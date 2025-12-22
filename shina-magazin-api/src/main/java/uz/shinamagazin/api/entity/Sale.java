@@ -1,0 +1,95 @@
+package uz.shinamagazin.api.entity;
+
+import jakarta.persistence.*;
+import lombok.*;
+import uz.shinamagazin.api.entity.base.BaseEntity;
+import uz.shinamagazin.api.enums.PaymentMethod;
+import uz.shinamagazin.api.enums.PaymentStatus;
+import uz.shinamagazin.api.enums.SaleStatus;
+
+import java.math.BigDecimal;
+import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.List;
+
+@Entity
+@Table(name = "sales")
+@Getter
+@Setter
+@NoArgsConstructor
+@AllArgsConstructor
+@Builder
+public class Sale extends BaseEntity {
+
+    @Column(name = "invoice_number", nullable = false, unique = true, length = 30)
+    private String invoiceNumber;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "customer_id")
+    private Customer customer;
+
+    @Column(name = "sale_date", nullable = false)
+    private LocalDateTime saleDate;
+
+    @Column(nullable = false, precision = 15, scale = 2)
+    private BigDecimal subtotal;
+
+    @Column(name = "discount_amount", precision = 15, scale = 2)
+    @Builder.Default
+    private BigDecimal discountAmount = BigDecimal.ZERO;
+
+    @Column(name = "discount_percent", precision = 5, scale = 2)
+    @Builder.Default
+    private BigDecimal discountPercent = BigDecimal.ZERO;
+
+    @Column(name = "total_amount", nullable = false, precision = 15, scale = 2)
+    private BigDecimal totalAmount;
+
+    @Column(name = "paid_amount", nullable = false, precision = 15, scale = 2)
+    @Builder.Default
+    private BigDecimal paidAmount = BigDecimal.ZERO;
+
+    @Column(name = "debt_amount", precision = 15, scale = 2)
+    @Builder.Default
+    private BigDecimal debtAmount = BigDecimal.ZERO;
+
+    @Enumerated(EnumType.STRING)
+    @Column(name = "payment_method", nullable = false, length = 20)
+    private PaymentMethod paymentMethod;
+
+    @Enumerated(EnumType.STRING)
+    @Column(name = "payment_status", nullable = false, length = 20)
+    private PaymentStatus paymentStatus;
+
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false, length = 20)
+    @Builder.Default
+    private SaleStatus status = SaleStatus.COMPLETED;
+
+    @Column(length = 500)
+    private String notes;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "created_by", nullable = false)
+    private User createdBy;
+
+    @OneToMany(mappedBy = "sale", cascade = CascadeType.ALL, orphanRemoval = true)
+    @Builder.Default
+    private List<SaleItem> items = new ArrayList<>();
+
+    @OneToMany(mappedBy = "sale", cascade = CascadeType.ALL)
+    @Builder.Default
+    private List<Payment> payments = new ArrayList<>();
+
+    // Helper: element qo'shish
+    public void addItem(SaleItem item) {
+        items.add(item);
+        item.setSale(this);
+    }
+
+    // Helper: to'lov qo'shish
+    public void addPayment(Payment payment) {
+        payments.add(payment);
+        payment.setSale(this);
+    }
+}
