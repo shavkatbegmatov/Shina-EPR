@@ -32,6 +32,7 @@ public class CustomerRequest {
     @Size(max = 200, message = "Kompaniya nomi 200 ta belgidan oshmasligi kerak")
     private String companyName;
 
+    @Builder.Default
     private CustomerType customerType = CustomerType.INDIVIDUAL;
 
     @Size(max = 500, message = "Izoh 500 ta belgidan oshmasligi kerak")

@@ -24,6 +24,7 @@ public class SaleItemRequest {
     private Integer quantity;
 
     @DecimalMin(value = "0", message = "Chegirma manfiy bo'lmasligi kerak")
+    @Builder.Default
     private BigDecimal discount = BigDecimal.ZERO;
 
     // Agar narx o'zgartirilsa

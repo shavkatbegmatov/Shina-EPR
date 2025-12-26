@@ -50,9 +50,11 @@ public class ProductRequest {
     private BigDecimal sellingPrice;
 
     @Min(value = 0, message = "Miqdor manfiy bo'lmasligi kerak")
+    @Builder.Default
     private Integer quantity = 0;
 
     @Min(value = 0, message = "Minimal zaxira manfiy bo'lmasligi kerak")
+    @Builder.Default
     private Integer minStockLevel = 5;
 
     private String description;
