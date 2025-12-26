@@ -1,0 +1,14 @@
+# IDE
+.idea/
+*.iml
+
+# Local tooling
+.claude/
+
+# Maven
+shina-magazin-api/target/
+
+# Node
+shina-magazin-front/node_modules/
+shina-magazin-front/dist/
+shina-magazin-front/.vite/
