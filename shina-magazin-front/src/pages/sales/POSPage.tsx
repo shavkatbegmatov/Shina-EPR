@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { Search, Plus, Minus, Trash2, ShoppingCart, User } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { productsApi } from '../../api/products.api';
@@ -17,11 +17,7 @@ export function POSPage() {
 
   const cart = useCartStore();
 
-  useEffect(() => {
-    loadProducts();
-  }, [search]);
-
-  const loadProducts = async () => {
+  const loadProducts = useCallback(async () => {
     try {
       const data = await productsApi.getAll({
         search: search || undefined,
@@ -31,7 +27,11 @@ export function POSPage() {
     } catch (error) {
       console.error('Failed to load products:', error);
     }
-  };
+  }, [search]);
+
+  useEffect(() => {
+    loadProducts();
+  }, [loadProducts]);
 
   const handleCompleteSale = async () => {
     if (cart.items.length === 0) {

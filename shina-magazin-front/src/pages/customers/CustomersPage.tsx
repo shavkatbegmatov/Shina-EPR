@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { Plus, Search, Users, Phone } from 'lucide-react';
 import { customersApi } from '../../api/customers.api';
 import { formatCurrency, CUSTOMER_TYPES } from '../../config/constants';
@@ -11,11 +11,7 @@ export function CustomersPage() {
   const [page, setPage] = useState(0);
   const [totalPages, setTotalPages] = useState(0);
 
-  useEffect(() => {
-    loadCustomers();
-  }, [search, page]);
-
-  const loadCustomers = async () => {
+  const loadCustomers = useCallback(async () => {
     setLoading(true);
     try {
       const data = await customersApi.getAll({
@@ -30,7 +26,11 @@ export function CustomersPage() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [page, search]);
+
+  useEffect(() => {
+    loadCustomers();
+  }, [loadCustomers]);
 
   return (
     <div className="space-y-6">

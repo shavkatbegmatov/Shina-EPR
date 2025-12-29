@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { Plus, Search, Package } from 'lucide-react';
 import { productsApi, brandsApi, categoriesApi } from '../../api/products.api';
 import { formatCurrency, SEASONS } from '../../config/constants';
@@ -11,19 +11,12 @@ export function ProductsPage() {
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
   const [brandFilter, setBrandFilter] = useState<number | ''>('');
+  const [categoryFilter, setCategoryFilter] = useState<number | ''>('');
   const [seasonFilter, setSeasonFilter] = useState<Season | ''>('');
   const [page, setPage] = useState(0);
   const [totalPages, setTotalPages] = useState(0);
 
-  useEffect(() => {
-    loadData();
-  }, []);
-
-  useEffect(() => {
-    loadProducts();
-  }, [search, brandFilter, seasonFilter, page]);
-
-  const loadData = async () => {
+  const loadData = useCallback(async () => {
     try {
       const [brandsData, categoriesData] = await Promise.all([
         brandsApi.getAll(),
@@ -34,9 +27,9 @@ export function ProductsPage() {
     } catch (error) {
       console.error('Failed to load data:', error);
     }
-  };
+  }, []);
 
-  const loadProducts = async () => {
+  const loadProducts = useCallback(async () => {
     setLoading(true);
     try {
       const data = await productsApi.getAll({
@@ -44,6 +37,7 @@ export function ProductsPage() {
         size: 20,
         search: search || undefined,
         brandId: brandFilter || undefined,
+        categoryId: categoryFilter || undefined,
         season: seasonFilter || undefined,
       });
       setProducts(data.content);
@@ -53,7 +47,15 @@ export function ProductsPage() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [brandFilter, categoryFilter, page, search, seasonFilter]);
+
+  useEffect(() => {
+    loadData();
+  }, [loadData]);
+
+  useEffect(() => {
+    loadProducts();
+  }, [loadProducts]);
 
   return (
     <div className="space-y-6">
@@ -102,6 +104,22 @@ export function ProductsPage() {
               {brands.map((brand) => (
                 <option key={brand.id} value={brand.id}>
                   {brand.name}
+                </option>
+              ))}
+            </select>
+
+            <select
+              className="select select-bordered w-full"
+              value={categoryFilter}
+              onChange={(e) => {
+                setCategoryFilter(e.target.value ? Number(e.target.value) : '');
+                setPage(0);
+              }}
+            >
+              <option value="">Barcha kategoriyalar</option>
+              {categories.map((category) => (
+                <option key={category.id} value={category.id}>
+                  {category.name}
                 </option>
               ))}
             </select>

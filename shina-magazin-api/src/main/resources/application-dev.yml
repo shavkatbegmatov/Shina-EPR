@@ -10,6 +10,13 @@ spring:
     hibernate:
       ddl-auto: validate
 
+  # Vault va Cloud tekshiruvlarini dev muhitda o'chirish
+  cloud:
+    vault:
+      enabled: false
+    compatibility-verifier:
+      enabled: false
+
 logging:
   level:
     uz.shinamagazin: DEBUG
