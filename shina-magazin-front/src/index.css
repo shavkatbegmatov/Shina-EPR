@@ -1,6 +1,147 @@
+@import url('https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&family=Sora:wght@400;500;600;700;800&display=swap');
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+@layer base {
+  :root {
+    --font-sans: 'Manrope', 'Sora', sans-serif;
+    --font-display: 'Sora', 'Manrope', sans-serif;
+    --shadow-soft: 0 16px 40px -28px rgba(15, 23, 42, 0.45);
+    --shadow-strong: 0 24px 60px -28px rgba(15, 23, 42, 0.6);
+  }
+
+  html {
+    font-family: var(--font-sans);
+    scroll-behavior: smooth;
+  }
+
+  body {
+    min-height: 100%;
+    background-color: hsl(var(--b1));
+    background-image:
+      radial-gradient(circle at 12% 18%, rgba(15, 118, 110, 0.12), transparent 45%),
+      radial-gradient(circle at 90% 10%, rgba(234, 88, 12, 0.12), transparent 40%),
+      linear-gradient(140deg, rgba(248, 250, 252, 0.9), rgba(241, 245, 249, 0.9));
+    color: hsl(var(--bc));
+  }
+
+  #root {
+    min-height: 100vh;
+  }
+
+  h1,
+  h2,
+  h3,
+  h4,
+  h5 {
+    font-family: var(--font-display);
+    letter-spacing: -0.01em;
+  }
+
+  p {
+    line-height: 1.6;
+  }
+
+  ::selection {
+    background: rgba(15, 118, 110, 0.2);
+  }
+
+  :focus-visible {
+    outline: 2px solid hsl(var(--p));
+    outline-offset: 2px;
+  }
+}
+
+@layer components {
+  .surface-card {
+    @apply bg-base-100/90 border border-base-200 shadow-[var(--shadow-soft)] backdrop-blur;
+  }
+
+  .surface-panel {
+    @apply bg-base-100 border border-base-200 shadow-sm;
+  }
+
+  .surface-soft {
+    @apply bg-base-200/70 border border-base-200;
+  }
+
+  .section-title {
+    @apply text-2xl font-bold tracking-tight;
+  }
+
+  .section-subtitle {
+    @apply text-base-content/70;
+  }
+
+  .pill {
+    @apply inline-flex items-center rounded-full border border-base-300 px-3 py-1 text-xs font-medium text-base-content/70;
+  }
+
+  .nav-chip {
+    @apply inline-flex items-center gap-2 rounded-full border border-base-300 bg-base-100/80 px-3 py-1 text-xs font-medium text-base-content/70;
+  }
+}
+
+@layer utilities {
+  @keyframes fade-up {
+    from {
+      opacity: 0;
+      transform: translateY(12px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+
+  @keyframes fade-in {
+    from {
+      opacity: 0;
+    }
+    to {
+      opacity: 1;
+    }
+  }
+
+  @keyframes slide-in {
+    from {
+      opacity: 0;
+      transform: translateX(16px);
+    }
+    to {
+      opacity: 1;
+      transform: translateX(0);
+    }
+  }
+
+  .animate-fade-up {
+    animation: fade-up 500ms ease both;
+  }
+
+  .animate-fade-in {
+    animation: fade-in 400ms ease both;
+  }
+
+  .animate-slide-in {
+    animation: slide-in 450ms ease both;
+  }
+
+  .stagger-children > * {
+    animation: fade-up 500ms ease both;
+    animation-delay: calc(var(--i, 0) * 90ms);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .animate-fade-up,
+  .animate-fade-in,
+  .animate-slide-in,
+  .stagger-children > * {
+    animation: none !important;
+  }
+}
 
 /* Custom scrollbar */
 ::-webkit-scrollbar {

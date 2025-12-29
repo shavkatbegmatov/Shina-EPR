@@ -21,9 +21,11 @@ function App() {
         toastOptions={{
           duration: 3000,
           style: {
-            borderRadius: '8px',
-            background: '#333',
-            color: '#fff',
+            borderRadius: '14px',
+            background: '#0f172a',
+            color: '#f8fafc',
+            border: '1px solid rgba(148, 163, 184, 0.25)',
+            padding: '12px 14px',
           },
         }}
       />

@@ -1,6 +1,8 @@
 import { createBrowserRouter, Navigate } from 'react-router-dom';
 import { MainLayout } from '../components/layout/MainLayout';
+import { PlaceholderPage } from '../components/common/PlaceholderPage';
 import { LoginPage } from '../pages/auth/LoginPage';
+import { RegisterPage } from '../pages/auth/RegisterPage';
 import { DashboardPage } from '../pages/dashboard/DashboardPage';
 import { ProductsPage } from '../pages/products/ProductsPage';
 import { CustomersPage } from '../pages/customers/CustomersPage';
@@ -10,6 +12,12 @@ export const router = createBrowserRouter([
   {
     path: '/login',
     element: <LoginPage />,
+    handle: { title: 'Kirish', description: 'Shaxsiy kabinetingizga kirish' },
+  },
+  {
+    path: '/register',
+    element: <RegisterPage />,
+    handle: { title: "Ro'yxatdan o'tish", description: "Yangi hisob so'rovi" },
   },
   {
     path: '/',
@@ -18,42 +26,82 @@ export const router = createBrowserRouter([
       {
         index: true,
         element: <DashboardPage />,
+        handle: { title: 'Dashboard', description: "Umumiy ko'rsatkichlar" },
       },
       {
         path: 'products',
         element: <ProductsPage />,
+        handle: { title: 'Mahsulotlar', description: 'Shina katalogi' },
       },
       {
         path: 'pos',
         element: <POSPage />,
+        handle: { title: 'Kassa (POS)', description: 'Savdo jarayoni' },
       },
       {
         path: 'sales',
-        element: <div className="p-4"><h1 className="text-2xl font-bold">Sotuvlar</h1><p className="text-base-content/70">Tez orada...</p></div>,
+        element: (
+          <PlaceholderPage
+            title="Sotuvlar"
+            description="Savdo tarixi va hisob-kitoblar shu yerda bo'ladi."
+          />
+        ),
+        handle: { title: 'Sotuvlar', description: "Hisob va to'lovlar" },
       },
       {
         path: 'customers',
         element: <CustomersPage />,
+        handle: { title: 'Mijozlar', description: 'Mijozlar bazasi' },
       },
       {
         path: 'debts',
-        element: <div className="p-4"><h1 className="text-2xl font-bold">Qarzlar</h1><p className="text-base-content/70">Tez orada...</p></div>,
+        element: (
+          <PlaceholderPage
+            title="Qarzlar"
+            description="Qarzlar nazorati va qarzdorlar ro'yxati."
+          />
+        ),
+        handle: { title: 'Qarzlar', description: 'Qarz va balans nazorati' },
       },
       {
         path: 'warehouse',
-        element: <div className="p-4"><h1 className="text-2xl font-bold">Ombor</h1><p className="text-base-content/70">Tez orada...</p></div>,
+        element: (
+          <PlaceholderPage
+            title="Ombor"
+            description="Zaxira kirim-chiqimi va partiya nazorati."
+          />
+        ),
+        handle: { title: 'Ombor', description: 'Zaxira va kirim-chiqim' },
       },
       {
         path: 'suppliers',
-        element: <div className="p-4"><h1 className="text-2xl font-bold">Ta'minotchilar</h1><p className="text-base-content/70">Tez orada...</p></div>,
+        element: (
+          <PlaceholderPage
+            title="Ta'minotchilar"
+            description="Hamkorlar va yetkazib beruvchilar bilan ishlash."
+          />
+        ),
+        handle: { title: "Ta'minotchilar", description: "Hamkorlar ro'yxati" },
       },
       {
         path: 'reports',
-        element: <div className="p-4"><h1 className="text-2xl font-bold">Hisobotlar</h1><p className="text-base-content/70">Tez orada...</p></div>,
+        element: (
+          <PlaceholderPage
+            title="Hisobotlar"
+            description="Analitika, eksport va vizual hisobotlar."
+          />
+        ),
+        handle: { title: 'Hisobotlar', description: 'Analitika va eksportlar' },
       },
       {
         path: 'settings',
-        element: <div className="p-4"><h1 className="text-2xl font-bold">Sozlamalar</h1><p className="text-base-content/70">Tez orada...</p></div>,
+        element: (
+          <PlaceholderPage
+            title="Sozlamalar"
+            description="Tizim sozlamalari va foydalanuvchi boshqaruvi."
+          />
+        ),
+        handle: { title: 'Sozlamalar', description: 'Tizim sozlamalari' },
       },
     ],
   },

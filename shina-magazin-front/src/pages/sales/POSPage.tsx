@@ -1,6 +1,7 @@
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { Search, Plus, Minus, Trash2, ShoppingCart, User } from 'lucide-react';
 import toast from 'react-hot-toast';
+import clsx from 'clsx';
 import { productsApi } from '../../api/products.api';
 import { salesApi } from '../../api/sales.api';
 import { useCartStore } from '../../store/cartStore';
@@ -68,75 +69,106 @@ export function POSPage() {
   };
 
   const total = cart.getTotal();
+  const subtotal = cart.getSubtotal();
+  const discountAmount = cart.getDiscountAmount();
+  const itemCount = cart.getItemCount();
   const change = paidAmount - total;
+  const isDebt = change < 0;
+
+  const discountSummary = useMemo(() => {
+    if (cart.discount > 0) {
+      return `-${formatCurrency(cart.discount)}`;
+    }
+    if (cart.discountPercent > 0) {
+      return `-${cart.discountPercent}%`;
+    }
+    return null;
+  }, [cart.discount, cart.discountPercent]);
 
   return (
-    <div className="flex flex-col lg:flex-row gap-4 h-[calc(100vh-8rem)]">
+    <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_380px]">
       {/* Products Grid */}
-      <div className="flex-1 flex flex-col bg-base-100 rounded-lg shadow-sm border border-base-200 overflow-hidden">
-        <div className="p-4 border-b border-base-200">
-          <div className="form-control">
-            <div className="input-group">
-              <span className="bg-base-200">
-                <Search className="w-5 h-5" />
-              </span>
-              <input
-                type="text"
-                placeholder="Mahsulot qidirish..."
-                className="input input-bordered w-full"
-                value={search}
-                onChange={(e) => setSearch(e.target.value)}
-              />
+      <section className="surface-card flex min-h-[60vh] flex-col overflow-hidden">
+        <div className="border-b border-base-200 p-4">
+          <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
+            <div>
+              <h2 className="text-lg font-semibold">Mahsulotlar</h2>
+              <p className="text-xs text-base-content/60">
+                {products.length} ta mahsulot topildi
+              </p>
+            </div>
+            <div className="form-control w-full md:max-w-sm">
+              <div className="input-group">
+                <span className="bg-base-200">
+                  <Search className="h-5 w-5" />
+                </span>
+                <input
+                  type="text"
+                  placeholder="Mahsulot qidirish..."
+                  className="input input-bordered w-full"
+                  value={search}
+                  onChange={(e) => setSearch(e.target.value)}
+                />
+              </div>
             </div>
           </div>
         </div>
 
         <div className="flex-1 overflow-auto p-4">
-          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3">
+          <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 xl:grid-cols-4">
             {products.map((product) => (
               <button
                 key={product.id}
-                className="card bg-base-200 hover:bg-base-300 transition-colors cursor-pointer disabled:opacity-50"
+                className={clsx(
+                  'surface-panel group flex h-full flex-col justify-between rounded-xl p-3 text-left transition hover:-translate-y-0.5 hover:shadow-[var(--shadow-soft)]',
+                  product.quantity === 0 && 'cursor-not-allowed opacity-60'
+                )}
                 disabled={product.quantity === 0}
                 onClick={() => cart.addItem(product)}
               >
-                <div className="card-body p-3">
-                  <h3 className="font-medium text-sm line-clamp-2">
+                <div>
+                  <h3 className="text-sm font-semibold line-clamp-2">
                     {product.name}
                   </h3>
-                  <p className="text-xs text-base-content/70">
-                    {product.sizeString}
+                  <p className="mt-1 text-xs text-base-content/60">
+                    {product.sizeString || "O'lcham ko'rsatilmagan"}
                   </p>
-                  <div className="flex justify-between items-center mt-2">
-                    <span className="font-bold text-primary">
-                      {formatCurrency(product.sellingPrice)}
-                    </span>
-                    <span
-                      className={`badge badge-sm ${
-                        product.quantity === 0
-                          ? 'badge-error'
-                          : product.lowStock
-                          ? 'badge-warning'
-                          : 'badge-success'
-                      }`}
-                    >
-                      {product.quantity}
-                    </span>
-                  </div>
+                </div>
+                <div className="mt-3 flex items-center justify-between">
+                  <span className="text-sm font-semibold text-primary">
+                    {formatCurrency(product.sellingPrice)}
+                  </span>
+                  <span
+                    className={clsx(
+                      'badge badge-sm',
+                      product.quantity === 0
+                        ? 'badge-error'
+                        : product.lowStock
+                        ? 'badge-warning'
+                        : 'badge-success'
+                    )}
+                  >
+                    {product.quantity}
+                  </span>
                 </div>
               </button>
             ))}
           </div>
         </div>
-      </div>
+      </section>
 
       {/* Cart */}
-      <div className="w-full lg:w-96 flex flex-col bg-base-100 rounded-lg shadow-sm border border-base-200 overflow-hidden">
-        <div className="p-4 border-b border-base-200 flex items-center justify-between">
-          <h2 className="text-lg font-bold flex items-center gap-2">
-            <ShoppingCart className="w-5 h-5" />
-            Savat
-          </h2>
+      <aside className="surface-card flex min-h-[60vh] flex-col overflow-hidden">
+        <div className="flex items-center justify-between border-b border-base-200 p-4">
+          <div>
+            <h2 className="flex items-center gap-2 text-lg font-semibold">
+              <ShoppingCart className="h-5 w-5" />
+              Savat
+            </h2>
+            <p className="text-xs text-base-content/60">
+              {itemCount} ta mahsulot
+            </p>
+          </div>
           {cart.items.length > 0 && (
             <button
               className="btn btn-ghost btn-sm text-error"
@@ -148,9 +180,9 @@ export function POSPage() {
         </div>
 
         {/* Customer Selection */}
-        <div className="p-4 border-b border-base-200">
+        <div className="border-b border-base-200 p-4">
           <button className="btn btn-outline btn-sm w-full gap-2">
-            <User className="w-4 h-4" />
+            <User className="h-4 w-4" />
             {cart.customer ? cart.customer.fullName : 'Mijoz tanlash'}
           </button>
         </div>
@@ -158,8 +190,8 @@ export function POSPage() {
         {/* Cart Items */}
         <div className="flex-1 overflow-auto p-4">
           {cart.items.length === 0 ? (
-            <div className="flex flex-col items-center justify-center h-full text-base-content/50">
-              <ShoppingCart className="w-12 h-12 mb-2" />
+            <div className="flex h-full flex-col items-center justify-center text-base-content/50">
+              <ShoppingCart className="mb-2 h-12 w-12" />
               <p>Savat bo'sh</p>
             </div>
           ) : (
@@ -167,18 +199,23 @@ export function POSPage() {
               {cart.items.map((item) => (
                 <div
                   key={item.product.id}
-                  className="flex gap-3 bg-base-200 p-3 rounded-lg"
+                  className="surface-soft flex gap-3 rounded-xl p-3"
                 >
                   <div className="flex-1">
-                    <h4 className="font-medium text-sm">{item.product.name}</h4>
+                    <h4 className="text-sm font-medium">{item.product.name}</h4>
                     <p className="text-xs text-base-content/70">
                       {formatCurrency(item.product.sellingPrice)} x{' '}
                       {item.quantity}
                     </p>
+                    {item.discount > 0 && (
+                      <p className="text-xs text-success">
+                        Chegirma: {formatCurrency(item.discount)}
+                      </p>
+                    )}
                   </div>
                   <div className="flex items-center gap-2">
                     <button
-                      className="btn btn-ghost btn-xs btn-circle"
+                      className="btn btn-ghost btn-sm btn-circle h-11 w-11"
                       onClick={() =>
                         cart.updateQuantity(
                           item.product.id,
@@ -187,11 +224,13 @@ export function POSPage() {
                       }
                       disabled={item.quantity <= 1}
                     >
-                      <Minus className="w-4 h-4" />
+                      <Minus className="h-4 w-4" />
                     </button>
-                    <span className="w-8 text-center">{item.quantity}</span>
+                    <span className="w-8 text-center text-sm">
+                      {item.quantity}
+                    </span>
                     <button
-                      className="btn btn-ghost btn-xs btn-circle"
+                      className="btn btn-ghost btn-sm btn-circle h-11 w-11"
                       onClick={() =>
                         cart.updateQuantity(
                           item.product.id,
@@ -200,13 +239,13 @@ export function POSPage() {
                       }
                       disabled={item.quantity >= item.product.quantity}
                     >
-                      <Plus className="w-4 h-4" />
+                      <Plus className="h-4 w-4" />
                     </button>
                     <button
-                      className="btn btn-ghost btn-xs btn-circle text-error"
+                      className="btn btn-ghost btn-sm btn-circle h-11 w-11 text-error"
                       onClick={() => cart.removeItem(item.product.id)}
                     >
-                      <Trash2 className="w-4 h-4" />
+                      <Trash2 className="h-4 w-4" />
                     </button>
                   </div>
                 </div>
@@ -215,9 +254,55 @@ export function POSPage() {
           )}
         </div>
 
+        {/* Discount */}
+        <div className="border-t border-base-200 p-4">
+          <div className="surface-soft space-y-3 rounded-xl p-3">
+            <div className="flex items-center justify-between text-sm">
+              <span>Sub-jami</span>
+              <span className="font-medium">{formatCurrency(subtotal)}</span>
+            </div>
+            <div className="grid grid-cols-2 gap-2">
+              <label className="form-control">
+                <span className="label-text text-xs">Chegirma (so'm)</span>
+                <input
+                  type="number"
+                  min={0}
+                  className="input input-bordered input-sm w-full"
+                  value={cart.discount}
+                  onChange={(e) =>
+                    cart.setDiscount(
+                      Math.min(subtotal, Math.max(0, Number(e.target.value)))
+                    )
+                  }
+                />
+              </label>
+              <label className="form-control">
+                <span className="label-text text-xs">Chegirma (%)</span>
+                <input
+                  type="number"
+                  min={0}
+                  max={100}
+                  className="input input-bordered input-sm w-full"
+                  value={cart.discountPercent}
+                  onChange={(e) =>
+                    cart.setDiscountPercent(
+                      Math.min(100, Math.max(0, Number(e.target.value)))
+                    )
+                  }
+                />
+              </label>
+            </div>
+            {discountSummary && (
+              <div className="text-xs text-success">
+                Umumiy chegirma: {discountSummary}
+              </div>
+            )}
+          </div>
+        </div>
+
         {/* Cart Total */}
-        <div className="p-4 border-t border-base-200 space-y-3">
-          <div className="flex justify-between text-lg">
+        <div className="border-t border-base-200 p-4 space-y-3">
+          <div className="flex items-center justify-between text-lg">
             <span>Jami:</span>
             <span className="font-bold">{formatCurrency(total)}</span>
           </div>
@@ -232,19 +317,20 @@ export function POSPage() {
             To'lovga o'tish
           </button>
         </div>
-      </div>
+      </aside>
 
       {/* Payment Modal */}
       {showPayment && (
         <div className="modal modal-open">
-          <div className="modal-box">
-            <h3 className="font-bold text-lg mb-4">To'lov</h3>
+          <div className="modal-box max-w-lg">
+            <h3 className="text-lg font-semibold">To'lov</h3>
+            <p className="text-sm text-base-content/60">
+              {itemCount} ta mahsulot · {formatCurrency(total)}
+            </p>
 
-            <div className="space-y-4">
-              <div className="form-control">
-                <label className="label">
-                  <span className="label-text">To'lov usuli</span>
-                </label>
+            <div className="mt-6 space-y-4">
+              <label className="form-control">
+                <span className="label-text">To'lov usuli</span>
                 <select
                   className="select select-bordered w-full"
                   value={paymentMethod}
@@ -258,36 +344,50 @@ export function POSPage() {
                     </option>
                   ))}
                 </select>
-              </div>
+              </label>
 
               <div className="form-control">
                 <label className="label">
                   <span className="label-text">To'langan summa</span>
                 </label>
-                <input
-                  type="number"
-                  className="input input-bordered w-full"
-                  value={paidAmount}
-                  onChange={(e) => setPaidAmount(Number(e.target.value))}
-                />
+                <div className="flex items-center gap-2">
+                  <input
+                    type="number"
+                    min={0}
+                    className="input input-bordered w-full"
+                    value={paidAmount}
+                    onChange={(e) => setPaidAmount(Number(e.target.value))}
+                  />
+                  <button
+                    className="btn btn-ghost btn-sm"
+                    onClick={() => setPaidAmount(total)}
+                  >
+                    To'liq
+                  </button>
+                </div>
               </div>
 
-              <div className="bg-base-200 p-4 rounded-lg">
-                <div className="flex justify-between mb-2">
+              <div className="surface-soft rounded-xl p-4">
+                <div className="flex justify-between text-sm">
+                  <span>Sub-jami:</span>
+                  <span>{formatCurrency(subtotal)}</span>
+                </div>
+                <div className="mt-2 flex justify-between text-sm">
+                  <span>Chegirma:</span>
+                  <span>{discountAmount ? formatCurrency(discountAmount) : '—'}</span>
+                </div>
+                <div className="divider my-3"></div>
+                <div className="flex justify-between text-lg">
                   <span>Jami:</span>
                   <span className="font-bold">{formatCurrency(total)}</span>
                 </div>
-                <div className="flex justify-between mb-2">
-                  <span>To'langan:</span>
-                  <span>{formatCurrency(paidAmount)}</span>
-                </div>
-                <div className="divider my-2"></div>
-                <div className="flex justify-between text-lg">
-                  <span>{change >= 0 ? 'Qaytim:' : 'Qarz:'}</span>
+                <div className="mt-3 flex justify-between text-sm">
+                  <span>{isDebt ? 'Qarz:' : 'Qaytim:'}</span>
                   <span
-                    className={`font-bold ${
-                      change < 0 ? 'text-error' : 'text-success'
-                    }`}
+                    className={clsx(
+                      'font-semibold',
+                      isDebt ? 'text-error' : 'text-success'
+                    )}
                   >
                     {formatCurrency(Math.abs(change))}
                   </span>

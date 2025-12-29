@@ -1,3 +1,4 @@
+import type { CSSProperties } from 'react';
 import { NavLink } from 'react-router-dom';
 import {
   LayoutDashboard,
@@ -41,46 +42,83 @@ export function Sidebar() {
       {/* Mobile overlay */}
       {sidebarOpen && (
         <div
-          className="fixed inset-0 bg-black/50 z-40 lg:hidden"
+          className="fixed inset-0 z-40 bg-black/50 lg:hidden"
           onClick={() => setSidebarOpen(false)}
+          role="button"
+          aria-label="Menyuni yopish"
         />
       )}
 
       {/* Sidebar */}
       <aside
         className={clsx(
-          'fixed top-0 left-0 z-50 h-screen w-64 bg-base-200 transition-transform lg:translate-x-0 lg:static',
+          'fixed left-0 top-0 z-50 flex h-screen w-72 flex-col bg-base-100/95 backdrop-blur transition-transform lg:static lg:translate-x-0',
+          'border-r border-base-200 shadow-[var(--shadow-soft)]',
           sidebarOpen ? 'translate-x-0' : '-translate-x-full'
         )}
       >
-        <div className="flex items-center justify-between p-4 border-b border-base-300">
-          <h1 className="text-xl font-bold text-primary">Shina Magazin</h1>
-          <button
-            className="btn btn-ghost btn-sm lg:hidden"
-            onClick={() => setSidebarOpen(false)}
-          >
-            <X className="w-5 h-5" />
-          </button>
+        <div className="relative overflow-hidden border-b border-base-200 px-4 py-5">
+          <div className="pointer-events-none absolute inset-0 bg-gradient-to-br from-primary/15 via-transparent to-secondary/10" />
+          <div className="relative flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <div className="grid h-10 w-10 place-items-center rounded-xl bg-primary/15 text-primary shadow-sm">
+                <span className="text-lg font-bold">S</span>
+              </div>
+              <div>
+                <h1 className="text-lg font-bold">Shina Magazin</h1>
+                <p className="text-xs text-base-content/60">
+                  ERP boshqaruv paneli
+                </p>
+              </div>
+            </div>
+            <button
+              className="btn btn-ghost btn-sm lg:hidden"
+              onClick={() => setSidebarOpen(false)}
+              aria-label="Yopish"
+            >
+              <X className="h-5 w-5" />
+            </button>
+          </div>
         </div>
 
-        <nav className="p-4">
-          <ul className="menu menu-compact gap-1">
-            {filteredItems.map((item) => (
-              <li key={item.path}>
+        <nav className="flex-1 p-4" aria-label="Asosiy navigatsiya">
+          <p className="px-3 pb-3 text-xs font-semibold uppercase tracking-[0.2em] text-base-content/40">
+            Navigatsiya
+          </p>
+          <ul className="stagger-children flex flex-col gap-1">
+            {filteredItems.map((item, index) => (
+              <li
+                key={item.path}
+                style={{ '--i': index } as CSSProperties}
+              >
                 <NavLink
                   to={item.path}
+                  end={item.path === '/'}
                   className={({ isActive }) =>
                     clsx(
-                      'flex items-center gap-3 px-4 py-3 rounded-lg transition-colors',
+                      'group flex items-center gap-3 rounded-xl border px-3 py-2.5 text-sm font-medium transition',
                       isActive
-                        ? 'bg-primary text-primary-content'
-                        : 'hover:bg-base-300'
+                        ? 'border-base-300 bg-base-200 text-base-content shadow-sm'
+                        : 'border-transparent text-base-content/70 hover:border-base-300 hover:bg-base-200/70 hover:text-base-content'
                     )
                   }
                   onClick={() => setSidebarOpen(false)}
                 >
-                  <item.icon className="w-5 h-5" />
-                  {item.label}
+                  {({ isActive }) => (
+                    <>
+                      <span
+                        className={clsx(
+                          'grid h-9 w-9 place-items-center rounded-lg transition',
+                          isActive
+                            ? 'bg-primary/10 text-primary'
+                            : 'bg-base-200/70 text-base-content/50 group-hover:text-primary'
+                        )}
+                      >
+                        <item.icon className="h-5 w-5" />
+                      </span>
+                      <span>{item.label}</span>
+                    </>
+                  )}
                 </NavLink>
               </li>
             ))}
