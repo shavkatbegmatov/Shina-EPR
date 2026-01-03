@@ -10,7 +10,13 @@ import {
 import clsx from 'clsx';
 import { productsApi, brandsApi, categoriesApi } from '../../api/products.api';
 import { formatCurrency, SEASONS } from '../../config/constants';
-import type { Product, Brand, Category, Season } from '../../types';
+import type { Product, Brand, Category, Season, ProductRequest } from '../../types';
+
+const emptyFormData: ProductRequest = {
+  sku: '',
+  name: '',
+  sellingPrice: 0,
+};
 
 export function ProductsPage() {
   const [products, setProducts] = useState<Product[]>([]);
@@ -24,6 +30,9 @@ export function ProductsPage() {
   const [page, setPage] = useState(0);
   const [totalPages, setTotalPages] = useState(0);
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
+  const [showNewProductModal, setShowNewProductModal] = useState(false);
+  const [formData, setFormData] = useState<ProductRequest>(emptyFormData);
+  const [saving, setSaving] = useState(false);
 
   const activeFilters = useMemo(() => {
     let count = 0;
@@ -83,6 +92,36 @@ export function ProductsPage() {
     setPage(0);
   };
 
+  const handleOpenNewProductModal = () => {
+    setFormData(emptyFormData);
+    setShowNewProductModal(true);
+  };
+
+  const handleCloseNewProductModal = () => {
+    setShowNewProductModal(false);
+    setFormData(emptyFormData);
+  };
+
+  const handleFormChange = (field: keyof ProductRequest, value: string | number | undefined) => {
+    setFormData((prev) => ({ ...prev, [field]: value }));
+  };
+
+  const handleSaveProduct = async () => {
+    if (!formData.sku.trim() || !formData.name.trim() || formData.sellingPrice <= 0) {
+      return;
+    }
+    setSaving(true);
+    try {
+      await productsApi.create(formData);
+      handleCloseNewProductModal();
+      loadProducts();
+    } catch (error) {
+      console.error('Failed to save product:', error);
+    } finally {
+      setSaving(false);
+    }
+  };
+
   return (
     <div className="space-y-6">
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
@@ -100,7 +139,7 @@ export function ProductsPage() {
               Filtrlarni tozalash
             </button>
           )}
-          <button className="btn btn-primary">
+          <button className="btn btn-primary" onClick={handleOpenNewProductModal}>
             <Plus className="h-5 w-5" />
             Yangi mahsulot
           </button>
@@ -489,6 +528,289 @@ export function ProductsPage() {
             </div>
           </div>
           <div className="modal-backdrop" onClick={() => setSelectedProduct(null)} />
+        </div>
+      )}
+
+      {showNewProductModal && (
+        <div className="modal modal-open">
+          <div className="modal-box max-w-3xl">
+            <div className="flex items-start justify-between gap-4">
+              <div>
+                <h3 className="text-xl font-semibold">Yangi mahsulot</h3>
+                <p className="text-sm text-base-content/60">
+                  Yangi shina qo'shish
+                </p>
+              </div>
+              <button
+                className="btn btn-ghost btn-sm"
+                onClick={handleCloseNewProductModal}
+              >
+                <X className="h-4 w-4" />
+              </button>
+            </div>
+
+            <div className="mt-6 space-y-4">
+              <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
+                <label className="form-control">
+                  <span className="label-text mb-1 text-xs font-semibold uppercase tracking-[0.18em] text-base-content/50">
+                    SKU *
+                  </span>
+                  <input
+                    type="text"
+                    className="input input-bordered w-full"
+                    value={formData.sku}
+                    onChange={(e) => handleFormChange('sku', e.target.value)}
+                    placeholder="SH-001"
+                  />
+                </label>
+                <label className="form-control sm:col-span-2">
+                  <span className="label-text mb-1 text-xs font-semibold uppercase tracking-[0.18em] text-base-content/50">
+                    Nomi *
+                  </span>
+                  <input
+                    type="text"
+                    className="input input-bordered w-full"
+                    value={formData.name}
+                    onChange={(e) => handleFormChange('name', e.target.value)}
+                    placeholder="Michelin Pilot Sport 5"
+                  />
+                </label>
+              </div>
+
+              <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                <label className="form-control">
+                  <span className="label-text mb-1 text-xs font-semibold uppercase tracking-[0.18em] text-base-content/50">
+                    Brend
+                  </span>
+                  <select
+                    className="select select-bordered w-full"
+                    value={formData.brandId || ''}
+                    onChange={(e) =>
+                      handleFormChange('brandId', e.target.value ? Number(e.target.value) : undefined)
+                    }
+                  >
+                    <option value="">Tanlang...</option>
+                    {brands.map((brand) => (
+                      <option key={brand.id} value={brand.id}>
+                        {brand.name}
+                      </option>
+                    ))}
+                  </select>
+                </label>
+                <label className="form-control">
+                  <span className="label-text mb-1 text-xs font-semibold uppercase tracking-[0.18em] text-base-content/50">
+                    Kategoriya
+                  </span>
+                  <select
+                    className="select select-bordered w-full"
+                    value={formData.categoryId || ''}
+                    onChange={(e) =>
+                      handleFormChange('categoryId', e.target.value ? Number(e.target.value) : undefined)
+                    }
+                  >
+                    <option value="">Tanlang...</option>
+                    {categories.map((category) => (
+                      <option key={category.id} value={category.id}>
+                        {category.name}
+                      </option>
+                    ))}
+                  </select>
+                </label>
+              </div>
+
+              <div className="grid grid-cols-3 gap-4 sm:grid-cols-6">
+                <label className="form-control">
+                  <span className="label-text mb-1 text-xs font-semibold uppercase tracking-[0.18em] text-base-content/50">
+                    Kenglik
+                  </span>
+                  <input
+                    type="number"
+                    className="input input-bordered w-full"
+                    value={formData.width || ''}
+                    onChange={(e) =>
+                      handleFormChange('width', e.target.value ? Number(e.target.value) : undefined)
+                    }
+                    placeholder="205"
+                  />
+                </label>
+                <label className="form-control">
+                  <span className="label-text mb-1 text-xs font-semibold uppercase tracking-[0.18em] text-base-content/50">
+                    Profil
+                  </span>
+                  <input
+                    type="number"
+                    className="input input-bordered w-full"
+                    value={formData.profile || ''}
+                    onChange={(e) =>
+                      handleFormChange('profile', e.target.value ? Number(e.target.value) : undefined)
+                    }
+                    placeholder="55"
+                  />
+                </label>
+                <label className="form-control">
+                  <span className="label-text mb-1 text-xs font-semibold uppercase tracking-[0.18em] text-base-content/50">
+                    Diametr
+                  </span>
+                  <input
+                    type="number"
+                    className="input input-bordered w-full"
+                    value={formData.diameter || ''}
+                    onChange={(e) =>
+                      handleFormChange('diameter', e.target.value ? Number(e.target.value) : undefined)
+                    }
+                    placeholder="16"
+                  />
+                </label>
+                <label className="form-control">
+                  <span className="label-text mb-1 text-xs font-semibold uppercase tracking-[0.18em] text-base-content/50">
+                    Yuk ind.
+                  </span>
+                  <input
+                    type="text"
+                    className="input input-bordered w-full"
+                    value={formData.loadIndex || ''}
+                    onChange={(e) => handleFormChange('loadIndex', e.target.value || undefined)}
+                    placeholder="91"
+                  />
+                </label>
+                <label className="form-control">
+                  <span className="label-text mb-1 text-xs font-semibold uppercase tracking-[0.18em] text-base-content/50">
+                    Tezlik
+                  </span>
+                  <input
+                    type="text"
+                    className="input input-bordered w-full"
+                    value={formData.speedRating || ''}
+                    onChange={(e) => handleFormChange('speedRating', e.target.value || undefined)}
+                    placeholder="V"
+                  />
+                </label>
+                <label className="form-control">
+                  <span className="label-text mb-1 text-xs font-semibold uppercase tracking-[0.18em] text-base-content/50">
+                    Mavsum
+                  </span>
+                  <select
+                    className="select select-bordered w-full"
+                    value={formData.season || ''}
+                    onChange={(e) =>
+                      handleFormChange('season', e.target.value as Season || undefined)
+                    }
+                  >
+                    <option value="">—</option>
+                    {Object.entries(SEASONS).map(([key, { label }]) => (
+                      <option key={key} value={key}>
+                        {label}
+                      </option>
+                    ))}
+                  </select>
+                </label>
+              </div>
+
+              <div className="grid grid-cols-2 gap-4 sm:grid-cols-4">
+                <label className="form-control">
+                  <span className="label-text mb-1 text-xs font-semibold uppercase tracking-[0.18em] text-base-content/50">
+                    Kelish narxi
+                  </span>
+                  <input
+                    type="number"
+                    className="input input-bordered w-full"
+                    value={formData.purchasePrice || ''}
+                    onChange={(e) =>
+                      handleFormChange('purchasePrice', e.target.value ? Number(e.target.value) : undefined)
+                    }
+                    placeholder="0"
+                  />
+                </label>
+                <label className="form-control">
+                  <span className="label-text mb-1 text-xs font-semibold uppercase tracking-[0.18em] text-base-content/50">
+                    Sotish narxi *
+                  </span>
+                  <input
+                    type="number"
+                    className="input input-bordered w-full"
+                    value={formData.sellingPrice || ''}
+                    onChange={(e) =>
+                      handleFormChange('sellingPrice', e.target.value ? Number(e.target.value) : 0)
+                    }
+                    placeholder="0"
+                  />
+                </label>
+                <label className="form-control">
+                  <span className="label-text mb-1 text-xs font-semibold uppercase tracking-[0.18em] text-base-content/50">
+                    Miqdor
+                  </span>
+                  <input
+                    type="number"
+                    className="input input-bordered w-full"
+                    value={formData.quantity || ''}
+                    onChange={(e) =>
+                      handleFormChange('quantity', e.target.value ? Number(e.target.value) : undefined)
+                    }
+                    placeholder="0"
+                  />
+                </label>
+                <label className="form-control">
+                  <span className="label-text mb-1 text-xs font-semibold uppercase tracking-[0.18em] text-base-content/50">
+                    Min zaxira
+                  </span>
+                  <input
+                    type="number"
+                    className="input input-bordered w-full"
+                    value={formData.minStockLevel || ''}
+                    onChange={(e) =>
+                      handleFormChange('minStockLevel', e.target.value ? Number(e.target.value) : undefined)
+                    }
+                    placeholder="5"
+                  />
+                </label>
+              </div>
+
+              <label className="form-control">
+                <span className="label-text mb-1 text-xs font-semibold uppercase tracking-[0.18em] text-base-content/50">
+                  Tavsif
+                </span>
+                <textarea
+                  className="textarea textarea-bordered w-full"
+                  rows={2}
+                  value={formData.description || ''}
+                  onChange={(e) => handleFormChange('description', e.target.value || undefined)}
+                  placeholder="Mahsulot haqida qo'shimcha ma'lumot..."
+                />
+              </label>
+
+              <label className="form-control">
+                <span className="label-text mb-1 text-xs font-semibold uppercase tracking-[0.18em] text-base-content/50">
+                  Rasm URL
+                </span>
+                <input
+                  type="text"
+                  className="input input-bordered w-full"
+                  value={formData.imageUrl || ''}
+                  onChange={(e) => handleFormChange('imageUrl', e.target.value || undefined)}
+                  placeholder="https://..."
+                />
+              </label>
+            </div>
+
+            <div className="modal-action">
+              <button
+                className="btn btn-ghost"
+                onClick={handleCloseNewProductModal}
+                disabled={saving}
+              >
+                Bekor qilish
+              </button>
+              <button
+                className="btn btn-primary"
+                onClick={handleSaveProduct}
+                disabled={saving || !formData.sku.trim() || !formData.name.trim() || formData.sellingPrice <= 0}
+              >
+                {saving && <span className="loading loading-spinner loading-sm" />}
+                Saqlash
+              </button>
+            </div>
+          </div>
+          <div className="modal-backdrop" onClick={handleCloseNewProductModal} />
         </div>
       )}
     </div>
