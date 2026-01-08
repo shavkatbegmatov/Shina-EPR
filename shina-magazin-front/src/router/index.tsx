@@ -7,6 +7,7 @@ import { DashboardPage } from '../pages/dashboard/DashboardPage';
 import { ProductsPage } from '../pages/products/ProductsPage';
 import { CustomersPage } from '../pages/customers/CustomersPage';
 import { POSPage } from '../pages/sales/POSPage';
+import { SalesPage } from '../pages/sales/SalesPage';
 import { SettingsPage } from '../pages/settings/SettingsPage';
 
 export const router = createBrowserRouter([
@@ -41,13 +42,8 @@ export const router = createBrowserRouter([
       },
       {
         path: 'sales',
-        element: (
-          <PlaceholderPage
-            title="Sotuvlar"
-            description="Savdo tarixi va hisob-kitoblar shu yerda bo'ladi."
-          />
-        ),
-        handle: { title: 'Sotuvlar', description: "Hisob va to'lovlar" },
+        element: <SalesPage />,
+        handle: { title: 'Sotuvlar', description: 'Sotuvlar tarixi' },
       },
       {
         path: 'customers',

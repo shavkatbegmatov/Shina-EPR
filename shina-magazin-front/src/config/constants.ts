@@ -13,6 +13,18 @@ export const PAYMENT_METHODS = {
   MIXED: { label: 'Aralash', value: 'MIXED' },
 } as const;
 
+export const PAYMENT_STATUSES = {
+  PAID: { label: "To'langan", value: 'PAID' },
+  PARTIAL: { label: 'Qisman', value: 'PARTIAL' },
+  UNPAID: { label: "To'lanmagan", value: 'UNPAID' },
+} as const;
+
+export const SALE_STATUSES = {
+  COMPLETED: { label: 'Yakunlangan', value: 'COMPLETED' },
+  CANCELLED: { label: 'Bekor qilingan', value: 'CANCELLED' },
+  REFUNDED: { label: 'Qaytarilgan', value: 'REFUNDED' },
+} as const;
+
 export const CUSTOMER_TYPES = {
   INDIVIDUAL: { label: 'Jismoniy shaxs', value: 'INDIVIDUAL' },
   BUSINESS: { label: 'Yuridik shaxs', value: 'BUSINESS' },

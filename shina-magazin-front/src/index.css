@@ -177,3 +177,18 @@
 .input-group > span {
   @apply flex items-center px-3;
 }
+
+/* Number input spinner fix for dark browser themes */
+input[type="number"]::-webkit-outer-spin-button,
+input[type="number"]::-webkit-inner-spin-button {
+  -webkit-appearance: inner-spin-button;
+  opacity: 1;
+  background: transparent;
+  border: none;
+  cursor: pointer;
+}
+
+/* Force light color scheme for inputs regardless of browser theme */
+input[type="number"] {
+  color-scheme: light;
+}
