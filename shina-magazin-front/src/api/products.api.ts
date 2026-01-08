@@ -102,6 +102,14 @@ export const categoriesApi = {
     return response.data.data;
   },
 
+  update: async (id: number, name: string, description?: string, parentId?: number): Promise<Category> => {
+    const params = new URLSearchParams({ name });
+    if (description) params.append('description', description);
+    if (parentId) params.append('parentId', parentId.toString());
+    const response = await api.put<ApiResponse<Category>>(`/v1/categories/${id}?${params}`);
+    return response.data.data;
+  },
+
   delete: async (id: number): Promise<void> => {
     await api.delete(`/v1/categories/${id}`);
   },

@@ -7,6 +7,7 @@ import { DashboardPage } from '../pages/dashboard/DashboardPage';
 import { ProductsPage } from '../pages/products/ProductsPage';
 import { CustomersPage } from '../pages/customers/CustomersPage';
 import { POSPage } from '../pages/sales/POSPage';
+import { SettingsPage } from '../pages/settings/SettingsPage';
 
 export const router = createBrowserRouter([
   {
@@ -95,12 +96,7 @@ export const router = createBrowserRouter([
       },
       {
         path: 'settings',
-        element: (
-          <PlaceholderPage
-            title="Sozlamalar"
-            description="Tizim sozlamalari va foydalanuvchi boshqaruvi."
-          />
-        ),
+        element: <SettingsPage />,
         handle: { title: 'Sozlamalar', description: 'Tizim sozlamalari' },
       },
     ],
