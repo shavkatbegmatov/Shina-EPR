@@ -238,8 +238,8 @@ public class SaleService {
 
     private String generateInvoiceNumber() {
         String prefix = "INV" + LocalDate.now().format(DateTimeFormatter.ofPattern("yyyyMMdd"));
-        Integer maxNumber = saleRepository.findMaxInvoiceNumber(prefix);
-        int nextNumber = (maxNumber != null ? maxNumber : 0) + 1;
+        Long maxNumber = saleRepository.findMaxInvoiceNumber(prefix);
+        long nextNumber = (maxNumber != null ? maxNumber : 0L) + 1;
         return prefix + String.format("%04d", nextNumber);
     }
 

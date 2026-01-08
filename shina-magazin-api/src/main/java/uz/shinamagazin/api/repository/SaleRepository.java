@@ -44,6 +44,6 @@ public interface SaleRepository extends JpaRepository<Sale, Long> {
     @Query("SELECT s FROM Sale s LEFT JOIN FETCH s.items WHERE s.id = :id")
     Optional<Sale> findByIdWithItems(@Param("id") Long id);
 
-    @Query("SELECT MAX(CAST(SUBSTRING(s.invoiceNumber, 4) AS integer)) FROM Sale s WHERE s.invoiceNumber LIKE :prefix%")
-    Integer findMaxInvoiceNumber(@Param("prefix") String prefix);
+    @Query("SELECT MAX(CAST(SUBSTRING(s.invoiceNumber, 4) AS long)) FROM Sale s WHERE s.invoiceNumber LIKE :prefix%")
+    Long findMaxInvoiceNumber(@Param("prefix") String prefix);
 }
