@@ -1,9 +1,15 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { Plus, Search, Users, Phone } from 'lucide-react';
+import { Plus, Search, Users, Phone, X } from 'lucide-react';
 import clsx from 'clsx';
 import { customersApi } from '../../api/customers.api';
 import { formatCurrency, CUSTOMER_TYPES } from '../../config/constants';
-import type { Customer } from '../../types';
+import type { Customer, CustomerRequest, CustomerType } from '../../types';
+
+const emptyFormData: CustomerRequest = {
+  fullName: '',
+  phone: '',
+  customerType: 'INDIVIDUAL',
+};
 
 export function CustomersPage() {
   const [customers, setCustomers] = useState<Customer[]>([]);
@@ -12,6 +18,9 @@ export function CustomersPage() {
   const [page, setPage] = useState(0);
   const [totalPages, setTotalPages] = useState(0);
   const [totalElements, setTotalElements] = useState(0);
+  const [showNewModal, setShowNewModal] = useState(false);
+  const [formData, setFormData] = useState<CustomerRequest>(emptyFormData);
+  const [saving, setSaving] = useState(false);
 
   const hasSearch = useMemo(() => search.trim().length > 0, [search]);
 
@@ -37,6 +46,36 @@ export function CustomersPage() {
     loadCustomers();
   }, [loadCustomers]);
 
+  const handleOpenNewModal = () => {
+    setFormData(emptyFormData);
+    setShowNewModal(true);
+  };
+
+  const handleCloseNewModal = () => {
+    setShowNewModal(false);
+    setFormData(emptyFormData);
+  };
+
+  const handleFormChange = (field: keyof CustomerRequest, value: string | undefined) => {
+    setFormData((prev) => ({ ...prev, [field]: value }));
+  };
+
+  const handleSaveCustomer = async () => {
+    if (!formData.fullName.trim() || !formData.phone.trim()) {
+      return;
+    }
+    setSaving(true);
+    try {
+      await customersApi.create(formData);
+      handleCloseNewModal();
+      loadCustomers();
+    } catch (error) {
+      console.error('Failed to save customer:', error);
+    } finally {
+      setSaving(false);
+    }
+  };
+
   return (
     <div className="space-y-6">
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
@@ -46,7 +85,7 @@ export function CustomersPage() {
         </div>
         <div className="flex items-center gap-2">
           <span className="pill">{totalElements} ta mijoz</span>
-          <button className="btn btn-primary">
+          <button className="btn btn-primary" onClick={handleOpenNewModal}>
             <Plus className="h-5 w-5" />
             Yangi mijoz
           </button>
@@ -255,6 +294,148 @@ export function CustomersPage() {
           </div>
         )}
       </div>
+
+      {/* New Customer Modal */}
+      {showNewModal && (
+        <div className="modal modal-open">
+          <div className="modal-box max-w-lg">
+            <div className="flex items-start justify-between gap-4">
+              <div>
+                <h3 className="text-xl font-semibold">Yangi mijoz</h3>
+                <p className="text-sm text-base-content/60">
+                  Yangi mijoz qo'shish
+                </p>
+              </div>
+              <button
+                className="btn btn-ghost btn-sm"
+                onClick={handleCloseNewModal}
+              >
+                <X className="h-4 w-4" />
+              </button>
+            </div>
+
+            <div className="mt-6 space-y-4">
+              <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                <label className="form-control sm:col-span-2">
+                  <span className="label-text mb-1 text-xs font-semibold uppercase tracking-[0.18em] text-base-content/50">
+                    To'liq ism *
+                  </span>
+                  <input
+                    type="text"
+                    className="input input-bordered w-full"
+                    value={formData.fullName}
+                    onChange={(e) => handleFormChange('fullName', e.target.value)}
+                    placeholder="Ism Familiya"
+                  />
+                </label>
+
+                <label className="form-control">
+                  <span className="label-text mb-1 text-xs font-semibold uppercase tracking-[0.18em] text-base-content/50">
+                    Telefon *
+                  </span>
+                  <input
+                    type="tel"
+                    className="input input-bordered w-full"
+                    value={formData.phone}
+                    onChange={(e) => handleFormChange('phone', e.target.value)}
+                    placeholder="+998 90 123 45 67"
+                  />
+                </label>
+
+                <label className="form-control">
+                  <span className="label-text mb-1 text-xs font-semibold uppercase tracking-[0.18em] text-base-content/50">
+                    Qo'shimcha telefon
+                  </span>
+                  <input
+                    type="tel"
+                    className="input input-bordered w-full"
+                    value={formData.phone2 || ''}
+                    onChange={(e) => handleFormChange('phone2', e.target.value || undefined)}
+                    placeholder="+998 90 123 45 67"
+                  />
+                </label>
+              </div>
+
+              <label className="form-control">
+                <span className="label-text mb-1 text-xs font-semibold uppercase tracking-[0.18em] text-base-content/50">
+                  Mijoz turi
+                </span>
+                <select
+                  className="select select-bordered w-full"
+                  value={formData.customerType || 'INDIVIDUAL'}
+                  onChange={(e) => handleFormChange('customerType', e.target.value as CustomerType)}
+                >
+                  {Object.entries(CUSTOMER_TYPES).map(([key, { label }]) => (
+                    <option key={key} value={key}>
+                      {label}
+                    </option>
+                  ))}
+                </select>
+              </label>
+
+              {formData.customerType === 'BUSINESS' && (
+                <label className="form-control">
+                  <span className="label-text mb-1 text-xs font-semibold uppercase tracking-[0.18em] text-base-content/50">
+                    Kompaniya nomi
+                  </span>
+                  <input
+                    type="text"
+                    className="input input-bordered w-full"
+                    value={formData.companyName || ''}
+                    onChange={(e) => handleFormChange('companyName', e.target.value || undefined)}
+                    placeholder="Kompaniya nomi"
+                  />
+                </label>
+              )}
+
+              <label className="form-control">
+                <span className="label-text mb-1 text-xs font-semibold uppercase tracking-[0.18em] text-base-content/50">
+                  Manzil
+                </span>
+                <input
+                  type="text"
+                  className="input input-bordered w-full"
+                  value={formData.address || ''}
+                  onChange={(e) => handleFormChange('address', e.target.value || undefined)}
+                  placeholder="Shahar, tuman, ko'cha..."
+                />
+              </label>
+
+              <label className="form-control">
+                <span className="label-text mb-1 text-xs font-semibold uppercase tracking-[0.18em] text-base-content/50">
+                  Izoh
+                </span>
+                <textarea
+                  className="textarea textarea-bordered w-full"
+                  rows={2}
+                  value={formData.notes || ''}
+                  onChange={(e) => handleFormChange('notes', e.target.value || undefined)}
+                  placeholder="Qo'shimcha ma'lumot..."
+                />
+              </label>
+            </div>
+
+            <div className="modal-action">
+              <button
+                className="btn btn-ghost"
+                onClick={handleCloseNewModal}
+                disabled={saving}
+              >
+                Bekor qilish
+              </button>
+              <button
+                className="btn btn-primary"
+                onClick={handleSaveCustomer}
+                disabled={saving || !formData.fullName.trim() || !formData.phone.trim()}
+              >
+                {saving && <span className="loading loading-spinner loading-sm" />}
+                Saqlash
+              </button>
+            </div>
+          </div>
+          <div className="modal-backdrop" onClick={handleCloseNewModal} />
+        </div>
+      )}
     </div>
   );
 }
