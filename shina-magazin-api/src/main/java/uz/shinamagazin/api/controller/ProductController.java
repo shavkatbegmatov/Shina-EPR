@@ -36,14 +36,9 @@ public class ProductController {
             @RequestParam(required = false) String search,
             @PageableDefault(size = 20) Pageable pageable) {
 
-        Page<ProductResponse> products;
-        if (search != null && !search.isEmpty()) {
-            products = productService.searchProducts(search, pageable);
-        } else if (brandId != null || categoryId != null || season != null) {
-            products = productService.getProductsWithFilters(brandId, categoryId, season, search, pageable);
-        } else {
-            products = productService.getAllProducts(pageable);
-        }
+        // Always use filtered query - it handles null values correctly
+        Page<ProductResponse> products = productService.getProductsWithFilters(
+                brandId, categoryId, season, search, pageable);
 
         return ResponseEntity.ok(ApiResponse.success(PagedResponse.from(products)));
     }
