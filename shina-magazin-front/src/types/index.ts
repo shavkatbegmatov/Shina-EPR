@@ -247,3 +247,40 @@ export interface CartItem {
   quantity: number;
   discount: number;
 }
+
+// Warehouse Types
+export type MovementType = 'IN' | 'OUT' | 'ADJUSTMENT';
+
+export interface StockMovement {
+  id: number;
+  productId: number;
+  productName: string;
+  productSku: string;
+  movementType: MovementType;
+  quantity: number;
+  previousStock: number;
+  newStock: number;
+  referenceType: string;
+  referenceId?: number;
+  notes?: string;
+  createdByName: string;
+  createdAt: string;
+}
+
+export interface StockAdjustmentRequest {
+  productId: number;
+  movementType: MovementType;
+  quantity: number;
+  referenceType?: string;
+  notes?: string;
+}
+
+export interface WarehouseStats {
+  totalProducts: number;
+  totalStock: number;
+  lowStockCount: number;
+  todayIncoming: number;
+  todayOutgoing: number;
+  todayInMovements: number;
+  todayOutMovements: number;
+}

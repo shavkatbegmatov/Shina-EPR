@@ -9,6 +9,7 @@ import { CustomersPage } from '../pages/customers/CustomersPage';
 import { POSPage } from '../pages/sales/POSPage';
 import { SalesPage } from '../pages/sales/SalesPage';
 import { DebtsPage } from '../pages/debts/DebtsPage';
+import { WarehousePage } from '../pages/warehouse/WarehousePage';
 import { SettingsPage } from '../pages/settings/SettingsPage';
 
 export const router = createBrowserRouter([
@@ -58,12 +59,7 @@ export const router = createBrowserRouter([
       },
       {
         path: 'warehouse',
-        element: (
-          <PlaceholderPage
-            title="Ombor"
-            description="Zaxira kirim-chiqimi va partiya nazorati."
-          />
-        ),
+        element: <WarehousePage />,
         handle: { title: 'Ombor', description: 'Zaxira va kirim-chiqim' },
       },
       {

@@ -1,0 +1,683 @@
+import { useCallback, useEffect, useState } from 'react';
+import {
+  Package,
+  TrendingUp,
+  TrendingDown,
+  AlertTriangle,
+  Plus,
+  Minus,
+  Settings,
+  X,
+  Search,
+  ArrowDownCircle,
+  ArrowUpCircle,
+  RefreshCw,
+} from 'lucide-react';
+import clsx from 'clsx';
+import { warehouseApi } from '../../api/warehouse.api';
+import { productsApi } from '../../api/products.api';
+import {
+  formatCurrency,
+  formatNumber,
+  MOVEMENT_TYPES,
+  REFERENCE_TYPES,
+} from '../../config/constants';
+import type {
+  MovementType,
+  Product,
+  StockMovement,
+  WarehouseStats,
+} from '../../types';
+
+export function WarehousePage() {
+  const [stats, setStats] = useState<WarehouseStats | null>(null);
+  const [movements, setMovements] = useState<StockMovement[]>([]);
+  const [lowStockProducts, setLowStockProducts] = useState<Product[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [loadingMovements, setLoadingMovements] = useState(true);
+  const [page, setPage] = useState(0);
+  const [totalPages, setTotalPages] = useState(0);
+
+  // Filters
+  const [movementTypeFilter, setMovementTypeFilter] = useState<MovementType | ''>('');
+  const [referenceTypeFilter, setReferenceTypeFilter] = useState('');
+
+  // Adjustment modal
+  const [showAdjustmentModal, setShowAdjustmentModal] = useState(false);
+  const [adjustmentType, setAdjustmentType] = useState<MovementType>('IN');
+  const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
+  const [adjustmentQuantity, setAdjustmentQuantity] = useState('');
+  const [adjustmentNotes, setAdjustmentNotes] = useState('');
+  const [submitting, setSubmitting] = useState(false);
+
+  // Product search for adjustment
+  const [productSearch, setProductSearch] = useState('');
+  const [searchResults, setSearchResults] = useState<Product[]>([]);
+  const [searchLoading, setSearchLoading] = useState(false);
+
+  const loadStats = useCallback(async () => {
+    try {
+      const data = await warehouseApi.getStats();
+      setStats(data);
+    } catch (error) {
+      console.error('Failed to load stats:', error);
+    }
+  }, []);
+
+  const loadMovements = useCallback(async () => {
+    setLoadingMovements(true);
+    try {
+      const data = await warehouseApi.getMovements({
+        page,
+        size: 20,
+        movementType: movementTypeFilter || undefined,
+        referenceType: referenceTypeFilter || undefined,
+      });
+      setMovements(data.content);
+      setTotalPages(data.totalPages);
+    } catch (error) {
+      console.error('Failed to load movements:', error);
+    } finally {
+      setLoadingMovements(false);
+    }
+  }, [page, movementTypeFilter, referenceTypeFilter]);
+
+  const loadLowStockProducts = useCallback(async () => {
+    try {
+      const data = await warehouseApi.getLowStockProducts();
+      setLowStockProducts(data);
+    } catch (error) {
+      console.error('Failed to load low stock products:', error);
+    }
+  }, []);
+
+  const loadInitialData = useCallback(async () => {
+    setLoading(true);
+    await Promise.all([loadStats(), loadLowStockProducts()]);
+    setLoading(false);
+  }, [loadStats, loadLowStockProducts]);
+
+  useEffect(() => {
+    loadInitialData();
+  }, [loadInitialData]);
+
+  useEffect(() => {
+    loadMovements();
+  }, [loadMovements]);
+
+  const handleSearchProducts = async (query: string) => {
+    setProductSearch(query);
+    if (query.length < 2) {
+      setSearchResults([]);
+      return;
+    }
+
+    setSearchLoading(true);
+    try {
+      const data = await productsApi.getAll({ search: query, size: 10 });
+      setSearchResults(data.content);
+    } catch (error) {
+      console.error('Failed to search products:', error);
+    } finally {
+      setSearchLoading(false);
+    }
+  };
+
+  const handleSelectProduct = (product: Product) => {
+    setSelectedProduct(product);
+    setProductSearch('');
+    setSearchResults([]);
+  };
+
+  const handleOpenAdjustmentModal = (type: MovementType) => {
+    setAdjustmentType(type);
+    setSelectedProduct(null);
+    setAdjustmentQuantity('');
+    setAdjustmentNotes('');
+    setProductSearch('');
+    setSearchResults([]);
+    setShowAdjustmentModal(true);
+  };
+
+  const handleCloseAdjustmentModal = () => {
+    setShowAdjustmentModal(false);
+    setSelectedProduct(null);
+    setAdjustmentQuantity('');
+    setAdjustmentNotes('');
+  };
+
+  const handleSubmitAdjustment = async () => {
+    if (!selectedProduct) return;
+
+    const quantity = parseInt(adjustmentQuantity);
+    if (isNaN(quantity) || quantity <= 0) return;
+
+    setSubmitting(true);
+    try {
+      await warehouseApi.createAdjustment({
+        productId: selectedProduct.id,
+        movementType: adjustmentType,
+        quantity,
+        notes: adjustmentNotes || undefined,
+      });
+
+      handleCloseAdjustmentModal();
+      loadStats();
+      loadMovements();
+      loadLowStockProducts();
+    } catch (error) {
+      console.error('Failed to create adjustment:', error);
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  const formatDateTime = (dateStr: string) => {
+    return new Date(dateStr).toLocaleString('uz-UZ', {
+      month: 'short',
+      day: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit',
+    });
+  };
+
+  const getMovementIcon = (type: MovementType) => {
+    switch (type) {
+      case 'IN':
+        return <ArrowDownCircle className="h-4 w-4 text-success" />;
+      case 'OUT':
+        return <ArrowUpCircle className="h-4 w-4 text-error" />;
+      case 'ADJUSTMENT':
+        return <RefreshCw className="h-4 w-4 text-info" />;
+    }
+  };
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center h-64">
+        <span className="loading loading-spinner loading-lg" />
+      </div>
+    );
+  }
+
+  return (
+    <div className="space-y-6">
+      {/* Header */}
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+        <div>
+          <h1 className="section-title">Ombor</h1>
+          <p className="section-subtitle">Zaxira nazorati va kirim-chiqim</p>
+        </div>
+        <div className="flex flex-wrap items-center gap-2">
+          <button
+            className="btn btn-success"
+            onClick={() => handleOpenAdjustmentModal('IN')}
+          >
+            <Plus className="h-5 w-5" />
+            Kirim
+          </button>
+          <button
+            className="btn btn-error"
+            onClick={() => handleOpenAdjustmentModal('OUT')}
+          >
+            <Minus className="h-5 w-5" />
+            Chiqim
+          </button>
+          <button
+            className="btn btn-info btn-outline"
+            onClick={() => handleOpenAdjustmentModal('ADJUSTMENT')}
+          >
+            <Settings className="h-5 w-5" />
+            Tuzatish
+          </button>
+        </div>
+      </div>
+
+      {/* Stats Cards */}
+      {stats && (
+        <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
+          <div className="surface-card p-4">
+            <div className="flex items-center gap-3">
+              <div className="rounded-lg bg-primary/10 p-2">
+                <Package className="h-5 w-5 text-primary" />
+              </div>
+              <div>
+                <p className="text-xs text-base-content/60">Jami mahsulotlar</p>
+                <p className="text-xl font-bold">{formatNumber(stats.totalProducts)}</p>
+              </div>
+            </div>
+          </div>
+
+          <div className="surface-card p-4">
+            <div className="flex items-center gap-3">
+              <div className="rounded-lg bg-success/10 p-2">
+                <TrendingUp className="h-5 w-5 text-success" />
+              </div>
+              <div>
+                <p className="text-xs text-base-content/60">Jami zaxira</p>
+                <p className="text-xl font-bold">{formatNumber(stats.totalStock)}</p>
+              </div>
+            </div>
+          </div>
+
+          <div className="surface-card p-4">
+            <div className="flex items-center gap-3">
+              <div className="rounded-lg bg-info/10 p-2">
+                <ArrowDownCircle className="h-5 w-5 text-info" />
+              </div>
+              <div>
+                <p className="text-xs text-base-content/60">Bugungi kirim</p>
+                <p className="text-xl font-bold text-success">+{formatNumber(stats.todayIncoming)}</p>
+              </div>
+            </div>
+          </div>
+
+          <div className="surface-card p-4">
+            <div className="flex items-center gap-3">
+              <div className="rounded-lg bg-error/10 p-2">
+                <ArrowUpCircle className="h-5 w-5 text-error" />
+              </div>
+              <div>
+                <p className="text-xs text-base-content/60">Bugungi chiqim</p>
+                <p className="text-xl font-bold text-error">-{formatNumber(stats.todayOutgoing)}</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
+        {/* Movements Table */}
+        <div className="lg:col-span-2 space-y-4">
+          {/* Filters */}
+          <div className="surface-card p-4">
+            <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+              <h2 className="text-sm font-semibold uppercase tracking-[0.2em] text-base-content/50">
+                Kirim-chiqim tarixi
+              </h2>
+              <div className="flex flex-wrap items-center gap-2">
+                <select
+                  className="select select-bordered select-sm"
+                  value={movementTypeFilter}
+                  onChange={(e) => {
+                    setMovementTypeFilter(e.target.value as MovementType | '');
+                    setPage(0);
+                  }}
+                >
+                  <option value="">Barcha turlar</option>
+                  {Object.entries(MOVEMENT_TYPES).map(([key, { label }]) => (
+                    <option key={key} value={key}>
+                      {label}
+                    </option>
+                  ))}
+                </select>
+                <select
+                  className="select select-bordered select-sm"
+                  value={referenceTypeFilter}
+                  onChange={(e) => {
+                    setReferenceTypeFilter(e.target.value);
+                    setPage(0);
+                  }}
+                >
+                  <option value="">Barcha manbalar</option>
+                  {Object.entries(REFERENCE_TYPES).map(([key, { label }]) => (
+                    <option key={key} value={key}>
+                      {label}
+                    </option>
+                  ))}
+                </select>
+              </div>
+            </div>
+          </div>
+
+          <div className="surface-card overflow-hidden">
+            {loadingMovements ? (
+              <div className="flex items-center justify-center h-64">
+                <span className="loading loading-spinner loading-lg" />
+              </div>
+            ) : movements.length === 0 ? (
+              <div className="flex flex-col items-center justify-center gap-2 p-10 text-center text-base-content/50">
+                <Package className="h-12 w-12" />
+                <div>
+                  <p className="text-base font-medium">Harakatlar topilmadi</p>
+                  <p className="text-sm">Kirim yoki chiqim qo'shing</p>
+                </div>
+              </div>
+            ) : (
+              <>
+                <div className="hidden overflow-x-auto lg:block">
+                  <table className="table table-zebra">
+                    <thead>
+                      <tr>
+                        <th>Sana</th>
+                        <th>Mahsulot</th>
+                        <th>Turi</th>
+                        <th>Miqdor</th>
+                        <th>Zaxira</th>
+                        <th>Manba</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {movements.map((movement) => (
+                        <tr key={movement.id}>
+                          <td className="text-sm text-base-content/70">
+                            {formatDateTime(movement.createdAt)}
+                          </td>
+                          <td>
+                            <div className="font-medium">{movement.productName}</div>
+                            <div className="text-xs text-base-content/60">
+                              {movement.productSku}
+                            </div>
+                          </td>
+                          <td>
+                            <div className="flex items-center gap-2">
+                              {getMovementIcon(movement.movementType)}
+                              <span className="badge badge-outline badge-sm">
+                                {MOVEMENT_TYPES[movement.movementType]?.label}
+                              </span>
+                            </div>
+                          </td>
+                          <td>
+                            <span
+                              className={clsx(
+                                'font-semibold',
+                                movement.quantity > 0 && 'text-success',
+                                movement.quantity < 0 && 'text-error'
+                              )}
+                            >
+                              {movement.quantity > 0 ? '+' : ''}
+                              {movement.quantity}
+                            </span>
+                          </td>
+                          <td>
+                            <span className="text-base-content/60">
+                              {movement.previousStock}
+                            </span>
+                            <span className="mx-1">→</span>
+                            <span className="font-medium">{movement.newStock}</span>
+                          </td>
+                          <td>
+                            <span className="badge badge-ghost badge-sm">
+                              {REFERENCE_TYPES[movement.referenceType as keyof typeof REFERENCE_TYPES]?.label ||
+                                movement.referenceType}
+                            </span>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+
+                {/* Mobile Cards */}
+                <div className="space-y-3 p-4 lg:hidden">
+                  {movements.map((movement) => (
+                    <div
+                      key={movement.id}
+                      className="surface-panel flex flex-col gap-2 rounded-xl p-4"
+                    >
+                      <div className="flex items-start justify-between gap-3">
+                        <div>
+                          <p className="font-medium">{movement.productName}</p>
+                          <p className="text-xs text-base-content/60">
+                            {movement.productSku}
+                          </p>
+                        </div>
+                        <div className="flex items-center gap-1">
+                          {getMovementIcon(movement.movementType)}
+                          <span
+                            className={clsx(
+                              'font-bold',
+                              movement.quantity > 0 && 'text-success',
+                              movement.quantity < 0 && 'text-error'
+                            )}
+                          >
+                            {movement.quantity > 0 ? '+' : ''}
+                            {movement.quantity}
+                          </span>
+                        </div>
+                      </div>
+                      <div className="flex items-center justify-between text-sm">
+                        <span className="text-base-content/60">
+                          {movement.previousStock} → {movement.newStock}
+                        </span>
+                        <span className="text-xs text-base-content/50">
+                          {formatDateTime(movement.createdAt)}
+                        </span>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+
+                {/* Pagination */}
+                {totalPages > 1 && (
+                  <div className="flex flex-wrap items-center justify-center gap-3 border-t border-base-200 p-4">
+                    <button
+                      className="btn btn-ghost btn-sm"
+                      disabled={page === 0}
+                      onClick={() => setPage(page - 1)}
+                    >
+                      « Oldingi
+                    </button>
+                    <span className="pill">
+                      Sahifa {page + 1} / {totalPages}
+                    </span>
+                    <button
+                      className="btn btn-ghost btn-sm"
+                      disabled={page >= totalPages - 1}
+                      onClick={() => setPage(page + 1)}
+                    >
+                      Keyingi »
+                    </button>
+                  </div>
+                )}
+              </>
+            )}
+          </div>
+        </div>
+
+        {/* Low Stock Alerts */}
+        <div className="lg:col-span-1">
+          <div className="surface-card p-4 space-y-4 sticky top-4">
+            <div className="flex items-center justify-between">
+              <h3 className="text-sm font-semibold uppercase tracking-[0.2em] text-base-content/50">
+                Kam zaxira
+              </h3>
+              {stats && stats.lowStockCount > 0 && (
+                <span className="badge badge-error badge-sm">
+                  {stats.lowStockCount}
+                </span>
+              )}
+            </div>
+
+            {lowStockProducts.length === 0 ? (
+              <div className="text-center py-8 text-base-content/50">
+                <Package className="h-10 w-10 mx-auto mb-2 opacity-50" />
+                <p className="text-sm">Kam zaxiradagi mahsulotlar yo'q</p>
+              </div>
+            ) : (
+              <div className="space-y-2 max-h-96 overflow-y-auto">
+                {lowStockProducts.map((product) => (
+                  <div
+                    key={product.id}
+                    className="surface-soft rounded-lg p-3 flex items-center justify-between"
+                  >
+                    <div className="flex-1 min-w-0">
+                      <p className="font-medium text-sm truncate">{product.name}</p>
+                      <p className="text-xs text-base-content/60">{product.sku}</p>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <div className="text-right">
+                        <p className="text-sm font-bold text-error">{product.quantity}</p>
+                        <p className="text-xs text-base-content/50">
+                          min: {product.minStockLevel}
+                        </p>
+                      </div>
+                      <AlertTriangle className="h-4 w-4 text-warning" />
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        </div>
+      </div>
+
+      {/* Adjustment Modal */}
+      {showAdjustmentModal && (
+        <div className="modal modal-open">
+          <div className="modal-box max-w-lg">
+            <div className="flex items-start justify-between gap-4">
+              <div>
+                <h3 className="text-xl font-semibold">
+                  {adjustmentType === 'IN' && 'Kirim qo\'shish'}
+                  {adjustmentType === 'OUT' && 'Chiqim qo\'shish'}
+                  {adjustmentType === 'ADJUSTMENT' && 'Zaxirani tuzatish'}
+                </h3>
+                <p className="text-sm text-base-content/60">
+                  {adjustmentType === 'IN' && 'Omborga yangi mahsulot kirimi'}
+                  {adjustmentType === 'OUT' && 'Ombordan mahsulot chiqimi'}
+                  {adjustmentType === 'ADJUSTMENT' && "Zaxira miqdorini to'g'rilash"}
+                </p>
+              </div>
+              <button
+                className="btn btn-ghost btn-sm"
+                onClick={handleCloseAdjustmentModal}
+              >
+                <X className="h-4 w-4" />
+              </button>
+            </div>
+
+            <div className="mt-6 space-y-4">
+              {/* Product Search */}
+              <label className="form-control">
+                <span className="label-text mb-1 text-xs font-semibold uppercase tracking-[0.18em] text-base-content/50">
+                  Mahsulot *
+                </span>
+                {selectedProduct ? (
+                  <div className="flex items-center justify-between p-3 bg-base-200 rounded-lg">
+                    <div>
+                      <p className="font-medium">{selectedProduct.name}</p>
+                      <p className="text-sm text-base-content/60">
+                        SKU: {selectedProduct.sku} | Zaxira: {selectedProduct.quantity}
+                      </p>
+                    </div>
+                    <button
+                      className="btn btn-ghost btn-sm btn-circle"
+                      onClick={() => setSelectedProduct(null)}
+                    >
+                      <X className="h-4 w-4" />
+                    </button>
+                  </div>
+                ) : (
+                  <div className="relative">
+                    <div className="input-group">
+                      <span className="bg-base-200">
+                        <Search className="h-5 w-5" />
+                      </span>
+                      <input
+                        type="text"
+                        className="input input-bordered w-full"
+                        placeholder="Mahsulot qidirish..."
+                        value={productSearch}
+                        onChange={(e) => handleSearchProducts(e.target.value)}
+                      />
+                    </div>
+                    {searchResults.length > 0 && (
+                      <div className="absolute z-10 w-full mt-1 bg-base-100 border border-base-300 rounded-lg shadow-lg max-h-48 overflow-y-auto">
+                        {searchResults.map((product) => (
+                          <button
+                            key={product.id}
+                            className="w-full text-left px-4 py-2 hover:bg-base-200 transition"
+                            onClick={() => handleSelectProduct(product)}
+                          >
+                            <p className="font-medium">{product.name}</p>
+                            <p className="text-sm text-base-content/60">
+                              {product.sku} | Zaxira: {product.quantity}
+                            </p>
+                          </button>
+                        ))}
+                      </div>
+                    )}
+                    {searchLoading && (
+                      <div className="absolute z-10 w-full mt-1 bg-base-100 border border-base-300 rounded-lg p-4 text-center">
+                        <span className="loading loading-spinner loading-sm" />
+                      </div>
+                    )}
+                  </div>
+                )}
+              </label>
+
+              <label className="form-control">
+                <span className="label-text mb-1 text-xs font-semibold uppercase tracking-[0.18em] text-base-content/50">
+                  {adjustmentType === 'ADJUSTMENT' ? 'Yangi zaxira miqdori *' : 'Miqdor *'}
+                </span>
+                <input
+                  type="number"
+                  className="input input-bordered w-full"
+                  value={adjustmentQuantity}
+                  onChange={(e) => setAdjustmentQuantity(e.target.value)}
+                  placeholder="0"
+                  min="1"
+                />
+                {adjustmentType === 'ADJUSTMENT' && selectedProduct && (
+                  <span className="label-text-alt mt-1 text-base-content/50">
+                    Hozirgi zaxira: {selectedProduct.quantity}
+                  </span>
+                )}
+                {adjustmentType === 'OUT' && selectedProduct && (
+                  <span className="label-text-alt mt-1 text-base-content/50">
+                    Mavjud zaxira: {selectedProduct.quantity}
+                  </span>
+                )}
+              </label>
+
+              <label className="form-control">
+                <span className="label-text mb-1 text-xs font-semibold uppercase tracking-[0.18em] text-base-content/50">
+                  Izoh
+                </span>
+                <textarea
+                  className="textarea textarea-bordered w-full"
+                  rows={2}
+                  value={adjustmentNotes}
+                  onChange={(e) => setAdjustmentNotes(e.target.value)}
+                  placeholder="Sabab yoki qo'shimcha ma'lumot..."
+                />
+              </label>
+            </div>
+
+            <div className="modal-action">
+              <button
+                className="btn btn-ghost"
+                onClick={handleCloseAdjustmentModal}
+                disabled={submitting}
+              >
+                Bekor qilish
+              </button>
+              <button
+                className={clsx(
+                  'btn',
+                  adjustmentType === 'IN' && 'btn-success',
+                  adjustmentType === 'OUT' && 'btn-error',
+                  adjustmentType === 'ADJUSTMENT' && 'btn-info'
+                )}
+                onClick={handleSubmitAdjustment}
+                disabled={
+                  submitting ||
+                  !selectedProduct ||
+                  !adjustmentQuantity ||
+                  parseInt(adjustmentQuantity) <= 0
+                }
+              >
+                {submitting && <span className="loading loading-spinner loading-sm" />}
+                {adjustmentType === 'IN' && 'Kirim qo\'shish'}
+                {adjustmentType === 'OUT' && 'Chiqim qo\'shish'}
+                {adjustmentType === 'ADJUSTMENT' && 'Tuzatish'}
+              </button>
+            </div>
+          </div>
+          <div className="modal-backdrop" onClick={handleCloseAdjustmentModal} />
+        </div>
+      )}
+    </div>
+  );
+}

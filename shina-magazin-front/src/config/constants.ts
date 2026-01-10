@@ -31,6 +31,20 @@ export const DEBT_STATUSES = {
   OVERDUE: { label: "Muddati o'tgan", value: 'OVERDUE' },
 } as const;
 
+export const MOVEMENT_TYPES = {
+  IN: { label: 'Kirim', value: 'IN' },
+  OUT: { label: 'Chiqim', value: 'OUT' },
+  ADJUSTMENT: { label: 'Tuzatish', value: 'ADJUSTMENT' },
+} as const;
+
+export const REFERENCE_TYPES = {
+  SALE: { label: 'Sotuv', value: 'SALE' },
+  SALE_CANCEL: { label: 'Sotuv bekor', value: 'SALE_CANCEL' },
+  PURCHASE: { label: 'Xarid', value: 'PURCHASE' },
+  MANUAL: { label: 'Qo\'lda', value: 'MANUAL' },
+  RETURN: { label: 'Qaytarish', value: 'RETURN' },
+} as const;
+
 export const CUSTOMER_TYPES = {
   INDIVIDUAL: { label: 'Jismoniy shaxs', value: 'INDIVIDUAL' },
   BUSINESS: { label: 'Yuridik shaxs', value: 'BUSINESS' },
