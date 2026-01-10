@@ -36,8 +36,11 @@ export function NumberInput({
   const holdTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const holdIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const holdActivatedRef = useRef(false);
+  const holdDirectionRef = useRef<'increment' | 'decrement' | null>(null);
 
   const numValue = typeof value === 'string' ? (value === '' ? NaN : parseFloat(value)) : value;
+  const valueRef = useRef(numValue);
+  valueRef.current = numValue; // Always keep ref in sync
 
   const clampValue = useCallback(
     (val: number): number => {
@@ -104,13 +107,27 @@ export function NumberInput({
     }
   };
 
+  // Execute action using current value from ref
+  const executeAction = useCallback((direction: 'increment' | 'decrement') => {
+    const current = isNaN(valueRef.current) ? 0 : valueRef.current;
+    const newValue = direction === 'increment'
+      ? clampValue(current + step)
+      : clampValue(current - step);
+    onChange(newValue);
+  }, [step, clampValue, onChange]);
+
   // Hold to repeat functionality
-  const startHold = (action: () => void) => {
+  const startHold = (direction: 'increment' | 'decrement') => {
     holdActivatedRef.current = false;
+    holdDirectionRef.current = direction;
     holdTimerRef.current = setTimeout(() => {
       holdActivatedRef.current = true;
-      action(); // First action after hold delay
-      holdIntervalRef.current = setInterval(action, 75);
+      executeAction(direction);
+      holdIntervalRef.current = setInterval(() => {
+        if (holdDirectionRef.current) {
+          executeAction(holdDirectionRef.current);
+        }
+      }, 75);
     }, 400);
   };
 
@@ -123,6 +140,7 @@ export function NumberInput({
       clearInterval(holdIntervalRef.current);
       holdIntervalRef.current = null;
     }
+    holdDirectionRef.current = null;
   };
 
   const handleClick = (action: () => void) => {
@@ -180,10 +198,10 @@ export function NumberInput({
               buttonSizeClasses[size]
             )}
             onClick={() => handleClick(decrement)}
-            onMouseDown={() => startHold(decrement)}
+            onMouseDown={() => startHold('decrement')}
             onMouseUp={stopHold}
             onMouseLeave={stopHold}
-            onTouchStart={() => startHold(decrement)}
+            onTouchStart={() => startHold('decrement')}
             onTouchEnd={stopHold}
             disabled={disabled || !canDecrement}
             tabIndex={-1}
@@ -223,10 +241,10 @@ export function NumberInput({
               buttonSizeClasses[size]
             )}
             onClick={() => handleClick(increment)}
-            onMouseDown={() => startHold(increment)}
+            onMouseDown={() => startHold('increment')}
             onMouseUp={stopHold}
             onMouseLeave={stopHold}
-            onTouchStart={() => startHold(increment)}
+            onTouchStart={() => startHold('increment')}
             onTouchEnd={stopHold}
             disabled={disabled || !canIncrement}
             tabIndex={-1}
