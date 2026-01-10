@@ -35,6 +35,7 @@ export function NumberInput({
   const [isFocused, setIsFocused] = useState(false);
   const holdTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const holdIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const holdActivatedRef = useRef(false);
 
   const numValue = typeof value === 'string' ? (value === '' ? NaN : parseFloat(value)) : value;
 
@@ -103,10 +104,12 @@ export function NumberInput({
     }
   };
 
-  // Hold to repeat functionality - only starts repeating after delay
+  // Hold to repeat functionality
   const startHold = (action: () => void) => {
+    holdActivatedRef.current = false;
     holdTimerRef.current = setTimeout(() => {
-      action(); // First repeat after hold delay
+      holdActivatedRef.current = true;
+      action(); // First action after hold delay
       holdIntervalRef.current = setInterval(action, 75);
     }, 400);
   };
@@ -120,6 +123,14 @@ export function NumberInput({
       clearInterval(holdIntervalRef.current);
       holdIntervalRef.current = null;
     }
+  };
+
+  const handleClick = (action: () => void) => {
+    // Only fire if hold wasn't activated (normal click)
+    if (!holdActivatedRef.current) {
+      action();
+    }
+    holdActivatedRef.current = false;
   };
 
   const sizeClasses = {
@@ -168,7 +179,7 @@ export function NumberInput({
               'disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:bg-base-200/50',
               buttonSizeClasses[size]
             )}
-            onClick={decrement}
+            onClick={() => handleClick(decrement)}
             onMouseDown={() => startHold(decrement)}
             onMouseUp={stopHold}
             onMouseLeave={stopHold}
@@ -211,7 +222,7 @@ export function NumberInput({
               'disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:bg-base-200/50',
               buttonSizeClasses[size]
             )}
-            onClick={increment}
+            onClick={() => handleClick(increment)}
             onMouseDown={() => startHold(increment)}
             onMouseUp={stopHold}
             onMouseLeave={stopHold}
