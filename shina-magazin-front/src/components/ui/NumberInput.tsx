@@ -103,10 +103,10 @@ export function NumberInput({
     }
   };
 
-  // Hold to repeat functionality
+  // Hold to repeat functionality - only starts repeating after delay
   const startHold = (action: () => void) => {
-    action();
     holdTimerRef.current = setTimeout(() => {
+      action(); // First repeat after hold delay
       holdIntervalRef.current = setInterval(action, 75);
     }, 400);
   };
@@ -168,6 +168,7 @@ export function NumberInput({
               'disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:bg-base-200/50',
               buttonSizeClasses[size]
             )}
+            onClick={decrement}
             onMouseDown={() => startHold(decrement)}
             onMouseUp={stopHold}
             onMouseLeave={stopHold}
@@ -210,6 +211,7 @@ export function NumberInput({
               'disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:bg-base-200/50',
               buttonSizeClasses[size]
             )}
+            onClick={increment}
             onMouseDown={() => startHold(increment)}
             onMouseUp={stopHold}
             onMouseLeave={stopHold}
