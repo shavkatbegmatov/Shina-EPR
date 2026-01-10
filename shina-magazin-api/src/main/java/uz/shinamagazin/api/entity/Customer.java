@@ -6,6 +6,7 @@ import uz.shinamagazin.api.entity.base.BaseEntity;
 import uz.shinamagazin.api.enums.CustomerType;
 
 import java.math.BigDecimal;
+import java.time.LocalDateTime;
 
 @Entity
 @Table(name = "customers")
@@ -47,6 +48,31 @@ public class Customer extends BaseEntity {
     @Column(nullable = false)
     @Builder.Default
     private Boolean active = true;
+
+    // Portal authentication fields
+    @Column(name = "pin_hash")
+    private String pinHash;
+
+    @Column(name = "pin_set_at")
+    private LocalDateTime pinSetAt;
+
+    @Column(name = "pin_attempts")
+    @Builder.Default
+    private Integer pinAttempts = 0;
+
+    @Column(name = "pin_locked_until")
+    private LocalDateTime pinLockedUntil;
+
+    @Column(name = "preferred_language", length = 5)
+    @Builder.Default
+    private String preferredLanguage = "uz";
+
+    @Column(name = "portal_enabled")
+    @Builder.Default
+    private Boolean portalEnabled = false;
+
+    @Column(name = "last_login_at")
+    private LocalDateTime lastLoginAt;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "created_by")

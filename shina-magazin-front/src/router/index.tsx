@@ -12,6 +12,16 @@ import { DebtsPage } from '../pages/debts/DebtsPage';
 import { WarehousePage } from '../pages/warehouse/WarehousePage';
 import { SettingsPage } from '../pages/settings/SettingsPage';
 
+// Portal imports
+import PortalLayout from '../portal/components/layout/PortalLayout';
+import PortalLoginPage from '../portal/pages/LoginPage';
+import PortalDashboardPage from '../portal/pages/DashboardPage';
+import PortalPurchasesPage from '../portal/pages/PurchasesPage';
+import PortalPurchaseDetailPage from '../portal/pages/PurchaseDetailPage';
+import PortalDebtsPage from '../portal/pages/DebtsPage';
+import PortalProfilePage from '../portal/pages/ProfilePage';
+import PortalNotificationsPage from '../portal/pages/NotificationsPage';
+
 export const router = createBrowserRouter([
   {
     path: '/login',
@@ -86,6 +96,48 @@ export const router = createBrowserRouter([
         path: 'settings',
         element: <SettingsPage />,
         handle: { title: 'Sozlamalar', description: 'Tizim sozlamalari' },
+      },
+    ],
+  },
+  // Customer Portal Routes
+  {
+    path: '/kabinet/kirish',
+    element: <PortalLoginPage />,
+    handle: { title: 'Mijoz Portali - Kirish', description: 'Mijoz shaxsiy kabinetiga kirish' },
+  },
+  {
+    path: '/kabinet',
+    element: <PortalLayout />,
+    children: [
+      {
+        index: true,
+        element: <PortalDashboardPage />,
+        handle: { title: 'Bosh sahifa', description: 'Mijoz bosh sahifasi' },
+      },
+      {
+        path: 'xaridlar',
+        element: <PortalPurchasesPage />,
+        handle: { title: 'Xaridlar', description: 'Xaridlar tarixi' },
+      },
+      {
+        path: 'xaridlar/:id',
+        element: <PortalPurchaseDetailPage />,
+        handle: { title: 'Xarid tafsilotlari', description: 'Xarid haqida batafsil' },
+      },
+      {
+        path: 'qarzlar',
+        element: <PortalDebtsPage />,
+        handle: { title: 'Qarzlar', description: 'Mijoz qarzlari' },
+      },
+      {
+        path: 'bildirishnomalar',
+        element: <PortalNotificationsPage />,
+        handle: { title: 'Bildirishnomalar', description: 'Xabarlar' },
+      },
+      {
+        path: 'profil',
+        element: <PortalProfilePage />,
+        handle: { title: 'Profil', description: 'Shaxsiy ma\'lumotlar' },
       },
     ],
   },

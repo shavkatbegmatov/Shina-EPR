@@ -45,8 +45,12 @@ public class SecurityConfig {
                 .authorizeHttpRequests(auth -> auth
                         // Public endpoints
                         .requestMatchers("/v1/auth/**").permitAll()
+                        .requestMatchers("/v1/customer-auth/**").permitAll()
                         .requestMatchers("/swagger-ui/**", "/api-docs/**", "/swagger-ui.html").permitAll()
                         .requestMatchers("/actuator/**").permitAll()
+
+                        // Customer Portal - faqat CUSTOMER roli uchun
+                        .requestMatchers("/v1/portal/**").hasRole("CUSTOMER")
 
                         // Admin only
                         .requestMatchers("/v1/users/**").hasRole("ADMIN")

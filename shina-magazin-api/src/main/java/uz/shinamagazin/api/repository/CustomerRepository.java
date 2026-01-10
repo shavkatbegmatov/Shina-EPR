@@ -16,6 +16,8 @@ public interface CustomerRepository extends JpaRepository<Customer, Long> {
 
     Optional<Customer> findByPhone(String phone);
 
+    Optional<Customer> findByPhoneAndPortalEnabledTrue(String phone);
+
     boolean existsByPhone(String phone);
 
     Page<Customer> findByActiveTrue(Pageable pageable);

@@ -40,11 +40,16 @@ public class JwtTokenProvider {
     }
 
     public String generateToken(String username) {
+        return generateToken(username, "STAFF");
+    }
+
+    public String generateToken(String username, String tokenType) {
         Date now = new Date();
         Date expiryDate = new Date(now.getTime() + jwtExpiration);
 
         return Jwts.builder()
                 .subject(username)
+                .claim("type", tokenType)
                 .issuedAt(now)
                 .expiration(expiryDate)
                 .signWith(key)
@@ -52,25 +57,52 @@ public class JwtTokenProvider {
     }
 
     public String generateRefreshToken(String username) {
+        return generateRefreshToken(username, "STAFF");
+    }
+
+    public String generateRefreshToken(String username, String tokenType) {
         Date now = new Date();
         Date expiryDate = new Date(now.getTime() + refreshExpiration);
 
         return Jwts.builder()
                 .subject(username)
+                .claim("type", tokenType)
                 .issuedAt(now)
                 .expiration(expiryDate)
                 .signWith(key)
                 .compact();
     }
 
+    // Customer portal uchun token generatsiya
+    public String generateCustomerToken(String phone) {
+        return generateToken(phone, "CUSTOMER");
+    }
+
+    public String generateCustomerRefreshToken(String phone) {
+        return generateRefreshToken(phone, "CUSTOMER");
+    }
+
     public String getUsernameFromToken(String token) {
-        Claims claims = Jwts.parser()
+        Claims claims = getClaims(token);
+        return claims.getSubject();
+    }
+
+    public String getTokenType(String token) {
+        Claims claims = getClaims(token);
+        String type = claims.get("type", String.class);
+        return type != null ? type : "STAFF"; // Default STAFF for old tokens
+    }
+
+    public boolean isCustomerToken(String token) {
+        return "CUSTOMER".equals(getTokenType(token));
+    }
+
+    private Claims getClaims(String token) {
+        return Jwts.parser()
                 .verifyWith(key)
                 .build()
                 .parseSignedClaims(token)
                 .getPayload();
-
-        return claims.getSubject();
     }
 
     public boolean validateToken(String token) {

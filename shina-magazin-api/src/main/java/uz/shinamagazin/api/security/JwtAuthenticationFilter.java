@@ -10,7 +10,6 @@ import org.springframework.lang.NonNull;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.UserDetails;
-import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.web.authentication.WebAuthenticationDetailsSource;
 import org.springframework.stereotype.Component;
 import org.springframework.util.StringUtils;
@@ -24,7 +23,8 @@ import java.io.IOException;
 public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
     private final JwtTokenProvider tokenProvider;
-    private final UserDetailsService userDetailsService;
+    private final CustomUserDetailsService staffUserDetailsService;
+    private final CustomerUserDetailsService customerUserDetailsService;
 
     @Override
     protected void doFilterInternal(
@@ -37,7 +37,16 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
             if (StringUtils.hasText(jwt) && tokenProvider.validateToken(jwt)) {
                 String username = tokenProvider.getUsernameFromToken(jwt);
-                UserDetails userDetails = userDetailsService.loadUserByUsername(username);
+                boolean isCustomerToken = tokenProvider.isCustomerToken(jwt);
+
+                UserDetails userDetails;
+                if (isCustomerToken) {
+                    // Mijoz tokeni - phone orqali yuklash
+                    userDetails = customerUserDetailsService.loadUserByUsername(username);
+                } else {
+                    // Staff tokeni - username orqali yuklash
+                    userDetails = staffUserDetailsService.loadUserByUsername(username);
+                }
 
                 UsernamePasswordAuthenticationToken authentication =
                         new UsernamePasswordAuthenticationToken(
