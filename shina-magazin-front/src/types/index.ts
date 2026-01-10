@@ -186,6 +186,49 @@ export interface SaleRequest {
   notes?: string;
 }
 
+// Debt Types
+export type DebtStatus = 'ACTIVE' | 'PAID' | 'OVERDUE';
+export type PaymentType = 'SALE_PAYMENT' | 'DEBT_PAYMENT';
+
+export interface Debt {
+  id: number;
+  customerId: number;
+  customerName: string;
+  customerPhone: string;
+  saleId?: number;
+  invoiceNumber?: string;
+  originalAmount: number;
+  remainingAmount: number;
+  paidAmount: number;
+  dueDate?: string;
+  status: DebtStatus;
+  overdue: boolean;
+  notes?: string;
+  createdAt: string;
+}
+
+export interface DebtPaymentRequest {
+  amount: number;
+  method: PaymentMethod;
+  referenceNumber?: string;
+  notes?: string;
+}
+
+export interface Payment {
+  id: number;
+  saleId?: number;
+  invoiceNumber?: string;
+  customerId?: number;
+  customerName?: string;
+  amount: number;
+  method: PaymentMethod;
+  paymentType: PaymentType;
+  referenceNumber?: string;
+  notes?: string;
+  paymentDate: string;
+  receivedByName: string;
+}
+
 // Dashboard Types
 export interface DashboardStats {
   todaySalesCount: number;

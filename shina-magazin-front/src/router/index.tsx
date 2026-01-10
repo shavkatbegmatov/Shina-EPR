@@ -8,6 +8,7 @@ import { ProductsPage } from '../pages/products/ProductsPage';
 import { CustomersPage } from '../pages/customers/CustomersPage';
 import { POSPage } from '../pages/sales/POSPage';
 import { SalesPage } from '../pages/sales/SalesPage';
+import { DebtsPage } from '../pages/debts/DebtsPage';
 import { SettingsPage } from '../pages/settings/SettingsPage';
 
 export const router = createBrowserRouter([
@@ -52,12 +53,7 @@ export const router = createBrowserRouter([
       },
       {
         path: 'debts',
-        element: (
-          <PlaceholderPage
-            title="Qarzlar"
-            description="Qarzlar nazorati va qarzdorlar ro'yxati."
-          />
-        ),
+        element: <DebtsPage />,
         handle: { title: 'Qarzlar', description: 'Qarz va balans nazorati' },
       },
       {

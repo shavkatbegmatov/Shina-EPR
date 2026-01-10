@@ -18,7 +18,8 @@ export function CustomersPage() {
   const [page, setPage] = useState(0);
   const [totalPages, setTotalPages] = useState(0);
   const [totalElements, setTotalElements] = useState(0);
-  const [showNewModal, setShowNewModal] = useState(false);
+  const [showModal, setShowModal] = useState(false);
+  const [editingCustomer, setEditingCustomer] = useState<Customer | null>(null);
   const [formData, setFormData] = useState<CustomerRequest>(emptyFormData);
   const [saving, setSaving] = useState(false);
 
@@ -47,12 +48,28 @@ export function CustomersPage() {
   }, [loadCustomers]);
 
   const handleOpenNewModal = () => {
+    setEditingCustomer(null);
     setFormData(emptyFormData);
-    setShowNewModal(true);
+    setShowModal(true);
   };
 
-  const handleCloseNewModal = () => {
-    setShowNewModal(false);
+  const handleOpenEditModal = (customer: Customer) => {
+    setEditingCustomer(customer);
+    setFormData({
+      fullName: customer.fullName,
+      phone: customer.phone,
+      phone2: customer.phone2,
+      address: customer.address,
+      companyName: customer.companyName,
+      customerType: customer.customerType,
+      notes: customer.notes,
+    });
+    setShowModal(true);
+  };
+
+  const handleCloseModal = () => {
+    setShowModal(false);
+    setEditingCustomer(null);
     setFormData(emptyFormData);
   };
 
@@ -66,8 +83,12 @@ export function CustomersPage() {
     }
     setSaving(true);
     try {
-      await customersApi.create(formData);
-      handleCloseNewModal();
+      if (editingCustomer) {
+        await customersApi.update(editingCustomer.id, formData);
+      } else {
+        await customersApi.create(formData);
+      }
+      handleCloseModal();
       loadCustomers();
     } catch (error) {
       console.error('Failed to save customer:', error);
@@ -216,7 +237,10 @@ export function CustomersPage() {
                         )}
                       </td>
                       <td>
-                        <button className="btn btn-ghost btn-sm">
+                        <button
+                          className="btn btn-ghost btn-sm"
+                          onClick={() => handleOpenEditModal(customer)}
+                        >
                           Tahrirlash
                         </button>
                       </td>
@@ -261,7 +285,10 @@ export function CustomersPage() {
                     <span className="text-sm font-semibold">
                       {formatCurrency(customer.balance)}
                     </span>
-                    <button className="btn btn-ghost btn-sm min-h-[44px]">
+                    <button
+                      className="btn btn-ghost btn-sm min-h-[44px]"
+                      onClick={() => handleOpenEditModal(customer)}
+                    >
                       Tahrirlash
                     </button>
                   </div>
@@ -295,20 +322,22 @@ export function CustomersPage() {
         )}
       </div>
 
-      {/* New Customer Modal */}
-      {showNewModal && (
+      {/* Customer Modal */}
+      {showModal && (
         <div className="modal modal-open">
           <div className="modal-box max-w-lg">
             <div className="flex items-start justify-between gap-4">
               <div>
-                <h3 className="text-xl font-semibold">Yangi mijoz</h3>
+                <h3 className="text-xl font-semibold">
+                  {editingCustomer ? 'Mijozni tahrirlash' : 'Yangi mijoz'}
+                </h3>
                 <p className="text-sm text-base-content/60">
-                  Yangi mijoz qo'shish
+                  {editingCustomer ? "Mijoz ma'lumotlarini o'zgartirish" : "Yangi mijoz qo'shish"}
                 </p>
               </div>
               <button
                 className="btn btn-ghost btn-sm"
-                onClick={handleCloseNewModal}
+                onClick={handleCloseModal}
               >
                 <X className="h-4 w-4" />
               </button>
@@ -418,7 +447,7 @@ export function CustomersPage() {
             <div className="modal-action">
               <button
                 className="btn btn-ghost"
-                onClick={handleCloseNewModal}
+                onClick={handleCloseModal}
                 disabled={saving}
               >
                 Bekor qilish
@@ -429,11 +458,11 @@ export function CustomersPage() {
                 disabled={saving || !formData.fullName.trim() || !formData.phone.trim()}
               >
                 {saving && <span className="loading loading-spinner loading-sm" />}
-                Saqlash
+                {editingCustomer ? 'Yangilash' : 'Saqlash'}
               </button>
             </div>
           </div>
-          <div className="modal-backdrop" onClick={handleCloseNewModal} />
+          <div className="modal-backdrop" onClick={handleCloseModal} />
         </div>
       )}
     </div>

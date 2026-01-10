@@ -25,6 +25,12 @@ export const SALE_STATUSES = {
   REFUNDED: { label: 'Qaytarilgan', value: 'REFUNDED' },
 } as const;
 
+export const DEBT_STATUSES = {
+  ACTIVE: { label: 'Faol', value: 'ACTIVE' },
+  PAID: { label: "To'langan", value: 'PAID' },
+  OVERDUE: { label: "Muddati o'tgan", value: 'OVERDUE' },
+} as const;
+
 export const CUSTOMER_TYPES = {
   INDIVIDUAL: { label: 'Jismoniy shaxs', value: 'INDIVIDUAL' },
   BUSINESS: { label: 'Yuridik shaxs', value: 'BUSINESS' },
