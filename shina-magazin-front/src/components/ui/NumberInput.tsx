@@ -168,7 +168,6 @@ export function NumberInput({
               'disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:bg-base-200/50',
               buttonSizeClasses[size]
             )}
-            onClick={decrement}
             onMouseDown={() => startHold(decrement)}
             onMouseUp={stopHold}
             onMouseLeave={stopHold}
@@ -211,7 +210,6 @@ export function NumberInput({
               'disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:bg-base-200/50',
               buttonSizeClasses[size]
             )}
-            onClick={increment}
             onMouseDown={() => startHold(increment)}
             onMouseUp={stopHold}
             onMouseLeave={stopHold}
