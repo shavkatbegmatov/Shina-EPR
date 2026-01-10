@@ -7,6 +7,7 @@ import { salesApi } from '../../api/sales.api';
 import { customersApi } from '../../api/customers.api';
 import { useCartStore } from '../../store/cartStore';
 import { formatCurrency, PAYMENT_METHODS } from '../../config/constants';
+import { NumberInput } from '../../components/ui/NumberInput';
 import type { Product, PaymentMethod, Customer } from '../../types';
 
 export function POSPage() {
@@ -323,35 +324,30 @@ export function POSPage() {
               <span className="font-medium">{formatCurrency(subtotal)}</span>
             </div>
             <div className="grid grid-cols-2 gap-2">
-              <label className="form-control">
-                <span className="label-text text-xs">Chegirma (so'm)</span>
-                <input
-                  type="number"
-                  min={0}
-                  className="input input-bordered input-sm w-full"
-                  value={cart.discount}
-                  onChange={(e) =>
-                    cart.setDiscount(
-                      Math.min(subtotal, Math.max(0, Number(e.target.value)))
-                    )
-                  }
-                />
-              </label>
-              <label className="form-control">
-                <span className="label-text text-xs">Chegirma (%)</span>
-                <input
-                  type="number"
-                  min={0}
-                  max={100}
-                  className="input input-bordered input-sm w-full"
-                  value={cart.discountPercent}
-                  onChange={(e) =>
-                    cart.setDiscountPercent(
-                      Math.min(100, Math.max(0, Number(e.target.value)))
-                    )
-                  }
-                />
-              </label>
+              <NumberInput
+                label="Chegirma (so'm)"
+                value={cart.discount}
+                onChange={(val) => {
+                  const num = typeof val === 'string' ? parseFloat(val) || 0 : val;
+                  cart.setDiscount(Math.min(subtotal, Math.max(0, num)));
+                }}
+                min={0}
+                max={subtotal}
+                size="sm"
+                allowEmpty={false}
+              />
+              <NumberInput
+                label="Chegirma (%)"
+                value={cart.discountPercent}
+                onChange={(val) => {
+                  const num = typeof val === 'string' ? parseFloat(val) || 0 : val;
+                  cart.setDiscountPercent(Math.min(100, Math.max(0, num)));
+                }}
+                min={0}
+                max={100}
+                size="sm"
+                allowEmpty={false}
+              />
             </div>
             {discountSummary && (
               <div className="text-xs text-success">
@@ -408,19 +404,21 @@ export function POSPage() {
               </label>
 
               <div className="form-control">
-                <label className="label">
-                  <span className="label-text">To'langan summa</span>
-                </label>
-                <div className="flex items-center gap-2">
-                  <input
-                    type="number"
-                    min={0}
-                    className="input input-bordered w-full"
+                <div className="flex items-end gap-2">
+                  <NumberInput
+                    label="To'langan summa"
                     value={paidAmount}
-                    onChange={(e) => setPaidAmount(Number(e.target.value))}
+                    onChange={(val) => {
+                      const num = typeof val === 'string' ? parseFloat(val) || 0 : val;
+                      setPaidAmount(Math.max(0, num));
+                    }}
+                    min={0}
+                    step={1000}
+                    allowEmpty={false}
+                    className="flex-1"
                   />
                   <button
-                    className="btn btn-ghost btn-sm"
+                    className="btn btn-ghost btn-sm mb-0.5"
                     onClick={() => setPaidAmount(total)}
                   >
                     To'liq

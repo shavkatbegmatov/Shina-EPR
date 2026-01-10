@@ -2,7 +2,6 @@ import { useCallback, useEffect, useState } from 'react';
 import {
   Package,
   TrendingUp,
-  TrendingDown,
   AlertTriangle,
   Plus,
   Minus,
@@ -16,8 +15,8 @@ import {
 import clsx from 'clsx';
 import { warehouseApi } from '../../api/warehouse.api';
 import { productsApi } from '../../api/products.api';
+import { NumberInput } from '../../components/ui/NumberInput';
 import {
-  formatCurrency,
   formatNumber,
   MOVEMENT_TYPES,
   REFERENCE_TYPES,
@@ -607,17 +606,14 @@ export function WarehousePage() {
                 )}
               </label>
 
-              <label className="form-control">
-                <span className="label-text mb-1 text-xs font-semibold uppercase tracking-[0.18em] text-base-content/50">
-                  {adjustmentType === 'ADJUSTMENT' ? 'Yangi zaxira miqdori *' : 'Miqdor *'}
-                </span>
-                <input
-                  type="number"
-                  className="input input-bordered w-full"
+              <div className="form-control">
+                <NumberInput
+                  label={adjustmentType === 'ADJUSTMENT' ? 'Yangi zaxira miqdori *' : 'Miqdor *'}
                   value={adjustmentQuantity}
-                  onChange={(e) => setAdjustmentQuantity(e.target.value)}
+                  onChange={(val) => setAdjustmentQuantity(String(val))}
+                  min={1}
+                  max={adjustmentType === 'OUT' && selectedProduct ? selectedProduct.quantity : undefined}
                   placeholder="0"
-                  min="1"
                 />
                 {adjustmentType === 'ADJUSTMENT' && selectedProduct && (
                   <span className="label-text-alt mt-1 text-base-content/50">
@@ -629,7 +625,7 @@ export function WarehousePage() {
                     Mavjud zaxira: {selectedProduct.quantity}
                   </span>
                 )}
-              </label>
+              </div>
 
               <label className="form-control">
                 <span className="label-text mb-1 text-xs font-semibold uppercase tracking-[0.18em] text-base-content/50">

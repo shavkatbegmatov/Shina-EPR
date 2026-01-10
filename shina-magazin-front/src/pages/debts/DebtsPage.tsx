@@ -1,20 +1,18 @@
 import { useCallback, useEffect, useState } from 'react';
 import {
   Wallet,
-  Search,
   Phone,
   Calendar,
-  AlertTriangle,
   CheckCircle,
   X,
   CreditCard,
   Banknote,
   Building,
-  FileText,
 } from 'lucide-react';
 import clsx from 'clsx';
 import { debtsApi } from '../../api/debts.api';
 import { formatCurrency, DEBT_STATUSES, PAYMENT_METHODS } from '../../config/constants';
+import { NumberInput } from '../../components/ui/NumberInput';
 import type { Debt, DebtStatus, Payment, PaymentMethod } from '../../types';
 
 export function DebtsPage() {
@@ -502,25 +500,23 @@ export function DebtsPage() {
             </div>
 
             <div className="mt-6 space-y-4">
-              <label className="form-control">
-                <span className="label-text mb-1 text-xs font-semibold uppercase tracking-[0.18em] text-base-content/50">
-                  To'lov summasi *
-                </span>
-                <input
-                  type="number"
-                  className="input input-bordered w-full"
+              <div className="form-control">
+                <NumberInput
+                  label="To'lov summasi *"
                   value={paymentAmount}
-                  onChange={(e) => setPaymentAmount(e.target.value)}
+                  onChange={(val) => setPaymentAmount(String(val))}
                   disabled={isFullPayment}
-                  placeholder="0"
+                  min={0}
                   max={selectedDebt.remainingAmount}
+                  step={1000}
+                  placeholder="0"
                 />
                 {!isFullPayment && (
                   <span className="label-text-alt mt-1 text-base-content/50">
                     Maksimum: {formatCurrency(selectedDebt.remainingAmount)}
                   </span>
                 )}
-              </label>
+              </div>
 
               <label className="form-control">
                 <span className="label-text mb-1 text-xs font-semibold uppercase tracking-[0.18em] text-base-content/50">

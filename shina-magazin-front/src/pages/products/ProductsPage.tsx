@@ -10,6 +10,7 @@ import {
 import clsx from 'clsx';
 import { productsApi, brandsApi, categoriesApi } from '../../api/products.api';
 import { formatCurrency, SEASONS } from '../../config/constants';
+import { NumberInput } from '../../components/ui/NumberInput';
 import type { Product, Brand, Category, Season, ProductRequest } from '../../types';
 
 const emptyFormData: ProductRequest = {
@@ -619,48 +620,39 @@ export function ProductsPage() {
               </div>
 
               <div className="grid grid-cols-3 gap-4 sm:grid-cols-6">
-                <label className="form-control">
-                  <span className="label-text mb-1 text-xs font-semibold uppercase tracking-[0.18em] text-base-content/50">
-                    Kenglik
-                  </span>
-                  <input
-                    type="number"
-                    className="input input-bordered w-full"
-                    value={formData.width || ''}
-                    onChange={(e) =>
-                      handleFormChange('width', e.target.value ? Number(e.target.value) : undefined)
-                    }
-                    placeholder="205"
-                  />
-                </label>
-                <label className="form-control">
-                  <span className="label-text mb-1 text-xs font-semibold uppercase tracking-[0.18em] text-base-content/50">
-                    Profil
-                  </span>
-                  <input
-                    type="number"
-                    className="input input-bordered w-full"
-                    value={formData.profile || ''}
-                    onChange={(e) =>
-                      handleFormChange('profile', e.target.value ? Number(e.target.value) : undefined)
-                    }
-                    placeholder="55"
-                  />
-                </label>
-                <label className="form-control">
-                  <span className="label-text mb-1 text-xs font-semibold uppercase tracking-[0.18em] text-base-content/50">
-                    Diametr
-                  </span>
-                  <input
-                    type="number"
-                    className="input input-bordered w-full"
-                    value={formData.diameter || ''}
-                    onChange={(e) =>
-                      handleFormChange('diameter', e.target.value ? Number(e.target.value) : undefined)
-                    }
-                    placeholder="16"
-                  />
-                </label>
+                <NumberInput
+                  label="Kenglik"
+                  value={formData.width ?? ''}
+                  onChange={(val) =>
+                    handleFormChange('width', val === '' ? undefined : Number(val))
+                  }
+                  placeholder="205"
+                  showButtons={false}
+                  min={100}
+                  max={400}
+                />
+                <NumberInput
+                  label="Profil"
+                  value={formData.profile ?? ''}
+                  onChange={(val) =>
+                    handleFormChange('profile', val === '' ? undefined : Number(val))
+                  }
+                  placeholder="55"
+                  showButtons={false}
+                  min={10}
+                  max={100}
+                />
+                <NumberInput
+                  label="Diametr"
+                  value={formData.diameter ?? ''}
+                  onChange={(val) =>
+                    handleFormChange('diameter', val === '' ? undefined : Number(val))
+                  }
+                  placeholder="16"
+                  showButtons={false}
+                  min={10}
+                  max={30}
+                />
                 <label className="form-control">
                   <span className="label-text mb-1 text-xs font-semibold uppercase tracking-[0.18em] text-base-content/50">
                     Yuk ind.
@@ -707,62 +699,45 @@ export function ProductsPage() {
               </div>
 
               <div className="grid grid-cols-2 gap-4 sm:grid-cols-4">
-                <label className="form-control">
-                  <span className="label-text mb-1 text-xs font-semibold uppercase tracking-[0.18em] text-base-content/50">
-                    Kelish narxi
-                  </span>
-                  <input
-                    type="number"
-                    className="input input-bordered w-full"
-                    value={formData.purchasePrice || ''}
-                    onChange={(e) =>
-                      handleFormChange('purchasePrice', e.target.value ? Number(e.target.value) : undefined)
-                    }
-                    placeholder="0"
-                  />
-                </label>
-                <label className="form-control">
-                  <span className="label-text mb-1 text-xs font-semibold uppercase tracking-[0.18em] text-base-content/50">
-                    Sotish narxi *
-                  </span>
-                  <input
-                    type="number"
-                    className="input input-bordered w-full"
-                    value={formData.sellingPrice || ''}
-                    onChange={(e) =>
-                      handleFormChange('sellingPrice', e.target.value ? Number(e.target.value) : 0)
-                    }
-                    placeholder="0"
-                  />
-                </label>
-                <label className="form-control">
-                  <span className="label-text mb-1 text-xs font-semibold uppercase tracking-[0.18em] text-base-content/50">
-                    Miqdor
-                  </span>
-                  <input
-                    type="number"
-                    className="input input-bordered w-full"
-                    value={formData.quantity || ''}
-                    onChange={(e) =>
-                      handleFormChange('quantity', e.target.value ? Number(e.target.value) : undefined)
-                    }
-                    placeholder="0"
-                  />
-                </label>
-                <label className="form-control">
-                  <span className="label-text mb-1 text-xs font-semibold uppercase tracking-[0.18em] text-base-content/50">
-                    Min zaxira
-                  </span>
-                  <input
-                    type="number"
-                    className="input input-bordered w-full"
-                    value={formData.minStockLevel || ''}
-                    onChange={(e) =>
-                      handleFormChange('minStockLevel', e.target.value ? Number(e.target.value) : undefined)
-                    }
-                    placeholder="5"
-                  />
-                </label>
+                <NumberInput
+                  label="Kelish narxi"
+                  value={formData.purchasePrice ?? ''}
+                  onChange={(val) =>
+                    handleFormChange('purchasePrice', val === '' ? undefined : Number(val))
+                  }
+                  placeholder="0"
+                  showButtons={false}
+                  min={0}
+                />
+                <NumberInput
+                  label="Sotish narxi *"
+                  value={formData.sellingPrice ?? ''}
+                  onChange={(val) =>
+                    handleFormChange('sellingPrice', val === '' ? 0 : Number(val))
+                  }
+                  placeholder="0"
+                  showButtons={false}
+                  min={0}
+                  allowEmpty={false}
+                />
+                <NumberInput
+                  label="Miqdor"
+                  value={formData.quantity ?? ''}
+                  onChange={(val) =>
+                    handleFormChange('quantity', val === '' ? undefined : Number(val))
+                  }
+                  placeholder="0"
+                  min={0}
+                />
+                <NumberInput
+                  label="Min zaxira"
+                  value={formData.minStockLevel ?? ''}
+                  onChange={(val) =>
+                    handleFormChange('minStockLevel', val === '' ? undefined : Number(val))
+                  }
+                  placeholder="5"
+                  min={0}
+                />
               </div>
 
               <label className="form-control">

@@ -178,17 +178,48 @@
   @apply flex items-center px-3;
 }
 
-/* Number input spinner fix for dark browser themes */
+/* Hide native number input spinners across all browsers */
 input[type="number"]::-webkit-outer-spin-button,
 input[type="number"]::-webkit-inner-spin-button {
-  -webkit-appearance: inner-spin-button;
-  opacity: 1;
-  background: transparent;
-  border: none;
-  cursor: pointer;
+  -webkit-appearance: none;
+  margin: 0;
+}
+
+input[type="number"] {
+  -moz-appearance: textfield;
+  appearance: textfield;
 }
 
 /* Force light color scheme for inputs regardless of browser theme */
-input[type="number"] {
+input[type="number"],
+input[type="text"],
+input[type="tel"],
+input[type="email"],
+input[type="password"],
+select,
+textarea {
   color-scheme: light;
+}
+
+/* Custom NumberInput component styles */
+.number-input-wrapper {
+  background: hsl(var(--b1));
+}
+
+.number-input-btn {
+  user-select: none;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.number-input-btn:active {
+  transform: scale(0.95);
+}
+
+.number-input-field {
+  font-variant-numeric: tabular-nums;
+}
+
+/* Prevent text selection on rapid clicks */
+.number-input-wrapper * {
+  -webkit-touch-callout: none;
 }
