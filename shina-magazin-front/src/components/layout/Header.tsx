@@ -96,9 +96,16 @@ export function Header() {
 
   const isDark = themeMode === 'dark' || (themeMode === 'system' && window.matchMedia('(prefers-color-scheme: dark)').matches);
 
-  // Fetch notifications on mount
+  // Fetch notifications on mount and poll every 30 seconds
   useEffect(() => {
     fetchNotifications();
+
+    // Poll for new notifications every 30 seconds
+    const interval = setInterval(() => {
+      fetchNotifications();
+    }, 30000);
+
+    return () => clearInterval(interval);
   }, [fetchNotifications]);
 
   // Close dropdowns when clicking outside

@@ -37,7 +37,8 @@ public class DebtService {
     private final PaymentRepository paymentRepository;
     private final CustomerRepository customerRepository;
     private final UserRepository userRepository;
-    private final StaffNotificationService notificationService;
+    private final StaffNotificationService staffNotificationService;
+    private final NotificationService customerNotificationService;
 
     public Page<DebtResponse> getAllDebts(DebtStatus status, Pageable pageable) {
         Page<Debt> debts;
@@ -137,7 +138,17 @@ public class DebtService {
 
         // Send notification about payment received
         String formattedAmount = String.format("%,.0f", paymentAmount);
-        notificationService.notifyPaymentReceived(customer.getFullName(), formattedAmount, debtId);
+
+        // Notify staff about payment
+        staffNotificationService.notifyPaymentReceived(customer.getFullName(), formattedAmount, debtId);
+
+        // Notify customer about payment
+        String amountInfo = formattedAmount + " so'm";
+        customerNotificationService.sendPaymentReceived(
+                customer.getId(),
+                amountInfo,
+                "{\"debtId\":" + debtId + ",\"amount\":" + paymentAmount + "}"
+        );
 
         // Update sale paid amount if linked
         if (debt.getSale() != null) {
