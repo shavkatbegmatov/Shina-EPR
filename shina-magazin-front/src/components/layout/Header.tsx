@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import {
   Menu,
   LogOut,
@@ -30,6 +30,25 @@ export function Header() {
   const matches = useMatches();
   const [searchFocused, setSearchFocused] = useState(false);
   const [isDark, setIsDark] = useState(false);
+  const [userDropdownOpen, setUserDropdownOpen] = useState(false);
+  const [notifDropdownOpen, setNotifDropdownOpen] = useState(false);
+  const userDropdownRef = useRef<HTMLDivElement>(null);
+  const notifDropdownRef = useRef<HTMLDivElement>(null);
+
+  // Close dropdowns when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (userDropdownRef.current && !userDropdownRef.current.contains(event.target as Node)) {
+        setUserDropdownOpen(false);
+      }
+      if (notifDropdownRef.current && !notifDropdownRef.current.contains(event.target as Node)) {
+        setNotifDropdownOpen(false);
+      }
+    };
+
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
 
   const activeMatch = [...matches]
     .reverse()
@@ -154,11 +173,14 @@ export function Header() {
           </button>
 
           {/* Notifications */}
-          <div className="dropdown dropdown-end">
+          <div className="relative" ref={notifDropdownRef}>
             <button
-              tabIndex={0}
               className="btn btn-ghost btn-sm btn-square relative"
               title="Bildirishnomalar"
+              onClick={() => {
+                setNotifDropdownOpen(!notifDropdownOpen);
+                setUserDropdownOpen(false);
+              }}
             >
               <Bell className="h-4 w-4" />
               <span className="absolute -right-0.5 -top-0.5 flex h-4 w-4 items-center justify-center rounded-full bg-error text-[10px] font-bold text-white">
@@ -166,8 +188,12 @@ export function Header() {
               </span>
             </button>
             <div
-              tabIndex={0}
-              className="dropdown-content z-[1] mt-3 w-80 rounded-xl bg-base-100 p-0 shadow-xl border border-base-200"
+              className={clsx(
+                "absolute right-0 z-50 mt-3 w-80 rounded-xl bg-base-100 p-0 shadow-xl border border-base-200 transition-all duration-200 origin-top-right",
+                notifDropdownOpen
+                  ? "opacity-100 scale-100 visible"
+                  : "opacity-0 scale-95 invisible"
+              )}
             >
               <div className="flex items-center justify-between border-b border-base-200 px-4 py-3">
                 <span className="font-semibold">Bildirishnomalar</span>
@@ -208,10 +234,13 @@ export function Header() {
           <div className="hidden sm:block h-6 w-px bg-base-200 mx-1" />
 
           {/* User dropdown */}
-          <div className="dropdown dropdown-end">
+          <div className="relative" ref={userDropdownRef}>
             <button
-              tabIndex={0}
               className="btn btn-ghost btn-sm gap-2 pl-2 pr-1.5"
+              onClick={() => {
+                setUserDropdownOpen(!userDropdownOpen);
+                setNotifDropdownOpen(false);
+              }}
             >
               <div className="avatar placeholder">
                 <div
@@ -230,12 +259,19 @@ export function Header() {
                   {user?.role && ROLES[user.role]?.label}
                 </div>
               </div>
-              <ChevronDown className="h-3.5 w-3.5 text-base-content/50 hidden lg:block" />
+              <ChevronDown className={clsx(
+                "h-3.5 w-3.5 text-base-content/50 hidden lg:block transition-transform duration-200",
+                userDropdownOpen && "rotate-180"
+              )} />
             </button>
 
             <div
-              tabIndex={0}
-              className="dropdown-content z-[1] mt-3 w-64 rounded-xl bg-base-100 p-0 shadow-xl border border-base-200"
+              className={clsx(
+                "absolute right-0 z-50 mt-3 w-64 rounded-xl bg-base-100 p-0 shadow-xl border border-base-200 transition-all duration-200 origin-top-right",
+                userDropdownOpen
+                  ? "opacity-100 scale-100 visible"
+                  : "opacity-0 scale-95 invisible"
+              )}
             >
               {/* User info header */}
               <div className="p-4 border-b border-base-200 bg-base-200/30 rounded-t-xl">
@@ -269,20 +305,27 @@ export function Header() {
 
               {/* Menu items */}
               <div className="p-2">
-                <button className="flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-sm transition-colors hover:bg-base-200/70">
+                <button
+                  className="flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-sm transition-colors hover:bg-base-200/70"
+                  onClick={() => setUserDropdownOpen(false)}
+                >
                   <UserIcon className="h-4 w-4 text-base-content/60" />
                   <span>Profil sozlamalari</span>
                 </button>
                 <Link
                   to="/settings"
                   className="flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-sm transition-colors hover:bg-base-200/70"
+                  onClick={() => setUserDropdownOpen(false)}
                 >
                   <Settings className="h-4 w-4 text-base-content/60" />
                   <span>Tizim sozlamalari</span>
                 </Link>
                 <button
                   className="flex sm:hidden w-full items-center gap-3 rounded-lg px-3 py-2.5 text-sm transition-colors hover:bg-base-200/70"
-                  onClick={toggleTheme}
+                  onClick={() => {
+                    toggleTheme();
+                    setUserDropdownOpen(false);
+                  }}
                 >
                   {isDark ? (
                     <Sun className="h-4 w-4 text-base-content/60" />
@@ -297,7 +340,10 @@ export function Header() {
               <div className="p-2 border-t border-base-200">
                 <button
                   className="flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-sm text-error transition-colors hover:bg-error/10"
-                  onClick={handleLogout}
+                  onClick={() => {
+                    setUserDropdownOpen(false);
+                    handleLogout();
+                  }}
                 >
                   <LogOut className="h-4 w-4" />
                   <span>Chiqish</span>
