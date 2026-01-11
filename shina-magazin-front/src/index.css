@@ -224,6 +224,15 @@ textarea {
   -webkit-touch-callout: none;
 }
 
+/* Modal fix - ensure backdrop covers full viewport */
+.modal {
+  @apply fixed inset-0 z-[100];
+}
+
+.modal-backdrop {
+  @apply fixed inset-0 bg-black/50;
+}
+
 /* Sticky table header */
 .table-container {
   @apply max-h-[calc(100vh-320px)] overflow-auto;
