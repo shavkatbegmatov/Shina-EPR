@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import {
   TrendingUp,
   ShoppingCart,
@@ -19,6 +19,7 @@ import {
   Receipt,
   Clock,
   UserX,
+  Check,
 } from 'lucide-react';
 import clsx from 'clsx';
 import { reportsApi } from '../../api/reports.api';
@@ -42,11 +43,13 @@ export function ReportsPage() {
   const [warehouseReport, setWarehouseReport] = useState<WarehouseReport | null>(null);
   const [debtsReport, setDebtsReport] = useState<DebtsReport | null>(null);
   const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
+  const [refreshSuccess, setRefreshSuccess] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [dateRangePreset, setDateRangePreset] = useState<DateRangePreset>('month');
   const [customRange, setCustomRange] = useState<DateRange>({ start: '', end: '' });
 
-  const getDateRangeValues = (preset: DateRangePreset): { start: string; end: string } => {
+  const getDateRangeValues = useCallback((preset: DateRangePreset): { start: string; end: string } => {
     const today = new Date();
     const end = today.toISOString().split('T')[0];
     let start: Date;
@@ -79,16 +82,23 @@ export function ReportsPage() {
     }
 
     return { start: start.toISOString().split('T')[0], end };
-  };
+  }, [customRange.start, customRange.end]);
 
-  const loadReports = async () => {
-    setLoading(true);
+  const loadReports = useCallback(async (isManualRefresh = false) => {
+    if (isManualRefresh) {
+      setRefreshing(true);
+      setRefreshSuccess(false);
+    } else {
+      setLoading(true);
+    }
     setError(null);
+
     try {
       const { start, end } = getDateRangeValues(dateRangePreset);
       if (!start || !end) {
         setError("Iltimos, sana oralig'ini tanlang");
         setLoading(false);
+        setRefreshing(false);
         return;
       }
       const [sales, warehouse, debts] = await Promise.all([
@@ -99,19 +109,25 @@ export function ReportsPage() {
       setSalesReport(sales);
       setWarehouseReport(warehouse);
       setDebtsReport(debts);
+
+      if (isManualRefresh) {
+        setRefreshSuccess(true);
+        setTimeout(() => setRefreshSuccess(false), 2000);
+      }
     } catch (err) {
       console.error('Failed to load reports:', err);
       setError('Hisobotlarni yuklashda xatolik yuz berdi');
     } finally {
       setLoading(false);
+      setRefreshing(false);
     }
-  };
+  }, [dateRangePreset, getDateRangeValues]);
 
   useEffect(() => {
     if (dateRangePreset !== 'custom' || (customRange.start && customRange.end)) {
-      loadReports();
+      loadReports(false);
     }
-  }, [dateRangePreset, customRange]);
+  }, [dateRangePreset, customRange.start, customRange.end, loadReports]);
 
   const handleDateRangeChange = (preset: DateRangePreset, range?: DateRange) => {
     setDateRangePreset(preset);
@@ -180,12 +196,24 @@ export function ReportsPage() {
           />
 
           <button
-            className="btn btn-outline btn-sm"
-            onClick={loadReports}
-            disabled={loading}
+            className={clsx(
+              'btn btn-sm gap-2 transition-all',
+              refreshSuccess ? 'btn-success' : 'btn-outline'
+            )}
+            onClick={() => loadReports(true)}
+            disabled={loading || refreshing}
           >
-            <RefreshCw className={clsx('h-4 w-4', loading && 'animate-spin')} />
-            Yangilash
+            {refreshSuccess ? (
+              <>
+                <Check className="h-4 w-4" />
+                Yangilandi
+              </>
+            ) : (
+              <>
+                <RefreshCw className={clsx('h-4 w-4', refreshing && 'animate-spin')} />
+                {refreshing ? 'Yangilanmoqda...' : 'Yangilash'}
+              </>
+            )}
           </button>
 
           <div className="flex items-center gap-2">
@@ -233,16 +261,29 @@ export function ReportsPage() {
         </div>
       )}
 
-      {/* Sales Report Tab */}
-      {activeTab === 'sales' && salesReport && <SalesReportView report={salesReport} />}
+      {/* Content with refresh overlay */}
+      <div className="relative">
+        {/* Refresh overlay */}
+        {refreshing && (
+          <div className="absolute inset-0 z-10 flex items-center justify-center rounded-xl bg-base-100/60 backdrop-blur-sm">
+            <div className="flex flex-col items-center gap-3">
+              <span className="loading loading-spinner loading-lg text-primary"></span>
+              <span className="text-sm font-medium text-base-content/70">Hisobotlar yangilanmoqda...</span>
+            </div>
+          </div>
+        )}
 
-      {/* Warehouse Report Tab */}
-      {activeTab === 'warehouse' && warehouseReport && (
-        <WarehouseReportView report={warehouseReport} />
-      )}
+        {/* Sales Report Tab */}
+        {activeTab === 'sales' && salesReport && <SalesReportView report={salesReport} />}
 
-      {/* Debts Report Tab */}
-      {activeTab === 'debts' && debtsReport && <DebtsReportView report={debtsReport} />}
+        {/* Warehouse Report Tab */}
+        {activeTab === 'warehouse' && warehouseReport && (
+          <WarehouseReportView report={warehouseReport} />
+        )}
+
+        {/* Debts Report Tab */}
+        {activeTab === 'debts' && debtsReport && <DebtsReportView report={debtsReport} />}
+      </div>
     </div>
   );
 }
@@ -250,7 +291,7 @@ export function ReportsPage() {
 // Sales Report View
 function SalesReportView({ report }: { report: SalesReport }) {
   return (
-    <>
+    <div className="space-y-6">
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
         <StatCard
           title="Jami daromad"
@@ -403,14 +444,14 @@ function SalesReportView({ report }: { report: SalesReport }) {
           )}
         </div>
       </div>
-    </>
+    </div>
   );
 }
 
 // Warehouse Report View
 function WarehouseReportView({ report }: { report: WarehouseReport }) {
   return (
-    <>
+    <div className="space-y-6">
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
         <StatCard
           title="Jami mahsulotlar"
@@ -582,14 +623,14 @@ function WarehouseReportView({ report }: { report: WarehouseReport }) {
           )}
         </div>
       </div>
-    </>
+    </div>
   );
 }
 
 // Debts Report View
 function DebtsReportView({ report }: { report: DebtsReport }) {
   return (
-    <>
+    <div className="space-y-6">
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
         <StatCard
           title="Faol qarzlar"
@@ -770,7 +811,7 @@ function DebtsReportView({ report }: { report: DebtsReport }) {
           </div>
         </div>
       </div>
-    </>
+    </div>
   );
 }
 
