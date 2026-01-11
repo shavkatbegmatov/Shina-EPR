@@ -1,39 +1,11 @@
-import { useEffect, useCallback } from 'react';
 import { Outlet, Navigate } from 'react-router-dom';
 import { useAuthStore } from '../../store/authStore';
-import { useUIStore } from '../../store/uiStore';
 import { Sidebar } from './Sidebar';
 import { Header } from './Header';
 import { Footer } from './Footer';
 
-function useTheme() {
-  const { themeMode, getEffectiveTheme } = useUIStore();
-
-  const applyTheme = useCallback(() => {
-    document.documentElement.setAttribute('data-theme', getEffectiveTheme());
-  }, [getEffectiveTheme]);
-
-  useEffect(() => {
-    applyTheme();
-
-    // Listen for system theme changes
-    const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)');
-    const handleChange = () => {
-      if (themeMode === 'system') {
-        applyTheme();
-      }
-    };
-
-    mediaQuery.addEventListener('change', handleChange);
-    return () => mediaQuery.removeEventListener('change', handleChange);
-  }, [themeMode, applyTheme]);
-}
-
 export function MainLayout() {
   const { isAuthenticated } = useAuthStore();
-
-  // Apply theme
-  useTheme();
 
   if (!isAuthenticated) {
     return <Navigate to="/login" replace />;
