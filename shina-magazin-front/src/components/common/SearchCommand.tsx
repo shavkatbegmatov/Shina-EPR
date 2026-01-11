@@ -274,21 +274,33 @@ export function SearchCommand() {
 
   if (!open) {
     return (
-      <button
-        onClick={() => setOpen(true)}
-        className={clsx(
-          'flex items-center gap-2 w-full max-w-md px-3 py-2 rounded-lg',
-          'bg-base-200/50 border border-base-200 transition-all duration-200',
-          'hover:bg-base-200 hover:border-base-300',
-          'text-base-content/50 text-sm'
-        )}
-      >
-        <Search className="h-4 w-4" />
-        <span className="flex-1 text-left">Qidirish...</span>
-        <kbd className="hidden lg:inline-flex items-center gap-1 px-1.5 py-0.5 text-[10px] font-medium bg-base-300/50 rounded">
-          ⌘K
-        </kbd>
-      </button>
+      <>
+        {/* Desktop trigger */}
+        <button
+          onClick={() => setOpen(true)}
+          className={clsx(
+            'hidden md:flex items-center gap-2 w-full max-w-md px-3 py-2 rounded-lg',
+            'bg-base-200/50 border border-base-200 transition-all duration-200',
+            'hover:bg-base-200 hover:border-base-300',
+            'text-base-content/50 text-sm'
+          )}
+        >
+          <Search className="h-4 w-4" />
+          <span className="flex-1 text-left">Qidirish...</span>
+          <kbd className="hidden lg:inline-flex items-center gap-1 px-1.5 py-0.5 text-[10px] font-medium bg-base-300/50 rounded">
+            ⌘K
+          </kbd>
+        </button>
+
+        {/* Mobile trigger */}
+        <button
+          onClick={() => setOpen(true)}
+          className="btn btn-ghost btn-sm btn-square md:hidden"
+          title="Qidirish"
+        >
+          <Search className="h-4 w-4" />
+        </button>
+      </>
     );
   }
 

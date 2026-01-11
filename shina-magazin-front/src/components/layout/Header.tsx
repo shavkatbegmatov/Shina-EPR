@@ -191,13 +191,17 @@ export function Header() {
           </div>
         </div>
 
-        {/* Center section - Search */}
+        {/* Center section - Search (desktop) */}
         <div className="hidden md:flex flex-1 justify-center max-w-xl mx-4">
           <SearchCommand />
         </div>
 
         {/* Right section - Actions & User */}
         <div className="ml-auto flex items-center gap-1">
+          {/* Mobile search */}
+          <div className="md:hidden">
+            <SearchCommand />
+          </div>
 
           {/* Theme toggle */}
           <button
