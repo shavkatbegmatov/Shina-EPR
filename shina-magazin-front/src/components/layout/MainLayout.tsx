@@ -16,12 +16,10 @@ export function MainLayout() {
       <Sidebar />
       <div className="flex min-w-0 flex-1 flex-col">
         <Header />
-        <main className="flex-1 overflow-auto px-4 pb-8 pt-6 lg:px-8">
-          <div className="flex w-full flex-col gap-8">
-            <Outlet />
-            <Footer />
-          </div>
+        <main className="flex-1 overflow-auto px-4 pb-6 pt-6 lg:px-8">
+          <Outlet />
         </main>
+        <Footer />
       </div>
     </div>
   );
