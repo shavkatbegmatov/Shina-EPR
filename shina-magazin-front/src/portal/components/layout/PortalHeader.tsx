@@ -35,27 +35,20 @@ export default function PortalHeader({
     }
   };
 
+  // Check if currently dark (either explicit dark or system dark)
+  const isDark = theme === 'dark' || (theme === 'system' && window.matchMedia('(prefers-color-scheme: dark)').matches);
+
   const toggleTheme = () => {
-    // Cycle through: light -> dark -> system -> light
-    if (theme === 'light') {
-      setTheme('dark');
-    } else if (theme === 'dark') {
-      setTheme('system');
-    } else {
+    // Toggle between light and dark only (system option available in Profile)
+    if (isDark) {
       setTheme('light');
+    } else {
+      setTheme('dark');
     }
   };
 
   const getThemeIcon = () => {
-    if (theme === 'dark') {
-      return <Moon size={18} />;
-    }
-    if (theme === 'light') {
-      return <Sun size={18} />;
-    }
-    // System theme - show based on actual preference
-    const isDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
-    return isDark ? <Moon size={18} className="opacity-60" /> : <Sun size={18} className="opacity-60" />;
+    return isDark ? <Moon size={18} /> : <Sun size={18} />;
   };
 
   return (
