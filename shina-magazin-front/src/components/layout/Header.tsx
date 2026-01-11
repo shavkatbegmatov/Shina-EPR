@@ -86,7 +86,6 @@ export function Header() {
   const { user, logout } = useAuthStore();
   const { toggleSidebar, themeMode, setThemeMode } = useUIStore();
   const { notifications, unreadCount, markAsRead, fetchNotifications, connectWebSocket, disconnectWebSocket } = useNotificationsStore();
-  const { accessToken } = useAuthStore();
   const navigate = useNavigate();
   const matches = useMatches();
   const [searchFocused, setSearchFocused] = useState(false);
@@ -102,15 +101,16 @@ export function Header() {
     // Dastlabki bildirishnomalarni yuklash
     fetchNotifications();
 
-    // WebSocket ulanishini boshlash
-    if (accessToken) {
-      connectWebSocket(accessToken);
+    // WebSocket ulanishini boshlash (localStorage'dan token olish)
+    const token = localStorage.getItem('accessToken');
+    if (token) {
+      connectWebSocket(token);
     }
 
     return () => {
       disconnectWebSocket();
     };
-  }, [accessToken, fetchNotifications, connectWebSocket, disconnectWebSocket]);
+  }, [fetchNotifications, connectWebSocket, disconnectWebSocket]);
 
   // Close dropdowns when clicking outside
   useEffect(() => {

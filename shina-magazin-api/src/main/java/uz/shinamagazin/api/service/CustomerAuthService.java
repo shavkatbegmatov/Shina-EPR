@@ -76,9 +76,9 @@ public class CustomerAuthService {
         customer.setLastLoginAt(LocalDateTime.now());
         customerRepository.save(customer);
 
-        // Token generatsiya
-        String accessToken = tokenProvider.generateCustomerToken(customer.getPhone());
-        String refreshToken = tokenProvider.generateCustomerRefreshToken(customer.getPhone());
+        // Token generatsiya (customerId bilan WebSocket uchun)
+        String accessToken = tokenProvider.generateCustomerToken(customer.getPhone(), customer.getId());
+        String refreshToken = tokenProvider.generateCustomerRefreshToken(customer.getPhone(), customer.getId());
 
         log.info("Customer logged in successfully: {}", customer.getPhone());
 
@@ -103,8 +103,8 @@ public class CustomerAuthService {
         Customer customer = customerRepository.findByPhoneAndPortalEnabledTrue(phone)
                 .orElseThrow(() -> new ResourceNotFoundException("Mijoz", "telefon", phone));
 
-        String newAccessToken = tokenProvider.generateCustomerToken(phone);
-        String newRefreshToken = tokenProvider.generateCustomerRefreshToken(phone);
+        String newAccessToken = tokenProvider.generateCustomerToken(phone, customer.getId());
+        String newRefreshToken = tokenProvider.generateCustomerRefreshToken(phone, customer.getId());
 
         return CustomerAuthResponse.builder()
                 .accessToken(newAccessToken)

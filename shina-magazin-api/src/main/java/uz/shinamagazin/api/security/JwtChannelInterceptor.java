@@ -36,10 +36,17 @@ public class JwtChannelInterceptor implements ChannelInterceptor {
                 if (jwtTokenProvider.validateToken(token)) {
                     String username = jwtTokenProvider.getUsernameFromToken(token);
                     String tokenType = jwtTokenProvider.getTokenType(token);
+                    Long userId = jwtTokenProvider.getUserIdFromToken(token);
                     boolean isCustomer = "CUSTOMER".equals(tokenType);
 
-                    // Principal yaratish
-                    String principalName = isCustomer ? "customer_" + username : username;
+                    // Principal yaratish - userId ishlatiladi (convertAndSendToUser uchun)
+                    String principalName;
+                    if (userId != null) {
+                        principalName = isCustomer ? "customer_" + userId : userId.toString();
+                    } else {
+                        // Eski tokenlar uchun fallback
+                        principalName = isCustomer ? "customer_" + username : username;
+                    }
                     String role = isCustomer ? "ROLE_CUSTOMER" : "ROLE_STAFF";
 
                     UsernamePasswordAuthenticationToken auth = new UsernamePasswordAuthenticationToken(

@@ -38,34 +38,40 @@ function useTheme() {
 }
 
 export default function PortalLayout() {
-  const { isAuthenticated, accessToken } = usePortalAuthStore();
+  const { isAuthenticated } = usePortalAuthStore();
   const [unreadCount, setUnreadCount] = useState(0);
+  const [newNotificationTrigger, setNewNotificationTrigger] = useState(0);
 
   // Apply theme
   useTheme();
 
   useEffect(() => {
-    if (isAuthenticated && accessToken) {
+    if (isAuthenticated) {
       // Fetch unread notifications count
       portalApiClient.getUnreadCount()
         .then(setUnreadCount)
         .catch(() => setUnreadCount(0));
 
-      // WebSocket ulanishini boshlash
-      portalWebSocketService.connect(
-        accessToken,
-        // Yangi notification kelganda
-        () => {
-          // Unread count'ni oshirish
-          setUnreadCount((prev) => prev + 1);
-        }
-      );
+      // WebSocket ulanishini boshlash (localStorage'dan token olish)
+      const token = localStorage.getItem('portalAccessToken');
+      if (token) {
+        portalWebSocketService.connect(
+          token,
+          // Yangi notification kelganda
+          () => {
+            // Unread count'ni oshirish
+            setUnreadCount((prev) => prev + 1);
+            // NotificationsPage'ga signal yuborish
+            setNewNotificationTrigger((prev) => prev + 1);
+          }
+        );
+      }
 
       return () => {
         portalWebSocketService.disconnect();
       };
     }
-  }, [isAuthenticated, accessToken]);
+  }, [isAuthenticated]);
 
   if (!isAuthenticated) {
     return <Navigate to="/kabinet/kirish" replace />;
@@ -74,7 +80,7 @@ export default function PortalLayout() {
   return (
     <div className="min-h-screen bg-base-200 flex flex-col max-w-md mx-auto">
       <main className="flex-1 pb-16 overflow-y-auto">
-        <Outlet context={{ setUnreadCount }} />
+        <Outlet context={{ setUnreadCount, newNotificationTrigger }} />
       </main>
       <BottomNav unreadCount={unreadCount} />
     </div>

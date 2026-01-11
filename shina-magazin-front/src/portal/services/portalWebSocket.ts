@@ -33,7 +33,7 @@ class PortalWebSocketService {
 
     this.client = new Client({
       // SockJS orqali ulanish
-      webSocketFactory: () => new SockJS('/api/ws'),
+      webSocketFactory: () => new SockJS('/api/v1/ws'),
 
       // Auth header
       connectHeaders: {

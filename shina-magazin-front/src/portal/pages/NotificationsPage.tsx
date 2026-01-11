@@ -12,6 +12,7 @@ import { usePortalAuthStore } from '../store/portalAuthStore';
 
 interface OutletContextType {
   setUnreadCount: (count: number) => void;
+  newNotificationTrigger: number;
 }
 
 const getNotificationIcon = (type: NotificationType) => {
@@ -31,7 +32,7 @@ const getNotificationIcon = (type: NotificationType) => {
 export default function PortalNotificationsPage() {
   const { t } = useTranslation();
   const { language } = usePortalAuthStore();
-  const { setUnreadCount } = useOutletContext<OutletContextType>();
+  const { setUnreadCount, newNotificationTrigger } = useOutletContext<OutletContextType>();
   const [notifications, setNotifications] = useState<PortalNotification[]>([]);
   const [loading, setLoading] = useState(true);
   const [page, setPage] = useState(0);
@@ -42,6 +43,13 @@ export default function PortalNotificationsPage() {
   useEffect(() => {
     fetchNotifications(0);
   }, []);
+
+  // WebSocket orqali yangi notification kelganda qayta yuklash
+  useEffect(() => {
+    if (newNotificationTrigger > 0) {
+      fetchNotifications(0);
+    }
+  }, [newNotificationTrigger]);
 
   const fetchNotifications = async (pageNum: number) => {
     try {

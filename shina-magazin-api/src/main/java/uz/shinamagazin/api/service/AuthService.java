@@ -34,8 +34,9 @@ public class AuthService {
         SecurityContextHolder.getContext().setAuthentication(authentication);
 
         CustomUserDetails userDetails = (CustomUserDetails) authentication.getPrincipal();
-        String accessToken = tokenProvider.generateToken(userDetails.getUsername());
-        String refreshToken = tokenProvider.generateRefreshToken(userDetails.getUsername());
+        Long userId = userDetails.getUser().getId();
+        String accessToken = tokenProvider.generateStaffToken(userDetails.getUsername(), userId);
+        String refreshToken = tokenProvider.generateStaffRefreshToken(userDetails.getUsername(), userId);
 
         return JwtResponse.builder()
                 .accessToken(accessToken)
@@ -50,8 +51,8 @@ public class AuthService {
             User user = userRepository.findByUsername(username)
                     .orElseThrow(() -> new ResourceNotFoundException("Foydalanuvchi", "username", username));
 
-            String newAccessToken = tokenProvider.generateToken(username);
-            String newRefreshToken = tokenProvider.generateRefreshToken(username);
+            String newAccessToken = tokenProvider.generateStaffToken(username, user.getId());
+            String newRefreshToken = tokenProvider.generateStaffRefreshToken(username, user.getId());
 
             return JwtResponse.builder()
                     .accessToken(newAccessToken)

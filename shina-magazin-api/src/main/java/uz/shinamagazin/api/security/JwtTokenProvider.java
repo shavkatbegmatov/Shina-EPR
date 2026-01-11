@@ -44,16 +44,24 @@ public class JwtTokenProvider {
     }
 
     public String generateToken(String username, String tokenType) {
+        return generateToken(username, tokenType, null);
+    }
+
+    public String generateToken(String username, String tokenType, Long userId) {
         Date now = new Date();
         Date expiryDate = new Date(now.getTime() + jwtExpiration);
 
-        return Jwts.builder()
+        var builder = Jwts.builder()
                 .subject(username)
                 .claim("type", tokenType)
                 .issuedAt(now)
-                .expiration(expiryDate)
-                .signWith(key)
-                .compact();
+                .expiration(expiryDate);
+
+        if (userId != null) {
+            builder.claim("userId", userId);
+        }
+
+        return builder.signWith(key).compact();
     }
 
     public String generateRefreshToken(String username) {
@@ -61,30 +69,52 @@ public class JwtTokenProvider {
     }
 
     public String generateRefreshToken(String username, String tokenType) {
+        return generateRefreshToken(username, tokenType, null);
+    }
+
+    public String generateRefreshToken(String username, String tokenType, Long userId) {
         Date now = new Date();
         Date expiryDate = new Date(now.getTime() + refreshExpiration);
 
-        return Jwts.builder()
+        var builder = Jwts.builder()
                 .subject(username)
                 .claim("type", tokenType)
                 .issuedAt(now)
-                .expiration(expiryDate)
-                .signWith(key)
-                .compact();
+                .expiration(expiryDate);
+
+        if (userId != null) {
+            builder.claim("userId", userId);
+        }
+
+        return builder.signWith(key).compact();
     }
 
     // Customer portal uchun token generatsiya
-    public String generateCustomerToken(String phone) {
-        return generateToken(phone, "CUSTOMER");
+    public String generateCustomerToken(String phone, Long customerId) {
+        return generateToken(phone, "CUSTOMER", customerId);
     }
 
-    public String generateCustomerRefreshToken(String phone) {
-        return generateRefreshToken(phone, "CUSTOMER");
+    public String generateCustomerRefreshToken(String phone, Long customerId) {
+        return generateRefreshToken(phone, "CUSTOMER", customerId);
+    }
+
+    // Staff uchun token generatsiya (userId bilan)
+    public String generateStaffToken(String username, Long userId) {
+        return generateToken(username, "STAFF", userId);
+    }
+
+    public String generateStaffRefreshToken(String username, Long userId) {
+        return generateRefreshToken(username, "STAFF", userId);
     }
 
     public String getUsernameFromToken(String token) {
         Claims claims = getClaims(token);
         return claims.getSubject();
+    }
+
+    public Long getUserIdFromToken(String token) {
+        Claims claims = getClaims(token);
+        return claims.get("userId", Long.class);
     }
 
     public String getTokenType(String token) {
