@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import {
   Package,
   TrendingUp,
@@ -16,6 +16,7 @@ import clsx from 'clsx';
 import { warehouseApi } from '../../api/warehouse.api';
 import { productsApi } from '../../api/products.api';
 import { NumberInput } from '../../components/ui/NumberInput';
+import { SortableHeader, useSorting, sortData } from '../../components/ui/SortableHeader';
 import {
   formatNumber,
   MOVEMENT_TYPES,
@@ -53,6 +54,13 @@ export function WarehousePage() {
   const [productSearch, setProductSearch] = useState('');
   const [searchResults, setSearchResults] = useState<Product[]>([]);
   const [searchLoading, setSearchLoading] = useState(false);
+
+  // Sorting
+  const { sortConfig, handleSort } = useSorting();
+
+  const sortedMovements = useMemo(() => {
+    return sortData(movements, sortConfig);
+  }, [movements, sortConfig]);
 
   const loadStats = useCallback(async () => {
     try {
@@ -348,16 +356,16 @@ export function WarehousePage() {
                   <table className="table table-zebra">
                     <thead>
                       <tr>
-                        <th>Sana</th>
-                        <th>Mahsulot</th>
-                        <th>Turi</th>
-                        <th>Miqdor</th>
-                        <th>Zaxira</th>
-                        <th>Manba</th>
+                        <SortableHeader label="Sana" sortKey="createdAt" currentSort={sortConfig} onSort={handleSort} />
+                        <SortableHeader label="Mahsulot" sortKey="productName" currentSort={sortConfig} onSort={handleSort} />
+                        <SortableHeader label="Turi" sortKey="movementType" currentSort={sortConfig} onSort={handleSort} />
+                        <SortableHeader label="Miqdor" sortKey="quantity" currentSort={sortConfig} onSort={handleSort} />
+                        <SortableHeader label="Zaxira" sortKey="newStock" currentSort={sortConfig} onSort={handleSort} />
+                        <SortableHeader label="Manba" sortKey="referenceType" currentSort={sortConfig} onSort={handleSort} />
                       </tr>
                     </thead>
                     <tbody>
-                      {movements.map((movement) => (
+                      {sortedMovements.map((movement) => (
                         <tr key={movement.id}>
                           <td className="text-sm text-base-content/70">
                             {formatDateTime(movement.createdAt)}
@@ -409,7 +417,7 @@ export function WarehousePage() {
 
                 {/* Mobile Cards */}
                 <div className="space-y-3 p-4 lg:hidden">
-                  {movements.map((movement) => (
+                  {sortedMovements.map((movement) => (
                     <div
                       key={movement.id}
                       className="surface-panel flex flex-col gap-2 rounded-xl p-4"
