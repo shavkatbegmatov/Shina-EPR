@@ -8,6 +8,7 @@ import { formatCurrency, PAYMENT_METHODS, PAYMENT_STATUSES, SALE_STATUSES } from
 import { DataTable, Column } from '../../components/ui/DataTable';
 import { ModalPortal } from '../../components/common/Modal';
 import type { Sale, PaymentStatus, SaleStatus, PaymentMethod } from '../../types';
+import { useNotificationsStore } from '../../store/notificationsStore';
 
 const paymentMethodIcons: Record<PaymentMethod, React.ReactNode> = {
   CASH: <Banknote className="h-4 w-4" />,
@@ -31,6 +32,7 @@ export function SalesPage() {
   const [showCancelModal, setShowCancelModal] = useState(false);
   const [cancelling, setCancelling] = useState(false);
   const [loadingDetails, setLoadingDetails] = useState(false);
+  const { notifications } = useNotificationsStore();
 
   const hasFilters = useMemo(
     () => search.trim().length > 0 || paymentStatusFilter !== '' || statusFilter !== '',
@@ -171,8 +173,8 @@ export function SalesPage() {
     },
   ], []);
 
-  const loadSales = useCallback(async () => {
-    setLoading(true);
+  const loadSales = useCallback(async (showLoading = true) => {
+    if (showLoading) setLoading(true);
     try {
       const data = await salesApi.getAll({ page, size: pageSize });
       setSales(data.content);
@@ -189,6 +191,13 @@ export function SalesPage() {
   useEffect(() => {
     loadSales();
   }, [loadSales]);
+
+  // WebSocket orqali yangi notification kelganda sotuvlarni yangilash
+  useEffect(() => {
+    if (notifications.length > 0) {
+      loadSales(false);
+    }
+  }, [notifications.length, loadSales]);
 
   const handleResetFilters = () => {
     setSearch('');
