@@ -1,18 +1,10 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import {
-  Plus,
-  Search,
-  Package,
-  BadgeCheck,
-  AlertTriangle,
-  X,
-} from 'lucide-react';
+import { Plus, Search, Package, BadgeCheck, AlertTriangle, X } from 'lucide-react';
 import clsx from 'clsx';
 import { productsApi, brandsApi, categoriesApi } from '../../api/products.api';
 import { formatCurrency, SEASONS } from '../../config/constants';
 import { NumberInput } from '../../components/ui/NumberInput';
-import { SortableHeader, useSorting, sortData } from '../../components/ui/SortableHeader';
-import { Pagination } from '../../components/ui/Pagination';
+import { DataTable, Column } from '../../components/ui/DataTable';
 import type { Product, Brand, Category, Season, ProductRequest } from '../../types';
 
 const emptyFormData: ProductRequest = {
@@ -39,13 +31,6 @@ export function ProductsPage() {
   const [formData, setFormData] = useState<ProductRequest>(emptyFormData);
   const [saving, setSaving] = useState(false);
 
-  // Sorting
-  const { sortConfig, handleSort } = useSorting();
-
-  const sortedProducts = useMemo(() => {
-    return sortData(products, sortConfig);
-  }, [products, sortConfig]);
-
   const activeFilters = useMemo(() => {
     let count = 0;
     if (search.trim()) count += 1;
@@ -54,6 +39,70 @@ export function ProductsPage() {
     if (seasonFilter) count += 1;
     return count;
   }, [brandFilter, categoryFilter, search, seasonFilter]);
+
+  // Table columns definition
+  const columns: Column<Product>[] = useMemo(() => [
+    {
+      key: 'sku',
+      header: 'SKU',
+      render: (product) => <span className="font-mono text-sm">{product.sku}</span>,
+    },
+    {
+      key: 'name',
+      header: 'Nomi',
+      render: (product) => (
+        <div>
+          <div className="font-medium">{product.name}</div>
+          <div className="text-xs text-base-content/60">{product.categoryName || '—'}</div>
+        </div>
+      ),
+    },
+    {
+      key: 'brandName',
+      header: 'Brend',
+      render: (product) => product.brandName || '—',
+    },
+    {
+      key: 'sizeString',
+      header: "O'lcham",
+      render: (product) => product.sizeString || '—',
+    },
+    {
+      key: 'season',
+      header: 'Mavsum',
+      render: (product) =>
+        product.season ? (
+          <span className="badge badge-outline badge-sm">{SEASONS[product.season]?.label}</span>
+        ) : null,
+    },
+    {
+      key: 'sellingPrice',
+      header: 'Narx',
+      render: (product) => <span className="font-medium">{formatCurrency(product.sellingPrice)}</span>,
+    },
+    {
+      key: 'quantity',
+      header: 'Zaxira',
+      render: (product) => (
+        <span className={clsx('badge badge-sm', product.lowStock ? 'badge-error' : 'badge-success')}>
+          {product.quantity}
+        </span>
+      ),
+    },
+    {
+      key: 'actions',
+      header: '',
+      sortable: false,
+      render: (product) => (
+        <div className="space-x-2">
+          <button className="btn btn-ghost btn-sm" onClick={(e) => { e.stopPropagation(); setSelectedProduct(product); }}>
+            Tafsilotlar
+          </button>
+          <button className="btn btn-ghost btn-sm">Tahrirlash</button>
+        </div>
+      ),
+    },
+  ], []);
 
   const loadData = useCallback(async () => {
     try {
@@ -149,10 +198,7 @@ export function ProductsPage() {
         </div>
         <div className="flex flex-wrap items-center gap-2">
           {activeFilters > 0 && (
-            <button
-              className="btn btn-ghost btn-sm"
-              onClick={handleResetFilters}
-            >
+            <button className="btn btn-ghost btn-sm" onClick={handleResetFilters}>
               <X className="h-4 w-4" />
               Filtrlarni tozalash
             </button>
@@ -172,9 +218,7 @@ export function ProductsPage() {
               Filtrlar
             </h2>
             <p className="text-xs text-base-content/60">
-              {activeFilters > 0
-                ? `${activeFilters} ta filter tanlangan`
-                : "Barcha mahsulotlar ko'rsatilmoqda"}
+              {activeFilters > 0 ? `${activeFilters} ta filter tanlangan` : "Barcha mahsulotlar ko'rsatilmoqda"}
             </p>
           </div>
           <div className="flex flex-wrap items-center gap-2 text-xs text-base-content/60">
@@ -195,10 +239,7 @@ export function ProductsPage() {
                 placeholder="SKU, nom yoki o'lcham..."
                 className="input input-bordered w-full"
                 value={search}
-                onChange={(e) => {
-                  setSearch(e.target.value);
-                  setPage(0);
-                }}
+                onChange={(e) => { setSearch(e.target.value); setPage(0); }}
               />
             </div>
           </label>
@@ -210,16 +251,11 @@ export function ProductsPage() {
             <select
               className="select select-bordered w-full"
               value={brandFilter}
-              onChange={(e) => {
-                setBrandFilter(e.target.value ? Number(e.target.value) : '');
-                setPage(0);
-              }}
+              onChange={(e) => { setBrandFilter(e.target.value ? Number(e.target.value) : ''); setPage(0); }}
             >
               <option value="">Barcha brendlar</option>
               {brands.map((brand) => (
-                <option key={brand.id} value={brand.id}>
-                  {brand.name}
-                </option>
+                <option key={brand.id} value={brand.id}>{brand.name}</option>
               ))}
             </select>
           </label>
@@ -231,16 +267,11 @@ export function ProductsPage() {
             <select
               className="select select-bordered w-full"
               value={categoryFilter}
-              onChange={(e) => {
-                setCategoryFilter(e.target.value ? Number(e.target.value) : '');
-                setPage(0);
-              }}
+              onChange={(e) => { setCategoryFilter(e.target.value ? Number(e.target.value) : ''); setPage(0); }}
             >
               <option value="">Barcha kategoriyalar</option>
               {categories.map((category) => (
-                <option key={category.id} value={category.id}>
-                  {category.name}
-                </option>
+                <option key={category.id} value={category.id}>{category.name}</option>
               ))}
             </select>
           </label>
@@ -252,16 +283,11 @@ export function ProductsPage() {
             <select
               className="select select-bordered w-full"
               value={seasonFilter}
-              onChange={(e) => {
-                setSeasonFilter(e.target.value as Season | '');
-                setPage(0);
-              }}
+              onChange={(e) => { setSeasonFilter(e.target.value as Season | ''); setPage(0); }}
             >
               <option value="">Barcha mavsumlar</option>
               {Object.entries(SEASONS).map(([key, { label }]) => (
-                <option key={key} value={key}>
-                  {label}
-                </option>
+                <option key={key} value={key}>{label}</option>
               ))}
             </select>
           </label>
@@ -269,173 +295,61 @@ export function ProductsPage() {
       </div>
 
       {/* Products Table */}
-      <div className="surface-card overflow-hidden">
-        {loading ? (
-          <div className="flex items-center justify-center h-64">
-            <span className="loading loading-spinner loading-lg" />
-          </div>
-        ) : products.length === 0 ? (
-          <div className="flex flex-col items-center justify-center gap-2 p-10 text-center text-base-content/50">
-            <Package className="h-12 w-12" />
-            <div>
-              <p className="text-base font-medium">Mahsulotlar topilmadi</p>
-              <p className="text-sm">Filtrlarni o'zgartirib ko'ring</p>
+      <DataTable
+        data={products}
+        columns={columns}
+        keyExtractor={(product) => product.id}
+        loading={loading}
+        emptyIcon={<Package className="h-12 w-12" />}
+        emptyTitle="Mahsulotlar topilmadi"
+        emptyDescription="Filtrlarni o'zgartirib ko'ring"
+        rowClassName={(product) => (product.lowStock ? 'bg-error/5' : '')}
+        currentPage={page}
+        totalPages={totalPages}
+        totalElements={totalElements}
+        pageSize={pageSize}
+        onPageChange={setPage}
+        onPageSizeChange={handlePageSizeChange}
+        renderMobileCard={(product) => (
+          <div className="surface-panel flex flex-col gap-3 rounded-xl p-4">
+            <div className="flex items-start justify-between gap-3">
+              <div>
+                <p className="text-sm font-semibold">{product.name}</p>
+                <p className="text-xs text-base-content/60">SKU: {product.sku}</p>
+                <p className="text-xs text-base-content/60">{product.sizeString || "O'lcham ko'rsatilmagan"}</p>
+              </div>
+              <span className={clsx('badge badge-sm', product.lowStock ? 'badge-error' : 'badge-success')}>
+                {product.quantity}
+              </span>
+            </div>
+            <div className="flex flex-wrap items-center gap-2 text-xs text-base-content/60">
+              {product.brandName && <span className="pill">{product.brandName}</span>}
+              {product.season && <span className="pill">{SEASONS[product.season]?.label}</span>}
+              {product.categoryName && <span className="pill">{product.categoryName}</span>}
+            </div>
+            <div className="flex items-center justify-between">
+              <span className="text-sm font-semibold text-primary">{formatCurrency(product.sellingPrice)}</span>
+              <div className="flex items-center gap-2">
+                <button className="btn btn-ghost btn-sm min-h-[44px]" onClick={() => setSelectedProduct(product)}>
+                  Tafsilotlar
+                </button>
+                <button className="btn btn-ghost btn-sm min-h-[44px]">Tahrirlash</button>
+              </div>
             </div>
           </div>
-        ) : (
-          <>
-            <div className="hidden lg:block table-container">
-              <table className="table table-zebra">
-                <thead>
-                  <tr>
-                    <SortableHeader label="SKU" sortKey="sku" currentSort={sortConfig} onSort={handleSort} />
-                    <SortableHeader label="Nomi" sortKey="name" currentSort={sortConfig} onSort={handleSort} />
-                    <SortableHeader label="Brend" sortKey="brandName" currentSort={sortConfig} onSort={handleSort} />
-                    <SortableHeader label="O'lcham" sortKey="sizeString" currentSort={sortConfig} onSort={handleSort} />
-                    <SortableHeader label="Mavsum" sortKey="season" currentSort={sortConfig} onSort={handleSort} />
-                    <SortableHeader label="Narx" sortKey="sellingPrice" currentSort={sortConfig} onSort={handleSort} />
-                    <SortableHeader label="Zaxira" sortKey="quantity" currentSort={sortConfig} onSort={handleSort} />
-                    <th></th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {sortedProducts.map((product) => (
-                    <tr
-                      key={product.id}
-                      className={clsx(
-                        'transition',
-                        product.lowStock && 'bg-error/5'
-                      )}
-                    >
-                      <td className="font-mono text-sm">{product.sku}</td>
-                      <td>
-                        <div className="font-medium">{product.name}</div>
-                        <div className="text-xs text-base-content/60">
-                          {product.categoryName || '—'}
-                        </div>
-                      </td>
-                      <td>{product.brandName || '—'}</td>
-                      <td>{product.sizeString || '—'}</td>
-                      <td>
-                        {product.season && (
-                          <span className="badge badge-outline badge-sm">
-                            {SEASONS[product.season]?.label}
-                          </span>
-                        )}
-                      </td>
-                      <td className="font-medium">
-                        {formatCurrency(product.sellingPrice)}
-                      </td>
-                      <td>
-                        <span
-                          className={clsx(
-                            'badge badge-sm',
-                            product.lowStock ? 'badge-error' : 'badge-success'
-                          )}
-                        >
-                          {product.quantity}
-                        </span>
-                      </td>
-                      <td className="space-x-2">
-                        <button
-                          className="btn btn-ghost btn-sm"
-                          onClick={() => setSelectedProduct(product)}
-                        >
-                          Tafsilotlar
-                        </button>
-                        <button className="btn btn-ghost btn-sm">
-                          Tahrirlash
-                        </button>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-
-            <div className="space-y-3 p-4 lg:hidden">
-              {sortedProducts.map((product) => (
-                <div
-                  key={product.id}
-                  className="surface-panel flex flex-col gap-3 rounded-xl p-4"
-                >
-                  <div className="flex items-start justify-between gap-3">
-                    <div>
-                      <p className="text-sm font-semibold">{product.name}</p>
-                      <p className="text-xs text-base-content/60">
-                        SKU: {product.sku}
-                      </p>
-                      <p className="text-xs text-base-content/60">
-                        {product.sizeString || "O'lcham ko'rsatilmagan"}
-                      </p>
-                    </div>
-                    <span
-                      className={clsx(
-                        'badge badge-sm',
-                        product.lowStock ? 'badge-error' : 'badge-success'
-                      )}
-                    >
-                      {product.quantity}
-                    </span>
-                  </div>
-                  <div className="flex flex-wrap items-center gap-2 text-xs text-base-content/60">
-                    {product.brandName && <span className="pill">{product.brandName}</span>}
-                    {product.season && (
-                      <span className="pill">
-                        {SEASONS[product.season]?.label}
-                      </span>
-                    )}
-                    {product.categoryName && (
-                      <span className="pill">{product.categoryName}</span>
-                    )}
-                  </div>
-                  <div className="flex items-center justify-between">
-                    <span className="text-sm font-semibold text-primary">
-                      {formatCurrency(product.sellingPrice)}
-                    </span>
-                    <div className="flex items-center gap-2">
-                      <button
-                        className="btn btn-ghost btn-sm min-h-[44px]"
-                        onClick={() => setSelectedProduct(product)}
-                      >
-                        Tafsilotlar
-                      </button>
-                      <button className="btn btn-ghost btn-sm min-h-[44px]">
-                        Tahrirlash
-                      </button>
-                    </div>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </>
         )}
+      />
 
-        {/* Pagination */}
-        <Pagination
-          currentPage={page}
-          totalPages={totalPages}
-          totalElements={totalElements}
-          pageSize={pageSize}
-          onPageChange={setPage}
-          onPageSizeChange={handlePageSizeChange}
-        />
-      </div>
-
+      {/* Product Detail Modal */}
       {selectedProduct && (
         <div className="modal modal-open">
           <div className="modal-box max-w-3xl">
             <div className="flex items-start justify-between gap-4">
               <div>
                 <h3 className="text-xl font-semibold">{selectedProduct.name}</h3>
-                <p className="text-sm text-base-content/60">
-                  SKU: {selectedProduct.sku}
-                </p>
+                <p className="text-sm text-base-content/60">SKU: {selectedProduct.sku}</p>
               </div>
-              <button
-                className="btn btn-ghost btn-sm"
-                onClick={() => setSelectedProduct(null)}
-              >
+              <button className="btn btn-ghost btn-sm" onClick={() => setSelectedProduct(null)}>
                 <X className="h-4 w-4" />
                 Yopish
               </button>
@@ -444,48 +358,27 @@ export function ProductsPage() {
             <div className="mt-6 grid gap-6 lg:grid-cols-[240px_1fr]">
               <div className="surface-soft flex h-48 items-center justify-center rounded-xl">
                 {selectedProduct.imageUrl ? (
-                  <img
-                    src={selectedProduct.imageUrl}
-                    alt={selectedProduct.name}
-                    className="h-full w-full rounded-xl object-cover"
-                  />
+                  <img src={selectedProduct.imageUrl} alt={selectedProduct.name} className="h-full w-full rounded-xl object-cover" />
                 ) : (
                   <Package className="h-12 w-12 text-base-content/40" />
                 )}
               </div>
               <div className="space-y-4">
                 <div className="flex flex-wrap items-center gap-2 text-xs text-base-content/60">
-                  {selectedProduct.brandName && (
-                    <span className="pill">{selectedProduct.brandName}</span>
-                  )}
-                  {selectedProduct.categoryName && (
-                    <span className="pill">{selectedProduct.categoryName}</span>
-                  )}
-                  {selectedProduct.season && (
-                    <span className="pill">
-                      {SEASONS[selectedProduct.season]?.label}
-                    </span>
-                  )}
+                  {selectedProduct.brandName && <span className="pill">{selectedProduct.brandName}</span>}
+                  {selectedProduct.categoryName && <span className="pill">{selectedProduct.categoryName}</span>}
+                  {selectedProduct.season && <span className="pill">{SEASONS[selectedProduct.season]?.label}</span>}
                 </div>
 
                 <div className="grid grid-cols-2 gap-3 text-sm">
                   <div className="surface-soft rounded-lg p-3">
                     <p className="text-xs text-base-content/60">Narx</p>
-                    <p className="text-lg font-semibold text-primary">
-                      {formatCurrency(selectedProduct.sellingPrice)}
-                    </p>
+                    <p className="text-lg font-semibold text-primary">{formatCurrency(selectedProduct.sellingPrice)}</p>
                   </div>
                   <div className="surface-soft rounded-lg p-3">
                     <p className="text-xs text-base-content/60">Zaxira</p>
                     <div className="flex items-center gap-2">
-                      <span
-                        className={clsx(
-                          'badge badge-sm',
-                          selectedProduct.lowStock
-                            ? 'badge-error'
-                            : 'badge-success'
-                        )}
-                      >
+                      <span className={clsx('badge badge-sm', selectedProduct.lowStock ? 'badge-error' : 'badge-success')}>
                         {selectedProduct.quantity}
                       </span>
                       {selectedProduct.lowStock ? (
@@ -505,21 +398,12 @@ export function ProductsPage() {
 
                 <div className="grid grid-cols-2 gap-3 text-sm text-base-content/70">
                   <div>
-                    <p className="text-xs uppercase tracking-[0.2em] text-base-content/40">
-                      O'lcham
-                    </p>
-                    <p className="font-medium">
-                      {selectedProduct.sizeString || '—'}
-                    </p>
+                    <p className="text-xs uppercase tracking-[0.2em] text-base-content/40">O'lcham</p>
+                    <p className="font-medium">{selectedProduct.sizeString || '—'}</p>
                   </div>
                   <div>
-                    <p className="text-xs uppercase tracking-[0.2em] text-base-content/40">
-                      Tezlik / Yuk
-                    </p>
-                    <p className="font-medium">
-                      {selectedProduct.speedRating || '—'} /{' '}
-                      {selectedProduct.loadIndex || '—'}
-                    </p>
+                    <p className="text-xs uppercase tracking-[0.2em] text-base-content/40">Tezlik / Yuk</p>
+                    <p className="font-medium">{selectedProduct.speedRating || '—'} / {selectedProduct.loadIndex || '—'}</p>
                   </div>
                 </div>
 
@@ -535,20 +419,16 @@ export function ProductsPage() {
         </div>
       )}
 
+      {/* New Product Modal */}
       {showNewProductModal && (
         <div className="modal modal-open">
           <div className="modal-box max-w-3xl">
             <div className="flex items-start justify-between gap-4">
               <div>
                 <h3 className="text-xl font-semibold">Yangi mahsulot</h3>
-                <p className="text-sm text-base-content/60">
-                  Yangi shina qo'shish
-                </p>
+                <p className="text-sm text-base-content/60">Yangi shina qo'shish</p>
               </div>
-              <button
-                className="btn btn-ghost btn-sm"
-                onClick={handleCloseNewProductModal}
-              >
+              <button className="btn btn-ghost btn-sm" onClick={handleCloseNewProductModal}>
                 <X className="h-4 w-4" />
               </button>
             </div>
@@ -556,233 +436,74 @@ export function ProductsPage() {
             <div className="mt-6 space-y-4">
               <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
                 <label className="form-control">
-                  <span className="label-text mb-1 text-xs font-semibold uppercase tracking-[0.18em] text-base-content/50">
-                    SKU *
-                  </span>
-                  <input
-                    type="text"
-                    className="input input-bordered w-full"
-                    value={formData.sku}
-                    onChange={(e) => handleFormChange('sku', e.target.value)}
-                    placeholder="SH-001"
-                  />
+                  <span className="label-text mb-1 text-xs font-semibold uppercase tracking-[0.18em] text-base-content/50">SKU *</span>
+                  <input type="text" className="input input-bordered w-full" value={formData.sku} onChange={(e) => handleFormChange('sku', e.target.value)} placeholder="SH-001" />
                 </label>
                 <label className="form-control sm:col-span-2">
-                  <span className="label-text mb-1 text-xs font-semibold uppercase tracking-[0.18em] text-base-content/50">
-                    Nomi *
-                  </span>
-                  <input
-                    type="text"
-                    className="input input-bordered w-full"
-                    value={formData.name}
-                    onChange={(e) => handleFormChange('name', e.target.value)}
-                    placeholder="Michelin Pilot Sport 5"
-                  />
+                  <span className="label-text mb-1 text-xs font-semibold uppercase tracking-[0.18em] text-base-content/50">Nomi *</span>
+                  <input type="text" className="input input-bordered w-full" value={formData.name} onChange={(e) => handleFormChange('name', e.target.value)} placeholder="Michelin Pilot Sport 5" />
                 </label>
               </div>
 
               <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                 <label className="form-control">
-                  <span className="label-text mb-1 text-xs font-semibold uppercase tracking-[0.18em] text-base-content/50">
-                    Brend
-                  </span>
-                  <select
-                    className="select select-bordered w-full"
-                    value={formData.brandId || ''}
-                    onChange={(e) =>
-                      handleFormChange('brandId', e.target.value ? Number(e.target.value) : undefined)
-                    }
-                  >
+                  <span className="label-text mb-1 text-xs font-semibold uppercase tracking-[0.18em] text-base-content/50">Brend</span>
+                  <select className="select select-bordered w-full" value={formData.brandId || ''} onChange={(e) => handleFormChange('brandId', e.target.value ? Number(e.target.value) : undefined)}>
                     <option value="">Tanlang...</option>
-                    {brands.map((brand) => (
-                      <option key={brand.id} value={brand.id}>
-                        {brand.name}
-                      </option>
-                    ))}
+                    {brands.map((brand) => <option key={brand.id} value={brand.id}>{brand.name}</option>)}
                   </select>
                 </label>
                 <label className="form-control">
-                  <span className="label-text mb-1 text-xs font-semibold uppercase tracking-[0.18em] text-base-content/50">
-                    Kategoriya
-                  </span>
-                  <select
-                    className="select select-bordered w-full"
-                    value={formData.categoryId || ''}
-                    onChange={(e) =>
-                      handleFormChange('categoryId', e.target.value ? Number(e.target.value) : undefined)
-                    }
-                  >
+                  <span className="label-text mb-1 text-xs font-semibold uppercase tracking-[0.18em] text-base-content/50">Kategoriya</span>
+                  <select className="select select-bordered w-full" value={formData.categoryId || ''} onChange={(e) => handleFormChange('categoryId', e.target.value ? Number(e.target.value) : undefined)}>
                     <option value="">Tanlang...</option>
-                    {categories.map((category) => (
-                      <option key={category.id} value={category.id}>
-                        {category.name}
-                      </option>
-                    ))}
+                    {categories.map((category) => <option key={category.id} value={category.id}>{category.name}</option>)}
                   </select>
                 </label>
               </div>
 
               <div className="grid grid-cols-3 gap-4 sm:grid-cols-6">
-                <NumberInput
-                  label="Kenglik"
-                  value={formData.width ?? ''}
-                  onChange={(val) =>
-                    handleFormChange('width', val === '' ? undefined : Number(val))
-                  }
-                  placeholder="205"
-                  showButtons={false}
-                  min={100}
-                  max={400}
-                />
-                <NumberInput
-                  label="Profil"
-                  value={formData.profile ?? ''}
-                  onChange={(val) =>
-                    handleFormChange('profile', val === '' ? undefined : Number(val))
-                  }
-                  placeholder="55"
-                  showButtons={false}
-                  min={10}
-                  max={100}
-                />
-                <NumberInput
-                  label="Diametr"
-                  value={formData.diameter ?? ''}
-                  onChange={(val) =>
-                    handleFormChange('diameter', val === '' ? undefined : Number(val))
-                  }
-                  placeholder="16"
-                  showButtons={false}
-                  min={10}
-                  max={30}
-                />
+                <NumberInput label="Kenglik" value={formData.width ?? ''} onChange={(val) => handleFormChange('width', val === '' ? undefined : Number(val))} placeholder="205" showButtons={false} min={100} max={400} />
+                <NumberInput label="Profil" value={formData.profile ?? ''} onChange={(val) => handleFormChange('profile', val === '' ? undefined : Number(val))} placeholder="55" showButtons={false} min={10} max={100} />
+                <NumberInput label="Diametr" value={formData.diameter ?? ''} onChange={(val) => handleFormChange('diameter', val === '' ? undefined : Number(val))} placeholder="16" showButtons={false} min={10} max={30} />
                 <label className="form-control">
-                  <span className="label-text mb-1 text-xs font-semibold uppercase tracking-[0.18em] text-base-content/50">
-                    Yuk ind.
-                  </span>
-                  <input
-                    type="text"
-                    className="input input-bordered w-full"
-                    value={formData.loadIndex || ''}
-                    onChange={(e) => handleFormChange('loadIndex', e.target.value || undefined)}
-                    placeholder="91"
-                  />
+                  <span className="label-text mb-1 text-xs font-semibold uppercase tracking-[0.18em] text-base-content/50">Yuk ind.</span>
+                  <input type="text" className="input input-bordered w-full" value={formData.loadIndex || ''} onChange={(e) => handleFormChange('loadIndex', e.target.value || undefined)} placeholder="91" />
                 </label>
                 <label className="form-control">
-                  <span className="label-text mb-1 text-xs font-semibold uppercase tracking-[0.18em] text-base-content/50">
-                    Tezlik
-                  </span>
-                  <input
-                    type="text"
-                    className="input input-bordered w-full"
-                    value={formData.speedRating || ''}
-                    onChange={(e) => handleFormChange('speedRating', e.target.value || undefined)}
-                    placeholder="V"
-                  />
+                  <span className="label-text mb-1 text-xs font-semibold uppercase tracking-[0.18em] text-base-content/50">Tezlik</span>
+                  <input type="text" className="input input-bordered w-full" value={formData.speedRating || ''} onChange={(e) => handleFormChange('speedRating', e.target.value || undefined)} placeholder="V" />
                 </label>
                 <label className="form-control">
-                  <span className="label-text mb-1 text-xs font-semibold uppercase tracking-[0.18em] text-base-content/50">
-                    Mavsum
-                  </span>
-                  <select
-                    className="select select-bordered w-full"
-                    value={formData.season || ''}
-                    onChange={(e) =>
-                      handleFormChange('season', e.target.value as Season || undefined)
-                    }
-                  >
+                  <span className="label-text mb-1 text-xs font-semibold uppercase tracking-[0.18em] text-base-content/50">Mavsum</span>
+                  <select className="select select-bordered w-full" value={formData.season || ''} onChange={(e) => handleFormChange('season', e.target.value as Season || undefined)}>
                     <option value="">—</option>
-                    {Object.entries(SEASONS).map(([key, { label }]) => (
-                      <option key={key} value={key}>
-                        {label}
-                      </option>
-                    ))}
+                    {Object.entries(SEASONS).map(([key, { label }]) => <option key={key} value={key}>{label}</option>)}
                   </select>
                 </label>
               </div>
 
               <div className="grid grid-cols-2 gap-4 sm:grid-cols-4">
-                <NumberInput
-                  label="Kelish narxi"
-                  value={formData.purchasePrice ?? ''}
-                  onChange={(val) =>
-                    handleFormChange('purchasePrice', val === '' ? undefined : Number(val))
-                  }
-                  placeholder="0"
-                  showButtons={false}
-                  min={0}
-                />
-                <NumberInput
-                  label="Sotish narxi *"
-                  value={formData.sellingPrice ?? ''}
-                  onChange={(val) =>
-                    handleFormChange('sellingPrice', val === '' ? 0 : Number(val))
-                  }
-                  placeholder="0"
-                  showButtons={false}
-                  min={0}
-                  allowEmpty={false}
-                />
-                <NumberInput
-                  label="Miqdor"
-                  value={formData.quantity ?? ''}
-                  onChange={(val) =>
-                    handleFormChange('quantity', val === '' ? undefined : Number(val))
-                  }
-                  placeholder="0"
-                  min={0}
-                />
-                <NumberInput
-                  label="Min zaxira"
-                  value={formData.minStockLevel ?? ''}
-                  onChange={(val) =>
-                    handleFormChange('minStockLevel', val === '' ? undefined : Number(val))
-                  }
-                  placeholder="5"
-                  min={0}
-                />
+                <NumberInput label="Kelish narxi" value={formData.purchasePrice ?? ''} onChange={(val) => handleFormChange('purchasePrice', val === '' ? undefined : Number(val))} placeholder="0" showButtons={false} min={0} />
+                <NumberInput label="Sotish narxi *" value={formData.sellingPrice ?? ''} onChange={(val) => handleFormChange('sellingPrice', val === '' ? 0 : Number(val))} placeholder="0" showButtons={false} min={0} allowEmpty={false} />
+                <NumberInput label="Miqdor" value={formData.quantity ?? ''} onChange={(val) => handleFormChange('quantity', val === '' ? undefined : Number(val))} placeholder="0" min={0} />
+                <NumberInput label="Min zaxira" value={formData.minStockLevel ?? ''} onChange={(val) => handleFormChange('minStockLevel', val === '' ? undefined : Number(val))} placeholder="5" min={0} />
               </div>
 
               <label className="form-control">
-                <span className="label-text mb-1 text-xs font-semibold uppercase tracking-[0.18em] text-base-content/50">
-                  Tavsif
-                </span>
-                <textarea
-                  className="textarea textarea-bordered w-full"
-                  rows={2}
-                  value={formData.description || ''}
-                  onChange={(e) => handleFormChange('description', e.target.value || undefined)}
-                  placeholder="Mahsulot haqida qo'shimcha ma'lumot..."
-                />
+                <span className="label-text mb-1 text-xs font-semibold uppercase tracking-[0.18em] text-base-content/50">Tavsif</span>
+                <textarea className="textarea textarea-bordered w-full" rows={2} value={formData.description || ''} onChange={(e) => handleFormChange('description', e.target.value || undefined)} placeholder="Mahsulot haqida qo'shimcha ma'lumot..." />
               </label>
 
               <label className="form-control">
-                <span className="label-text mb-1 text-xs font-semibold uppercase tracking-[0.18em] text-base-content/50">
-                  Rasm URL
-                </span>
-                <input
-                  type="text"
-                  className="input input-bordered w-full"
-                  value={formData.imageUrl || ''}
-                  onChange={(e) => handleFormChange('imageUrl', e.target.value || undefined)}
-                  placeholder="https://..."
-                />
+                <span className="label-text mb-1 text-xs font-semibold uppercase tracking-[0.18em] text-base-content/50">Rasm URL</span>
+                <input type="text" className="input input-bordered w-full" value={formData.imageUrl || ''} onChange={(e) => handleFormChange('imageUrl', e.target.value || undefined)} placeholder="https://..." />
               </label>
             </div>
 
             <div className="modal-action">
-              <button
-                className="btn btn-ghost"
-                onClick={handleCloseNewProductModal}
-                disabled={saving}
-              >
-                Bekor qilish
-              </button>
-              <button
-                className="btn btn-primary"
-                onClick={handleSaveProduct}
-                disabled={saving || !formData.sku.trim() || !formData.name.trim() || formData.sellingPrice <= 0}
-              >
+              <button className="btn btn-ghost" onClick={handleCloseNewProductModal} disabled={saving}>Bekor qilish</button>
+              <button className="btn btn-primary" onClick={handleSaveProduct} disabled={saving || !formData.sku.trim() || !formData.name.trim() || formData.sellingPrice <= 0}>
                 {saving && <span className="loading loading-spinner loading-sm" />}
                 Saqlash
               </button>
