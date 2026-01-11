@@ -1,11 +1,15 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Link } from 'react-router-dom';
+import { Link, useOutletContext } from 'react-router-dom';
 import { ShoppingBag, ChevronRight } from 'lucide-react';
 import { portalApiClient } from '../api/portal.api';
 import PortalHeader from '../components/layout/PortalHeader';
 import type { PortalSale, PagedResponse } from '../types/portal.types';
 import { format } from 'date-fns';
+
+interface OutletContextType {
+  newNotificationTrigger: number;
+}
 
 function formatMoney(amount: number): string {
   return new Intl.NumberFormat('uz-UZ').format(amount);
@@ -13,20 +17,19 @@ function formatMoney(amount: number): string {
 
 export default function PortalPurchasesPage() {
   const { t } = useTranslation();
+  const { newNotificationTrigger } = useOutletContext<OutletContextType>();
   const [purchases, setPurchases] = useState<PortalSale[]>([]);
   const [loading, setLoading] = useState(true);
   const [page, setPage] = useState(0);
   const [hasMore, setHasMore] = useState(true);
   const [loadingMore, setLoadingMore] = useState(false);
 
-  useEffect(() => {
-    fetchPurchases(0);
-  }, []);
-
-  const fetchPurchases = async (pageNum: number) => {
+  const fetchPurchases = useCallback(async (pageNum: number, showLoading = true) => {
     try {
-      if (pageNum === 0) setLoading(true);
-      else setLoadingMore(true);
+      if (showLoading) {
+        if (pageNum === 0) setLoading(true);
+        else setLoadingMore(true);
+      }
 
       const data: PagedResponse<PortalSale> = await portalApiClient.getPurchases(pageNum, 10);
 
@@ -44,7 +47,18 @@ export default function PortalPurchasesPage() {
       setLoading(false);
       setLoadingMore(false);
     }
-  };
+  }, []);
+
+  useEffect(() => {
+    fetchPurchases(0);
+  }, [fetchPurchases]);
+
+  // WebSocket orqali yangi notification kelganda xaridlarni yangilash
+  useEffect(() => {
+    if (newNotificationTrigger > 0) {
+      fetchPurchases(0, false);
+    }
+  }, [newNotificationTrigger, fetchPurchases]);
 
   const loadMore = () => {
     if (!loadingMore && hasMore) {

@@ -36,7 +36,8 @@ public class SaleService {
     private final UserRepository userRepository;
     private final DebtRepository debtRepository;
     private final StockMovementRepository stockMovementRepository;
-    private final StaffNotificationService notificationService;
+    private final StaffNotificationService staffNotificationService;
+    private final NotificationService customerNotificationService;
 
     public Page<SaleResponse> getAllSales(Pageable pageable) {
         return saleRepository.findAll(pageable)
@@ -120,7 +121,7 @@ public class SaleService {
 
             // Check for low stock and notify
             if (newStock > 0 && newStock <= 5) {
-                notificationService.notifyLowStock(product.getName(), newStock, product.getId());
+                staffNotificationService.notifyLowStock(product.getName(), newStock, product.getId());
             }
 
             // Record stock movement
@@ -175,9 +176,22 @@ public class SaleService {
 
         Sale savedSale = saleRepository.save(sale);
 
-        // Send notification about new sale
+        // Send notification about new sale to staff
         String customerName = customer != null ? customer.getFullName() : "Noma'lum mijoz";
-        notificationService.notifyNewOrder(savedSale.getInvoiceNumber(), customerName, savedSale.getId());
+        staffNotificationService.notifyNewOrder(savedSale.getInvoiceNumber(), customerName, savedSale.getId());
+
+        // Send notification to customer about their purchase
+        if (customer != null && Boolean.TRUE.equals(customer.getPortalEnabled())) {
+            String formattedTotal = String.format("%,.0f", totalAmount);
+            String metadata = String.format("{\"saleId\": %d, \"invoiceNumber\": \"%s\"}",
+                    savedSale.getId(), savedSale.getInvoiceNumber());
+            customerNotificationService.sendPurchaseCompleted(
+                    customer.getId(),
+                    savedSale.getInvoiceNumber(),
+                    formattedTotal,
+                    metadata
+            );
+        }
 
         // Create debt record if partial/unpaid
         if (debtAmount.compareTo(BigDecimal.ZERO) > 0) {

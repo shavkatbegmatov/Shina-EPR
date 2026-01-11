@@ -90,6 +90,23 @@ public class NotificationService {
     }
 
     /**
+     * Xarid amalga oshirildi xabari
+     */
+    @Transactional
+    public void sendPurchaseCompleted(Long customerId, String invoiceNumber, String totalAmount, String metadata) {
+        createNotification(
+                customerId,
+                "Xarid amalga oshirildi",
+                "Покупка совершена",
+                String.format("Sizning xaridingiz muvaffaqiyatli amalga oshirildi. Hisob: %s, Summa: %s so'm", invoiceNumber, totalAmount),
+                String.format("Ваша покупка успешно совершена. Счёт: %s, Сумма: %s сум", invoiceNumber, totalAmount),
+                NotificationType.SYSTEM,
+                null,
+                metadata
+        );
+    }
+
+    /**
      * Aksiya/chegirma xabari
      */
     @Transactional
