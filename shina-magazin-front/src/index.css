@@ -226,11 +226,28 @@ textarea {
 
 /* Modal fix - ensure backdrop covers full viewport */
 .modal {
-  @apply fixed inset-0 z-[100];
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  width: 100vw;
+  height: 100vh;
+  z-index: 100;
 }
 
 .modal-backdrop {
-  @apply fixed inset-0 bg-black/50;
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  background-color: rgba(0, 0, 0, 0.5);
+}
+
+/* Hide body scroll when modal is open */
+body:has(.modal-open) {
+  overflow: hidden;
 }
 
 /* Sticky table header */
