@@ -36,6 +36,7 @@ public class SaleService {
     private final UserRepository userRepository;
     private final DebtRepository debtRepository;
     private final StockMovementRepository stockMovementRepository;
+    private final StaffNotificationService notificationService;
 
     public Page<SaleResponse> getAllSales(Pageable pageable) {
         return saleRepository.findAll(pageable)
@@ -113,8 +114,14 @@ public class SaleService {
 
             // Reduce stock
             int previousStock = product.getQuantity();
-            product.setQuantity(previousStock - itemRequest.getQuantity());
+            int newStock = previousStock - itemRequest.getQuantity();
+            product.setQuantity(newStock);
             productRepository.save(product);
+
+            // Check for low stock and notify
+            if (newStock > 0 && newStock <= 5) {
+                notificationService.notifyLowStock(product.getName(), newStock, product.getId());
+            }
 
             // Record stock movement
             StockMovement movement = StockMovement.builder()
@@ -122,7 +129,7 @@ public class SaleService {
                     .movementType(MovementType.OUT)
                     .quantity(-itemRequest.getQuantity())
                     .previousStock(previousStock)
-                    .newStock(product.getQuantity())
+                    .newStock(newStock)
                     .referenceType("SALE")
                     .notes("Sotuv: " + sale.getInvoiceNumber())
                     .createdBy(currentUser)
@@ -167,6 +174,10 @@ public class SaleService {
         sale.setStatus(SaleStatus.COMPLETED);
 
         Sale savedSale = saleRepository.save(sale);
+
+        // Send notification about new sale
+        String customerName = customer != null ? customer.getName() : "Noma'lum mijoz";
+        notificationService.notifyNewOrder(savedSale.getInvoiceNumber(), customerName, savedSale.getId());
 
         // Create debt record if partial/unpaid
         if (debtAmount.compareTo(BigDecimal.ZERO) > 0) {
