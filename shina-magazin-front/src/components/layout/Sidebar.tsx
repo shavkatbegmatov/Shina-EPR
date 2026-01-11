@@ -57,7 +57,7 @@ export function Sidebar() {
           sidebarOpen ? 'translate-x-0' : '-translate-x-full'
         )}
       >
-        <div className="relative overflow-hidden border-b border-base-200 px-4 py-5">
+        <div className="relative overflow-hidden border-b border-base-200 px-4 py-2.5">
           <div className="pointer-events-none absolute inset-0 bg-gradient-to-br from-primary/15 via-transparent to-secondary/10" />
           <div className="relative flex items-center justify-between">
             <div className="flex items-center gap-3">
