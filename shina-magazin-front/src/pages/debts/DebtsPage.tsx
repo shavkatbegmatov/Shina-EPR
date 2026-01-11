@@ -16,10 +16,12 @@ import { NumberInput } from '../../components/ui/NumberInput';
 import { DataTable, Column } from '../../components/ui/DataTable';
 import { ModalPortal } from '../../components/common/Modal';
 import type { Debt, DebtStatus, Payment, PaymentMethod } from '../../types';
+import { useNotificationsStore } from '../../store/notificationsStore';
 
 export function DebtsPage() {
   const [debts, setDebts] = useState<Debt[]>([]);
   const [loading, setLoading] = useState(true);
+  const { notifications } = useNotificationsStore();
   const [page, setPage] = useState(0);
   const [pageSize, setPageSize] = useState(20);
   const [totalPages, setTotalPages] = useState(0);
@@ -113,8 +115,8 @@ export function DebtsPage() {
     setPage(0);
   };
 
-  const loadDebts = useCallback(async () => {
-    setLoading(true);
+  const loadDebts = useCallback(async (showLoading = true) => {
+    if (showLoading) setLoading(true);
     try {
       const data = await debtsApi.getAll({
         page,
@@ -156,6 +158,14 @@ export function DebtsPage() {
     loadDebts();
     loadTotalDebt();
   }, [loadDebts, loadTotalDebt]);
+
+  // WebSocket orqali yangi notification kelganda qarzlarni yangilash
+  useEffect(() => {
+    if (notifications.length > 0) {
+      loadDebts(false);
+      loadTotalDebt();
+    }
+  }, [notifications.length, loadDebts, loadTotalDebt]);
 
   const handleSelectDebt = (debt: Debt) => {
     setSelectedDebt(debt);
