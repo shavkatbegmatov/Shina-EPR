@@ -1,5 +1,5 @@
 import type { CSSProperties } from 'react';
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import {
   ShoppingCart,
   Package,
@@ -13,6 +13,7 @@ import clsx from 'clsx';
 import { dashboardApi } from '../../api/dashboard.api';
 import { formatCurrency, formatNumber } from '../../config/constants';
 import type { DashboardStats } from '../../types';
+import { useNotificationsStore } from '../../store/notificationsStore';
 
 const STAT_TONES: Record<string, string> = {
   primary: 'bg-primary/10 text-primary border-primary/20',
@@ -79,13 +80,11 @@ function StatCard({
 export function DashboardPage() {
   const [stats, setStats] = useState<DashboardStats | null>(null);
   const [loading, setLoading] = useState(true);
+  const { notifications } = useNotificationsStore();
 
-  useEffect(() => {
-    loadStats();
-  }, []);
-
-  const loadStats = async () => {
+  const loadStats = useCallback(async (showLoading = true) => {
     try {
+      if (showLoading) setLoading(true);
       const data = await dashboardApi.getStats();
       setStats(data);
     } catch (error) {
@@ -93,7 +92,18 @@ export function DashboardPage() {
     } finally {
       setLoading(false);
     }
-  };
+  }, []);
+
+  useEffect(() => {
+    loadStats();
+  }, [loadStats]);
+
+  // WebSocket orqali yangi notification kelganda statistikani yangilash
+  useEffect(() => {
+    if (notifications.length > 0) {
+      loadStats(false);
+    }
+  }, [notifications.length, loadStats]);
 
   if (loading) {
     return (

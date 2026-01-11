@@ -1,12 +1,16 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Link } from 'react-router-dom';
+import { Link, useOutletContext } from 'react-router-dom';
 import { Wallet, AlertTriangle, ShoppingBag, ChevronRight } from 'lucide-react';
 import { usePortalAuthStore } from '../store/portalAuthStore';
 import { portalApiClient } from '../api/portal.api';
 import PortalHeader from '../components/layout/PortalHeader';
 import type { CustomerDashboardStats, PortalSale } from '../types/portal.types';
 import { format } from 'date-fns';
+
+interface OutletContextType {
+  newNotificationTrigger: number;
+}
 
 function formatMoney(amount: number): string {
   return new Intl.NumberFormat('uz-UZ').format(amount);
@@ -15,28 +19,37 @@ function formatMoney(amount: number): string {
 export default function PortalDashboardPage() {
   const { t } = useTranslation();
   const { customer } = usePortalAuthStore();
+  const { newNotificationTrigger } = useOutletContext<OutletContextType>();
   const [stats, setStats] = useState<CustomerDashboardStats | null>(null);
   const [recentPurchases, setRecentPurchases] = useState<PortalSale[]>([]);
   const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
-    const fetchData = async () => {
-      try {
-        const [dashboardStats, purchasesData] = await Promise.all([
-          portalApiClient.getDashboard(),
-          portalApiClient.getPurchases(0, 3),
-        ]);
-        setStats(dashboardStats);
-        setRecentPurchases(purchasesData.content);
-      } catch (error) {
-        console.error('Failed to fetch dashboard data', error);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchData();
+  const fetchData = useCallback(async (showLoading = true) => {
+    try {
+      if (showLoading) setLoading(true);
+      const [dashboardStats, purchasesData] = await Promise.all([
+        portalApiClient.getDashboard(),
+        portalApiClient.getPurchases(0, 3),
+      ]);
+      setStats(dashboardStats);
+      setRecentPurchases(purchasesData.content);
+    } catch (error) {
+      console.error('Failed to fetch dashboard data', error);
+    } finally {
+      setLoading(false);
+    }
   }, []);
+
+  useEffect(() => {
+    fetchData();
+  }, [fetchData]);
+
+  // WebSocket orqali yangi notification kelganda ma'lumotlarni yangilash
+  useEffect(() => {
+    if (newNotificationTrigger > 0) {
+      fetchData(false);
+    }
+  }, [newNotificationTrigger, fetchData]);
 
   if (loading) {
     return (
