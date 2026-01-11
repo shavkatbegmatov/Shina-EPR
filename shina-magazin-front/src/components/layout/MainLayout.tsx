@@ -17,7 +17,7 @@ export function MainLayout() {
       <div className="flex min-w-0 flex-1 flex-col">
         <Header />
         <main className="flex-1 overflow-auto px-4 pb-8 pt-6 lg:px-8">
-          <div className="mx-auto flex w-full max-w-[1400px] flex-col gap-8">
+          <div className="flex w-full flex-col gap-8">
             <Outlet />
             <Footer />
           </div>
