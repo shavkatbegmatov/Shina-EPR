@@ -10,6 +10,7 @@ import { POSPage } from '../pages/sales/POSPage';
 import { SalesPage } from '../pages/sales/SalesPage';
 import { DebtsPage } from '../pages/debts/DebtsPage';
 import { WarehousePage } from '../pages/warehouse/WarehousePage';
+import { SuppliersPage } from '../pages/suppliers/SuppliersPage';
 import { SettingsPage } from '../pages/settings/SettingsPage';
 
 // Portal imports
@@ -74,12 +75,7 @@ export const router = createBrowserRouter([
       },
       {
         path: 'suppliers',
-        element: (
-          <PlaceholderPage
-            title="Ta'minotchilar"
-            description="Hamkorlar va yetkazib beruvchilar bilan ishlash."
-          />
-        ),
+        element: <SuppliersPage />,
         handle: { title: "Ta'minotchilar", description: "Hamkorlar ro'yxati" },
       },
       {

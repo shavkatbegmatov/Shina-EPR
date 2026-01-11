@@ -284,3 +284,30 @@ export interface WarehouseStats {
   todayInMovements: number;
   todayOutMovements: number;
 }
+
+// Supplier Types
+export interface Supplier {
+  id: number;
+  name: string;
+  contactPerson?: string;
+  phone?: string;
+  email?: string;
+  address?: string;
+  bankDetails?: string;
+  balance: number;
+  hasDebt: boolean;
+  notes?: string;
+  active: boolean;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface SupplierRequest {
+  name: string;
+  contactPerson?: string;
+  phone?: string;
+  email?: string;
+  address?: string;
+  bankDetails?: string;
+  notes?: string;
+}
