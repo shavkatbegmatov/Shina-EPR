@@ -223,3 +223,20 @@ textarea {
 .number-input-wrapper * {
   -webkit-touch-callout: none;
 }
+
+/* Sticky table header */
+.table-container {
+  @apply max-h-[calc(100vh-320px)] overflow-auto;
+}
+
+.table-container .table thead {
+  @apply sticky top-0 z-10;
+}
+
+.table-container .table thead tr {
+  @apply bg-base-100;
+}
+
+.table-container .table thead th {
+  @apply bg-base-100 border-b border-base-200;
+}

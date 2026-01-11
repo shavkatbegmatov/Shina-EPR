@@ -253,7 +253,7 @@ export function SettingsPage() {
             ) : (
               <>
                 {/* Desktop table */}
-                <div className="hidden overflow-x-auto lg:block">
+                <div className="hidden lg:block table-container">
                   <table className="table table-zebra">
                     <thead>
                       <tr>
@@ -357,7 +357,7 @@ export function SettingsPage() {
             ) : (
               <>
                 {/* Desktop table */}
-                <div className="hidden overflow-x-auto lg:block">
+                <div className="hidden lg:block table-container">
                   <table className="table table-zebra">
                     <thead>
                       <tr>
