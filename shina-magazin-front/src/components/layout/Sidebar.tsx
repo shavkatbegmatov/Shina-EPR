@@ -9,6 +9,7 @@ import {
   Warehouse,
   TruckIcon,
   BarChart3,
+  Bell,
   Settings,
   X,
 } from 'lucide-react';
@@ -26,6 +27,7 @@ const menuItems = [
   { path: '/warehouse', icon: Warehouse, label: 'Ombor', roles: ['ADMIN', 'MANAGER'] },
   { path: '/suppliers', icon: TruckIcon, label: "Ta'minotchilar", roles: ['ADMIN', 'MANAGER'] },
   { path: '/reports', icon: BarChart3, label: 'Hisobotlar', roles: ['ADMIN', 'MANAGER'] },
+  { path: '/notifications', icon: Bell, label: 'Bildirishnomalar', roles: ['ADMIN', 'MANAGER', 'SELLER'] },
   { path: '/settings', icon: Settings, label: 'Sozlamalar', roles: ['ADMIN'] },
 ];
 

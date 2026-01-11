@@ -12,6 +12,7 @@ import { DebtsPage } from '../pages/debts/DebtsPage';
 import { WarehousePage } from '../pages/warehouse/WarehousePage';
 import { SuppliersPage } from '../pages/suppliers/SuppliersPage';
 import { SettingsPage } from '../pages/settings/SettingsPage';
+import { NotificationsPage } from '../pages/notifications/NotificationsPage';
 
 // Portal imports
 import PortalLayout from '../portal/components/layout/PortalLayout';
@@ -92,6 +93,11 @@ export const router = createBrowserRouter([
         path: 'settings',
         element: <SettingsPage />,
         handle: { title: 'Sozlamalar' },
+      },
+      {
+        path: 'notifications',
+        element: <NotificationsPage />,
+        handle: { title: 'Bildirishnomalar' },
       },
     ],
   },

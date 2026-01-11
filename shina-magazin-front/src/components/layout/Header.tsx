@@ -224,7 +224,7 @@ export function Header() {
                   className="btn btn-ghost btn-sm w-full"
                   onClick={() => {
                     setNotifDropdownOpen(false);
-                    // TODO: Navigate to notifications page when implemented
+                    navigate('/notifications');
                   }}
                 >
                   Barchasini ko'rish
