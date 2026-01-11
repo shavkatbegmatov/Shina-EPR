@@ -1,5 +1,5 @@
 import api from './axios';
-import type { ApiResponse, SalesReport, WarehouseReport } from '../types';
+import type { ApiResponse, SalesReport, WarehouseReport, DebtsReport } from '../types';
 
 export const reportsApi = {
   getSalesReport: async (startDate: string, endDate: string): Promise<SalesReport> => {
@@ -11,6 +11,13 @@ export const reportsApi = {
 
   getWarehouseReport: async (startDate: string, endDate: string): Promise<WarehouseReport> => {
     const response = await api.get<ApiResponse<WarehouseReport>>('/v1/reports/warehouse', {
+      params: { startDate, endDate },
+    });
+    return response.data.data;
+  },
+
+  getDebtsReport: async (startDate: string, endDate: string): Promise<DebtsReport> => {
+    const response = await api.get<ApiResponse<DebtsReport>>('/v1/reports/debts', {
       params: { startDate, endDate },
     });
     return response.data.data;

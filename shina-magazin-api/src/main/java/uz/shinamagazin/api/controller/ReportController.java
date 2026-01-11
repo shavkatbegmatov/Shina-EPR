@@ -7,6 +7,7 @@ import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import uz.shinamagazin.api.dto.response.ApiResponse;
+import uz.shinamagazin.api.dto.response.DebtsReportResponse;
 import uz.shinamagazin.api.dto.response.SalesReportResponse;
 import uz.shinamagazin.api.dto.response.WarehouseReportResponse;
 import uz.shinamagazin.api.service.ReportService;
@@ -35,5 +36,13 @@ public class ReportController {
             @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate startDate,
             @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate endDate) {
         return ResponseEntity.ok(ApiResponse.success(reportService.getWarehouseReport(startDate, endDate)));
+    }
+
+    @GetMapping("/debts")
+    @Operation(summary = "Get debts report", description = "Qarzlar hisoboti")
+    public ResponseEntity<ApiResponse<DebtsReportResponse>> getDebtsReport(
+            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate startDate,
+            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate endDate) {
+        return ResponseEntity.ok(ApiResponse.success(reportService.getDebtsReport(startDate, endDate)));
     }
 }

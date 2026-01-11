@@ -2,18 +2,15 @@ package uz.shinamagazin.api.service;
 
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
+import uz.shinamagazin.api.dto.response.DebtsReportResponse;
 import uz.shinamagazin.api.dto.response.SalesReportResponse;
 import uz.shinamagazin.api.dto.response.WarehouseReportResponse;
-import uz.shinamagazin.api.entity.Product;
-import uz.shinamagazin.api.entity.Sale;
-import uz.shinamagazin.api.entity.SaleItem;
-import uz.shinamagazin.api.entity.StockMovement;
+import uz.shinamagazin.api.entity.*;
+import uz.shinamagazin.api.enums.DebtStatus;
 import uz.shinamagazin.api.enums.MovementType;
 import uz.shinamagazin.api.enums.PaymentMethod;
 import uz.shinamagazin.api.enums.SaleStatus;
-import uz.shinamagazin.api.repository.ProductRepository;
-import uz.shinamagazin.api.repository.SaleRepository;
-import uz.shinamagazin.api.repository.StockMovementRepository;
+import uz.shinamagazin.api.repository.*;
 
 import java.math.BigDecimal;
 import java.math.RoundingMode;
@@ -31,6 +28,8 @@ public class ReportService {
     private final SaleRepository saleRepository;
     private final ProductRepository productRepository;
     private final StockMovementRepository stockMovementRepository;
+    private final DebtRepository debtRepository;
+    private final PaymentRepository paymentRepository;
 
     public SalesReportResponse getSalesReport(LocalDate startDate, LocalDate endDate) {
         LocalDateTime start = startDate.atStartOfDay();
@@ -299,6 +298,212 @@ public class ReportService {
                 .lowStockProducts(lowStockProducts)
                 .recentMovements(recentMovements)
                 .build();
+    }
+
+    public DebtsReportResponse getDebtsReport(LocalDate startDate, LocalDate endDate) {
+        LocalDateTime start = startDate.atStartOfDay();
+        LocalDateTime end = endDate.atTime(LocalTime.MAX);
+        LocalDate today = LocalDate.now();
+
+        // Get all debts
+        List<Debt> allDebts = debtRepository.findAll();
+        List<Payment> payments = paymentRepository.findByPaymentDateBetween(start, end);
+
+        // Active debts
+        List<Debt> activeDebts = allDebts.stream()
+                .filter(d -> d.getStatus() == DebtStatus.ACTIVE)
+                .collect(Collectors.toList());
+
+        // Paid debts in period
+        List<Debt> paidDebts = allDebts.stream()
+                .filter(d -> d.getStatus() == DebtStatus.PAID)
+                .collect(Collectors.toList());
+
+        // Overdue debts
+        List<Debt> overdueDebts = activeDebts.stream()
+                .filter(d -> d.getDueDate() != null && d.getDueDate().isBefore(today))
+                .collect(Collectors.toList());
+
+        // Calculate totals
+        BigDecimal totalActiveDebt = activeDebts.stream()
+                .map(Debt::getRemainingAmount)
+                .reduce(BigDecimal.ZERO, BigDecimal::add);
+
+        BigDecimal totalPaidDebt = paidDebts.stream()
+                .map(Debt::getOriginalAmount)
+                .reduce(BigDecimal.ZERO, BigDecimal::add);
+
+        BigDecimal totalOverdueDebt = overdueDebts.stream()
+                .map(Debt::getRemainingAmount)
+                .reduce(BigDecimal.ZERO, BigDecimal::add);
+
+        BigDecimal totalPaymentsReceived = payments.stream()
+                .map(Payment::getAmount)
+                .reduce(BigDecimal.ZERO, BigDecimal::add);
+
+        BigDecimal averageDebtAmount = activeDebts.isEmpty() ? BigDecimal.ZERO :
+                totalActiveDebt.divide(BigDecimal.valueOf(activeDebts.size()), 2, RoundingMode.HALF_UP);
+
+        // Top debtors
+        List<DebtsReportResponse.CustomerDebtSummary> topDebtors = getTopDebtors(activeDebts, overdueDebts);
+
+        // Debt aging
+        List<DebtsReportResponse.DebtAging> debtAging = getDebtAging(activeDebts, today);
+
+        // Recent payments
+        List<DebtsReportResponse.PaymentSummary> recentPayments = getPaymentSummary(payments, startDate, endDate);
+
+        // Overdue debts list
+        List<DebtsReportResponse.OverdueDebt> overdueDebtsList = overdueDebts.stream()
+                .sorted((a, b) -> Long.compare(
+                        java.time.temporal.ChronoUnit.DAYS.between(b.getDueDate(), today),
+                        java.time.temporal.ChronoUnit.DAYS.between(a.getDueDate(), today)))
+                .limit(20)
+                .map(d -> DebtsReportResponse.OverdueDebt.builder()
+                        .debtId(d.getId())
+                        .customerId(d.getCustomer().getId())
+                        .customerName(d.getCustomer().getFullName())
+                        .customerPhone(d.getCustomer().getPhone())
+                        .remainingAmount(d.getRemainingAmount())
+                        .dueDate(d.getDueDate().toString())
+                        .daysOverdue((int) java.time.temporal.ChronoUnit.DAYS.between(d.getDueDate(), today))
+                        .build())
+                .collect(Collectors.toList());
+
+        return DebtsReportResponse.builder()
+                .totalActiveDebt(totalActiveDebt)
+                .totalPaidDebt(totalPaidDebt)
+                .totalOverdueDebt(totalOverdueDebt)
+                .activeDebtsCount(activeDebts.size())
+                .paidDebtsCount(paidDebts.size())
+                .overdueDebtsCount(overdueDebts.size())
+                .totalPaymentsReceived(totalPaymentsReceived)
+                .paymentsCount(payments.size())
+                .averageDebtAmount(averageDebtAmount)
+                .topDebtors(topDebtors)
+                .debtAging(debtAging)
+                .recentPayments(recentPayments)
+                .overdueDebts(overdueDebtsList)
+                .build();
+    }
+
+    private List<DebtsReportResponse.CustomerDebtSummary> getTopDebtors(List<Debt> activeDebts, List<Debt> overdueDebts) {
+        Map<Long, DebtorAggregator> debtorMap = new HashMap<>();
+        Set<Long> overdueCustomerIds = overdueDebts.stream()
+                .map(d -> d.getCustomer().getId())
+                .collect(Collectors.toSet());
+
+        for (Debt debt : activeDebts) {
+            Long customerId = debt.getCustomer().getId();
+            DebtorAggregator agg = debtorMap.computeIfAbsent(customerId, k -> {
+                DebtorAggregator a = new DebtorAggregator();
+                a.customerId = customerId;
+                a.customerName = debt.getCustomer().getFullName();
+                a.customerPhone = debt.getCustomer().getPhone();
+                return a;
+            });
+            agg.totalDebt = agg.totalDebt.add(debt.getRemainingAmount());
+            agg.debtsCount++;
+            if (overdueCustomerIds.contains(customerId) && debt.getDueDate() != null &&
+                debt.getDueDate().isBefore(LocalDate.now())) {
+                agg.overdueCount++;
+            }
+        }
+
+        return debtorMap.values().stream()
+                .sorted((a, b) -> b.totalDebt.compareTo(a.totalDebt))
+                .limit(10)
+                .map(a -> DebtsReportResponse.CustomerDebtSummary.builder()
+                        .customerId(a.customerId)
+                        .customerName(a.customerName)
+                        .customerPhone(a.customerPhone)
+                        .totalDebt(a.totalDebt)
+                        .debtsCount(a.debtsCount)
+                        .overdueCount(a.overdueCount)
+                        .build())
+                .collect(Collectors.toList());
+    }
+
+    private List<DebtsReportResponse.DebtAging> getDebtAging(List<Debt> activeDebts, LocalDate today) {
+        long current = 0, days30 = 0, days60 = 0, days90 = 0, over90 = 0;
+        BigDecimal currentAmt = BigDecimal.ZERO, days30Amt = BigDecimal.ZERO,
+                   days60Amt = BigDecimal.ZERO, days90Amt = BigDecimal.ZERO, over90Amt = BigDecimal.ZERO;
+
+        for (Debt debt : activeDebts) {
+            if (debt.getDueDate() == null) {
+                current++;
+                currentAmt = currentAmt.add(debt.getRemainingAmount());
+                continue;
+            }
+
+            long daysOverdue = java.time.temporal.ChronoUnit.DAYS.between(debt.getDueDate(), today);
+            if (daysOverdue <= 0) {
+                current++;
+                currentAmt = currentAmt.add(debt.getRemainingAmount());
+            } else if (daysOverdue <= 30) {
+                days30++;
+                days30Amt = days30Amt.add(debt.getRemainingAmount());
+            } else if (daysOverdue <= 60) {
+                days60++;
+                days60Amt = days60Amt.add(debt.getRemainingAmount());
+            } else if (daysOverdue <= 90) {
+                days90++;
+                days90Amt = days90Amt.add(debt.getRemainingAmount());
+            } else {
+                over90++;
+                over90Amt = over90Amt.add(debt.getRemainingAmount());
+            }
+        }
+
+        List<DebtsReportResponse.DebtAging> aging = new ArrayList<>();
+        aging.add(DebtsReportResponse.DebtAging.builder().period("Joriy").count(current).amount(currentAmt).build());
+        aging.add(DebtsReportResponse.DebtAging.builder().period("1-30 kun").count(days30).amount(days30Amt).build());
+        aging.add(DebtsReportResponse.DebtAging.builder().period("31-60 kun").count(days60).amount(days60Amt).build());
+        aging.add(DebtsReportResponse.DebtAging.builder().period("61-90 kun").count(days90).amount(days90Amt).build());
+        aging.add(DebtsReportResponse.DebtAging.builder().period("90+ kun").count(over90).amount(over90Amt).build());
+        return aging;
+    }
+
+    private List<DebtsReportResponse.PaymentSummary> getPaymentSummary(
+            List<Payment> payments, LocalDate startDate, LocalDate endDate) {
+
+        Map<String, PaymentAggregator> paymentMap = new LinkedHashMap<>();
+        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd");
+
+        for (LocalDate date = startDate; !date.isAfter(endDate); date = date.plusDays(1)) {
+            paymentMap.put(date.format(formatter), new PaymentAggregator());
+        }
+
+        for (Payment payment : payments) {
+            String dateKey = payment.getPaymentDate().toLocalDate().format(formatter);
+            PaymentAggregator agg = paymentMap.get(dateKey);
+            if (agg != null) {
+                agg.count++;
+                agg.amount = agg.amount.add(payment.getAmount());
+            }
+        }
+
+        return paymentMap.entrySet().stream()
+                .map(e -> DebtsReportResponse.PaymentSummary.builder()
+                        .date(e.getKey())
+                        .count(e.getValue().count)
+                        .amount(e.getValue().amount)
+                        .build())
+                .collect(Collectors.toList());
+    }
+
+    private static class DebtorAggregator {
+        Long customerId;
+        String customerName;
+        String customerPhone;
+        BigDecimal totalDebt = BigDecimal.ZERO;
+        int debtsCount = 0;
+        int overdueCount = 0;
+    }
+
+    private static class PaymentAggregator {
+        long count = 0;
+        BigDecimal amount = BigDecimal.ZERO;
     }
 
     private List<WarehouseReportResponse.StockByCategory> getStockByCategory(List<Product> products) {

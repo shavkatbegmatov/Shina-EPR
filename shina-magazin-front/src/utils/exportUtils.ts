@@ -1,7 +1,7 @@
 import * as XLSX from 'xlsx';
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
-import type { SalesReport, WarehouseReport } from '../types';
+import type { SalesReport, WarehouseReport, DebtsReport } from '../types';
 
 const formatCurrency = (amount: number): string => {
   return new Intl.NumberFormat('uz-UZ').format(amount) + " so'm";
@@ -409,5 +409,204 @@ export function exportWarehouseReportToPDF(report: WarehouseReport, startDate: s
 
   // Download
   const filename = `ombor_hisoboti_${startDate}_${endDate}.pdf`;
+  doc.save(filename);
+}
+
+// Debts Report Export Functions
+export function exportDebtsReportToExcel(report: DebtsReport, startDate: string, endDate: string): void {
+  const workbook = XLSX.utils.book_new();
+
+  // Summary sheet
+  const summaryData = [
+    ['Qarzlar Hisoboti'],
+    [`Davr: ${formatDate(startDate)} - ${formatDate(endDate)}`],
+    [],
+    ['Umumiy ko\'rsatkichlar'],
+    ['Faol qarzlar', formatCurrency(report.totalActiveDebt)],
+    ['To\'langan qarzlar', formatCurrency(report.totalPaidDebt)],
+    ['Muddati o\'tgan', formatCurrency(report.totalOverdueDebt)],
+    [],
+    ['Statistika'],
+    ['Faol qarzlar soni', report.activeDebtsCount],
+    ['To\'langan qarzlar soni', report.paidDebtsCount],
+    ['Muddati o\'tgan soni', report.overdueDebtsCount],
+    ['Qabul qilingan to\'lovlar', formatCurrency(report.totalPaymentsReceived)],
+    ['To\'lovlar soni', report.paymentsCount],
+    ['O\'rtacha qarz miqdori', formatCurrency(report.averageDebtAmount)],
+  ];
+  const summarySheet = XLSX.utils.aoa_to_sheet(summaryData);
+  summarySheet['!cols'] = [{ wch: 25 }, { wch: 25 }];
+  XLSX.utils.book_append_sheet(workbook, summarySheet, 'Umumiy');
+
+  // Top debtors
+  const debtorHeaders = ['#', 'Mijoz', 'Telefon', 'Jami qarz', 'Qarzlar soni', 'Muddati o\'tgan'];
+  const debtorRows = report.topDebtors.map((debtor, index) => [
+    index + 1,
+    debtor.customerName,
+    debtor.customerPhone,
+    formatCurrency(debtor.totalDebt),
+    debtor.debtsCount,
+    debtor.overdueCount,
+  ]);
+  const debtorSheet = XLSX.utils.aoa_to_sheet([debtorHeaders, ...debtorRows]);
+  debtorSheet['!cols'] = [{ wch: 5 }, { wch: 25 }, { wch: 15 }, { wch: 20 }, { wch: 12 }, { wch: 15 }];
+  XLSX.utils.book_append_sheet(workbook, debtorSheet, 'Top qarzdorlar');
+
+  // Debt aging
+  const agingHeaders = ['Davr', 'Soni', 'Miqdori'];
+  const agingRows = report.debtAging.map(aging => [
+    aging.period,
+    aging.count,
+    formatCurrency(aging.amount),
+  ]);
+  const agingSheet = XLSX.utils.aoa_to_sheet([agingHeaders, ...agingRows]);
+  agingSheet['!cols'] = [{ wch: 20 }, { wch: 10 }, { wch: 20 }];
+  XLSX.utils.book_append_sheet(workbook, agingSheet, 'Qarz davrlari');
+
+  // Overdue debts
+  const overdueHeaders = ['Mijoz', 'Telefon', 'Qoldiq', 'Muddat', 'O\'tgan kunlar'];
+  const overdueRows = report.overdueDebts.map(debt => [
+    debt.customerName,
+    debt.customerPhone,
+    formatCurrency(debt.remainingAmount),
+    formatDate(debt.dueDate),
+    debt.daysOverdue,
+  ]);
+  const overdueSheet = XLSX.utils.aoa_to_sheet([overdueHeaders, ...overdueRows]);
+  overdueSheet['!cols'] = [{ wch: 25 }, { wch: 15 }, { wch: 20 }, { wch: 15 }, { wch: 12 }];
+  XLSX.utils.book_append_sheet(workbook, overdueSheet, 'Muddati o\'tgan');
+
+  // Recent payments
+  const paymentHeaders = ['Sana', 'Soni', 'Miqdori'];
+  const paymentRows = report.recentPayments.map(payment => [
+    formatDate(payment.date),
+    payment.count,
+    formatCurrency(payment.amount),
+  ]);
+  const paymentSheet = XLSX.utils.aoa_to_sheet([paymentHeaders, ...paymentRows]);
+  paymentSheet['!cols'] = [{ wch: 15 }, { wch: 10 }, { wch: 20 }];
+  XLSX.utils.book_append_sheet(workbook, paymentSheet, 'So\'nggi to\'lovlar');
+
+  // Download
+  const filename = `qarzlar_hisoboti_${startDate}_${endDate}.xlsx`;
+  XLSX.writeFile(workbook, filename);
+}
+
+export function exportDebtsReportToPDF(report: DebtsReport, startDate: string, endDate: string): void {
+  const doc = new jsPDF();
+  let yPos = 20;
+
+  // Title
+  doc.setFontSize(18);
+  doc.text('Qarzlar Hisoboti', 105, yPos, { align: 'center' });
+  yPos += 10;
+
+  doc.setFontSize(12);
+  doc.text(`Davr: ${formatDate(startDate)} - ${formatDate(endDate)}`, 105, yPos, { align: 'center' });
+  yPos += 15;
+
+  // Summary section
+  doc.setFontSize(14);
+  doc.text('Qarzlar holati', 14, yPos);
+  yPos += 8;
+
+  autoTable(doc, {
+    startY: yPos,
+    head: [['Ko\'rsatkich', 'Qiymat']],
+    body: [
+      ['Faol qarzlar', formatCurrency(report.totalActiveDebt)],
+      ['To\'langan qarzlar', formatCurrency(report.totalPaidDebt)],
+      ['Muddati o\'tgan', formatCurrency(report.totalOverdueDebt)],
+      ['Faol qarzlar soni', report.activeDebtsCount.toString()],
+      ['Muddati o\'tgan soni', report.overdueDebtsCount.toString()],
+    ],
+    theme: 'striped',
+    headStyles: { fillColor: [239, 68, 68] },
+    margin: { left: 14 },
+    tableWidth: 90,
+  });
+
+  yPos = (doc as jsPDF & { lastAutoTable: { finalY: number } }).lastAutoTable.finalY + 10;
+
+  // Payments summary
+  autoTable(doc, {
+    startY: yPos,
+    head: [['To\'lovlar', 'Qiymat']],
+    body: [
+      ['Qabul qilingan', formatCurrency(report.totalPaymentsReceived)],
+      ['To\'lovlar soni', report.paymentsCount.toString()],
+      ['O\'rtacha qarz', formatCurrency(report.averageDebtAmount)],
+    ],
+    theme: 'striped',
+    headStyles: { fillColor: [34, 197, 94] },
+    margin: { left: 110 },
+    tableWidth: 85,
+  });
+
+  // Debt aging
+  yPos = (doc as jsPDF & { lastAutoTable: { finalY: number } }).lastAutoTable.finalY + 15;
+
+  doc.setFontSize(14);
+  doc.text('Qarz davrlari', 14, yPos);
+  yPos += 8;
+
+  autoTable(doc, {
+    startY: yPos,
+    head: [['Davr', 'Soni', 'Miqdori']],
+    body: report.debtAging.map(aging => [
+      aging.period,
+      aging.count.toString(),
+      formatCurrency(aging.amount),
+    ]),
+    theme: 'striped',
+    headStyles: { fillColor: [245, 158, 11] },
+  });
+
+  // Top debtors page
+  doc.addPage();
+  yPos = 20;
+
+  doc.setFontSize(14);
+  doc.text('Top qarzdorlar', 14, yPos);
+  yPos += 8;
+
+  autoTable(doc, {
+    startY: yPos,
+    head: [['#', 'Mijoz', 'Telefon', 'Jami qarz', 'Soni']],
+    body: report.topDebtors.map((debtor, index) => [
+      (index + 1).toString(),
+      debtor.customerName,
+      debtor.customerPhone,
+      formatCurrency(debtor.totalDebt),
+      debtor.debtsCount.toString(),
+    ]),
+    theme: 'striped',
+    headStyles: { fillColor: [239, 68, 68] },
+  });
+
+  // Overdue debts
+  if (report.overdueDebts.length > 0) {
+    yPos = (doc as jsPDF & { lastAutoTable: { finalY: number } }).lastAutoTable.finalY + 15;
+
+    doc.setFontSize(14);
+    doc.text('Muddati o\'tgan qarzlar', 14, yPos);
+    yPos += 8;
+
+    autoTable(doc, {
+      startY: yPos,
+      head: [['Mijoz', 'Telefon', 'Qoldiq', 'O\'tgan kunlar']],
+      body: report.overdueDebts.map(debt => [
+        debt.customerName,
+        debt.customerPhone,
+        formatCurrency(debt.remainingAmount),
+        debt.daysOverdue.toString(),
+      ]),
+      theme: 'striped',
+      headStyles: { fillColor: [220, 38, 38] },
+    });
+  }
+
+  // Download
+  const filename = `qarzlar_hisoboti_${startDate}_${endDate}.pdf`;
   doc.save(filename);
 }

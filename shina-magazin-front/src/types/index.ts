@@ -375,6 +375,54 @@ export interface MovementSummary {
   outQuantity: number;
 }
 
+// Debts Report Types
+export interface DebtsReport {
+  totalActiveDebt: number;
+  totalPaidDebt: number;
+  totalOverdueDebt: number;
+  activeDebtsCount: number;
+  paidDebtsCount: number;
+  overdueDebtsCount: number;
+  totalPaymentsReceived: number;
+  paymentsCount: number;
+  averageDebtAmount: number;
+  topDebtors: CustomerDebtSummary[];
+  debtAging: DebtAging[];
+  recentPayments: PaymentSummaryItem[];
+  overdueDebts: OverdueDebtItem[];
+}
+
+export interface CustomerDebtSummary {
+  customerId: number;
+  customerName: string;
+  customerPhone: string;
+  totalDebt: number;
+  debtsCount: number;
+  overdueCount: number;
+}
+
+export interface DebtAging {
+  period: string;
+  count: number;
+  amount: number;
+}
+
+export interface PaymentSummaryItem {
+  date: string;
+  count: number;
+  amount: number;
+}
+
+export interface OverdueDebtItem {
+  debtId: number;
+  customerId: number;
+  customerName: string;
+  customerPhone: string;
+  remainingAmount: number;
+  dueDate: string;
+  daysOverdue: number;
+}
+
 // Supplier Types
 export interface Supplier {
   id: number;

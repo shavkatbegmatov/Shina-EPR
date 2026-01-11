@@ -17,6 +17,9 @@ import {
   ArrowUpFromLine,
   AlertTriangle,
   Tag,
+  Receipt,
+  Clock,
+  UserX,
 } from 'lucide-react';
 import clsx from 'clsx';
 import { reportsApi } from '../../api/reports.api';
@@ -26,16 +29,19 @@ import {
   exportReportToPDF,
   exportWarehouseReportToExcel,
   exportWarehouseReportToPDF,
+  exportDebtsReportToExcel,
+  exportDebtsReportToPDF,
 } from '../../utils/exportUtils';
-import type { SalesReport, WarehouseReport } from '../../types';
+import type { SalesReport, WarehouseReport, DebtsReport } from '../../types';
 
 type DateRange = 'today' | 'week' | 'month' | 'quarter' | 'year' | 'custom';
-type ReportTab = 'sales' | 'warehouse';
+type ReportTab = 'sales' | 'warehouse' | 'debts';
 
 export function ReportsPage() {
   const [activeTab, setActiveTab] = useState<ReportTab>('sales');
   const [salesReport, setSalesReport] = useState<SalesReport | null>(null);
   const [warehouseReport, setWarehouseReport] = useState<WarehouseReport | null>(null);
+  const [debtsReport, setDebtsReport] = useState<DebtsReport | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [dateRange, setDateRange] = useState<DateRange>('month');
@@ -87,12 +93,14 @@ export function ReportsPage() {
         setLoading(false);
         return;
       }
-      const [sales, warehouse] = await Promise.all([
+      const [sales, warehouse, debts] = await Promise.all([
         reportsApi.getSalesReport(start, end),
         reportsApi.getWarehouseReport(start, end),
+        reportsApi.getDebtsReport(start, end),
       ]);
       setSalesReport(sales);
       setWarehouseReport(warehouse);
+      setDebtsReport(debts);
     } catch (err) {
       console.error('Failed to load reports:', err);
       setError('Hisobotlarni yuklashda xatolik yuz berdi');
@@ -122,6 +130,8 @@ export function ReportsPage() {
       exportReportToExcel(salesReport, start, end);
     } else if (activeTab === 'warehouse' && warehouseReport) {
       exportWarehouseReportToExcel(warehouseReport, start, end);
+    } else if (activeTab === 'debts' && debtsReport) {
+      exportDebtsReportToExcel(debtsReport, start, end);
     }
   };
 
@@ -131,6 +141,8 @@ export function ReportsPage() {
       exportReportToPDF(salesReport, start, end);
     } else if (activeTab === 'warehouse' && warehouseReport) {
       exportWarehouseReportToPDF(warehouseReport, start, end);
+    } else if (activeTab === 'debts' && debtsReport) {
+      exportDebtsReportToPDF(debtsReport, start, end);
     }
   };
 
@@ -161,7 +173,7 @@ export function ReportsPage() {
       <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
         <div>
           <h1 className="section-title">Hisobotlar</h1>
-          <p className="section-subtitle">Sotuvlar va ombor hisobotlari</p>
+          <p className="section-subtitle">Sotuvlar, ombor va qarzlar hisobotlari</p>
         </div>
 
         <div className="flex flex-wrap items-center gap-3">
@@ -236,6 +248,13 @@ export function ReportsPage() {
           <Warehouse className="h-4 w-4" />
           Ombor
         </button>
+        <button
+          className={clsx('tab gap-2', activeTab === 'debts' && 'tab-active')}
+          onClick={() => setActiveTab('debts')}
+        >
+          <Receipt className="h-4 w-4" />
+          Qarzlar
+        </button>
       </div>
 
       {error && (
@@ -252,6 +271,9 @@ export function ReportsPage() {
       {activeTab === 'warehouse' && warehouseReport && (
         <WarehouseReportView report={warehouseReport} />
       )}
+
+      {/* Debts Report Tab */}
+      {activeTab === 'debts' && debtsReport && <DebtsReportView report={debtsReport} />}
     </div>
   );
 }
@@ -589,6 +611,194 @@ function WarehouseReportView({ report }: { report: WarehouseReport }) {
           ) : (
             <p className="text-base-content/60">Ma'lumot mavjud emas</p>
           )}
+        </div>
+      </div>
+    </>
+  );
+}
+
+// Debts Report View
+function DebtsReportView({ report }: { report: DebtsReport }) {
+  return (
+    <>
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
+        <StatCard
+          title="Faol qarzlar"
+          value={formatCurrency(report.totalActiveDebt)}
+          icon={Receipt}
+          color="error"
+          subtext={`${report.activeDebtsCount} ta qarz`}
+        />
+        <StatCard
+          title="To'langan"
+          value={formatCurrency(report.totalPaidDebt)}
+          icon={Banknote}
+          color="success"
+          subtext={`${report.paidDebtsCount} ta qarz`}
+        />
+        <StatCard
+          title="Muddati o'tgan"
+          value={formatCurrency(report.totalOverdueDebt)}
+          icon={Clock}
+          color="warning"
+          subtext={`${report.overdueDebtsCount} ta qarz`}
+        />
+        <StatCard
+          title="O'rtacha qarz"
+          value={formatCurrency(report.averageDebtAmount)}
+          icon={TrendingUp}
+          color="info"
+          subtext={`To'lovlar: ${report.paymentsCount} ta`}
+        />
+      </div>
+
+      <div className="surface-card p-6">
+        <h2 className="mb-4 text-lg font-semibold">Qarz davrlari (Aging)</h2>
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-5">
+          {report.debtAging.map((aging) => (
+            <div key={aging.period} className="rounded-xl bg-base-200/50 p-4 text-center">
+              <p className="text-sm text-base-content/60">{aging.period}</p>
+              <p className="mt-1 text-xl font-bold">{formatNumber(aging.count)}</p>
+              <p className="text-sm text-base-content/70">{formatCurrency(aging.amount)}</p>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
+        <div className="surface-card p-6">
+          <h2 className="mb-4 flex items-center gap-2 text-lg font-semibold">
+            <UserX className="h-5 w-5 text-error" />
+            Top qarzdorlar
+          </h2>
+          {report.topDebtors.length > 0 ? (
+            <div className="overflow-x-auto">
+              <table className="table table-sm">
+                <thead>
+                  <tr>
+                    <th>#</th>
+                    <th>Mijoz</th>
+                    <th className="text-right">Jami qarz</th>
+                    <th className="text-right">Soni</th>
+                    <th className="text-right">Kechikkan</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {report.topDebtors.map((debtor, index) => (
+                    <tr key={debtor.customerId}>
+                      <td>{index + 1}</td>
+                      <td>
+                        <span className="font-medium">{debtor.customerName}</span>
+                        <span className="ml-2 text-xs text-base-content/60">{debtor.customerPhone}</span>
+                      </td>
+                      <td className="text-right font-semibold text-error">
+                        {formatCurrency(debtor.totalDebt)}
+                      </td>
+                      <td className="text-right">{debtor.debtsCount}</td>
+                      <td className="text-right">
+                        {debtor.overdueCount > 0 && (
+                          <span className="badge badge-warning badge-sm">{debtor.overdueCount}</span>
+                        )}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          ) : (
+            <p className="text-success">Qarzdorlar yo'q</p>
+          )}
+        </div>
+
+        <div className="surface-card p-6">
+          <h2 className="mb-4 flex items-center gap-2 text-lg font-semibold">
+            <Clock className="h-5 w-5 text-warning" />
+            Muddati o'tgan qarzlar
+          </h2>
+          {report.overdueDebts.length > 0 ? (
+            <div className="overflow-x-auto">
+              <table className="table table-sm">
+                <thead>
+                  <tr>
+                    <th>Mijoz</th>
+                    <th className="text-right">Qoldiq</th>
+                    <th className="text-right">O'tgan kunlar</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {report.overdueDebts.slice(0, 10).map((debt) => (
+                    <tr key={debt.debtId} className="text-error">
+                      <td>
+                        <span className="font-medium">{debt.customerName}</span>
+                        <span className="ml-2 text-xs text-base-content/60">{debt.customerPhone}</span>
+                      </td>
+                      <td className="text-right font-semibold">{formatCurrency(debt.remainingAmount)}</td>
+                      <td className="text-right">
+                        <span className="badge badge-error badge-sm">{debt.daysOverdue} kun</span>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          ) : (
+            <p className="text-success">Muddati o'tgan qarzlar yo'q</p>
+          )}
+        </div>
+      </div>
+
+      <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
+        <div className="surface-card p-6">
+          <h2 className="mb-4 flex items-center gap-2 text-lg font-semibold">
+            <Banknote className="h-5 w-5 text-success" />
+            So'nggi to'lovlar
+          </h2>
+          {report.recentPayments.length > 0 ? (
+            <div className="overflow-x-auto">
+              <table className="table table-sm">
+                <thead>
+                  <tr>
+                    <th>Sana</th>
+                    <th className="text-right">Soni</th>
+                    <th className="text-right">Miqdori</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {report.recentPayments.slice(0, 10).map((payment) => (
+                    <tr key={payment.date}>
+                      <td>{formatDate(payment.date)}</td>
+                      <td className="text-right">{payment.count}</td>
+                      <td className="text-right text-success">{formatCurrency(payment.amount)}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          ) : (
+            <p className="text-base-content/60">To'lovlar mavjud emas</p>
+          )}
+        </div>
+
+        <div className="surface-card p-6">
+          <h2 className="mb-4 text-lg font-semibold">Qarzlar statistikasi</h2>
+          <div className="space-y-4">
+            <div className="flex items-center justify-between rounded-lg bg-base-200/50 p-4">
+              <span className="text-base-content/70">Qabul qilingan to'lovlar</span>
+              <span className="text-xl font-bold text-success">
+                {formatCurrency(report.totalPaymentsReceived)}
+              </span>
+            </div>
+            <div className="flex items-center justify-between rounded-lg bg-base-200/50 p-4">
+              <span className="text-base-content/70">To'lovlar soni</span>
+              <span className="text-xl font-bold">{formatNumber(report.paymentsCount)}</span>
+            </div>
+            <div className="flex items-center justify-between rounded-lg bg-base-200/50 p-4">
+              <span className="text-base-content/70">Faol + Muddati o'tgan</span>
+              <span className="text-xl font-bold text-error">
+                {formatCurrency(report.totalActiveDebt + report.totalOverdueDebt)}
+              </span>
+            </div>
+          </div>
         </div>
       </div>
     </>
