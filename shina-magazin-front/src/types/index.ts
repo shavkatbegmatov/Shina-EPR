@@ -285,6 +285,45 @@ export interface WarehouseStats {
   todayOutMovements: number;
 }
 
+// Report Types
+export interface SalesReport {
+  totalRevenue: number;
+  totalProfit: number;
+  totalSalesCount: number;
+  completedSalesCount: number;
+  cancelledSalesCount: number;
+  averageSaleAmount: number;
+  cashTotal: number;
+  cardTotal: number;
+  transferTotal: number;
+  debtTotal: number;
+  dailyData: DailySalesData[];
+  topProducts: TopSellingProduct[];
+  topCustomers: TopCustomer[];
+}
+
+export interface DailySalesData {
+  date: string;
+  revenue: number;
+  salesCount: number;
+}
+
+export interface TopSellingProduct {
+  productId: number;
+  productName: string;
+  productSku: string;
+  quantitySold: number;
+  totalRevenue: number;
+}
+
+export interface TopCustomer {
+  customerId: number;
+  customerName: string;
+  customerPhone: string;
+  purchaseCount: number;
+  totalSpent: number;
+}
+
 // Supplier Types
 export interface Supplier {
   id: number;

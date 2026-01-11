@@ -1,6 +1,5 @@
 import { createBrowserRouter, Navigate } from 'react-router-dom';
 import { MainLayout } from '../components/layout/MainLayout';
-import { PlaceholderPage } from '../components/common/PlaceholderPage';
 import { LoginPage } from '../pages/auth/LoginPage';
 import { RegisterPage } from '../pages/auth/RegisterPage';
 import { DashboardPage } from '../pages/dashboard/DashboardPage';
@@ -13,6 +12,7 @@ import { WarehousePage } from '../pages/warehouse/WarehousePage';
 import { SuppliersPage } from '../pages/suppliers/SuppliersPage';
 import { SettingsPage } from '../pages/settings/SettingsPage';
 import { NotificationsPage } from '../pages/notifications/NotificationsPage';
+import { ReportsPage } from '../pages/reports/ReportsPage';
 
 // Portal imports
 import PortalLayout from '../portal/components/layout/PortalLayout';
@@ -81,12 +81,7 @@ export const router = createBrowserRouter([
       },
       {
         path: 'reports',
-        element: (
-          <PlaceholderPage
-            title="Hisobotlar"
-            description="Analitika, eksport va vizual hisobotlar."
-          />
-        ),
+        element: <ReportsPage />,
         handle: { title: 'Hisobotlar' },
       },
       {

@@ -1,0 +1,525 @@
+import { useEffect, useState } from 'react';
+import {
+  Calendar,
+  TrendingUp,
+  ShoppingCart,
+  Users,
+  Banknote,
+  CreditCard,
+  Building2,
+  AlertCircle,
+  Package,
+  RefreshCw,
+  FileDown,
+  FileSpreadsheet,
+} from 'lucide-react';
+import clsx from 'clsx';
+import { reportsApi } from '../../api/reports.api';
+import { formatCurrency, formatNumber } from '../../config/constants';
+import { exportReportToExcel, exportReportToPDF } from '../../utils/exportUtils';
+import type { SalesReport } from '../../types';
+
+type DateRange = 'today' | 'week' | 'month' | 'quarter' | 'year' | 'custom';
+
+export function ReportsPage() {
+  const [report, setReport] = useState<SalesReport | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [dateRange, setDateRange] = useState<DateRange>('month');
+  const [customStart, setCustomStart] = useState('');
+  const [customEnd, setCustomEnd] = useState('');
+
+  const getDateRange = (range: DateRange): { start: string; end: string } => {
+    const today = new Date();
+    const end = today.toISOString().split('T')[0];
+    let start: Date;
+
+    switch (range) {
+      case 'today':
+        start = today;
+        break;
+      case 'week':
+        start = new Date(today);
+        start.setDate(start.getDate() - 7);
+        break;
+      case 'month':
+        start = new Date(today);
+        start.setMonth(start.getMonth() - 1);
+        break;
+      case 'quarter':
+        start = new Date(today);
+        start.setMonth(start.getMonth() - 3);
+        break;
+      case 'year':
+        start = new Date(today);
+        start.setFullYear(start.getFullYear() - 1);
+        break;
+      case 'custom':
+        return { start: customStart, end: customEnd };
+      default:
+        start = new Date(today);
+        start.setMonth(start.getMonth() - 1);
+    }
+
+    return { start: start.toISOString().split('T')[0], end };
+  };
+
+  const loadReport = async () => {
+    setLoading(true);
+    setError(null);
+    try {
+      const { start, end } = getDateRange(dateRange);
+      if (!start || !end) {
+        setError('Iltimos, sana oralig\'ini tanlang');
+        setLoading(false);
+        return;
+      }
+      const data = await reportsApi.getSalesReport(start, end);
+      setReport(data);
+    } catch (err) {
+      console.error('Failed to load report:', err);
+      setError('Hisobotni yuklashda xatolik yuz berdi');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    if (dateRange !== 'custom' || (customStart && customEnd)) {
+      loadReport();
+    }
+  }, [dateRange, customStart, customEnd]);
+
+  const dateRangeOptions: { value: DateRange; label: string }[] = [
+    { value: 'today', label: 'Bugun' },
+    { value: 'week', label: 'Hafta' },
+    { value: 'month', label: 'Oy' },
+    { value: 'quarter', label: 'Chorak' },
+    { value: 'year', label: 'Yil' },
+    { value: 'custom', label: 'Maxsus' },
+  ];
+
+  if (loading) {
+    return (
+      <div className="space-y-6">
+        <div className="flex items-center justify-between">
+          <div>
+            <div className="skeleton h-6 w-40" />
+            <div className="skeleton mt-2 h-4 w-52" />
+          </div>
+        </div>
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
+          {Array.from({ length: 4 }).map((_, i) => (
+            <div key={i} className="surface-card p-4">
+              <div className="skeleton h-4 w-24" />
+              <div className="skeleton mt-3 h-8 w-32" />
+            </div>
+          ))}
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="space-y-6">
+      {/* Header */}
+      <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+        <div>
+          <h1 className="section-title">Hisobotlar</h1>
+          <p className="section-subtitle">Sotuvlar va moliyaviy hisobotlar</p>
+        </div>
+
+        <div className="flex flex-wrap items-center gap-3">
+          {/* Date range selector */}
+          <div className="flex items-center gap-2">
+            <Calendar className="h-4 w-4 text-base-content/60" />
+            <select
+              className="select select-bordered select-sm"
+              value={dateRange}
+              onChange={(e) => setDateRange(e.target.value as DateRange)}
+            >
+              {dateRangeOptions.map((opt) => (
+                <option key={opt.value} value={opt.value}>
+                  {opt.label}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          {/* Custom date range */}
+          {dateRange === 'custom' && (
+            <div className="flex items-center gap-2">
+              <input
+                type="date"
+                className="input input-bordered input-sm"
+                value={customStart}
+                onChange={(e) => setCustomStart(e.target.value)}
+              />
+              <span>-</span>
+              <input
+                type="date"
+                className="input input-bordered input-sm"
+                value={customEnd}
+                onChange={(e) => setCustomEnd(e.target.value)}
+              />
+            </div>
+          )}
+
+          <button
+            className="btn btn-outline btn-sm"
+            onClick={loadReport}
+            disabled={loading}
+          >
+            <RefreshCw className={clsx('h-4 w-4', loading && 'animate-spin')} />
+            Yangilash
+          </button>
+
+          {/* Export buttons */}
+          {report && (
+            <div className="flex items-center gap-2">
+              <button
+                className="btn btn-success btn-sm"
+                onClick={() => {
+                  const { start, end } = getDateRange(dateRange);
+                  exportReportToExcel(report, start, end);
+                }}
+              >
+                <FileSpreadsheet className="h-4 w-4" />
+                Excel
+              </button>
+              <button
+                className="btn btn-error btn-sm"
+                onClick={() => {
+                  const { start, end } = getDateRange(dateRange);
+                  exportReportToPDF(report, start, end);
+                }}
+              >
+                <FileDown className="h-4 w-4" />
+                PDF
+              </button>
+            </div>
+          )}
+        </div>
+      </div>
+
+      {error && (
+        <div className="alert alert-error">
+          <AlertCircle className="h-5 w-5" />
+          <span>{error}</span>
+        </div>
+      )}
+
+      {report && (
+        <>
+          {/* Summary Stats */}
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
+            <StatCard
+              title="Jami daromad"
+              value={formatCurrency(report.totalRevenue)}
+              icon={TrendingUp}
+              color="success"
+            />
+            <StatCard
+              title="Jami foyda"
+              value={formatCurrency(report.totalProfit)}
+              icon={Banknote}
+              color="primary"
+            />
+            <StatCard
+              title="Sotuvlar soni"
+              value={formatNumber(report.completedSalesCount)}
+              icon={ShoppingCart}
+              color="info"
+              subtext={`Bekor qilingan: ${report.cancelledSalesCount}`}
+            />
+            <StatCard
+              title="O'rtacha sotuv"
+              value={formatCurrency(report.averageSaleAmount)}
+              icon={TrendingUp}
+              color="secondary"
+            />
+          </div>
+
+          {/* Payment Methods */}
+          <div className="surface-card p-6">
+            <h2 className="mb-4 text-lg font-semibold">To'lov usullari bo'yicha</h2>
+            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
+              <PaymentMethodCard
+                icon={Banknote}
+                label="Naqd"
+                amount={report.cashTotal}
+                color="bg-green-500"
+              />
+              <PaymentMethodCard
+                icon={CreditCard}
+                label="Karta"
+                amount={report.cardTotal}
+                color="bg-blue-500"
+              />
+              <PaymentMethodCard
+                icon={Building2}
+                label="O'tkazma"
+                amount={report.transferTotal}
+                color="bg-purple-500"
+              />
+              <PaymentMethodCard
+                icon={AlertCircle}
+                label="Qarz"
+                amount={report.debtTotal}
+                color="bg-orange-500"
+              />
+            </div>
+          </div>
+
+          {/* Charts Section */}
+          <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
+            {/* Daily Sales Chart */}
+            <div className="surface-card p-6">
+              <h2 className="mb-4 text-lg font-semibold">Kunlik sotuvlar</h2>
+              {report.dailyData.length > 0 ? (
+                <div className="space-y-2">
+                  <div className="overflow-x-auto">
+                    <table className="table table-sm">
+                      <thead>
+                        <tr>
+                          <th>Sana</th>
+                          <th className="text-right">Sotuvlar</th>
+                          <th className="text-right">Daromad</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {report.dailyData.slice(-10).map((day) => (
+                          <tr key={day.date}>
+                            <td>{formatDate(day.date)}</td>
+                            <td className="text-right">{day.salesCount}</td>
+                            <td className="text-right">{formatCurrency(day.revenue)}</td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                  {report.dailyData.length > 10 && (
+                    <p className="text-center text-sm text-base-content/60">
+                      Oxirgi 10 kun ko'rsatilmoqda
+                    </p>
+                  )}
+                </div>
+              ) : (
+                <p className="text-base-content/60">Ma'lumot mavjud emas</p>
+              )}
+            </div>
+
+            {/* Daily Chart Visual */}
+            <div className="surface-card p-6">
+              <h2 className="mb-4 text-lg font-semibold">Daromad grafigi</h2>
+              {report.dailyData.length > 0 ? (
+                <div className="h-64">
+                  <SimpleBarChart data={report.dailyData.slice(-14)} />
+                </div>
+              ) : (
+                <p className="text-base-content/60">Ma'lumot mavjud emas</p>
+              )}
+            </div>
+          </div>
+
+          {/* Top Products & Customers */}
+          <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
+            {/* Top Products */}
+            <div className="surface-card p-6">
+              <h2 className="mb-4 flex items-center gap-2 text-lg font-semibold">
+                <Package className="h-5 w-5" />
+                Top mahsulotlar
+              </h2>
+              {report.topProducts.length > 0 ? (
+                <div className="overflow-x-auto">
+                  <table className="table table-sm">
+                    <thead>
+                      <tr>
+                        <th>#</th>
+                        <th>Mahsulot</th>
+                        <th className="text-right">Sotildi</th>
+                        <th className="text-right">Daromad</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {report.topProducts.map((product, index) => (
+                        <tr key={product.productId}>
+                          <td>{index + 1}</td>
+                          <td>
+                            <div>
+                              <span className="font-medium">{product.productName}</span>
+                              <span className="ml-2 text-xs text-base-content/60">
+                                {product.productSku}
+                              </span>
+                            </div>
+                          </td>
+                          <td className="text-right">{product.quantitySold} dona</td>
+                          <td className="text-right">{formatCurrency(product.totalRevenue)}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              ) : (
+                <p className="text-base-content/60">Ma'lumot mavjud emas</p>
+              )}
+            </div>
+
+            {/* Top Customers */}
+            <div className="surface-card p-6">
+              <h2 className="mb-4 flex items-center gap-2 text-lg font-semibold">
+                <Users className="h-5 w-5" />
+                Top mijozlar
+              </h2>
+              {report.topCustomers.length > 0 ? (
+                <div className="overflow-x-auto">
+                  <table className="table table-sm">
+                    <thead>
+                      <tr>
+                        <th>#</th>
+                        <th>Mijoz</th>
+                        <th className="text-right">Xaridlar</th>
+                        <th className="text-right">Jami</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {report.topCustomers.map((customer, index) => (
+                        <tr key={customer.customerId}>
+                          <td>{index + 1}</td>
+                          <td>
+                            <div>
+                              <span className="font-medium">{customer.customerName}</span>
+                              <span className="ml-2 text-xs text-base-content/60">
+                                {customer.customerPhone}
+                              </span>
+                            </div>
+                          </td>
+                          <td className="text-right">{customer.purchaseCount}</td>
+                          <td className="text-right">{formatCurrency(customer.totalSpent)}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              ) : (
+                <p className="text-base-content/60">Ma'lumot mavjud emas</p>
+              )}
+            </div>
+          </div>
+        </>
+      )}
+    </div>
+  );
+}
+
+// Helper Components
+function StatCard({
+  title,
+  value,
+  icon: Icon,
+  color,
+  subtext,
+}: {
+  title: string;
+  value: string | number;
+  icon: React.ElementType;
+  color: string;
+  subtext?: string;
+}) {
+  const colorClasses: Record<string, string> = {
+    primary: 'bg-primary/10 text-primary',
+    success: 'bg-success/10 text-success',
+    info: 'bg-info/10 text-info',
+    secondary: 'bg-secondary/10 text-secondary',
+    warning: 'bg-warning/10 text-warning',
+    error: 'bg-error/10 text-error',
+  };
+
+  return (
+    <div className="surface-card p-4">
+      <div className="flex items-start justify-between">
+        <div>
+          <p className="text-sm text-base-content/60">{title}</p>
+          <p className="mt-2 text-2xl font-bold">{value}</p>
+          {subtext && <p className="mt-1 text-xs text-base-content/60">{subtext}</p>}
+        </div>
+        <div className={clsx('rounded-xl p-3', colorClasses[color])}>
+          <Icon className="h-5 w-5" />
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function PaymentMethodCard({
+  icon: Icon,
+  label,
+  amount,
+  color,
+}: {
+  icon: React.ElementType;
+  label: string;
+  amount: number;
+  color: string;
+}) {
+  return (
+    <div className="flex items-center gap-3 rounded-xl bg-base-200/50 p-4">
+      <div className={clsx('rounded-lg p-2 text-white', color)}>
+        <Icon className="h-5 w-5" />
+      </div>
+      <div>
+        <p className="text-sm text-base-content/60">{label}</p>
+        <p className="font-semibold">{formatCurrency(amount)}</p>
+      </div>
+    </div>
+  );
+}
+
+function SimpleBarChart({ data }: { data: { date: string; revenue: number }[] }) {
+  if (data.length === 0) return null;
+
+  const maxRevenue = Math.max(...data.map((d) => d.revenue));
+
+  return (
+    <div className="flex h-full items-end gap-1">
+      {data.map((day) => {
+        const height = maxRevenue > 0 ? (day.revenue / maxRevenue) * 100 : 0;
+        return (
+          <div
+            key={day.date}
+            className="group relative flex flex-1 flex-col items-center"
+          >
+            <div
+              className="w-full rounded-t bg-primary transition-all hover:bg-primary/80"
+              style={{ height: `${Math.max(height, 2)}%` }}
+            />
+            <div className="mt-1 text-[10px] text-base-content/60">
+              {formatShortDate(day.date)}
+            </div>
+            {/* Tooltip */}
+            <div className="absolute bottom-full mb-2 hidden rounded bg-base-300 px-2 py-1 text-xs shadow-lg group-hover:block">
+              {formatCurrency(day.revenue)}
+            </div>
+          </div>
+        );
+      })}
+    </div>
+  );
+}
+
+function formatDate(dateStr: string): string {
+  const date = new Date(dateStr);
+  return date.toLocaleDateString('uz-UZ', {
+    day: '2-digit',
+    month: '2-digit',
+    year: 'numeric',
+  });
+}
+
+function formatShortDate(dateStr: string): string {
+  const date = new Date(dateStr);
+  return date.toLocaleDateString('uz-UZ', {
+    day: '2-digit',
+    month: '2-digit',
+  });
+}
