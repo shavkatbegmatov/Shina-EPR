@@ -5,6 +5,7 @@ import { productsApi, brandsApi, categoriesApi } from '../../api/products.api';
 import { formatCurrency, SEASONS } from '../../config/constants';
 import { NumberInput } from '../../components/ui/NumberInput';
 import { DataTable, Column } from '../../components/ui/DataTable';
+import { ModalPortal } from '../../components/common/Modal';
 import type { Product, Brand, Category, Season, ProductRequest } from '../../types';
 
 const emptyFormData: ProductRequest = {
@@ -341,88 +342,89 @@ export function ProductsPage() {
       />
 
       {/* Product Detail Modal */}
-      {selectedProduct && (
-        <div className="modal modal-open">
-          <div className="modal-box max-w-3xl">
-            <div className="flex items-start justify-between gap-4">
-              <div>
-                <h3 className="text-xl font-semibold">{selectedProduct.name}</h3>
-                <p className="text-sm text-base-content/60">SKU: {selectedProduct.sku}</p>
-              </div>
-              <button className="btn btn-ghost btn-sm" onClick={() => setSelectedProduct(null)}>
-                <X className="h-4 w-4" />
-                Yopish
-              </button>
-            </div>
-
-            <div className="mt-6 grid gap-6 lg:grid-cols-[240px_1fr]">
-              <div className="surface-soft flex h-48 items-center justify-center rounded-xl">
-                {selectedProduct.imageUrl ? (
-                  <img src={selectedProduct.imageUrl} alt={selectedProduct.name} className="h-full w-full rounded-xl object-cover" />
-                ) : (
-                  <Package className="h-12 w-12 text-base-content/40" />
-                )}
-              </div>
-              <div className="space-y-4">
-                <div className="flex flex-wrap items-center gap-2 text-xs text-base-content/60">
-                  {selectedProduct.brandName && <span className="pill">{selectedProduct.brandName}</span>}
-                  {selectedProduct.categoryName && <span className="pill">{selectedProduct.categoryName}</span>}
-                  {selectedProduct.season && <span className="pill">{SEASONS[selectedProduct.season]?.label}</span>}
+      <ModalPortal isOpen={!!selectedProduct} onClose={() => setSelectedProduct(null)}>
+        {selectedProduct && (
+          <div className="w-full max-w-3xl bg-base-100 rounded-2xl shadow-2xl max-h-[90vh] overflow-y-auto">
+            <div className="p-4 sm:p-6">
+              <div className="flex items-start justify-between gap-4">
+                <div>
+                  <h3 className="text-xl font-semibold">{selectedProduct.name}</h3>
+                  <p className="text-sm text-base-content/60">SKU: {selectedProduct.sku}</p>
                 </div>
+                <button className="btn btn-ghost btn-sm" onClick={() => setSelectedProduct(null)}>
+                  <X className="h-4 w-4" />
+                  Yopish
+                </button>
+              </div>
 
-                <div className="grid grid-cols-2 gap-3 text-sm">
-                  <div className="surface-soft rounded-lg p-3">
-                    <p className="text-xs text-base-content/60">Narx</p>
-                    <p className="text-lg font-semibold text-primary">{formatCurrency(selectedProduct.sellingPrice)}</p>
+              <div className="mt-6 grid gap-6 lg:grid-cols-[240px_1fr]">
+                <div className="surface-soft flex h-48 items-center justify-center rounded-xl">
+                  {selectedProduct.imageUrl ? (
+                    <img src={selectedProduct.imageUrl} alt={selectedProduct.name} className="h-full w-full rounded-xl object-cover" />
+                  ) : (
+                    <Package className="h-12 w-12 text-base-content/40" />
+                  )}
+                </div>
+                <div className="space-y-4">
+                  <div className="flex flex-wrap items-center gap-2 text-xs text-base-content/60">
+                    {selectedProduct.brandName && <span className="pill">{selectedProduct.brandName}</span>}
+                    {selectedProduct.categoryName && <span className="pill">{selectedProduct.categoryName}</span>}
+                    {selectedProduct.season && <span className="pill">{SEASONS[selectedProduct.season]?.label}</span>}
                   </div>
-                  <div className="surface-soft rounded-lg p-3">
-                    <p className="text-xs text-base-content/60">Zaxira</p>
-                    <div className="flex items-center gap-2">
-                      <span className={clsx('badge badge-sm', selectedProduct.lowStock ? 'badge-error' : 'badge-success')}>
-                        {selectedProduct.quantity}
-                      </span>
-                      {selectedProduct.lowStock ? (
-                        <span className="flex items-center gap-1 text-xs text-error">
-                          <AlertTriangle className="h-4 w-4" />
-                          Kam zaxira
+
+                  <div className="grid grid-cols-2 gap-3 text-sm">
+                    <div className="surface-soft rounded-lg p-3">
+                      <p className="text-xs text-base-content/60">Narx</p>
+                      <p className="text-lg font-semibold text-primary">{formatCurrency(selectedProduct.sellingPrice)}</p>
+                    </div>
+                    <div className="surface-soft rounded-lg p-3">
+                      <p className="text-xs text-base-content/60">Zaxira</p>
+                      <div className="flex items-center gap-2">
+                        <span className={clsx('badge badge-sm', selectedProduct.lowStock ? 'badge-error' : 'badge-success')}>
+                          {selectedProduct.quantity}
                         </span>
-                      ) : (
-                        <span className="flex items-center gap-1 text-xs text-success">
-                          <BadgeCheck className="h-4 w-4" />
-                          Yetarli
-                        </span>
-                      )}
+                        {selectedProduct.lowStock ? (
+                          <span className="flex items-center gap-1 text-xs text-error">
+                            <AlertTriangle className="h-4 w-4" />
+                            Kam zaxira
+                          </span>
+                        ) : (
+                          <span className="flex items-center gap-1 text-xs text-success">
+                            <BadgeCheck className="h-4 w-4" />
+                            Yetarli
+                          </span>
+                        )}
+                      </div>
                     </div>
                   </div>
-                </div>
 
-                <div className="grid grid-cols-2 gap-3 text-sm text-base-content/70">
-                  <div>
-                    <p className="text-xs uppercase tracking-[0.2em] text-base-content/40">O'lcham</p>
-                    <p className="font-medium">{selectedProduct.sizeString || '—'}</p>
+                  <div className="grid grid-cols-2 gap-3 text-sm text-base-content/70">
+                    <div>
+                      <p className="text-xs uppercase tracking-[0.2em] text-base-content/40">O'lcham</p>
+                      <p className="font-medium">{selectedProduct.sizeString || '—'}</p>
+                    </div>
+                    <div>
+                      <p className="text-xs uppercase tracking-[0.2em] text-base-content/40">Tezlik / Yuk</p>
+                      <p className="font-medium">{selectedProduct.speedRating || '—'} / {selectedProduct.loadIndex || '—'}</p>
+                    </div>
                   </div>
-                  <div>
-                    <p className="text-xs uppercase tracking-[0.2em] text-base-content/40">Tezlik / Yuk</p>
-                    <p className="font-medium">{selectedProduct.speedRating || '—'} / {selectedProduct.loadIndex || '—'}</p>
-                  </div>
-                </div>
 
-                {selectedProduct.description && (
-                  <div className="surface-soft rounded-lg p-3 text-sm text-base-content/70">
-                    {selectedProduct.description}
-                  </div>
-                )}
+                  {selectedProduct.description && (
+                    <div className="surface-soft rounded-lg p-3 text-sm text-base-content/70">
+                      {selectedProduct.description}
+                    </div>
+                  )}
+                </div>
               </div>
             </div>
           </div>
-          <div className="modal-backdrop" onClick={() => setSelectedProduct(null)} />
-        </div>
-      )}
+        )}
+      </ModalPortal>
 
       {/* New Product Modal */}
-      {showNewProductModal && (
-        <div className="modal modal-open">
-          <div className="modal-box max-w-3xl">
+      <ModalPortal isOpen={showNewProductModal} onClose={handleCloseNewProductModal}>
+        <div className="w-full max-w-3xl bg-base-100 rounded-2xl shadow-2xl max-h-[90vh] overflow-y-auto">
+          <div className="p-4 sm:p-6">
             <div className="flex items-start justify-between gap-4">
               <div>
                 <h3 className="text-xl font-semibold">Yangi mahsulot</h3>
@@ -501,7 +503,7 @@ export function ProductsPage() {
               </label>
             </div>
 
-            <div className="modal-action">
+            <div className="mt-6 flex justify-end gap-2">
               <button className="btn btn-ghost" onClick={handleCloseNewProductModal} disabled={saving}>Bekor qilish</button>
               <button className="btn btn-primary" onClick={handleSaveProduct} disabled={saving || !formData.sku.trim() || !formData.name.trim() || formData.sellingPrice <= 0}>
                 {saving && <span className="loading loading-spinner loading-sm" />}
@@ -509,9 +511,8 @@ export function ProductsPage() {
               </button>
             </div>
           </div>
-          <div className="modal-backdrop" onClick={handleCloseNewProductModal} />
         </div>
-      )}
+      </ModalPortal>
     </div>
   );
 }

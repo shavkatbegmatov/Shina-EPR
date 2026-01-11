@@ -17,6 +17,7 @@ import clsx from 'clsx';
 import { suppliersApi } from '../../api/suppliers.api';
 import { formatCurrency } from '../../config/constants';
 import { DataTable, Column } from '../../components/ui/DataTable';
+import { ModalPortal } from '../../components/common/Modal';
 import type { Supplier, SupplierRequest } from '../../types';
 
 const emptyFormData: SupplierRequest = {
@@ -409,9 +410,9 @@ export function SuppliersPage() {
       />
 
       {/* Supplier Modal */}
-      {showModal && (
-        <div className="modal modal-open">
-          <div className="modal-box max-w-2xl">
+      <ModalPortal isOpen={showModal} onClose={handleCloseModal}>
+        <div className="w-full max-w-2xl bg-base-100 rounded-2xl shadow-2xl max-h-[90vh] overflow-y-auto">
+          <div className="p-4 sm:p-6">
             <div className="flex items-start justify-between gap-4">
               <div>
                 <h3 className="text-xl font-semibold">
@@ -542,7 +543,7 @@ export function SuppliersPage() {
               </div>
             </div>
 
-            <div className="modal-action">
+            <div className="mt-6 flex justify-end gap-2">
               <button className="btn btn-ghost" onClick={handleCloseModal} disabled={saving}>
                 Bekor qilish
               </button>
@@ -556,9 +557,8 @@ export function SuppliersPage() {
               </button>
             </div>
           </div>
-          <div className="modal-backdrop" onClick={handleCloseModal} />
         </div>
-      )}
+      </ModalPortal>
     </div>
   );
 }

@@ -4,6 +4,7 @@ import clsx from 'clsx';
 import { customersApi } from '../../api/customers.api';
 import { formatCurrency, CUSTOMER_TYPES } from '../../config/constants';
 import { DataTable, Column } from '../../components/ui/DataTable';
+import { ModalPortal } from '../../components/common/Modal';
 import type { Customer, CustomerRequest, CustomerType } from '../../types';
 
 const emptyFormData: CustomerRequest = {
@@ -263,9 +264,9 @@ export function CustomersPage() {
       />
 
       {/* Customer Modal */}
-      {showModal && (
-        <div className="modal modal-open">
-          <div className="modal-box max-w-lg">
+      <ModalPortal isOpen={showModal} onClose={handleCloseModal}>
+        <div className="w-full max-w-lg bg-base-100 rounded-2xl shadow-2xl max-h-[90vh] overflow-y-auto">
+          <div className="p-4 sm:p-6">
             <div className="flex items-start justify-between gap-4">
               <div>
                 <h3 className="text-xl font-semibold">{editingCustomer ? 'Mijozni tahrirlash' : 'Yangi mijoz'}</h3>
@@ -315,7 +316,7 @@ export function CustomersPage() {
               </label>
             </div>
 
-            <div className="modal-action">
+            <div className="mt-6 flex justify-end gap-2">
               <button className="btn btn-ghost" onClick={handleCloseModal} disabled={saving}>Bekor qilish</button>
               <button className="btn btn-primary" onClick={handleSaveCustomer} disabled={saving || !formData.fullName.trim() || !formData.phone.trim()}>
                 {saving && <span className="loading loading-spinner loading-sm" />}
@@ -323,9 +324,8 @@ export function CustomersPage() {
               </button>
             </div>
           </div>
-          <div className="modal-backdrop" onClick={handleCloseModal} />
         </div>
-      )}
+      </ModalPortal>
     </div>
   );
 }

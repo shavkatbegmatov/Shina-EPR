@@ -17,6 +17,7 @@ import { warehouseApi } from '../../api/warehouse.api';
 import { productsApi } from '../../api/products.api';
 import { NumberInput } from '../../components/ui/NumberInput';
 import { DataTable, Column } from '../../components/ui/DataTable';
+import { ModalPortal } from '../../components/common/Modal';
 import {
   formatNumber,
   MOVEMENT_TYPES,
@@ -506,9 +507,9 @@ export function WarehousePage() {
       </div>
 
       {/* Adjustment Modal */}
-      {showAdjustmentModal && (
-        <div className="modal modal-open">
-          <div className="modal-box max-w-lg">
+      <ModalPortal isOpen={showAdjustmentModal} onClose={handleCloseAdjustmentModal}>
+        <div className="w-full max-w-lg bg-base-100 rounded-2xl shadow-2xl max-h-[90vh] overflow-y-auto">
+          <div className="p-4 sm:p-6">
             <div className="flex items-start justify-between gap-4">
               <div>
                 <h3 className="text-xl font-semibold">
@@ -625,7 +626,7 @@ export function WarehousePage() {
               </label>
             </div>
 
-            <div className="modal-action">
+            <div className="mt-6 flex justify-end gap-2">
               <button
                 className="btn btn-ghost"
                 onClick={handleCloseAdjustmentModal}
@@ -655,9 +656,8 @@ export function WarehousePage() {
               </button>
             </div>
           </div>
-          <div className="modal-backdrop" onClick={handleCloseAdjustmentModal} />
         </div>
-      )}
+      </ModalPortal>
     </div>
   );
 }

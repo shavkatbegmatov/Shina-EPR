@@ -14,6 +14,7 @@ import { debtsApi } from '../../api/debts.api';
 import { formatCurrency, DEBT_STATUSES, PAYMENT_METHODS } from '../../config/constants';
 import { NumberInput } from '../../components/ui/NumberInput';
 import { DataTable, Column } from '../../components/ui/DataTable';
+import { ModalPortal } from '../../components/common/Modal';
 import type { Debt, DebtStatus, Payment, PaymentMethod } from '../../types';
 
 export function DebtsPage() {
@@ -464,109 +465,110 @@ export function DebtsPage() {
       </div>
 
       {/* Payment Modal */}
-      {showPaymentModal && selectedDebt && (
-        <div className="modal modal-open">
-          <div className="modal-box max-w-md">
-            <div className="flex items-start justify-between gap-4">
-              <div>
-                <h3 className="text-xl font-semibold">
-                  {isFullPayment ? "To'liq to'lov" : "Qisman to'lov"}
-                </h3>
-                <p className="text-sm text-base-content/60">
-                  {selectedDebt.customerName} - Qoldiq: {formatCurrency(selectedDebt.remainingAmount)}
-                </p>
-              </div>
-              <button
-                className="btn btn-ghost btn-sm"
-                onClick={handleClosePaymentModal}
-              >
-                <X className="h-4 w-4" />
-              </button>
-            </div>
-
-            <div className="mt-6 space-y-4">
-              <div className="form-control">
-                <NumberInput
-                  label="To'lov summasi *"
-                  value={paymentAmount}
-                  onChange={(val) => setPaymentAmount(String(val))}
-                  disabled={isFullPayment}
-                  min={0}
-                  max={selectedDebt.remainingAmount}
-                  step={1000}
-                  placeholder="0"
-                />
-                {!isFullPayment && (
-                  <span className="label-text-alt mt-1 text-base-content/50">
-                    Maksimum: {formatCurrency(selectedDebt.remainingAmount)}
-                  </span>
-                )}
-              </div>
-
-              <label className="form-control">
-                <span className="label-text mb-1 text-xs font-semibold uppercase tracking-[0.18em] text-base-content/50">
-                  To'lov usuli *
-                </span>
-                <div className="grid grid-cols-3 gap-2">
-                  {Object.entries(PAYMENT_METHODS)
-                    .filter(([key]) => key !== 'MIXED')
-                    .map(([key, { label }]) => (
-                      <button
-                        key={key}
-                        type="button"
-                        className={clsx(
-                          'btn btn-sm',
-                          paymentMethod === key ? 'btn-primary' : 'btn-outline'
-                        )}
-                        onClick={() => setPaymentMethod(key as PaymentMethod)}
-                      >
-                        {key === 'CASH' && <Banknote className="h-4 w-4" />}
-                        {key === 'CARD' && <CreditCard className="h-4 w-4" />}
-                        {key === 'TRANSFER' && <Building className="h-4 w-4" />}
-                        {label}
-                      </button>
-                    ))}
+      <ModalPortal isOpen={showPaymentModal && !!selectedDebt} onClose={handleClosePaymentModal}>
+        {selectedDebt && (
+          <div className="w-full max-w-md bg-base-100 rounded-2xl shadow-2xl">
+            <div className="p-4 sm:p-6">
+              <div className="flex items-start justify-between gap-4">
+                <div>
+                  <h3 className="text-xl font-semibold">
+                    {isFullPayment ? "To'liq to'lov" : "Qisman to'lov"}
+                  </h3>
+                  <p className="text-sm text-base-content/60">
+                    {selectedDebt.customerName} - Qoldiq: {formatCurrency(selectedDebt.remainingAmount)}
+                  </p>
                 </div>
-              </label>
+                <button
+                  className="btn btn-ghost btn-sm"
+                  onClick={handleClosePaymentModal}
+                >
+                  <X className="h-4 w-4" />
+                </button>
+              </div>
 
-              <label className="form-control">
-                <span className="label-text mb-1 text-xs font-semibold uppercase tracking-[0.18em] text-base-content/50">
-                  Izoh
-                </span>
-                <textarea
-                  className="textarea textarea-bordered w-full"
-                  rows={2}
-                  value={paymentNotes}
-                  onChange={(e) => setPaymentNotes(e.target.value)}
-                  placeholder="Qo'shimcha ma'lumot..."
-                />
-              </label>
-            </div>
+              <div className="mt-6 space-y-4">
+                <div className="form-control">
+                  <NumberInput
+                    label="To'lov summasi *"
+                    value={paymentAmount}
+                    onChange={(val) => setPaymentAmount(String(val))}
+                    disabled={isFullPayment}
+                    min={0}
+                    max={selectedDebt.remainingAmount}
+                    step={1000}
+                    placeholder="0"
+                  />
+                  {!isFullPayment && (
+                    <span className="label-text-alt mt-1 text-base-content/50">
+                      Maksimum: {formatCurrency(selectedDebt.remainingAmount)}
+                    </span>
+                  )}
+                </div>
 
-            <div className="modal-action">
-              <button
-                className="btn btn-ghost"
-                onClick={handleClosePaymentModal}
-                disabled={submitting}
-              >
-                Bekor qilish
-              </button>
-              <button
-                className="btn btn-primary"
-                onClick={handleSubmitPayment}
-                disabled={
-                  submitting ||
-                  (!isFullPayment && (isNaN(parseFloat(paymentAmount)) || parseFloat(paymentAmount) <= 0))
-                }
-              >
-                {submitting && <span className="loading loading-spinner loading-sm" />}
-                {isFullPayment ? "To'liq to'lash" : "To'lash"}
-              </button>
+                <label className="form-control">
+                  <span className="label-text mb-1 text-xs font-semibold uppercase tracking-[0.18em] text-base-content/50">
+                    To'lov usuli *
+                  </span>
+                  <div className="grid grid-cols-3 gap-2">
+                    {Object.entries(PAYMENT_METHODS)
+                      .filter(([key]) => key !== 'MIXED')
+                      .map(([key, { label }]) => (
+                        <button
+                          key={key}
+                          type="button"
+                          className={clsx(
+                            'btn btn-sm',
+                            paymentMethod === key ? 'btn-primary' : 'btn-outline'
+                          )}
+                          onClick={() => setPaymentMethod(key as PaymentMethod)}
+                        >
+                          {key === 'CASH' && <Banknote className="h-4 w-4" />}
+                          {key === 'CARD' && <CreditCard className="h-4 w-4" />}
+                          {key === 'TRANSFER' && <Building className="h-4 w-4" />}
+                          {label}
+                        </button>
+                      ))}
+                  </div>
+                </label>
+
+                <label className="form-control">
+                  <span className="label-text mb-1 text-xs font-semibold uppercase tracking-[0.18em] text-base-content/50">
+                    Izoh
+                  </span>
+                  <textarea
+                    className="textarea textarea-bordered w-full"
+                    rows={2}
+                    value={paymentNotes}
+                    onChange={(e) => setPaymentNotes(e.target.value)}
+                    placeholder="Qo'shimcha ma'lumot..."
+                  />
+                </label>
+              </div>
+
+              <div className="mt-6 flex justify-end gap-2">
+                <button
+                  className="btn btn-ghost"
+                  onClick={handleClosePaymentModal}
+                  disabled={submitting}
+                >
+                  Bekor qilish
+                </button>
+                <button
+                  className="btn btn-primary"
+                  onClick={handleSubmitPayment}
+                  disabled={
+                    submitting ||
+                    (!isFullPayment && (isNaN(parseFloat(paymentAmount)) || parseFloat(paymentAmount) <= 0))
+                  }
+                >
+                  {submitting && <span className="loading loading-spinner loading-sm" />}
+                  {isFullPayment ? "To'liq to'lash" : "To'lash"}
+                </button>
+              </div>
             </div>
           </div>
-          <div className="modal-backdrop" onClick={handleClosePaymentModal} />
-        </div>
-      )}
+        )}
+      </ModalPortal>
     </div>
   );
 }

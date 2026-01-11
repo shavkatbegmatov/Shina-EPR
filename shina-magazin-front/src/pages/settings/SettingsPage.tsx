@@ -10,6 +10,7 @@ import {
 } from 'lucide-react';
 import clsx from 'clsx';
 import { brandsApi, categoriesApi } from '../../api/products.api';
+import { ModalPortal } from '../../components/common/Modal';
 import type { Brand, Category } from '../../types';
 
 type Tab = 'brands' | 'categories';
@@ -441,9 +442,9 @@ export function SettingsPage() {
       )}
 
       {/* Brand Modal */}
-      {showBrandModal && (
-        <div className="modal modal-open">
-          <div className="modal-box max-w-md">
+      <ModalPortal isOpen={showBrandModal} onClose={handleCloseBrandModal}>
+        <div className="w-full max-w-md bg-base-100 rounded-2xl shadow-2xl">
+          <div className="p-4 sm:p-6">
             <div className="flex items-start justify-between gap-4">
               <div>
                 <h3 className="text-xl font-semibold">
@@ -488,7 +489,7 @@ export function SettingsPage() {
               </label>
             </div>
 
-            <div className="modal-action">
+            <div className="mt-6 flex justify-end gap-2">
               <button
                 className="btn btn-ghost"
                 onClick={handleCloseBrandModal}
@@ -506,14 +507,13 @@ export function SettingsPage() {
               </button>
             </div>
           </div>
-          <div className="modal-backdrop" onClick={handleCloseBrandModal} />
         </div>
-      )}
+      </ModalPortal>
 
       {/* Category Modal */}
-      {showCategoryModal && (
-        <div className="modal modal-open">
-          <div className="modal-box max-w-md">
+      <ModalPortal isOpen={showCategoryModal} onClose={handleCloseCategoryModal}>
+        <div className="w-full max-w-md bg-base-100 rounded-2xl shadow-2xl">
+          <div className="p-4 sm:p-6">
             <div className="flex items-start justify-between gap-4">
               <div>
                 <h3 className="text-xl font-semibold">
@@ -587,7 +587,7 @@ export function SettingsPage() {
               </label>
             </div>
 
-            <div className="modal-action">
+            <div className="mt-6 flex justify-end gap-2">
               <button
                 className="btn btn-ghost"
                 onClick={handleCloseCategoryModal}
@@ -605,14 +605,13 @@ export function SettingsPage() {
               </button>
             </div>
           </div>
-          <div className="modal-backdrop" onClick={handleCloseCategoryModal} />
         </div>
-      )}
+      </ModalPortal>
 
       {/* Delete Brand Confirmation Modal */}
-      {deletingBrand && (
-        <div className="modal modal-open">
-          <div className="modal-box max-w-sm">
+      <ModalPortal isOpen={!!deletingBrand} onClose={() => setDeletingBrand(null)}>
+        <div className="w-full max-w-sm bg-base-100 rounded-2xl shadow-2xl">
+          <div className="p-4 sm:p-6">
             <div className="flex flex-col items-center gap-4 text-center">
               <div className="flex h-12 w-12 items-center justify-center rounded-full bg-error/10">
                 <AlertTriangle className="h-6 w-6 text-error" />
@@ -620,11 +619,11 @@ export function SettingsPage() {
               <div>
                 <h3 className="text-lg font-semibold">O'chirishni tasdiqlang</h3>
                 <p className="mt-1 text-sm text-base-content/60">
-                  "{deletingBrand.name}" brendini o'chirmoqchimisiz?
+                  "{deletingBrand?.name}" brendini o'chirmoqchimisiz?
                 </p>
               </div>
             </div>
-            <div className="modal-action justify-center">
+            <div className="mt-6 flex justify-center gap-2">
               <button
                 className="btn btn-ghost"
                 onClick={() => setDeletingBrand(null)}
@@ -642,14 +641,13 @@ export function SettingsPage() {
               </button>
             </div>
           </div>
-          <div className="modal-backdrop" onClick={() => setDeletingBrand(null)} />
         </div>
-      )}
+      </ModalPortal>
 
       {/* Delete Category Confirmation Modal */}
-      {deletingCategory && (
-        <div className="modal modal-open">
-          <div className="modal-box max-w-sm">
+      <ModalPortal isOpen={!!deletingCategory} onClose={() => setDeletingCategory(null)}>
+        <div className="w-full max-w-sm bg-base-100 rounded-2xl shadow-2xl">
+          <div className="p-4 sm:p-6">
             <div className="flex flex-col items-center gap-4 text-center">
               <div className="flex h-12 w-12 items-center justify-center rounded-full bg-error/10">
                 <AlertTriangle className="h-6 w-6 text-error" />
@@ -657,11 +655,11 @@ export function SettingsPage() {
               <div>
                 <h3 className="text-lg font-semibold">O'chirishni tasdiqlang</h3>
                 <p className="mt-1 text-sm text-base-content/60">
-                  "{deletingCategory.name}" kategoriyasini o'chirmoqchimisiz?
+                  "{deletingCategory?.name}" kategoriyasini o'chirmoqchimisiz?
                 </p>
               </div>
             </div>
-            <div className="modal-action justify-center">
+            <div className="mt-6 flex justify-center gap-2">
               <button
                 className="btn btn-ghost"
                 onClick={() => setDeletingCategory(null)}
@@ -679,9 +677,8 @@ export function SettingsPage() {
               </button>
             </div>
           </div>
-          <div className="modal-backdrop" onClick={() => setDeletingCategory(null)} />
         </div>
-      )}
+      </ModalPortal>
     </div>
   );
 }

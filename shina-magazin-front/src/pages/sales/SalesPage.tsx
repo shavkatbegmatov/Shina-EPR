@@ -6,6 +6,7 @@ import toast from 'react-hot-toast';
 import { salesApi } from '../../api/sales.api';
 import { formatCurrency, PAYMENT_METHODS, PAYMENT_STATUSES, SALE_STATUSES } from '../../config/constants';
 import { DataTable, Column } from '../../components/ui/DataTable';
+import { ModalPortal } from '../../components/common/Modal';
 import type { Sale, PaymentStatus, SaleStatus, PaymentMethod } from '../../types';
 
 const paymentMethodIcons: Record<PaymentMethod, React.ReactNode> = {
@@ -331,144 +332,146 @@ export function SalesPage() {
       />
 
       {/* Sale Detail Modal */}
-      {showDetailModal && selectedSale && (
-        <div className="modal modal-open">
-          <div className="modal-box max-w-2xl">
-            <button className="btn btn-circle btn-ghost btn-sm absolute right-4 top-4" onClick={() => { setShowDetailModal(false); setSelectedSale(null); }}>
-              <X className="h-5 w-5" />
-            </button>
-            <h3 className="text-lg font-bold">Sotuv tafsilotlari</h3>
-            <p className="text-sm text-base-content/60">Faktura: {selectedSale.invoiceNumber}</p>
+      <ModalPortal isOpen={showDetailModal && !!selectedSale} onClose={() => { setShowDetailModal(false); setSelectedSale(null); }}>
+        {selectedSale && (
+          <div className="w-full max-w-2xl bg-base-100 rounded-2xl shadow-2xl max-h-[90vh] overflow-y-auto">
+            <div className="p-4 sm:p-6">
+              <button className="btn btn-circle btn-ghost btn-sm absolute right-4 top-4" onClick={() => { setShowDetailModal(false); setSelectedSale(null); }}>
+                <X className="h-5 w-5" />
+              </button>
+              <h3 className="text-lg font-bold">Sotuv tafsilotlari</h3>
+              <p className="text-sm text-base-content/60">Faktura: {selectedSale.invoiceNumber}</p>
 
-            <div className="mt-6 space-y-4">
-              <div className="grid gap-4 sm:grid-cols-2">
-                <div className="surface-soft rounded-lg p-3">
-                  <p className="text-xs font-semibold uppercase tracking-wider text-base-content/50">Sana</p>
-                  <p className="mt-1 font-medium">{formatDate(selectedSale.saleDate)}</p>
-                </div>
-                <div className="surface-soft rounded-lg p-3">
-                  <p className="text-xs font-semibold uppercase tracking-wider text-base-content/50">Mijoz</p>
-                  <p className="mt-1 font-medium">{selectedSale.customerName || "Noma'lum mijoz"}</p>
-                  {selectedSale.customerPhone && <p className="text-sm text-base-content/60">{selectedSale.customerPhone}</p>}
-                </div>
-                <div className="surface-soft rounded-lg p-3">
-                  <p className="text-xs font-semibold uppercase tracking-wider text-base-content/50">To'lov usuli</p>
-                  <div className="mt-1 flex items-center gap-2">
-                    {paymentMethodIcons[selectedSale.paymentMethod]}
-                    <span className="font-medium">{PAYMENT_METHODS[selectedSale.paymentMethod]?.label}</span>
+              <div className="mt-6 space-y-4">
+                <div className="grid gap-4 sm:grid-cols-2">
+                  <div className="surface-soft rounded-lg p-3">
+                    <p className="text-xs font-semibold uppercase tracking-wider text-base-content/50">Sana</p>
+                    <p className="mt-1 font-medium">{formatDate(selectedSale.saleDate)}</p>
+                  </div>
+                  <div className="surface-soft rounded-lg p-3">
+                    <p className="text-xs font-semibold uppercase tracking-wider text-base-content/50">Mijoz</p>
+                    <p className="mt-1 font-medium">{selectedSale.customerName || "Noma'lum mijoz"}</p>
+                    {selectedSale.customerPhone && <p className="text-sm text-base-content/60">{selectedSale.customerPhone}</p>}
+                  </div>
+                  <div className="surface-soft rounded-lg p-3">
+                    <p className="text-xs font-semibold uppercase tracking-wider text-base-content/50">To'lov usuli</p>
+                    <div className="mt-1 flex items-center gap-2">
+                      {paymentMethodIcons[selectedSale.paymentMethod]}
+                      <span className="font-medium">{PAYMENT_METHODS[selectedSale.paymentMethod]?.label}</span>
+                    </div>
+                  </div>
+                  <div className="surface-soft rounded-lg p-3">
+                    <p className="text-xs font-semibold uppercase tracking-wider text-base-content/50">Sotuvchi</p>
+                    <p className="mt-1 font-medium">{selectedSale.createdByName || '-'}</p>
                   </div>
                 </div>
-                <div className="surface-soft rounded-lg p-3">
-                  <p className="text-xs font-semibold uppercase tracking-wider text-base-content/50">Sotuvchi</p>
-                  <p className="mt-1 font-medium">{selectedSale.createdByName || '-'}</p>
-                </div>
-              </div>
 
-              <div>
-                <h4 className="mb-2 text-sm font-semibold uppercase tracking-wider text-base-content/50">Mahsulotlar</h4>
-                {loadingDetails ? (
-                  <div className="flex items-center justify-center py-8"><span className="loading loading-spinner" /></div>
-                ) : selectedSale.items && selectedSale.items.length > 0 ? (
-                  <div className="overflow-x-auto">
-                    <table className="table table-sm">
-                      <thead>
-                        <tr>
-                          <th>Mahsulot</th>
-                          <th className="text-right">Narx</th>
-                          <th className="text-right">Soni</th>
-                          <th className="text-right">Jami</th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {selectedSale.items.map((item, index) => (
-                          <tr key={item.id || index}>
-                            <td>
-                              <div>
-                                <div className="font-medium">{item.productName}</div>
-                                {item.sizeString && <div className="text-xs text-base-content/60">{item.sizeString}</div>}
-                              </div>
-                            </td>
-                            <td className="text-right">{formatCurrency(item.unitPrice)}</td>
-                            <td className="text-right">{item.quantity}</td>
-                            <td className="text-right font-medium">{formatCurrency(item.totalPrice)}</td>
+                <div>
+                  <h4 className="mb-2 text-sm font-semibold uppercase tracking-wider text-base-content/50">Mahsulotlar</h4>
+                  {loadingDetails ? (
+                    <div className="flex items-center justify-center py-8"><span className="loading loading-spinner" /></div>
+                  ) : selectedSale.items && selectedSale.items.length > 0 ? (
+                    <div className="overflow-x-auto">
+                      <table className="table table-sm">
+                        <thead>
+                          <tr>
+                            <th>Mahsulot</th>
+                            <th className="text-right">Narx</th>
+                            <th className="text-right">Soni</th>
+                            <th className="text-right">Jami</th>
                           </tr>
-                        ))}
-                      </tbody>
-                    </table>
-                  </div>
-                ) : (
-                  <p className="text-center text-sm text-base-content/50 py-4">Mahsulotlar mavjud emas</p>
-                )}
-              </div>
+                        </thead>
+                        <tbody>
+                          {selectedSale.items.map((item, index) => (
+                            <tr key={item.id || index}>
+                              <td>
+                                <div>
+                                  <div className="font-medium">{item.productName}</div>
+                                  {item.sizeString && <div className="text-xs text-base-content/60">{item.sizeString}</div>}
+                                </div>
+                              </td>
+                              <td className="text-right">{formatCurrency(item.unitPrice)}</td>
+                              <td className="text-right">{item.quantity}</td>
+                              <td className="text-right font-medium">{formatCurrency(item.totalPrice)}</td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+                  ) : (
+                    <p className="text-center text-sm text-base-content/50 py-4">Mahsulotlar mavjud emas</p>
+                  )}
+                </div>
 
-              <div className="border-t border-base-200 pt-4 space-y-2">
-                <div className="flex justify-between text-sm">
-                  <span className="text-base-content/70">Jami:</span>
-                  <span>{formatCurrency(selectedSale.subtotal)}</span>
-                </div>
-                {(selectedSale.discountAmount > 0 || selectedSale.discountPercent > 0) && (
-                  <div className="flex justify-between text-sm text-error">
-                    <span>Chegirma{selectedSale.discountPercent > 0 && ` (${selectedSale.discountPercent}%)`}:</span>
-                    <span>-{formatCurrency(selectedSale.discountAmount)}</span>
-                  </div>
-                )}
-                <div className="flex justify-between text-lg font-bold">
-                  <span>Umumiy:</span>
-                  <span>{formatCurrency(selectedSale.totalAmount)}</span>
-                </div>
-                <div className="flex justify-between text-sm">
-                  <span className="text-base-content/70">To'langan:</span>
-                  <span className="text-success">{formatCurrency(selectedSale.paidAmount)}</span>
-                </div>
-                {selectedSale.debtAmount > 0 && (
+                <div className="border-t border-base-200 pt-4 space-y-2">
                   <div className="flex justify-between text-sm">
-                    <span className="text-base-content/70">Qarz:</span>
-                    <span className="text-error">{formatCurrency(selectedSale.debtAmount)}</span>
+                    <span className="text-base-content/70">Jami:</span>
+                    <span>{formatCurrency(selectedSale.subtotal)}</span>
+                  </div>
+                  {(selectedSale.discountAmount > 0 || selectedSale.discountPercent > 0) && (
+                    <div className="flex justify-between text-sm text-error">
+                      <span>Chegirma{selectedSale.discountPercent > 0 && ` (${selectedSale.discountPercent}%)`}:</span>
+                      <span>-{formatCurrency(selectedSale.discountAmount)}</span>
+                    </div>
+                  )}
+                  <div className="flex justify-between text-lg font-bold">
+                    <span>Umumiy:</span>
+                    <span>{formatCurrency(selectedSale.totalAmount)}</span>
+                  </div>
+                  <div className="flex justify-between text-sm">
+                    <span className="text-base-content/70">To'langan:</span>
+                    <span className="text-success">{formatCurrency(selectedSale.paidAmount)}</span>
+                  </div>
+                  {selectedSale.debtAmount > 0 && (
+                    <div className="flex justify-between text-sm">
+                      <span className="text-base-content/70">Qarz:</span>
+                      <span className="text-error">{formatCurrency(selectedSale.debtAmount)}</span>
+                    </div>
+                  )}
+                </div>
+
+                <div className="flex items-center gap-2">
+                  {getPaymentStatusBadge(selectedSale.paymentStatus)}
+                  {getSaleStatusBadge(selectedSale.status)}
+                </div>
+
+                {selectedSale.notes && (
+                  <div className="surface-soft rounded-lg p-3">
+                    <p className="text-xs font-semibold uppercase tracking-wider text-base-content/50">Izoh</p>
+                    <p className="mt-1 text-sm">{selectedSale.notes}</p>
                   </div>
                 )}
               </div>
 
-              <div className="flex items-center gap-2">
-                {getPaymentStatusBadge(selectedSale.paymentStatus)}
-                {getSaleStatusBadge(selectedSale.status)}
+              <div className="mt-6 flex justify-end">
+                <button className="btn" onClick={() => { setShowDetailModal(false); setSelectedSale(null); }}>Yopish</button>
               </div>
-
-              {selectedSale.notes && (
-                <div className="surface-soft rounded-lg p-3">
-                  <p className="text-xs font-semibold uppercase tracking-wider text-base-content/50">Izoh</p>
-                  <p className="mt-1 text-sm">{selectedSale.notes}</p>
-                </div>
-              )}
-            </div>
-
-            <div className="modal-action">
-              <button className="btn" onClick={() => { setShowDetailModal(false); setSelectedSale(null); }}>Yopish</button>
             </div>
           </div>
-          <div className="modal-backdrop" onClick={() => { setShowDetailModal(false); setSelectedSale(null); }} />
-        </div>
-      )}
+        )}
+      </ModalPortal>
 
       {/* Cancel Confirmation Modal */}
-      {showCancelModal && selectedSale && (
-        <div className="modal modal-open">
-          <div className="modal-box">
-            <h3 className="text-lg font-bold text-error">Sotuvni bekor qilish</h3>
-            <p className="mt-4 text-base-content/70">
-              Haqiqatan ham <span className="font-semibold">{selectedSale.invoiceNumber}</span> raqamli sotuvni bekor qilmoqchimisiz?
-            </p>
-            <p className="mt-2 text-sm text-base-content/60">Bu amal mahsulotlar zahirasini qaytaradi va sotuvni bekor qilingan deb belgilaydi.</p>
-            <div className="modal-action">
-              <button className="btn" onClick={() => { setShowCancelModal(false); setSelectedSale(null); }} disabled={cancelling}>Yo'q, ortga</button>
-              <button className="btn btn-error" onClick={handleCancelSale} disabled={cancelling}>
-                {cancelling && <span className="loading loading-spinner loading-sm" />}
-                Ha, bekor qilish
-              </button>
+      <ModalPortal isOpen={showCancelModal && !!selectedSale} onClose={() => { if (!cancelling) { setShowCancelModal(false); setSelectedSale(null); } }}>
+        {selectedSale && (
+          <div className="w-full max-w-md bg-base-100 rounded-2xl shadow-2xl">
+            <div className="p-4 sm:p-6">
+              <h3 className="text-lg font-bold text-error">Sotuvni bekor qilish</h3>
+              <p className="mt-4 text-base-content/70">
+                Haqiqatan ham <span className="font-semibold">{selectedSale.invoiceNumber}</span> raqamli sotuvni bekor qilmoqchimisiz?
+              </p>
+              <p className="mt-2 text-sm text-base-content/60">Bu amal mahsulotlar zahirasini qaytaradi va sotuvni bekor qilingan deb belgilaydi.</p>
+              <div className="mt-6 flex justify-end gap-2">
+                <button className="btn" onClick={() => { setShowCancelModal(false); setSelectedSale(null); }} disabled={cancelling}>Yo'q, ortga</button>
+                <button className="btn btn-error" onClick={handleCancelSale} disabled={cancelling}>
+                  {cancelling && <span className="loading loading-spinner loading-sm" />}
+                  Ha, bekor qilish
+                </button>
+              </div>
             </div>
           </div>
-          <div className="modal-backdrop" onClick={() => { if (!cancelling) { setShowCancelModal(false); setSelectedSale(null); } }} />
-        </div>
-      )}
+        )}
+      </ModalPortal>
     </div>
   );
 }

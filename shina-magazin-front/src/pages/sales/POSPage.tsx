@@ -8,6 +8,7 @@ import { customersApi } from '../../api/customers.api';
 import { useCartStore } from '../../store/cartStore';
 import { formatCurrency, PAYMENT_METHODS } from '../../config/constants';
 import { NumberInput } from '../../components/ui/NumberInput';
+import { ModalPortal } from '../../components/common/Modal';
 import type { Product, PaymentMethod, Customer } from '../../types';
 
 export function POSPage() {
@@ -377,9 +378,9 @@ export function POSPage() {
       </aside>
 
       {/* Payment Modal */}
-      {showPayment && (
-        <div className="modal modal-open">
-          <div className="modal-box max-w-lg">
+      <ModalPortal isOpen={showPayment} onClose={() => setShowPayment(false)}>
+        <div className="w-full max-w-lg bg-base-100 rounded-2xl shadow-2xl">
+          <div className="p-4 sm:p-6">
             <h3 className="text-lg font-semibold">To'lov</h3>
             <p className="text-sm text-base-content/60">
               {itemCount} ta mahsulot · {formatCurrency(total)}
@@ -454,7 +455,7 @@ export function POSPage() {
               </div>
             </div>
 
-            <div className="modal-action">
+            <div className="mt-6 flex justify-end gap-2">
               <button
                 className="btn btn-ghost"
                 onClick={() => setShowPayment(false)}
@@ -475,12 +476,12 @@ export function POSPage() {
             </div>
           </div>
         </div>
-      )}
+      </ModalPortal>
 
       {/* Customer Selection Modal */}
-      {showCustomerModal && (
-        <div className="modal modal-open">
-          <div className="modal-box max-w-lg">
+      <ModalPortal isOpen={showCustomerModal} onClose={() => { setShowCustomerModal(false); setCustomerSearch(''); }}>
+        <div className="w-full max-w-lg bg-base-100 rounded-2xl shadow-2xl max-h-[90vh] overflow-y-auto">
+          <div className="p-4 sm:p-6">
             <button
               className="btn btn-circle btn-ghost btn-sm absolute right-4 top-4"
               onClick={() => {
@@ -550,7 +551,7 @@ export function POSPage() {
               )}
             </div>
 
-            <div className="modal-action">
+            <div className="mt-6 flex justify-end">
               <button
                 className="btn btn-ghost"
                 onClick={() => {
@@ -562,15 +563,8 @@ export function POSPage() {
               </button>
             </div>
           </div>
-          <div
-            className="modal-backdrop"
-            onClick={() => {
-              setShowCustomerModal(false);
-              setCustomerSearch('');
-            }}
-          />
         </div>
-      )}
+      </ModalPortal>
     </div>
   );
 }
