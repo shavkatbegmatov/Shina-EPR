@@ -11,12 +11,72 @@ import {
   Moon,
   HelpCircle,
   Shield,
+  AlertTriangle,
+  CheckCircle,
+  Info,
+  Package,
+  CreditCard,
+  Users,
 } from 'lucide-react';
 import { useMatches, useNavigate, Link } from 'react-router-dom';
 import clsx from 'clsx';
 import { useAuthStore } from '../../store/authStore';
 import { useUIStore } from '../../store/uiStore';
+import { useNotificationsStore, type Notification } from '../../store/notificationsStore';
 import { ROLES } from '../../config/constants';
+
+const getNotificationIcon = (type: Notification['type']) => {
+  switch (type) {
+    case 'warning':
+      return <AlertTriangle className="h-4 w-4 text-warning" />;
+    case 'success':
+      return <CheckCircle className="h-4 w-4 text-success" />;
+    case 'order':
+      return <Package className="h-4 w-4 text-primary" />;
+    case 'payment':
+      return <CreditCard className="h-4 w-4 text-success" />;
+    case 'customer':
+      return <Users className="h-4 w-4 text-info" />;
+    case 'info':
+    default:
+      return <Info className="h-4 w-4 text-info" />;
+  }
+};
+
+const getNotificationBorderColor = (type: Notification['type']) => {
+  switch (type) {
+    case 'warning':
+      return 'border-warning';
+    case 'success':
+    case 'payment':
+      return 'border-success';
+    case 'order':
+      return 'border-primary';
+    case 'customer':
+    case 'info':
+    default:
+      return 'border-info';
+  }
+};
+
+const formatTimeAgo = (dateString: string) => {
+  const date = new Date(dateString);
+  const now = new Date();
+  const diffMs = now.getTime() - date.getTime();
+  const diffMins = Math.floor(diffMs / 60000);
+  const diffHours = Math.floor(diffMs / 3600000);
+  const diffDays = Math.floor(diffMs / 86400000);
+
+  if (diffMins < 60) {
+    return `${diffMins} daqiqa oldin`;
+  } else if (diffHours < 24) {
+    return `${diffHours} soat oldin`;
+  } else if (diffDays < 7) {
+    return `${diffDays} kun oldin`;
+  } else {
+    return date.toLocaleDateString('uz-UZ');
+  }
+};
 
 type RouteHandle = {
   title?: string;
@@ -25,6 +85,7 @@ type RouteHandle = {
 export function Header() {
   const { user, logout } = useAuthStore();
   const { toggleSidebar } = useUIStore();
+  const { notifications, unreadCount, markAsRead } = useNotificationsStore();
   const navigate = useNavigate();
   const matches = useMatches();
   const [searchFocused, setSearchFocused] = useState(false);
@@ -180,9 +241,11 @@ export function Header() {
               }}
             >
               <Bell className="h-4 w-4" />
-              <span className="absolute -right-0.5 -top-0.5 flex h-4 w-4 items-center justify-center rounded-full bg-error text-[10px] font-bold text-white">
-                3
-              </span>
+              {unreadCount > 0 && (
+                <span className="absolute -right-0.5 -top-0.5 flex h-4 w-4 items-center justify-center rounded-full bg-error text-[10px] font-bold text-white">
+                  {unreadCount > 9 ? '9+' : unreadCount}
+                </span>
+              )}
             </button>
             <div
               className={clsx(
@@ -194,30 +257,53 @@ export function Header() {
             >
               <div className="flex items-center justify-between border-b border-base-200 px-4 py-3">
                 <span className="font-semibold">Bildirishnomalar</span>
-                <span className="badge badge-error badge-sm">3 ta yangi</span>
+                {unreadCount > 0 && (
+                  <span className="badge badge-error badge-sm">{unreadCount} ta yangi</span>
+                )}
               </div>
               <div className="max-h-72 overflow-y-auto">
-                <div className="px-4 py-3 hover:bg-base-200/50 cursor-pointer transition-colors border-l-2 border-primary">
-                  <p className="text-sm font-medium">Yangi buyurtma</p>
-                  <p className="text-xs text-base-content/60 mt-0.5">
-                    #INV-2024-001 buyurtmasi yaratildi
-                  </p>
-                  <p className="text-xs text-base-content/40 mt-1">2 daqiqa oldin</p>
-                </div>
-                <div className="px-4 py-3 hover:bg-base-200/50 cursor-pointer transition-colors border-l-2 border-warning">
-                  <p className="text-sm font-medium">Kam zaxira ogohlantirishi</p>
-                  <p className="text-xs text-base-content/60 mt-0.5">
-                    5 ta mahsulot kam zaxirada
-                  </p>
-                  <p className="text-xs text-base-content/40 mt-1">1 soat oldin</p>
-                </div>
-                <div className="px-4 py-3 hover:bg-base-200/50 cursor-pointer transition-colors border-l-2 border-success">
-                  <p className="text-sm font-medium">To'lov qabul qilindi</p>
-                  <p className="text-xs text-base-content/60 mt-0.5">
-                    Mijoz Alisher 500,000 so'm to'ladi
-                  </p>
-                  <p className="text-xs text-base-content/40 mt-1">3 soat oldin</p>
-                </div>
+                {notifications.length === 0 ? (
+                  <div className="px-4 py-8 text-center text-base-content/50">
+                    <Bell className="h-8 w-8 mx-auto mb-2 opacity-50" />
+                    <p className="text-sm">Bildirishnomalar yo'q</p>
+                  </div>
+                ) : (
+                  notifications.slice(0, 5).map((notification) => (
+                    <div
+                      key={notification.id}
+                      className={clsx(
+                        "px-4 py-3 hover:bg-base-200/50 cursor-pointer transition-colors border-l-2",
+                        getNotificationBorderColor(notification.type),
+                        !notification.isRead && "bg-primary/5"
+                      )}
+                      onClick={() => {
+                        if (!notification.isRead) {
+                          markAsRead(notification.id);
+                        }
+                      }}
+                    >
+                      <div className="flex items-start gap-2">
+                        <div className="mt-0.5">
+                          {getNotificationIcon(notification.type)}
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <p className={clsx(
+                            "text-sm",
+                            !notification.isRead ? "font-semibold" : "font-medium"
+                          )}>
+                            {notification.title}
+                          </p>
+                          <p className="text-xs text-base-content/60 mt-0.5 line-clamp-1">
+                            {notification.message}
+                          </p>
+                          <p className="text-xs text-base-content/40 mt-1">
+                            {formatTimeAgo(notification.createdAt)}
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+                  ))
+                )}
               </div>
               <div className="border-t border-base-200 p-2">
                 <button

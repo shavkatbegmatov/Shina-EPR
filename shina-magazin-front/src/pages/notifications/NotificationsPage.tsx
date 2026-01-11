@@ -12,85 +12,9 @@ import {
   Filter,
 } from 'lucide-react';
 import clsx from 'clsx';
+import { useNotificationsStore, type Notification } from '../../store/notificationsStore';
 
-type NotificationType = 'warning' | 'success' | 'info' | 'order' | 'payment' | 'customer';
-
-interface Notification {
-  id: number;
-  title: string;
-  message: string;
-  type: NotificationType;
-  isRead: boolean;
-  createdAt: string;
-}
-
-// Mock data - keyinchalik API dan olinadi
-const mockNotifications: Notification[] = [
-  {
-    id: 1,
-    title: 'Yangi buyurtma',
-    message: '#INV-2024-001 buyurtmasi yaratildi. Mijoz: Alisher Karimov',
-    type: 'order',
-    isRead: false,
-    createdAt: '2024-01-15T10:30:00',
-  },
-  {
-    id: 2,
-    title: 'Kam zaxira ogohlantirishi',
-    message: "Michelin Pilot Sport 4 (225/45 R17) - Zaxirada faqat 3 ta qoldi",
-    type: 'warning',
-    isRead: false,
-    createdAt: '2024-01-15T09:15:00',
-  },
-  {
-    id: 3,
-    title: "To'lov qabul qilindi",
-    message: "Mijoz Bobur Toshmatov 1,500,000 so'm to'ladi. Qarz to'liq yopildi.",
-    type: 'payment',
-    isRead: false,
-    createdAt: '2024-01-15T08:45:00',
-  },
-  {
-    id: 4,
-    title: 'Yangi mijoz',
-    message: "Sardor Aliyev ro'yxatdan o'tdi. Telefon: +998 90 123 45 67",
-    type: 'customer',
-    isRead: true,
-    createdAt: '2024-01-14T16:20:00',
-  },
-  {
-    id: 5,
-    title: 'Mahsulot qo\'shildi',
-    message: "Continental PremiumContact 6 (205/55 R16) omborga qo'shildi. Soni: 20 ta",
-    type: 'info',
-    isRead: true,
-    createdAt: '2024-01-14T14:00:00',
-  },
-  {
-    id: 6,
-    title: 'Sotuw muvaffaqiyatli',
-    message: '#INV-2024-098 buyurtmasi yakunlandi. Jami: 2,400,000 so\'m',
-    type: 'success',
-    isRead: true,
-    createdAt: '2024-01-14T11:30:00',
-  },
-  {
-    id: 7,
-    title: 'Qarz eslatmasi',
-    message: "Jasur Rahimov ning qarzi 500,000 so'm. Muddat: 3 kun qoldi",
-    type: 'warning',
-    isRead: true,
-    createdAt: '2024-01-13T09:00:00',
-  },
-  {
-    id: 8,
-    title: "Ta'minotchi yetkazib berdi",
-    message: "Tashkent Shina LLC dan 50 ta mahsulot qabul qilindi",
-    type: 'info',
-    isRead: true,
-    createdAt: '2024-01-12T15:45:00',
-  },
-];
+type NotificationType = Notification['type'];
 
 const getNotificationIcon = (type: NotificationType) => {
   switch (type) {
@@ -148,34 +72,21 @@ const formatTimeAgo = (dateString: string) => {
 type FilterType = 'all' | 'unread' | 'warning' | 'order' | 'payment';
 
 export function NotificationsPage() {
-  const [notifications, setNotifications] = useState<Notification[]>(mockNotifications);
+  const {
+    notifications,
+    unreadCount,
+    markAsRead,
+    markAllAsRead,
+    deleteNotification,
+    clearAll,
+  } = useNotificationsStore();
   const [filter, setFilter] = useState<FilterType>('all');
-
-  const unreadCount = notifications.filter((n) => !n.isRead).length;
 
   const filteredNotifications = notifications.filter((n) => {
     if (filter === 'all') return true;
     if (filter === 'unread') return !n.isRead;
     return n.type === filter;
   });
-
-  const handleMarkAsRead = (id: number) => {
-    setNotifications((prev) =>
-      prev.map((n) => (n.id === id ? { ...n, isRead: true } : n))
-    );
-  };
-
-  const handleMarkAllRead = () => {
-    setNotifications((prev) => prev.map((n) => ({ ...n, isRead: true })));
-  };
-
-  const handleDelete = (id: number) => {
-    setNotifications((prev) => prev.filter((n) => n.id !== id));
-  };
-
-  const handleClearAll = () => {
-    setNotifications([]);
-  };
 
   return (
     <div className="space-y-6">
@@ -193,7 +104,7 @@ export function NotificationsPage() {
           {unreadCount > 0 && (
             <button
               className="btn btn-ghost btn-sm"
-              onClick={handleMarkAllRead}
+              onClick={markAllAsRead}
             >
               <CheckCheck className="h-4 w-4" />
               <span className="hidden sm:inline">Barchasini o'qilgan qilish</span>
@@ -202,7 +113,7 @@ export function NotificationsPage() {
           {notifications.length > 0 && (
             <button
               className="btn btn-ghost btn-sm text-error"
-              onClick={handleClearAll}
+              onClick={clearAll}
             >
               <Trash2 className="h-4 w-4" />
               <span className="hidden sm:inline">Tozalash</span>
@@ -295,7 +206,7 @@ export function NotificationsPage() {
                       {!notification.isRead && (
                         <button
                           className="btn btn-ghost btn-xs"
-                          onClick={() => handleMarkAsRead(notification.id)}
+                          onClick={() => markAsRead(notification.id)}
                           title="O'qilgan qilish"
                         >
                           <CheckCircle className="h-4 w-4" />
@@ -303,7 +214,7 @@ export function NotificationsPage() {
                       )}
                       <button
                         className="btn btn-ghost btn-xs text-error"
-                        onClick={() => handleDelete(notification.id)}
+                        onClick={() => deleteNotification(notification.id)}
                         title="O'chirish"
                       >
                         <Trash2 className="h-4 w-4" />
