@@ -14,12 +14,14 @@ import { debtsApi } from '../../api/debts.api';
 import { formatCurrency, DEBT_STATUSES, PAYMENT_METHODS } from '../../config/constants';
 import { NumberInput } from '../../components/ui/NumberInput';
 import { SortableHeader, useSorting, sortData } from '../../components/ui/SortableHeader';
+import { Pagination } from '../../components/ui/Pagination';
 import type { Debt, DebtStatus, Payment, PaymentMethod } from '../../types';
 
 export function DebtsPage() {
   const [debts, setDebts] = useState<Debt[]>([]);
   const [loading, setLoading] = useState(true);
   const [page, setPage] = useState(0);
+  const [pageSize, setPageSize] = useState(20);
   const [totalPages, setTotalPages] = useState(0);
   const [totalElements, setTotalElements] = useState(0);
   const [statusFilter, setStatusFilter] = useState<DebtStatus | ''>('');
@@ -45,12 +47,17 @@ export function DebtsPage() {
     return sortData(debts, sortConfig);
   }, [debts, sortConfig]);
 
+  const handlePageSizeChange = (newSize: number) => {
+    setPageSize(newSize);
+    setPage(0);
+  };
+
   const loadDebts = useCallback(async () => {
     setLoading(true);
     try {
       const data = await debtsApi.getAll({
         page,
-        size: 20,
+        size: pageSize,
         status: statusFilter || undefined,
       });
       setDebts(data.content);
@@ -61,7 +68,7 @@ export function DebtsPage() {
     } finally {
       setLoading(false);
     }
-  }, [page, statusFilter]);
+  }, [page, pageSize, statusFilter]);
 
   const loadTotalDebt = useCallback(async () => {
     try {
@@ -343,27 +350,14 @@ export function DebtsPage() {
                 </div>
 
                 {/* Pagination */}
-                {totalPages > 1 && (
-                  <div className="flex flex-wrap items-center justify-center gap-3 border-t border-base-200 p-4">
-                    <button
-                      className="btn btn-ghost btn-sm"
-                      disabled={page === 0}
-                      onClick={() => setPage(page - 1)}
-                    >
-                      « Oldingi
-                    </button>
-                    <span className="pill">
-                      Sahifa {page + 1} / {totalPages}
-                    </span>
-                    <button
-                      className="btn btn-ghost btn-sm"
-                      disabled={page >= totalPages - 1}
-                      onClick={() => setPage(page + 1)}
-                    >
-                      Keyingi »
-                    </button>
-                  </div>
-                )}
+                <Pagination
+                  currentPage={page}
+                  totalPages={totalPages}
+                  totalElements={totalElements}
+                  pageSize={pageSize}
+                  onPageChange={setPage}
+                  onPageSizeChange={handlePageSizeChange}
+                />
               </>
             )}
           </div>

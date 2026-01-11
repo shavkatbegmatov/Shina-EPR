@@ -4,6 +4,7 @@ import clsx from 'clsx';
 import { customersApi } from '../../api/customers.api';
 import { formatCurrency, CUSTOMER_TYPES } from '../../config/constants';
 import { SortableHeader, useSorting, sortData } from '../../components/ui/SortableHeader';
+import { Pagination } from '../../components/ui/Pagination';
 import type { Customer, CustomerRequest, CustomerType } from '../../types';
 
 const emptyFormData: CustomerRequest = {
@@ -17,6 +18,7 @@ export function CustomersPage() {
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
   const [page, setPage] = useState(0);
+  const [pageSize, setPageSize] = useState(20);
   const [totalPages, setTotalPages] = useState(0);
   const [totalElements, setTotalElements] = useState(0);
   const [showModal, setShowModal] = useState(false);
@@ -33,12 +35,17 @@ export function CustomersPage() {
 
   const hasSearch = useMemo(() => search.trim().length > 0, [search]);
 
+  const handlePageSizeChange = (newSize: number) => {
+    setPageSize(newSize);
+    setPage(0);
+  };
+
   const loadCustomers = useCallback(async () => {
     setLoading(true);
     try {
       const data = await customersApi.getAll({
         page,
-        size: 20,
+        size: pageSize,
         search: search || undefined,
       });
       setCustomers(data.content);
@@ -49,7 +56,7 @@ export function CustomersPage() {
     } finally {
       setLoading(false);
     }
-  }, [page, search]);
+  }, [page, pageSize, search]);
 
   useEffect(() => {
     loadCustomers();
@@ -307,27 +314,14 @@ export function CustomersPage() {
         )}
 
         {/* Pagination */}
-        {totalPages > 1 && (
-          <div className="flex flex-wrap items-center justify-center gap-3 border-t border-base-200 p-4">
-            <button
-              className="btn btn-ghost btn-sm"
-              disabled={page === 0}
-              onClick={() => setPage(page - 1)}
-            >
-              « Oldingi
-            </button>
-            <span className="pill">
-              Sahifa {page + 1} / {totalPages}
-            </span>
-            <button
-              className="btn btn-ghost btn-sm"
-              disabled={page >= totalPages - 1}
-              onClick={() => setPage(page + 1)}
-            >
-              Keyingi »
-            </button>
-          </div>
-        )}
+        <Pagination
+          currentPage={page}
+          totalPages={totalPages}
+          totalElements={totalElements}
+          pageSize={pageSize}
+          onPageChange={setPage}
+          onPageSizeChange={handlePageSizeChange}
+        />
       </div>
 
       {/* Customer Modal */}

@@ -17,6 +17,7 @@ import { warehouseApi } from '../../api/warehouse.api';
 import { productsApi } from '../../api/products.api';
 import { NumberInput } from '../../components/ui/NumberInput';
 import { SortableHeader, useSorting, sortData } from '../../components/ui/SortableHeader';
+import { Pagination } from '../../components/ui/Pagination';
 import {
   formatNumber,
   MOVEMENT_TYPES,
@@ -36,7 +37,9 @@ export function WarehousePage() {
   const [loading, setLoading] = useState(true);
   const [loadingMovements, setLoadingMovements] = useState(true);
   const [page, setPage] = useState(0);
+  const [pageSize, setPageSize] = useState(20);
   const [totalPages, setTotalPages] = useState(0);
+  const [totalElements, setTotalElements] = useState(0);
 
   // Filters
   const [movementTypeFilter, setMovementTypeFilter] = useState<MovementType | ''>('');
@@ -62,6 +65,11 @@ export function WarehousePage() {
     return sortData(movements, sortConfig);
   }, [movements, sortConfig]);
 
+  const handlePageSizeChange = (newSize: number) => {
+    setPageSize(newSize);
+    setPage(0);
+  };
+
   const loadStats = useCallback(async () => {
     try {
       const data = await warehouseApi.getStats();
@@ -76,18 +84,19 @@ export function WarehousePage() {
     try {
       const data = await warehouseApi.getMovements({
         page,
-        size: 20,
+        size: pageSize,
         movementType: movementTypeFilter || undefined,
         referenceType: referenceTypeFilter || undefined,
       });
       setMovements(data.content);
       setTotalPages(data.totalPages);
+      setTotalElements(data.totalElements);
     } catch (error) {
       console.error('Failed to load movements:', error);
     } finally {
       setLoadingMovements(false);
     }
-  }, [page, movementTypeFilter, referenceTypeFilter]);
+  }, [page, pageSize, movementTypeFilter, referenceTypeFilter]);
 
   const loadLowStockProducts = useCallback(async () => {
     try {
@@ -456,27 +465,14 @@ export function WarehousePage() {
                 </div>
 
                 {/* Pagination */}
-                {totalPages > 1 && (
-                  <div className="flex flex-wrap items-center justify-center gap-3 border-t border-base-200 p-4">
-                    <button
-                      className="btn btn-ghost btn-sm"
-                      disabled={page === 0}
-                      onClick={() => setPage(page - 1)}
-                    >
-                      « Oldingi
-                    </button>
-                    <span className="pill">
-                      Sahifa {page + 1} / {totalPages}
-                    </span>
-                    <button
-                      className="btn btn-ghost btn-sm"
-                      disabled={page >= totalPages - 1}
-                      onClick={() => setPage(page + 1)}
-                    >
-                      Keyingi »
-                    </button>
-                  </div>
-                )}
+                <Pagination
+                  currentPage={page}
+                  totalPages={totalPages}
+                  totalElements={totalElements}
+                  pageSize={pageSize}
+                  onPageChange={setPage}
+                  onPageSizeChange={handlePageSizeChange}
+                />
               </>
             )}
           </div>

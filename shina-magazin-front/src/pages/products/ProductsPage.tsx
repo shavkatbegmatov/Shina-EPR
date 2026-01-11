@@ -12,6 +12,7 @@ import { productsApi, brandsApi, categoriesApi } from '../../api/products.api';
 import { formatCurrency, SEASONS } from '../../config/constants';
 import { NumberInput } from '../../components/ui/NumberInput';
 import { SortableHeader, useSorting, sortData } from '../../components/ui/SortableHeader';
+import { Pagination } from '../../components/ui/Pagination';
 import type { Product, Brand, Category, Season, ProductRequest } from '../../types';
 
 const emptyFormData: ProductRequest = {
@@ -30,7 +31,9 @@ export function ProductsPage() {
   const [categoryFilter, setCategoryFilter] = useState<number | ''>('');
   const [seasonFilter, setSeasonFilter] = useState<Season | ''>('');
   const [page, setPage] = useState(0);
+  const [pageSize, setPageSize] = useState(20);
   const [totalPages, setTotalPages] = useState(0);
+  const [totalElements, setTotalElements] = useState(0);
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
   const [showNewProductModal, setShowNewProductModal] = useState(false);
   const [formData, setFormData] = useState<ProductRequest>(emptyFormData);
@@ -70,7 +73,7 @@ export function ProductsPage() {
     try {
       const data = await productsApi.getAll({
         page,
-        size: 20,
+        size: pageSize,
         search: search || undefined,
         brandId: brandFilter || undefined,
         categoryId: categoryFilter || undefined,
@@ -78,12 +81,13 @@ export function ProductsPage() {
       });
       setProducts(data.content);
       setTotalPages(data.totalPages);
+      setTotalElements(data.totalElements);
     } catch (error) {
       console.error('Failed to load products:', error);
     } finally {
       setLoading(false);
     }
-  }, [brandFilter, categoryFilter, page, search, seasonFilter]);
+  }, [brandFilter, categoryFilter, page, pageSize, search, seasonFilter]);
 
   useEffect(() => {
     loadData();
@@ -98,6 +102,11 @@ export function ProductsPage() {
     setBrandFilter('');
     setCategoryFilter('');
     setSeasonFilter('');
+    setPage(0);
+  };
+
+  const handlePageSizeChange = (newSize: number) => {
+    setPageSize(newSize);
     setPage(0);
   };
 
@@ -169,8 +178,7 @@ export function ProductsPage() {
             </p>
           </div>
           <div className="flex flex-wrap items-center gap-2 text-xs text-base-content/60">
-            <span className="pill">20 / sahifa</span>
-            <span className="pill">{products.length} ta natija</span>
+            <span className="pill">{totalElements} ta mahsulot</span>
           </div>
         </div>
         <div className="mt-4 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
@@ -404,27 +412,14 @@ export function ProductsPage() {
         )}
 
         {/* Pagination */}
-        {totalPages > 1 && (
-          <div className="flex flex-wrap items-center justify-center gap-3 border-t border-base-200 p-4">
-            <button
-              className="btn btn-ghost btn-sm"
-              disabled={page === 0}
-              onClick={() => setPage(page - 1)}
-            >
-              « Oldingi
-            </button>
-            <span className="pill">
-              Sahifa {page + 1} / {totalPages}
-            </span>
-            <button
-              className="btn btn-ghost btn-sm"
-              disabled={page >= totalPages - 1}
-              onClick={() => setPage(page + 1)}
-            >
-              Keyingi »
-            </button>
-          </div>
-        )}
+        <Pagination
+          currentPage={page}
+          totalPages={totalPages}
+          totalElements={totalElements}
+          pageSize={pageSize}
+          onPageChange={setPage}
+          onPageSizeChange={handlePageSizeChange}
+        />
       </div>
 
       {selectedProduct && (
