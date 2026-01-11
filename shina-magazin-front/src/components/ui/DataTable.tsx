@@ -208,7 +208,7 @@ export function DataTable<T>({
   // Loading state
   if (loading) {
     return (
-      <div className={clsx('surface-card overflow-hidden', containerClassName)}>
+      <div className={clsx('surface-card', containerClassName)}>
         <div className="flex items-center justify-center h-64">
           <span className="loading loading-spinner loading-lg" />
         </div>
@@ -219,7 +219,7 @@ export function DataTable<T>({
   // Empty state
   if (sortedData.length === 0) {
     return (
-      <div className={clsx('surface-card overflow-hidden', containerClassName)}>
+      <div className={clsx('surface-card', containerClassName)}>
         <div className="flex flex-col items-center justify-center gap-2 p-10 text-center text-base-content/50">
           {emptyIcon && <div className="mb-2">{emptyIcon}</div>}
           <div>
@@ -232,12 +232,12 @@ export function DataTable<T>({
   }
 
   return (
-    <div className={clsx('surface-card overflow-hidden', containerClassName)}>
+    <div className={clsx('surface-card', containerClassName)}>
       {/* Desktop Table */}
-      <div className={clsx('hidden lg:block overflow-x-auto', className)}>
-        <table className="table table-zebra">
-          <thead className="sticky top-0 z-20">
-            <tr className="bg-base-100 shadow-[0_1px_3px_-1px_rgba(0,0,0,0.1)]">
+      <div className={clsx('hidden lg:block', className)}>
+        <table className="table table-zebra w-full">
+          <thead className="sticky top-16 z-20 bg-base-100">
+            <tr className="shadow-[0_1px_3px_-1px_rgba(0,0,0,0.1)]">
               {columns.map((column) => (
                 <th
                   key={column.key}
