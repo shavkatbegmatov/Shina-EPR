@@ -14,6 +14,7 @@ import {
   Clock,
   ArrowRight,
   Loader2,
+  type LucideIcon,
 } from 'lucide-react';
 import clsx from 'clsx';
 import { productsApi } from '../../api/products.api';
@@ -22,29 +23,74 @@ import { salesApi } from '../../api/sales.api';
 import { formatCurrency } from '../../config/constants';
 import type { Product, Customer, Sale } from '../../types';
 
+type ResultType = 'product' | 'customer' | 'sale' | 'page';
+
 interface SearchResult {
   id: string;
-  type: 'product' | 'customer' | 'sale' | 'page';
+  type: ResultType;
   title: string;
   subtitle?: string;
-  icon: React.ReactNode;
   href: string;
   meta?: string;
 }
 
+// Icon mapping by type
+const ICON_MAP: Record<ResultType, LucideIcon> = {
+  product: Package,
+  customer: Users,
+  sale: CreditCard,
+  page: LayoutDashboard,
+};
+
+// Page-specific icons
+const PAGE_ICONS: Record<string, LucideIcon> = {
+  'page-dashboard': LayoutDashboard,
+  'page-pos': ShoppingCart,
+  'page-products': Package,
+  'page-customers': Users,
+  'page-sales': CreditCard,
+  'page-warehouse': Warehouse,
+  'page-reports': BarChart3,
+  'page-settings': Settings,
+};
+
 const QUICK_ACTIONS: SearchResult[] = [
-  { id: 'page-dashboard', type: 'page', title: 'Dashboard', icon: <LayoutDashboard className="h-4 w-4" />, href: '/' },
-  { id: 'page-pos', type: 'page', title: 'Kassa (POS)', subtitle: 'Yangi sotuv qilish', icon: <ShoppingCart className="h-4 w-4" />, href: '/pos' },
-  { id: 'page-products', type: 'page', title: 'Mahsulotlar', icon: <Package className="h-4 w-4" />, href: '/products' },
-  { id: 'page-customers', type: 'page', title: 'Mijozlar', icon: <Users className="h-4 w-4" />, href: '/customers' },
-  { id: 'page-sales', type: 'page', title: 'Sotuvlar', icon: <CreditCard className="h-4 w-4" />, href: '/sales' },
-  { id: 'page-warehouse', type: 'page', title: 'Ombor', icon: <Warehouse className="h-4 w-4" />, href: '/warehouse' },
-  { id: 'page-reports', type: 'page', title: 'Hisobotlar', icon: <BarChart3 className="h-4 w-4" />, href: '/reports' },
-  { id: 'page-settings', type: 'page', title: 'Sozlamalar', icon: <Settings className="h-4 w-4" />, href: '/settings' },
+  { id: 'page-dashboard', type: 'page', title: 'Dashboard', href: '/' },
+  { id: 'page-pos', type: 'page', title: 'Kassa (POS)', subtitle: 'Yangi sotuv qilish', href: '/pos' },
+  { id: 'page-products', type: 'page', title: 'Mahsulotlar', href: '/products' },
+  { id: 'page-customers', type: 'page', title: 'Mijozlar', href: '/customers' },
+  { id: 'page-sales', type: 'page', title: 'Sotuvlar', href: '/sales' },
+  { id: 'page-warehouse', type: 'page', title: 'Ombor', href: '/warehouse' },
+  { id: 'page-reports', type: 'page', title: 'Hisobotlar', href: '/reports' },
+  { id: 'page-settings', type: 'page', title: 'Sozlamalar', href: '/settings' },
 ];
 
 const RECENT_SEARCHES_KEY = 'search_recent';
 const MAX_RECENT = 5;
+
+// Get icon for a result
+function getResultIcon(result: SearchResult): LucideIcon {
+  if (result.type === 'page' && PAGE_ICONS[result.id]) {
+    return PAGE_ICONS[result.id];
+  }
+  return ICON_MAP[result.type] || LayoutDashboard;
+}
+
+// Get icon color classes
+function getIconColorClass(type: ResultType, isSelected: boolean): string {
+  if (isSelected) return 'bg-primary-content/20';
+
+  switch (type) {
+    case 'product':
+      return 'bg-info/10 text-info';
+    case 'customer':
+      return 'bg-success/10 text-success';
+    case 'sale':
+      return 'bg-warning/10 text-warning';
+    default:
+      return 'bg-base-200 text-base-content/70';
+  }
+}
 
 export function SearchCommand() {
   const [open, setOpen] = useState(false);
@@ -137,7 +183,6 @@ export function SearchCommand() {
           type: 'product',
           title: product.name,
           subtitle: product.sku,
-          icon: <Package className="h-4 w-4" />,
           href: `/products?search=${encodeURIComponent(product.name)}`,
           meta: formatCurrency(product.sellingPrice),
         });
@@ -150,7 +195,6 @@ export function SearchCommand() {
           type: 'customer',
           title: customer.fullName,
           subtitle: customer.phone,
-          icon: <Users className="h-4 w-4" />,
           href: `/customers?search=${encodeURIComponent(customer.fullName)}`,
           meta: customer.balance < 0 ? `Qarz: ${formatCurrency(Math.abs(customer.balance))}` : undefined,
         });
@@ -165,7 +209,6 @@ export function SearchCommand() {
             type: 'sale',
             title: sale.invoiceNumber,
             subtitle: sale.customerName || "Noma'lum mijoz",
-            icon: <CreditCard className="h-4 w-4" />,
             href: `/sales?search=${encodeURIComponent(sale.invoiceNumber)}`,
             meta: formatCurrency(sale.totalAmount),
           });
@@ -298,6 +341,7 @@ export function SearchCommand() {
             {displayItems.map((item, index) => {
               const isQuickAction = !query && index >= recentSearches.length;
               const showQuickActionHeader = isQuickAction && index === recentSearches.length;
+              const Icon = getResultIcon(item);
 
               return (
                 <div key={item.id}>
@@ -319,18 +363,10 @@ export function SearchCommand() {
                     <div
                       className={clsx(
                         'grid h-8 w-8 place-items-center rounded-lg',
-                        selectedIndex === index
-                          ? 'bg-primary-content/20'
-                          : item.type === 'product'
-                          ? 'bg-info/10 text-info'
-                          : item.type === 'customer'
-                          ? 'bg-success/10 text-success'
-                          : item.type === 'sale'
-                          ? 'bg-warning/10 text-warning'
-                          : 'bg-base-200 text-base-content/70'
+                        getIconColorClass(item.type, selectedIndex === index)
                       )}
                     >
-                      {item.icon}
+                      <Icon className="h-4 w-4" />
                     </div>
                     <div className="flex-1 min-w-0">
                       <div className="font-medium truncate">{item.title}</div>
