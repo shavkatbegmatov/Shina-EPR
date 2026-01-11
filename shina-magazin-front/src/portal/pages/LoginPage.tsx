@@ -1,8 +1,8 @@
-import { useState } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useForm } from 'react-hook-form';
 import { useTranslation } from 'react-i18next';
 import { useNavigate, Navigate } from 'react-router-dom';
-import { LogIn, Phone, Lock, Globe, AlertCircle } from 'lucide-react';
+import { LogIn, Phone, Lock, Globe, AlertCircle, Sun, Moon } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { portalAuthApi } from '../api/portalAuth.api';
 import { usePortalAuthStore } from '../store/portalAuthStore';
@@ -11,9 +11,31 @@ import type { CustomerLoginRequest } from '../types/portal.types';
 export default function PortalLoginPage() {
   const { t, i18n } = useTranslation();
   const navigate = useNavigate();
-  const { isAuthenticated, setAuth, language, setLanguage } = usePortalAuthStore();
+  const { isAuthenticated, setAuth, language, setLanguage, theme, setTheme } = usePortalAuthStore();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  // Apply theme on login page
+  const getEffectiveTheme = useCallback(() => {
+    if (theme === 'system') {
+      return window.matchMedia('(prefers-color-scheme: dark)').matches ? 'shina-dark' : 'shina';
+    }
+    return theme === 'dark' ? 'shina-dark' : 'shina';
+  }, [theme]);
+
+  useEffect(() => {
+    const applyTheme = () => {
+      document.documentElement.setAttribute('data-theme', getEffectiveTheme());
+    };
+    applyTheme();
+
+    const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)');
+    const handleChange = () => {
+      if (theme === 'system') applyTheme();
+    };
+    mediaQuery.addEventListener('change', handleChange);
+    return () => mediaQuery.removeEventListener('change', handleChange);
+  }, [theme, getEffectiveTheme]);
 
   const {
     register,
@@ -30,6 +52,10 @@ export default function PortalLoginPage() {
     const newLang = language === 'uz' ? 'ru' : 'uz';
     setLanguage(newLang);
     i18n.changeLanguage(newLang);
+  };
+
+  const toggleTheme = () => {
+    setTheme(theme === 'light' ? 'dark' : 'light');
   };
 
   const onSubmit = async (data: CustomerLoginRequest) => {
@@ -57,17 +83,28 @@ export default function PortalLoginPage() {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-primary to-primary-focus flex flex-col items-center justify-center p-4 max-w-md mx-auto">
-      {/* Language Toggle */}
-      <button
-        type="button"
-        className="absolute top-4 right-4 btn btn-ghost btn-circle text-primary-content"
-        onClick={toggleLanguage}
-      >
-        <div className="flex items-center gap-1">
-          <Globe size={20} />
-          <span className="text-sm uppercase font-semibold">{language}</span>
-        </div>
-      </button>
+      {/* Top Controls */}
+      <div className="absolute top-4 right-4 flex items-center gap-2">
+        {/* Theme Toggle */}
+        <button
+          type="button"
+          className="btn btn-ghost btn-circle text-primary-content"
+          onClick={toggleTheme}
+        >
+          {theme === 'dark' ? <Moon size={20} /> : <Sun size={20} />}
+        </button>
+        {/* Language Toggle */}
+        <button
+          type="button"
+          className="btn btn-ghost btn-circle text-primary-content"
+          onClick={toggleLanguage}
+        >
+          <div className="flex items-center gap-1">
+            <Globe size={20} />
+            <span className="text-sm uppercase font-semibold">{language}</span>
+          </div>
+        </button>
+      </div>
 
       {/* Logo/Brand */}
       <div className="text-center mb-8">

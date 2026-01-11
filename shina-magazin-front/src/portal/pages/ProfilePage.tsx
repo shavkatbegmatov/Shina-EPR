@@ -1,11 +1,11 @@
 import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { User, Phone, MapPin, Building, Calendar, Globe, LogOut } from 'lucide-react';
+import { User, Phone, MapPin, Building, Calendar, Globe, LogOut, Sun, Moon, Monitor } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import toast from 'react-hot-toast';
 import { portalApiClient } from '../api/portal.api';
 import { portalAuthApi } from '../api/portalAuth.api';
-import { usePortalAuthStore } from '../store/portalAuthStore';
+import { usePortalAuthStore, type ThemeMode } from '../store/portalAuthStore';
 import PortalHeader from '../components/layout/PortalHeader';
 import type { CustomerPortalProfile } from '../types/portal.types';
 import { format } from 'date-fns';
@@ -13,7 +13,7 @@ import { format } from 'date-fns';
 export default function PortalProfilePage() {
   const { t, i18n } = useTranslation();
   const navigate = useNavigate();
-  const { logout, language, setLanguage } = usePortalAuthStore();
+  const { logout, language, setLanguage, theme, setTheme } = usePortalAuthStore();
   const [profile, setProfile] = useState<CustomerPortalProfile | null>(null);
   const [loading, setLoading] = useState(true);
 
@@ -33,6 +33,11 @@ export default function PortalProfilePage() {
     } catch (error) {
       console.error('Failed to update language', error);
     }
+  };
+
+  const handleThemeChange = (newTheme: ThemeMode) => {
+    setTheme(newTheme);
+    toast.success(t('profile.theme') + ': ' + t(`profile.theme${newTheme.charAt(0).toUpperCase() + newTheme.slice(1)}`));
   };
 
   const handleLogout = async () => {
@@ -153,6 +158,39 @@ export default function PortalProfilePage() {
                 onClick={() => handleLanguageChange('ru')}
               >
                 Русский
+              </button>
+            </div>
+          </div>
+        </div>
+
+        {/* Theme Settings */}
+        <div className="card bg-base-100 shadow-sm">
+          <div className="card-body p-4">
+            <h3 className="font-semibold mb-3 flex items-center gap-2">
+              <Sun size={18} />
+              {t('profile.theme')}
+            </h3>
+            <div className="flex gap-2">
+              <button
+                className={`btn btn-sm flex-1 gap-1 ${theme === 'light' ? 'btn-primary' : 'btn-ghost'}`}
+                onClick={() => handleThemeChange('light')}
+              >
+                <Sun size={16} />
+                {t('profile.themeLight')}
+              </button>
+              <button
+                className={`btn btn-sm flex-1 gap-1 ${theme === 'dark' ? 'btn-primary' : 'btn-ghost'}`}
+                onClick={() => handleThemeChange('dark')}
+              >
+                <Moon size={16} />
+                {t('profile.themeDark')}
+              </button>
+              <button
+                className={`btn btn-sm flex-1 gap-1 ${theme === 'system' ? 'btn-primary' : 'btn-ghost'}`}
+                onClick={() => handleThemeChange('system')}
+              >
+                <Monitor size={16} />
+                {t('profile.themeSystem')}
               </button>
             </div>
           </div>

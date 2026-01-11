@@ -95,7 +95,12 @@
     "currentPin": "Текущий PIN",
     "newPin": "Новый PIN",
     "confirmPin": "Подтвердите PIN",
-    "pinChanged": "PIN успешно изменен"
+    "pinChanged": "PIN успешно изменен",
+    "theme": "Тема",
+    "changeTheme": "Изменить тему",
+    "themeLight": "Светлая",
+    "themeDark": "Тёмная",
+    "themeSystem": "Система"
   },
   "status": {
     "completed": "Завершен",

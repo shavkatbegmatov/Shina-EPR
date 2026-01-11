@@ -1,12 +1,47 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import { Outlet, Navigate } from 'react-router-dom';
 import { usePortalAuthStore } from '../../store/portalAuthStore';
 import { portalApiClient } from '../../api/portal.api';
 import BottomNav from './BottomNav';
 
+function useTheme() {
+  const { theme } = usePortalAuthStore();
+
+  const getEffectiveTheme = useCallback(() => {
+    if (theme === 'system') {
+      return window.matchMedia('(prefers-color-scheme: dark)').matches ? 'shina-dark' : 'shina';
+    }
+    return theme === 'dark' ? 'shina-dark' : 'shina';
+  }, [theme]);
+
+  useEffect(() => {
+    const applyTheme = () => {
+      document.documentElement.setAttribute('data-theme', getEffectiveTheme());
+    };
+
+    applyTheme();
+
+    // Listen for system theme changes
+    const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)');
+    const handleChange = () => {
+      if (theme === 'system') {
+        applyTheme();
+      }
+    };
+
+    mediaQuery.addEventListener('change', handleChange);
+    return () => mediaQuery.removeEventListener('change', handleChange);
+  }, [theme, getEffectiveTheme]);
+
+  return getEffectiveTheme();
+}
+
 export default function PortalLayout() {
   const { isAuthenticated } = usePortalAuthStore();
   const [unreadCount, setUnreadCount] = useState(0);
+
+  // Apply theme
+  useTheme();
 
   useEffect(() => {
     if (isAuthenticated) {

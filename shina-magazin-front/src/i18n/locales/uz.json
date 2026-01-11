@@ -95,7 +95,12 @@
     "currentPin": "Joriy PIN",
     "newPin": "Yangi PIN",
     "confirmPin": "PIN ni tasdiqlang",
-    "pinChanged": "PIN muvaffaqiyatli o'zgartirildi"
+    "pinChanged": "PIN muvaffaqiyatli o'zgartirildi",
+    "theme": "Mavzu",
+    "changeTheme": "Mavzuni o'zgartirish",
+    "themeLight": "Yorug'",
+    "themeDark": "Qorong'i",
+    "themeSystem": "Tizim"
   },
   "status": {
     "completed": "Yakunlangan",
