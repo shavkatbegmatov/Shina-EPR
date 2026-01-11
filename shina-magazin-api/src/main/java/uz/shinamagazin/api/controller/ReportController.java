@@ -8,6 +8,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import uz.shinamagazin.api.dto.response.ApiResponse;
 import uz.shinamagazin.api.dto.response.SalesReportResponse;
+import uz.shinamagazin.api.dto.response.WarehouseReportResponse;
 import uz.shinamagazin.api.service.ReportService;
 
 import java.time.LocalDate;
@@ -26,5 +27,13 @@ public class ReportController {
             @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate startDate,
             @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate endDate) {
         return ResponseEntity.ok(ApiResponse.success(reportService.getSalesReport(startDate, endDate)));
+    }
+
+    @GetMapping("/warehouse")
+    @Operation(summary = "Get warehouse report", description = "Ombor hisoboti")
+    public ResponseEntity<ApiResponse<WarehouseReportResponse>> getWarehouseReport(
+            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate startDate,
+            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate endDate) {
+        return ResponseEntity.ok(ApiResponse.success(reportService.getWarehouseReport(startDate, endDate)));
     }
 }

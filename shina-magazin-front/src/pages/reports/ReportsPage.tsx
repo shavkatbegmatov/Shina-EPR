@@ -12,17 +12,30 @@ import {
   RefreshCw,
   FileDown,
   FileSpreadsheet,
+  Warehouse,
+  ArrowDownToLine,
+  ArrowUpFromLine,
+  AlertTriangle,
+  Tag,
 } from 'lucide-react';
 import clsx from 'clsx';
 import { reportsApi } from '../../api/reports.api';
 import { formatCurrency, formatNumber } from '../../config/constants';
-import { exportReportToExcel, exportReportToPDF } from '../../utils/exportUtils';
-import type { SalesReport } from '../../types';
+import {
+  exportReportToExcel,
+  exportReportToPDF,
+  exportWarehouseReportToExcel,
+  exportWarehouseReportToPDF,
+} from '../../utils/exportUtils';
+import type { SalesReport, WarehouseReport } from '../../types';
 
 type DateRange = 'today' | 'week' | 'month' | 'quarter' | 'year' | 'custom';
+type ReportTab = 'sales' | 'warehouse';
 
 export function ReportsPage() {
-  const [report, setReport] = useState<SalesReport | null>(null);
+  const [activeTab, setActiveTab] = useState<ReportTab>('sales');
+  const [salesReport, setSalesReport] = useState<SalesReport | null>(null);
+  const [warehouseReport, setWarehouseReport] = useState<WarehouseReport | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [dateRange, setDateRange] = useState<DateRange>('month');
@@ -64,21 +77,25 @@ export function ReportsPage() {
     return { start: start.toISOString().split('T')[0], end };
   };
 
-  const loadReport = async () => {
+  const loadReports = async () => {
     setLoading(true);
     setError(null);
     try {
       const { start, end } = getDateRange(dateRange);
       if (!start || !end) {
-        setError('Iltimos, sana oralig\'ini tanlang');
+        setError("Iltimos, sana oralig'ini tanlang");
         setLoading(false);
         return;
       }
-      const data = await reportsApi.getSalesReport(start, end);
-      setReport(data);
+      const [sales, warehouse] = await Promise.all([
+        reportsApi.getSalesReport(start, end),
+        reportsApi.getWarehouseReport(start, end),
+      ]);
+      setSalesReport(sales);
+      setWarehouseReport(warehouse);
     } catch (err) {
-      console.error('Failed to load report:', err);
-      setError('Hisobotni yuklashda xatolik yuz berdi');
+      console.error('Failed to load reports:', err);
+      setError('Hisobotlarni yuklashda xatolik yuz berdi');
     } finally {
       setLoading(false);
     }
@@ -86,7 +103,7 @@ export function ReportsPage() {
 
   useEffect(() => {
     if (dateRange !== 'custom' || (customStart && customEnd)) {
-      loadReport();
+      loadReports();
     }
   }, [dateRange, customStart, customEnd]);
 
@@ -98,6 +115,24 @@ export function ReportsPage() {
     { value: 'year', label: 'Yil' },
     { value: 'custom', label: 'Maxsus' },
   ];
+
+  const handleExportExcel = () => {
+    const { start, end } = getDateRange(dateRange);
+    if (activeTab === 'sales' && salesReport) {
+      exportReportToExcel(salesReport, start, end);
+    } else if (activeTab === 'warehouse' && warehouseReport) {
+      exportWarehouseReportToExcel(warehouseReport, start, end);
+    }
+  };
+
+  const handleExportPDF = () => {
+    const { start, end } = getDateRange(dateRange);
+    if (activeTab === 'sales' && salesReport) {
+      exportReportToPDF(salesReport, start, end);
+    } else if (activeTab === 'warehouse' && warehouseReport) {
+      exportWarehouseReportToPDF(warehouseReport, start, end);
+    }
+  };
 
   if (loading) {
     return (
@@ -126,11 +161,10 @@ export function ReportsPage() {
       <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
         <div>
           <h1 className="section-title">Hisobotlar</h1>
-          <p className="section-subtitle">Sotuvlar va moliyaviy hisobotlar</p>
+          <p className="section-subtitle">Sotuvlar va ombor hisobotlari</p>
         </div>
 
         <div className="flex flex-wrap items-center gap-3">
-          {/* Date range selector */}
           <div className="flex items-center gap-2">
             <Calendar className="h-4 w-4 text-base-content/60" />
             <select
@@ -146,7 +180,6 @@ export function ReportsPage() {
             </select>
           </div>
 
-          {/* Custom date range */}
           {dateRange === 'custom' && (
             <div className="flex items-center gap-2">
               <input
@@ -167,39 +200,42 @@ export function ReportsPage() {
 
           <button
             className="btn btn-outline btn-sm"
-            onClick={loadReport}
+            onClick={loadReports}
             disabled={loading}
           >
             <RefreshCw className={clsx('h-4 w-4', loading && 'animate-spin')} />
             Yangilash
           </button>
 
-          {/* Export buttons */}
-          {report && (
-            <div className="flex items-center gap-2">
-              <button
-                className="btn btn-success btn-sm"
-                onClick={() => {
-                  const { start, end } = getDateRange(dateRange);
-                  exportReportToExcel(report, start, end);
-                }}
-              >
-                <FileSpreadsheet className="h-4 w-4" />
-                Excel
-              </button>
-              <button
-                className="btn btn-error btn-sm"
-                onClick={() => {
-                  const { start, end } = getDateRange(dateRange);
-                  exportReportToPDF(report, start, end);
-                }}
-              >
-                <FileDown className="h-4 w-4" />
-                PDF
-              </button>
-            </div>
-          )}
+          <div className="flex items-center gap-2">
+            <button className="btn btn-success btn-sm" onClick={handleExportExcel}>
+              <FileSpreadsheet className="h-4 w-4" />
+              Excel
+            </button>
+            <button className="btn btn-error btn-sm" onClick={handleExportPDF}>
+              <FileDown className="h-4 w-4" />
+              PDF
+            </button>
+          </div>
         </div>
+      </div>
+
+      {/* Tabs */}
+      <div className="tabs tabs-boxed w-fit">
+        <button
+          className={clsx('tab gap-2', activeTab === 'sales' && 'tab-active')}
+          onClick={() => setActiveTab('sales')}
+        >
+          <ShoppingCart className="h-4 w-4" />
+          Sotuvlar
+        </button>
+        <button
+          className={clsx('tab gap-2', activeTab === 'warehouse' && 'tab-active')}
+          onClick={() => setActiveTab('warehouse')}
+        >
+          <Warehouse className="h-4 w-4" />
+          Ombor
+        </button>
       </div>
 
       {error && (
@@ -209,206 +245,353 @@ export function ReportsPage() {
         </div>
       )}
 
-      {report && (
-        <>
-          {/* Summary Stats */}
-          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
-            <StatCard
-              title="Jami daromad"
-              value={formatCurrency(report.totalRevenue)}
-              icon={TrendingUp}
-              color="success"
-            />
-            <StatCard
-              title="Jami foyda"
-              value={formatCurrency(report.totalProfit)}
-              icon={Banknote}
-              color="primary"
-            />
-            <StatCard
-              title="Sotuvlar soni"
-              value={formatNumber(report.completedSalesCount)}
-              icon={ShoppingCart}
-              color="info"
-              subtext={`Bekor qilingan: ${report.cancelledSalesCount}`}
-            />
-            <StatCard
-              title="O'rtacha sotuv"
-              value={formatCurrency(report.averageSaleAmount)}
-              icon={TrendingUp}
-              color="secondary"
-            />
-          </div>
+      {/* Sales Report Tab */}
+      {activeTab === 'sales' && salesReport && <SalesReportView report={salesReport} />}
 
-          {/* Payment Methods */}
-          <div className="surface-card p-6">
-            <h2 className="mb-4 text-lg font-semibold">To'lov usullari bo'yicha</h2>
-            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
-              <PaymentMethodCard
-                icon={Banknote}
-                label="Naqd"
-                amount={report.cashTotal}
-                color="bg-green-500"
-              />
-              <PaymentMethodCard
-                icon={CreditCard}
-                label="Karta"
-                amount={report.cardTotal}
-                color="bg-blue-500"
-              />
-              <PaymentMethodCard
-                icon={Building2}
-                label="O'tkazma"
-                amount={report.transferTotal}
-                color="bg-purple-500"
-              />
-              <PaymentMethodCard
-                icon={AlertCircle}
-                label="Qarz"
-                amount={report.debtTotal}
-                color="bg-orange-500"
-              />
-            </div>
-          </div>
-
-          {/* Charts Section */}
-          <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
-            {/* Daily Sales Chart */}
-            <div className="surface-card p-6">
-              <h2 className="mb-4 text-lg font-semibold">Kunlik sotuvlar</h2>
-              {report.dailyData.length > 0 ? (
-                <div className="space-y-2">
-                  <div className="overflow-x-auto">
-                    <table className="table table-sm">
-                      <thead>
-                        <tr>
-                          <th>Sana</th>
-                          <th className="text-right">Sotuvlar</th>
-                          <th className="text-right">Daromad</th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {report.dailyData.slice(-10).map((day) => (
-                          <tr key={day.date}>
-                            <td>{formatDate(day.date)}</td>
-                            <td className="text-right">{day.salesCount}</td>
-                            <td className="text-right">{formatCurrency(day.revenue)}</td>
-                          </tr>
-                        ))}
-                      </tbody>
-                    </table>
-                  </div>
-                  {report.dailyData.length > 10 && (
-                    <p className="text-center text-sm text-base-content/60">
-                      Oxirgi 10 kun ko'rsatilmoqda
-                    </p>
-                  )}
-                </div>
-              ) : (
-                <p className="text-base-content/60">Ma'lumot mavjud emas</p>
-              )}
-            </div>
-
-            {/* Daily Chart Visual */}
-            <div className="surface-card p-6">
-              <h2 className="mb-4 text-lg font-semibold">Daromad grafigi</h2>
-              {report.dailyData.length > 0 ? (
-                <div className="h-64">
-                  <SimpleBarChart data={report.dailyData.slice(-14)} />
-                </div>
-              ) : (
-                <p className="text-base-content/60">Ma'lumot mavjud emas</p>
-              )}
-            </div>
-          </div>
-
-          {/* Top Products & Customers */}
-          <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
-            {/* Top Products */}
-            <div className="surface-card p-6">
-              <h2 className="mb-4 flex items-center gap-2 text-lg font-semibold">
-                <Package className="h-5 w-5" />
-                Top mahsulotlar
-              </h2>
-              {report.topProducts.length > 0 ? (
-                <div className="overflow-x-auto">
-                  <table className="table table-sm">
-                    <thead>
-                      <tr>
-                        <th>#</th>
-                        <th>Mahsulot</th>
-                        <th className="text-right">Sotildi</th>
-                        <th className="text-right">Daromad</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {report.topProducts.map((product, index) => (
-                        <tr key={product.productId}>
-                          <td>{index + 1}</td>
-                          <td>
-                            <div>
-                              <span className="font-medium">{product.productName}</span>
-                              <span className="ml-2 text-xs text-base-content/60">
-                                {product.productSku}
-                              </span>
-                            </div>
-                          </td>
-                          <td className="text-right">{product.quantitySold} dona</td>
-                          <td className="text-right">{formatCurrency(product.totalRevenue)}</td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
-              ) : (
-                <p className="text-base-content/60">Ma'lumot mavjud emas</p>
-              )}
-            </div>
-
-            {/* Top Customers */}
-            <div className="surface-card p-6">
-              <h2 className="mb-4 flex items-center gap-2 text-lg font-semibold">
-                <Users className="h-5 w-5" />
-                Top mijozlar
-              </h2>
-              {report.topCustomers.length > 0 ? (
-                <div className="overflow-x-auto">
-                  <table className="table table-sm">
-                    <thead>
-                      <tr>
-                        <th>#</th>
-                        <th>Mijoz</th>
-                        <th className="text-right">Xaridlar</th>
-                        <th className="text-right">Jami</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {report.topCustomers.map((customer, index) => (
-                        <tr key={customer.customerId}>
-                          <td>{index + 1}</td>
-                          <td>
-                            <div>
-                              <span className="font-medium">{customer.customerName}</span>
-                              <span className="ml-2 text-xs text-base-content/60">
-                                {customer.customerPhone}
-                              </span>
-                            </div>
-                          </td>
-                          <td className="text-right">{customer.purchaseCount}</td>
-                          <td className="text-right">{formatCurrency(customer.totalSpent)}</td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
-              ) : (
-                <p className="text-base-content/60">Ma'lumot mavjud emas</p>
-              )}
-            </div>
-          </div>
-        </>
+      {/* Warehouse Report Tab */}
+      {activeTab === 'warehouse' && warehouseReport && (
+        <WarehouseReportView report={warehouseReport} />
       )}
     </div>
+  );
+}
+
+// Sales Report View
+function SalesReportView({ report }: { report: SalesReport }) {
+  return (
+    <>
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
+        <StatCard
+          title="Jami daromad"
+          value={formatCurrency(report.totalRevenue)}
+          icon={TrendingUp}
+          color="success"
+        />
+        <StatCard
+          title="Jami foyda"
+          value={formatCurrency(report.totalProfit)}
+          icon={Banknote}
+          color="primary"
+        />
+        <StatCard
+          title="Sotuvlar soni"
+          value={formatNumber(report.completedSalesCount)}
+          icon={ShoppingCart}
+          color="info"
+          subtext={`Bekor qilingan: ${report.cancelledSalesCount}`}
+        />
+        <StatCard
+          title="O'rtacha sotuv"
+          value={formatCurrency(report.averageSaleAmount)}
+          icon={TrendingUp}
+          color="secondary"
+        />
+      </div>
+
+      <div className="surface-card p-6">
+        <h2 className="mb-4 text-lg font-semibold">To'lov usullari bo'yicha</h2>
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
+          <PaymentMethodCard icon={Banknote} label="Naqd" amount={report.cashTotal} color="bg-green-500" />
+          <PaymentMethodCard icon={CreditCard} label="Karta" amount={report.cardTotal} color="bg-blue-500" />
+          <PaymentMethodCard icon={Building2} label="O'tkazma" amount={report.transferTotal} color="bg-purple-500" />
+          <PaymentMethodCard icon={AlertCircle} label="Qarz" amount={report.debtTotal} color="bg-orange-500" />
+        </div>
+      </div>
+
+      <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
+        <div className="surface-card p-6">
+          <h2 className="mb-4 text-lg font-semibold">Kunlik sotuvlar</h2>
+          {report.dailyData.length > 0 ? (
+            <div className="overflow-x-auto">
+              <table className="table table-sm">
+                <thead>
+                  <tr>
+                    <th>Sana</th>
+                    <th className="text-right">Sotuvlar</th>
+                    <th className="text-right">Daromad</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {report.dailyData.slice(-10).map((day) => (
+                    <tr key={day.date}>
+                      <td>{formatDate(day.date)}</td>
+                      <td className="text-right">{day.salesCount}</td>
+                      <td className="text-right">{formatCurrency(day.revenue)}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          ) : (
+            <p className="text-base-content/60">Ma'lumot mavjud emas</p>
+          )}
+        </div>
+
+        <div className="surface-card p-6">
+          <h2 className="mb-4 text-lg font-semibold">Daromad grafigi</h2>
+          {report.dailyData.length > 0 ? (
+            <div className="h-64">
+              <SimpleBarChart data={report.dailyData.slice(-14)} />
+            </div>
+          ) : (
+            <p className="text-base-content/60">Ma'lumot mavjud emas</p>
+          )}
+        </div>
+      </div>
+
+      <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
+        <div className="surface-card p-6">
+          <h2 className="mb-4 flex items-center gap-2 text-lg font-semibold">
+            <Package className="h-5 w-5" />
+            Top mahsulotlar
+          </h2>
+          {report.topProducts.length > 0 ? (
+            <div className="overflow-x-auto">
+              <table className="table table-sm">
+                <thead>
+                  <tr>
+                    <th>#</th>
+                    <th>Mahsulot</th>
+                    <th className="text-right">Sotildi</th>
+                    <th className="text-right">Daromad</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {report.topProducts.map((product, index) => (
+                    <tr key={product.productId}>
+                      <td>{index + 1}</td>
+                      <td>
+                        <span className="font-medium">{product.productName}</span>
+                        <span className="ml-2 text-xs text-base-content/60">{product.productSku}</span>
+                      </td>
+                      <td className="text-right">{product.quantitySold} dona</td>
+                      <td className="text-right">{formatCurrency(product.totalRevenue)}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          ) : (
+            <p className="text-base-content/60">Ma'lumot mavjud emas</p>
+          )}
+        </div>
+
+        <div className="surface-card p-6">
+          <h2 className="mb-4 flex items-center gap-2 text-lg font-semibold">
+            <Users className="h-5 w-5" />
+            Top mijozlar
+          </h2>
+          {report.topCustomers.length > 0 ? (
+            <div className="overflow-x-auto">
+              <table className="table table-sm">
+                <thead>
+                  <tr>
+                    <th>#</th>
+                    <th>Mijoz</th>
+                    <th className="text-right">Xaridlar</th>
+                    <th className="text-right">Jami</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {report.topCustomers.map((customer, index) => (
+                    <tr key={customer.customerId}>
+                      <td>{index + 1}</td>
+                      <td>
+                        <span className="font-medium">{customer.customerName}</span>
+                        <span className="ml-2 text-xs text-base-content/60">{customer.customerPhone}</span>
+                      </td>
+                      <td className="text-right">{customer.purchaseCount}</td>
+                      <td className="text-right">{formatCurrency(customer.totalSpent)}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          ) : (
+            <p className="text-base-content/60">Ma'lumot mavjud emas</p>
+          )}
+        </div>
+      </div>
+    </>
+  );
+}
+
+// Warehouse Report View
+function WarehouseReportView({ report }: { report: WarehouseReport }) {
+  return (
+    <>
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
+        <StatCard
+          title="Jami mahsulotlar"
+          value={formatNumber(report.totalProducts)}
+          icon={Package}
+          color="primary"
+          subtext={`Omborda: ${formatNumber(report.totalStock)} dona`}
+        />
+        <StatCard
+          title="Ombor qiymati"
+          value={formatCurrency(report.totalStockValue)}
+          icon={Banknote}
+          color="success"
+          subtext={`Potensial: ${formatCurrency(report.totalPotentialRevenue)}`}
+        />
+        <StatCard
+          title="Kam qolgan"
+          value={formatNumber(report.lowStockCount)}
+          icon={AlertTriangle}
+          color="warning"
+          subtext={`Tugagan: ${report.outOfStockCount}`}
+        />
+        <StatCard
+          title="Harakatlar"
+          value={`${report.inMovementsCount} / ${report.outMovementsCount}`}
+          icon={ArrowDownToLine}
+          color="info"
+          subtext={`Kirim: ${report.totalIncoming}, Chiqim: ${report.totalOutgoing}`}
+        />
+      </div>
+
+      <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
+        <div className="surface-card p-6">
+          <h2 className="mb-4 flex items-center gap-2 text-lg font-semibold">
+            <Tag className="h-5 w-5" />
+            Kategoriya bo'yicha
+          </h2>
+          {report.stockByCategory.length > 0 ? (
+            <div className="overflow-x-auto">
+              <table className="table table-sm">
+                <thead>
+                  <tr>
+                    <th>Kategoriya</th>
+                    <th className="text-right">Mahsulotlar</th>
+                    <th className="text-right">Omborda</th>
+                    <th className="text-right">Qiymati</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {report.stockByCategory.map((cat) => (
+                    <tr key={cat.categoryId}>
+                      <td className="font-medium">{cat.categoryName}</td>
+                      <td className="text-right">{cat.productCount}</td>
+                      <td className="text-right">{formatNumber(cat.totalStock)} dona</td>
+                      <td className="text-right">{formatCurrency(cat.stockValue)}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          ) : (
+            <p className="text-base-content/60">Ma'lumot mavjud emas</p>
+          )}
+        </div>
+
+        <div className="surface-card p-6">
+          <h2 className="mb-4 flex items-center gap-2 text-lg font-semibold">
+            <Package className="h-5 w-5" />
+            Brend bo'yicha
+          </h2>
+          {report.stockByBrand.length > 0 ? (
+            <div className="overflow-x-auto">
+              <table className="table table-sm">
+                <thead>
+                  <tr>
+                    <th>Brend</th>
+                    <th className="text-right">Mahsulotlar</th>
+                    <th className="text-right">Omborda</th>
+                    <th className="text-right">Qiymati</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {report.stockByBrand.map((brand) => (
+                    <tr key={brand.brandId}>
+                      <td className="font-medium">{brand.brandName}</td>
+                      <td className="text-right">{brand.productCount}</td>
+                      <td className="text-right">{formatNumber(brand.totalStock)} dona</td>
+                      <td className="text-right">{formatCurrency(brand.stockValue)}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          ) : (
+            <p className="text-base-content/60">Ma'lumot mavjud emas</p>
+          )}
+        </div>
+      </div>
+
+      <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
+        <div className="surface-card p-6">
+          <h2 className="mb-4 flex items-center gap-2 text-lg font-semibold">
+            <AlertTriangle className="h-5 w-5 text-warning" />
+            Kam qolgan mahsulotlar
+          </h2>
+          {report.lowStockProducts.length > 0 ? (
+            <div className="overflow-x-auto">
+              <table className="table table-sm">
+                <thead>
+                  <tr>
+                    <th>Mahsulot</th>
+                    <th className="text-right">Hozirgi</th>
+                    <th className="text-right">Minimal</th>
+                    <th className="text-right">Narxi</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {report.lowStockProducts.map((product) => (
+                    <tr key={product.productId} className={product.currentStock === 0 ? 'text-error' : ''}>
+                      <td>
+                        <span className="font-medium">{product.productName}</span>
+                        <span className="ml-2 text-xs text-base-content/60">{product.productSku}</span>
+                      </td>
+                      <td className="text-right font-bold">{product.currentStock}</td>
+                      <td className="text-right">{product.minStockLevel}</td>
+                      <td className="text-right">{formatCurrency(product.sellingPrice)}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          ) : (
+            <p className="text-success">Barcha mahsulotlar yetarli miqdorda</p>
+          )}
+        </div>
+
+        <div className="surface-card p-6">
+          <h2 className="mb-4 flex items-center gap-2 text-lg font-semibold">
+            <ArrowUpFromLine className="h-5 w-5" />
+            Kunlik harakatlar
+          </h2>
+          {report.recentMovements.length > 0 ? (
+            <div className="overflow-x-auto">
+              <table className="table table-sm">
+                <thead>
+                  <tr>
+                    <th>Sana</th>
+                    <th className="text-right text-success">Kirim</th>
+                    <th className="text-right text-error">Chiqim</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {report.recentMovements.slice(-10).map((mov) => (
+                    <tr key={mov.date}>
+                      <td>{formatDate(mov.date)}</td>
+                      <td className="text-right text-success">
+                        {mov.inCount > 0 && `${mov.inCount} ta (${mov.inQuantity} dona)`}
+                      </td>
+                      <td className="text-right text-error">
+                        {mov.outCount > 0 && `${mov.outCount} ta (${mov.outQuantity} dona)`}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          ) : (
+            <p className="text-base-content/60">Ma'lumot mavjud emas</p>
+          )}
+        </div>
+      </div>
+    </>
   );
 }
 
@@ -477,7 +660,6 @@ function PaymentMethodCard({
 
 function SimpleBarChart({ data }: { data: { date: string; revenue: number }[] }) {
   if (data.length === 0) return null;
-
   const maxRevenue = Math.max(...data.map((d) => d.revenue));
 
   return (
@@ -485,18 +667,12 @@ function SimpleBarChart({ data }: { data: { date: string; revenue: number }[] })
       {data.map((day) => {
         const height = maxRevenue > 0 ? (day.revenue / maxRevenue) * 100 : 0;
         return (
-          <div
-            key={day.date}
-            className="group relative flex flex-1 flex-col items-center"
-          >
+          <div key={day.date} className="group relative flex flex-1 flex-col items-center">
             <div
               className="w-full rounded-t bg-primary transition-all hover:bg-primary/80"
               style={{ height: `${Math.max(height, 2)}%` }}
             />
-            <div className="mt-1 text-[10px] text-base-content/60">
-              {formatShortDate(day.date)}
-            </div>
-            {/* Tooltip */}
+            <div className="mt-1 text-[10px] text-base-content/60">{formatShortDate(day.date)}</div>
             <div className="absolute bottom-full mb-2 hidden rounded bg-base-300 px-2 py-1 text-xs shadow-lg group-hover:block">
               {formatCurrency(day.revenue)}
             </div>
@@ -509,17 +685,10 @@ function SimpleBarChart({ data }: { data: { date: string; revenue: number }[] })
 
 function formatDate(dateStr: string): string {
   const date = new Date(dateStr);
-  return date.toLocaleDateString('uz-UZ', {
-    day: '2-digit',
-    month: '2-digit',
-    year: 'numeric',
-  });
+  return date.toLocaleDateString('uz-UZ', { day: '2-digit', month: '2-digit', year: 'numeric' });
 }
 
 function formatShortDate(dateStr: string): string {
   const date = new Date(dateStr);
-  return date.toLocaleDateString('uz-UZ', {
-    day: '2-digit',
-    month: '2-digit',
-  });
+  return date.toLocaleDateString('uz-UZ', { day: '2-digit', month: '2-digit' });
 }

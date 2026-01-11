@@ -324,6 +324,57 @@ export interface TopCustomer {
   totalSpent: number;
 }
 
+// Warehouse Report Types
+export interface WarehouseReport {
+  totalProducts: number;
+  totalStock: number;
+  lowStockCount: number;
+  outOfStockCount: number;
+  totalStockValue: number;
+  totalPotentialRevenue: number;
+  totalIncoming: number;
+  totalOutgoing: number;
+  inMovementsCount: number;
+  outMovementsCount: number;
+  stockByCategory: StockByCategory[];
+  stockByBrand: StockByBrand[];
+  lowStockProducts: LowStockProduct[];
+  recentMovements: MovementSummary[];
+}
+
+export interface StockByCategory {
+  categoryId: number;
+  categoryName: string;
+  productCount: number;
+  totalStock: number;
+  stockValue: number;
+}
+
+export interface StockByBrand {
+  brandId: number;
+  brandName: string;
+  productCount: number;
+  totalStock: number;
+  stockValue: number;
+}
+
+export interface LowStockProduct {
+  productId: number;
+  productName: string;
+  productSku: string;
+  currentStock: number;
+  minStockLevel: number;
+  sellingPrice: number;
+}
+
+export interface MovementSummary {
+  date: string;
+  inCount: number;
+  outCount: number;
+  inQuantity: number;
+  outQuantity: number;
+}
+
 // Supplier Types
 export interface Supplier {
   id: number;
