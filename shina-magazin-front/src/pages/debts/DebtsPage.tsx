@@ -13,8 +13,7 @@ import clsx from 'clsx';
 import { debtsApi } from '../../api/debts.api';
 import { formatCurrency, DEBT_STATUSES, PAYMENT_METHODS } from '../../config/constants';
 import { NumberInput } from '../../components/ui/NumberInput';
-import { SortableHeader, useSorting, sortData } from '../../components/ui/SortableHeader';
-import { Pagination } from '../../components/ui/Pagination';
+import { DataTable, Column } from '../../components/ui/DataTable';
 import type { Debt, DebtStatus, Payment, PaymentMethod } from '../../types';
 
 export function DebtsPage() {
@@ -40,12 +39,73 @@ export function DebtsPage() {
   // Stats
   const [totalActiveDebt, setTotalActiveDebt] = useState(0);
 
-  // Sorting
-  const { sortConfig, handleSort } = useSorting();
-
-  const sortedDebts = useMemo(() => {
-    return sortData(debts, sortConfig);
-  }, [debts, sortConfig]);
+  // Table columns
+  const columns: Column<Debt>[] = useMemo(() => [
+    {
+      key: 'customerName',
+      header: 'Mijoz',
+      render: (debt) => (
+        <div>
+          <div className="font-medium">{debt.customerName}</div>
+          <div className="flex items-center gap-1 text-xs text-base-content/60">
+            <Phone className="h-3 w-3" />
+            {debt.customerPhone}
+          </div>
+        </div>
+      ),
+    },
+    {
+      key: 'invoiceNumber',
+      header: 'Faktura',
+      render: (debt) => (
+        <span className="font-mono text-sm">
+          {debt.invoiceNumber || '-'}
+        </span>
+      ),
+    },
+    {
+      key: 'originalAmount',
+      header: 'Summa',
+      getValue: (debt) => debt.originalAmount,
+      render: (debt) => formatCurrency(debt.originalAmount),
+    },
+    {
+      key: 'remainingAmount',
+      header: 'Qoldiq',
+      getValue: (debt) => debt.remainingAmount,
+      render: (debt) => (
+        <span className="font-semibold text-error">
+          {formatCurrency(debt.remainingAmount)}
+        </span>
+      ),
+    },
+    {
+      key: 'status',
+      header: 'Holat',
+      render: (debt) => (
+        <span
+          className={clsx(
+            'badge badge-sm',
+            debt.status === 'PAID' && 'badge-success',
+            debt.status === 'ACTIVE' && !debt.overdue && 'badge-warning',
+            (debt.status === 'OVERDUE' || debt.overdue) && 'badge-error'
+          )}
+        >
+          {debt.overdue ? "Muddati o'tgan" : DEBT_STATUSES[debt.status]?.label}
+        </span>
+      ),
+    },
+    {
+      key: 'actions',
+      header: '',
+      sortable: false,
+      render: () => (
+        <button className="btn btn-ghost btn-sm">
+          Batafsil
+        </button>
+      ),
+    },
+  ], []);
 
   const handlePageSizeChange = (newSize: number) => {
     setPageSize(newSize);
@@ -228,139 +288,62 @@ export function DebtsPage() {
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
         {/* Debts List */}
         <div className="lg:col-span-2">
-          <div className="surface-card overflow-hidden">
-            {loading ? (
-              <div className="flex items-center justify-center h-64">
-                <span className="loading loading-spinner loading-lg" />
-              </div>
-            ) : debts.length === 0 ? (
-              <div className="flex flex-col items-center justify-center gap-2 p-10 text-center text-base-content/50">
-                <Wallet className="h-12 w-12" />
-                <div>
-                  <p className="text-base font-medium">Qarzlar topilmadi</p>
-                  <p className="text-sm">Filtrlarni o'zgartiring</p>
-                </div>
-              </div>
-            ) : (
-              <>
-                <div className="hidden lg:block table-container">
-                  <table className="table table-zebra">
-                    <thead>
-                      <tr>
-                        <SortableHeader label="Mijoz" sortKey="customerName" currentSort={sortConfig} onSort={handleSort} />
-                        <SortableHeader label="Faktura" sortKey="invoiceNumber" currentSort={sortConfig} onSort={handleSort} />
-                        <SortableHeader label="Summa" sortKey="originalAmount" currentSort={sortConfig} onSort={handleSort} />
-                        <SortableHeader label="Qoldiq" sortKey="remainingAmount" currentSort={sortConfig} onSort={handleSort} />
-                        <SortableHeader label="Holat" sortKey="status" currentSort={sortConfig} onSort={handleSort} />
-                        <th></th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {sortedDebts.map((debt) => (
-                        <tr
-                          key={debt.id}
-                          className={clsx(
-                            'cursor-pointer transition hover:bg-base-200/50',
-                            debt.overdue && 'bg-error/5',
-                            selectedDebt?.id === debt.id && 'bg-primary/10'
-                          )}
-                          onClick={() => handleSelectDebt(debt)}
-                        >
-                          <td>
-                            <div className="font-medium">{debt.customerName}</div>
-                            <div className="flex items-center gap-1 text-xs text-base-content/60">
-                              <Phone className="h-3 w-3" />
-                              {debt.customerPhone}
-                            </div>
-                          </td>
-                          <td>
-                            <span className="font-mono text-sm">
-                              {debt.invoiceNumber || '-'}
-                            </span>
-                          </td>
-                          <td>{formatCurrency(debt.originalAmount)}</td>
-                          <td>
-                            <span className="font-semibold text-error">
-                              {formatCurrency(debt.remainingAmount)}
-                            </span>
-                          </td>
-                          <td>
-                            <span
-                              className={clsx(
-                                'badge badge-sm',
-                                debt.status === 'PAID' && 'badge-success',
-                                debt.status === 'ACTIVE' && !debt.overdue && 'badge-warning',
-                                (debt.status === 'OVERDUE' || debt.overdue) && 'badge-error'
-                              )}
-                            >
-                              {debt.overdue ? "Muddati o'tgan" : DEBT_STATUSES[debt.status]?.label}
-                            </span>
-                          </td>
-                          <td>
-                            <button className="btn btn-ghost btn-sm">
-                              Batafsil
-                            </button>
-                          </td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
-
-                {/* Mobile Cards */}
-                <div className="space-y-3 p-4 lg:hidden">
-                  {sortedDebts.map((debt) => (
-                    <div
-                      key={debt.id}
-                      className={clsx(
-                        'surface-panel flex flex-col gap-3 rounded-xl p-4 cursor-pointer transition',
-                        debt.overdue && 'border-error/30',
-                        selectedDebt?.id === debt.id && 'ring-2 ring-primary'
-                      )}
-                      onClick={() => handleSelectDebt(debt)}
-                    >
-                      <div className="flex items-start justify-between gap-3">
-                        <div>
-                          <p className="font-semibold">{debt.customerName}</p>
-                          <p className="text-xs text-base-content/60">
-                            {debt.invoiceNumber || 'Fakturasiz'}
-                          </p>
-                        </div>
-                        <span
-                          className={clsx(
-                            'badge badge-sm',
-                            debt.status === 'PAID' && 'badge-success',
-                            debt.status === 'ACTIVE' && !debt.overdue && 'badge-warning',
-                            (debt.status === 'OVERDUE' || debt.overdue) && 'badge-error'
-                          )}
-                        >
-                          {debt.overdue ? "Muddati o'tgan" : DEBT_STATUSES[debt.status]?.label}
-                        </span>
-                      </div>
-                      <div className="flex items-center justify-between">
-                        <div className="text-sm text-base-content/70">
-                          Qoldiq: <span className="font-semibold text-error">{formatCurrency(debt.remainingAmount)}</span>
-                        </div>
-                        <div className="text-sm text-base-content/60">
-                          {formatCurrency(debt.originalAmount)}
-                        </div>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-
-                {/* Pagination */}
-                <Pagination
-                  currentPage={page}
-                  totalPages={totalPages}
-                  totalElements={totalElements}
-                  pageSize={pageSize}
-                  onPageChange={setPage}
-                  onPageSizeChange={handlePageSizeChange}
-                />
-              </>
+          <DataTable
+            data={debts}
+            columns={columns}
+            keyExtractor={(debt) => debt.id}
+            loading={loading}
+            emptyIcon={<Wallet className="h-12 w-12" />}
+            emptyTitle="Qarzlar topilmadi"
+            emptyDescription="Filtrlarni o'zgartiring"
+            onRowClick={handleSelectDebt}
+            rowClassName={(debt) => clsx(
+              debt.overdue && 'bg-error/5',
+              selectedDebt?.id === debt.id && 'bg-primary/10'
             )}
-          </div>
+            currentPage={page}
+            totalPages={totalPages}
+            totalElements={totalElements}
+            pageSize={pageSize}
+            onPageChange={setPage}
+            onPageSizeChange={handlePageSizeChange}
+            renderMobileCard={(debt) => (
+              <div
+                className={clsx(
+                  'surface-panel flex flex-col gap-3 rounded-xl p-4 cursor-pointer transition',
+                  debt.overdue && 'border-error/30',
+                  selectedDebt?.id === debt.id && 'ring-2 ring-primary'
+                )}
+              >
+                <div className="flex items-start justify-between gap-3">
+                  <div>
+                    <p className="font-semibold">{debt.customerName}</p>
+                    <p className="text-xs text-base-content/60">
+                      {debt.invoiceNumber || 'Fakturasiz'}
+                    </p>
+                  </div>
+                  <span
+                    className={clsx(
+                      'badge badge-sm',
+                      debt.status === 'PAID' && 'badge-success',
+                      debt.status === 'ACTIVE' && !debt.overdue && 'badge-warning',
+                      (debt.status === 'OVERDUE' || debt.overdue) && 'badge-error'
+                    )}
+                  >
+                    {debt.overdue ? "Muddati o'tgan" : DEBT_STATUSES[debt.status]?.label}
+                  </span>
+                </div>
+                <div className="flex items-center justify-between">
+                  <div className="text-sm text-base-content/70">
+                    Qoldiq: <span className="font-semibold text-error">{formatCurrency(debt.remainingAmount)}</span>
+                  </div>
+                  <div className="text-sm text-base-content/60">
+                    {formatCurrency(debt.originalAmount)}
+                  </div>
+                </div>
+              </div>
+            )}
+          />
         </div>
 
         {/* Debt Detail Panel */}

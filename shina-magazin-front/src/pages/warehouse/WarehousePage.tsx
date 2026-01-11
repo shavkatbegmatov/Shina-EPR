@@ -16,8 +16,7 @@ import clsx from 'clsx';
 import { warehouseApi } from '../../api/warehouse.api';
 import { productsApi } from '../../api/products.api';
 import { NumberInput } from '../../components/ui/NumberInput';
-import { SortableHeader, useSorting, sortData } from '../../components/ui/SortableHeader';
-import { Pagination } from '../../components/ui/Pagination';
+import { DataTable, Column } from '../../components/ui/DataTable';
 import {
   formatNumber,
   MOVEMENT_TYPES,
@@ -58,12 +57,98 @@ export function WarehousePage() {
   const [searchResults, setSearchResults] = useState<Product[]>([]);
   const [searchLoading, setSearchLoading] = useState(false);
 
-  // Sorting
-  const { sortConfig, handleSort } = useSorting();
+  const getMovementIcon = (type: MovementType) => {
+    switch (type) {
+      case 'IN':
+        return <ArrowDownCircle className="h-4 w-4 text-success" />;
+      case 'OUT':
+        return <ArrowUpCircle className="h-4 w-4 text-error" />;
+      case 'ADJUSTMENT':
+        return <RefreshCw className="h-4 w-4 text-info" />;
+    }
+  };
 
-  const sortedMovements = useMemo(() => {
-    return sortData(movements, sortConfig);
-  }, [movements, sortConfig]);
+  const formatDateTime = (dateStr: string) => {
+    return new Date(dateStr).toLocaleString('uz-UZ', {
+      month: 'short',
+      day: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit',
+    });
+  };
+
+  // Table columns
+  const columns: Column<StockMovement>[] = useMemo(() => [
+    {
+      key: 'createdAt',
+      header: 'Sana',
+      getValue: (m) => new Date(m.createdAt).getTime(),
+      render: (movement) => (
+        <span className="text-sm text-base-content/70">
+          {formatDateTime(movement.createdAt)}
+        </span>
+      ),
+    },
+    {
+      key: 'productName',
+      header: 'Mahsulot',
+      render: (movement) => (
+        <div>
+          <div className="font-medium">{movement.productName}</div>
+          <div className="text-xs text-base-content/60">{movement.productSku}</div>
+        </div>
+      ),
+    },
+    {
+      key: 'movementType',
+      header: 'Turi',
+      render: (movement) => (
+        <div className="flex items-center gap-2">
+          {getMovementIcon(movement.movementType)}
+          <span className="badge badge-outline badge-sm">
+            {MOVEMENT_TYPES[movement.movementType]?.label}
+          </span>
+        </div>
+      ),
+    },
+    {
+      key: 'quantity',
+      header: 'Miqdor',
+      getValue: (m) => m.quantity,
+      render: (movement) => (
+        <span
+          className={clsx(
+            'font-semibold',
+            movement.quantity > 0 && 'text-success',
+            movement.quantity < 0 && 'text-error'
+          )}
+        >
+          {movement.quantity > 0 ? '+' : ''}{movement.quantity}
+        </span>
+      ),
+    },
+    {
+      key: 'newStock',
+      header: 'Zaxira',
+      getValue: (m) => m.newStock,
+      render: (movement) => (
+        <span>
+          <span className="text-base-content/60">{movement.previousStock}</span>
+          <span className="mx-1">→</span>
+          <span className="font-medium">{movement.newStock}</span>
+        </span>
+      ),
+    },
+    {
+      key: 'referenceType',
+      header: 'Manba',
+      render: (movement) => (
+        <span className="badge badge-ghost badge-sm">
+          {REFERENCE_TYPES[movement.referenceType as keyof typeof REFERENCE_TYPES]?.label || movement.referenceType}
+        </span>
+      ),
+    },
+  ], []);
 
   const handlePageSizeChange = (newSize: number) => {
     setPageSize(newSize);
@@ -185,26 +270,6 @@ export function WarehousePage() {
       console.error('Failed to create adjustment:', error);
     } finally {
       setSubmitting(false);
-    }
-  };
-
-  const formatDateTime = (dateStr: string) => {
-    return new Date(dateStr).toLocaleString('uz-UZ', {
-      month: 'short',
-      day: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit',
-    });
-  };
-
-  const getMovementIcon = (type: MovementType) => {
-    switch (type) {
-      case 'IN':
-        return <ArrowDownCircle className="h-4 w-4 text-success" />;
-      case 'OUT':
-        return <ArrowUpCircle className="h-4 w-4 text-error" />;
-      case 'ADJUSTMENT':
-        return <RefreshCw className="h-4 w-4 text-info" />;
     }
   };
 
@@ -346,136 +411,51 @@ export function WarehousePage() {
             </div>
           </div>
 
-          <div className="surface-card overflow-hidden">
-            {loadingMovements ? (
-              <div className="flex items-center justify-center h-64">
-                <span className="loading loading-spinner loading-lg" />
-              </div>
-            ) : movements.length === 0 ? (
-              <div className="flex flex-col items-center justify-center gap-2 p-10 text-center text-base-content/50">
-                <Package className="h-12 w-12" />
-                <div>
-                  <p className="text-base font-medium">Harakatlar topilmadi</p>
-                  <p className="text-sm">Kirim yoki chiqim qo'shing</p>
-                </div>
-              </div>
-            ) : (
-              <>
-                <div className="hidden lg:block table-container">
-                  <table className="table table-zebra">
-                    <thead>
-                      <tr>
-                        <SortableHeader label="Sana" sortKey="createdAt" currentSort={sortConfig} onSort={handleSort} />
-                        <SortableHeader label="Mahsulot" sortKey="productName" currentSort={sortConfig} onSort={handleSort} />
-                        <SortableHeader label="Turi" sortKey="movementType" currentSort={sortConfig} onSort={handleSort} />
-                        <SortableHeader label="Miqdor" sortKey="quantity" currentSort={sortConfig} onSort={handleSort} />
-                        <SortableHeader label="Zaxira" sortKey="newStock" currentSort={sortConfig} onSort={handleSort} />
-                        <SortableHeader label="Manba" sortKey="referenceType" currentSort={sortConfig} onSort={handleSort} />
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {sortedMovements.map((movement) => (
-                        <tr key={movement.id}>
-                          <td className="text-sm text-base-content/70">
-                            {formatDateTime(movement.createdAt)}
-                          </td>
-                          <td>
-                            <div className="font-medium">{movement.productName}</div>
-                            <div className="text-xs text-base-content/60">
-                              {movement.productSku}
-                            </div>
-                          </td>
-                          <td>
-                            <div className="flex items-center gap-2">
-                              {getMovementIcon(movement.movementType)}
-                              <span className="badge badge-outline badge-sm">
-                                {MOVEMENT_TYPES[movement.movementType]?.label}
-                              </span>
-                            </div>
-                          </td>
-                          <td>
-                            <span
-                              className={clsx(
-                                'font-semibold',
-                                movement.quantity > 0 && 'text-success',
-                                movement.quantity < 0 && 'text-error'
-                              )}
-                            >
-                              {movement.quantity > 0 ? '+' : ''}
-                              {movement.quantity}
-                            </span>
-                          </td>
-                          <td>
-                            <span className="text-base-content/60">
-                              {movement.previousStock}
-                            </span>
-                            <span className="mx-1">→</span>
-                            <span className="font-medium">{movement.newStock}</span>
-                          </td>
-                          <td>
-                            <span className="badge badge-ghost badge-sm">
-                              {REFERENCE_TYPES[movement.referenceType as keyof typeof REFERENCE_TYPES]?.label ||
-                                movement.referenceType}
-                            </span>
-                          </td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
-
-                {/* Mobile Cards */}
-                <div className="space-y-3 p-4 lg:hidden">
-                  {sortedMovements.map((movement) => (
-                    <div
-                      key={movement.id}
-                      className="surface-panel flex flex-col gap-2 rounded-xl p-4"
+          <DataTable
+            data={movements}
+            columns={columns}
+            keyExtractor={(movement) => movement.id}
+            loading={loadingMovements}
+            emptyIcon={<Package className="h-12 w-12" />}
+            emptyTitle="Harakatlar topilmadi"
+            emptyDescription="Kirim yoki chiqim qo'shing"
+            currentPage={page}
+            totalPages={totalPages}
+            totalElements={totalElements}
+            pageSize={pageSize}
+            onPageChange={setPage}
+            onPageSizeChange={handlePageSizeChange}
+            renderMobileCard={(movement) => (
+              <div className="surface-panel flex flex-col gap-2 rounded-xl p-4">
+                <div className="flex items-start justify-between gap-3">
+                  <div>
+                    <p className="font-medium">{movement.productName}</p>
+                    <p className="text-xs text-base-content/60">{movement.productSku}</p>
+                  </div>
+                  <div className="flex items-center gap-1">
+                    {getMovementIcon(movement.movementType)}
+                    <span
+                      className={clsx(
+                        'font-bold',
+                        movement.quantity > 0 && 'text-success',
+                        movement.quantity < 0 && 'text-error'
+                      )}
                     >
-                      <div className="flex items-start justify-between gap-3">
-                        <div>
-                          <p className="font-medium">{movement.productName}</p>
-                          <p className="text-xs text-base-content/60">
-                            {movement.productSku}
-                          </p>
-                        </div>
-                        <div className="flex items-center gap-1">
-                          {getMovementIcon(movement.movementType)}
-                          <span
-                            className={clsx(
-                              'font-bold',
-                              movement.quantity > 0 && 'text-success',
-                              movement.quantity < 0 && 'text-error'
-                            )}
-                          >
-                            {movement.quantity > 0 ? '+' : ''}
-                            {movement.quantity}
-                          </span>
-                        </div>
-                      </div>
-                      <div className="flex items-center justify-between text-sm">
-                        <span className="text-base-content/60">
-                          {movement.previousStock} → {movement.newStock}
-                        </span>
-                        <span className="text-xs text-base-content/50">
-                          {formatDateTime(movement.createdAt)}
-                        </span>
-                      </div>
-                    </div>
-                  ))}
+                      {movement.quantity > 0 ? '+' : ''}{movement.quantity}
+                    </span>
+                  </div>
                 </div>
-
-                {/* Pagination */}
-                <Pagination
-                  currentPage={page}
-                  totalPages={totalPages}
-                  totalElements={totalElements}
-                  pageSize={pageSize}
-                  onPageChange={setPage}
-                  onPageSizeChange={handlePageSizeChange}
-                />
-              </>
+                <div className="flex items-center justify-between text-sm">
+                  <span className="text-base-content/60">
+                    {movement.previousStock} → {movement.newStock}
+                  </span>
+                  <span className="text-xs text-base-content/50">
+                    {formatDateTime(movement.createdAt)}
+                  </span>
+                </div>
+              </div>
             )}
-          </div>
+          />
         </div>
 
         {/* Low Stock Alerts */}

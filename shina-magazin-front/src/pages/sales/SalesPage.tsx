@@ -1,30 +1,11 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
-import {
-  Search,
-  ShoppingCart,
-  Receipt,
-  Eye,
-  XCircle,
-  Calendar,
-  User,
-  X,
-  CreditCard,
-  Banknote,
-  ArrowRightLeft,
-  Layers,
-} from 'lucide-react';
+import { Search, ShoppingCart, Receipt, Eye, XCircle, Calendar, User, X, CreditCard, Banknote, ArrowRightLeft, Layers } from 'lucide-react';
 import clsx from 'clsx';
 import toast from 'react-hot-toast';
 import { salesApi } from '../../api/sales.api';
-import {
-  formatCurrency,
-  PAYMENT_METHODS,
-  PAYMENT_STATUSES,
-  SALE_STATUSES,
-} from '../../config/constants';
-import { SortableHeader, useSorting, sortData } from '../../components/ui/SortableHeader';
-import { Pagination } from '../../components/ui/Pagination';
+import { formatCurrency, PAYMENT_METHODS, PAYMENT_STATUSES, SALE_STATUSES } from '../../config/constants';
+import { DataTable, Column } from '../../components/ui/DataTable';
 import type { Sale, PaymentStatus, SaleStatus, PaymentMethod } from '../../types';
 
 const paymentMethodIcons: Record<PaymentMethod, React.ReactNode> = {
@@ -55,56 +36,32 @@ export function SalesPage() {
     [search, paymentStatusFilter, statusFilter]
   );
 
-  // Sorting
-  const { sortConfig, handleSort } = useSorting();
-
   const handlePageSizeChange = (newSize: number) => {
     setPageSize(newSize);
     setPage(0);
   };
 
-  const loadSales = useCallback(async () => {
-    setLoading(true);
-    try {
-      const data = await salesApi.getAll({
-        page,
-        size: pageSize,
-      });
-      setSales(data.content);
-      setTotalPages(data.totalPages);
-      setTotalElements(data.totalElements);
-    } catch (error) {
-      console.error('Failed to load sales:', error);
-      toast.error('Sotuvlarni yuklashda xatolik');
-    } finally {
-      setLoading(false);
-    }
-  }, [page, pageSize]);
-
-  useEffect(() => {
-    loadSales();
-  }, [loadSales]);
-
   const filteredSales = useMemo(() => {
-    const filtered = sales.filter((sale) => {
-      if (search.trim() && !sale.invoiceNumber.toLowerCase().includes(search.toLowerCase())) {
-        return false;
-      }
-      if (paymentStatusFilter && sale.paymentStatus !== paymentStatusFilter) {
-        return false;
-      }
-      if (statusFilter && sale.status !== statusFilter) {
-        return false;
-      }
+    return sales.filter((sale) => {
+      if (search.trim() && !sale.invoiceNumber.toLowerCase().includes(search.toLowerCase())) return false;
+      if (paymentStatusFilter && sale.paymentStatus !== paymentStatusFilter) return false;
+      if (statusFilter && sale.status !== statusFilter) return false;
       return true;
     });
-    return sortData(filtered, sortConfig);
-  }, [sales, search, paymentStatusFilter, statusFilter, sortConfig]);
+  }, [sales, search, paymentStatusFilter, statusFilter]);
 
-  const handleResetFilters = () => {
-    setSearch('');
-    setPaymentStatusFilter('');
-    setStatusFilter('');
+  const formatDate = (dateStr: string) => {
+    return new Date(dateStr).toLocaleDateString('uz-UZ', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' });
+  };
+
+  const getPaymentStatusBadge = (status: PaymentStatus) => {
+    const styles: Record<PaymentStatus, string> = { PAID: 'badge-success', PARTIAL: 'badge-warning', UNPAID: 'badge-error' };
+    return <span className={clsx('badge badge-sm', styles[status])}>{PAYMENT_STATUSES[status]?.label}</span>;
+  };
+
+  const getSaleStatusBadge = (status: SaleStatus) => {
+    const styles: Record<SaleStatus, string> = { COMPLETED: 'badge-success badge-outline', CANCELLED: 'badge-error badge-outline', REFUNDED: 'badge-warning badge-outline' };
+    return <span className={clsx('badge badge-sm', styles[status])}>{SALE_STATUSES[status]?.label}</span>;
   };
 
   const handleViewSale = async (sale: Sale) => {
@@ -129,6 +86,115 @@ export function SalesPage() {
     setShowCancelModal(true);
   };
 
+  // Table columns
+  const columns: Column<Sale>[] = useMemo(() => [
+    {
+      key: 'invoiceNumber',
+      header: 'Faktura',
+      render: (sale) => (
+        <div className="flex items-center gap-2">
+          <Receipt className="h-4 w-4 text-primary" />
+          <span className="font-mono text-sm">{sale.invoiceNumber}</span>
+        </div>
+      ),
+    },
+    {
+      key: 'saleDate',
+      header: 'Sana',
+      render: (sale) => (
+        <div className="flex items-center gap-2 text-sm">
+          <Calendar className="h-4 w-4 text-base-content/50" />
+          {formatDate(sale.saleDate)}
+        </div>
+      ),
+    },
+    {
+      key: 'customerName',
+      header: 'Mijoz',
+      render: (sale) => sale.customerName ? (
+        <div className="flex items-center gap-2">
+          <User className="h-4 w-4 text-base-content/50" />
+          <div>
+            <div className="font-medium">{sale.customerName}</div>
+            {sale.customerPhone && <div className="text-xs text-base-content/60">{sale.customerPhone}</div>}
+          </div>
+        </div>
+      ) : <span className="text-base-content/50">-</span>,
+    },
+    {
+      key: 'totalAmount',
+      header: 'Summa',
+      render: (sale) => (
+        <div>
+          <div className="font-semibold">{formatCurrency(sale.totalAmount)}</div>
+          {sale.debtAmount > 0 && <div className="text-xs text-error">Qarz: {formatCurrency(sale.debtAmount)}</div>}
+        </div>
+      ),
+    },
+    {
+      key: 'paymentMethod',
+      header: "To'lov usuli",
+      render: (sale) => (
+        <div className="flex items-center gap-1.5">
+          {paymentMethodIcons[sale.paymentMethod]}
+          <span className="text-sm">{PAYMENT_METHODS[sale.paymentMethod]?.label}</span>
+        </div>
+      ),
+    },
+    {
+      key: 'paymentStatus',
+      header: "To'lov holati",
+      render: (sale) => getPaymentStatusBadge(sale.paymentStatus),
+    },
+    {
+      key: 'status',
+      header: 'Holat',
+      render: (sale) => getSaleStatusBadge(sale.status),
+    },
+    {
+      key: 'actions',
+      header: '',
+      sortable: false,
+      render: (sale) => (
+        <div className="flex items-center gap-1">
+          <button className="btn btn-ghost btn-sm" onClick={(e) => { e.stopPropagation(); handleViewSale(sale); }} title="Ko'rish">
+            <Eye className="h-4 w-4" />
+          </button>
+          {sale.status === 'COMPLETED' && (
+            <button className="btn btn-ghost btn-sm text-error" onClick={(e) => { e.stopPropagation(); handleOpenCancelModal(sale); }} title="Bekor qilish">
+              <XCircle className="h-4 w-4" />
+            </button>
+          )}
+        </div>
+      ),
+    },
+  ], []);
+
+  const loadSales = useCallback(async () => {
+    setLoading(true);
+    try {
+      const data = await salesApi.getAll({ page, size: pageSize });
+      setSales(data.content);
+      setTotalPages(data.totalPages);
+      setTotalElements(data.totalElements);
+    } catch (error) {
+      console.error('Failed to load sales:', error);
+      toast.error('Sotuvlarni yuklashda xatolik');
+    } finally {
+      setLoading(false);
+    }
+  }, [page, pageSize]);
+
+  useEffect(() => {
+    loadSales();
+  }, [loadSales]);
+
+  const handleResetFilters = () => {
+    setSearch('');
+    setPaymentStatusFilter('');
+    setStatusFilter('');
+  };
+
   const handleCancelSale = async () => {
     if (!selectedSale) return;
     setCancelling(true);
@@ -144,43 +210,6 @@ export function SalesPage() {
     } finally {
       setCancelling(false);
     }
-  };
-
-  const formatDate = (dateStr: string) => {
-    const date = new Date(dateStr);
-    return date.toLocaleDateString('uz-UZ', {
-      day: '2-digit',
-      month: '2-digit',
-      year: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit',
-    });
-  };
-
-  const getPaymentStatusBadge = (status: PaymentStatus) => {
-    const styles: Record<PaymentStatus, string> = {
-      PAID: 'badge-success',
-      PARTIAL: 'badge-warning',
-      UNPAID: 'badge-error',
-    };
-    return (
-      <span className={clsx('badge badge-sm', styles[status])}>
-        {PAYMENT_STATUSES[status]?.label}
-      </span>
-    );
-  };
-
-  const getSaleStatusBadge = (status: SaleStatus) => {
-    const styles: Record<SaleStatus, string> = {
-      COMPLETED: 'badge-success badge-outline',
-      CANCELLED: 'badge-error badge-outline',
-      REFUNDED: 'badge-warning badge-outline',
-    };
-    return (
-      <span className={clsx('badge badge-sm', styles[status])}>
-        {SALE_STATUSES[status]?.label}
-      </span>
-    );
   };
 
   return (
@@ -204,78 +233,39 @@ export function SalesPage() {
       <div className="surface-card p-4">
         <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
           <div>
-            <h2 className="text-sm font-semibold uppercase tracking-[0.2em] text-base-content/50">
-              Filtrlar
-            </h2>
-            <p className="text-xs text-base-content/60">
-              {hasFilters ? "Filtrlangan natijalar ko'rsatilmoqda" : 'Barcha sotuvlar'}
-            </p>
+            <h2 className="text-sm font-semibold uppercase tracking-[0.2em] text-base-content/50">Filtrlar</h2>
+            <p className="text-xs text-base-content/60">{hasFilters ? "Filtrlangan natijalar ko'rsatilmoqda" : 'Barcha sotuvlar'}</p>
           </div>
-          <div className="flex items-center gap-2">
-            {hasFilters && (
-              <button className="btn btn-ghost btn-sm" onClick={handleResetFilters}>
-                <X className="h-4 w-4" />
-                Tozalash
-              </button>
-            )}
-            <span className="pill">20 / sahifa</span>
-          </div>
+          {hasFilters && (
+            <button className="btn btn-ghost btn-sm" onClick={handleResetFilters}>
+              <X className="h-4 w-4" />
+              Tozalash
+            </button>
+          )}
         </div>
-
         <div className="mt-4 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-          {/* Search */}
           <label className="form-control">
-            <span className="label-text mb-1 text-xs font-semibold uppercase tracking-[0.18em] text-base-content/50">
-              Faktura raqami
-            </span>
+            <span className="label-text mb-1 text-xs font-semibold uppercase tracking-[0.18em] text-base-content/50">Faktura raqami</span>
             <div className="input-group">
-              <span className="bg-base-200">
-                <Search className="h-5 w-5" />
-              </span>
-              <input
-                type="text"
-                placeholder="INV... bo'yicha qidirish"
-                className="input input-bordered w-full"
-                value={search}
-                onChange={(e) => setSearch(e.target.value)}
-              />
+              <span className="bg-base-200"><Search className="h-5 w-5" /></span>
+              <input type="text" placeholder="INV... bo'yicha qidirish" className="input input-bordered w-full" value={search} onChange={(e) => setSearch(e.target.value)} />
             </div>
           </label>
-
-          {/* Payment Status Filter */}
           <label className="form-control">
-            <span className="label-text mb-1 text-xs font-semibold uppercase tracking-[0.18em] text-base-content/50">
-              To'lov holati
-            </span>
-            <select
-              className="select select-bordered w-full"
-              value={paymentStatusFilter}
-              onChange={(e) => setPaymentStatusFilter(e.target.value as PaymentStatus | '')}
-            >
+            <span className="label-text mb-1 text-xs font-semibold uppercase tracking-[0.18em] text-base-content/50">To'lov holati</span>
+            <select className="select select-bordered w-full" value={paymentStatusFilter} onChange={(e) => setPaymentStatusFilter(e.target.value as PaymentStatus | '')}>
               <option value="">Barchasi</option>
               {Object.values(PAYMENT_STATUSES).map((status) => (
-                <option key={status.value} value={status.value}>
-                  {status.label}
-                </option>
+                <option key={status.value} value={status.value}>{status.label}</option>
               ))}
             </select>
           </label>
-
-          {/* Sale Status Filter */}
           <label className="form-control">
-            <span className="label-text mb-1 text-xs font-semibold uppercase tracking-[0.18em] text-base-content/50">
-              Sotuv holati
-            </span>
-            <select
-              className="select select-bordered w-full"
-              value={statusFilter}
-              onChange={(e) => setStatusFilter(e.target.value as SaleStatus | '')}
-            >
+            <span className="label-text mb-1 text-xs font-semibold uppercase tracking-[0.18em] text-base-content/50">Sotuv holati</span>
+            <select className="select select-bordered w-full" value={statusFilter} onChange={(e) => setStatusFilter(e.target.value as SaleStatus | '')}>
               <option value="">Barchasi</option>
               {Object.values(SALE_STATUSES).map((status) => (
-                <option key={status.value} value={status.value}>
-                  {status.label}
-                </option>
+                <option key={status.value} value={status.value}>{status.label}</option>
               ))}
             </select>
           </label>
@@ -283,261 +273,101 @@ export function SalesPage() {
       </div>
 
       {/* Sales Table */}
-      <div className="surface-card overflow-hidden">
-        {loading ? (
-          <div className="flex items-center justify-center h-64">
-            <span className="loading loading-spinner loading-lg" />
-          </div>
-        ) : filteredSales.length === 0 ? (
-          <div className="flex flex-col items-center justify-center gap-2 p-10 text-center text-base-content/50">
-            <Receipt className="h-12 w-12" />
-            <div>
-              <p className="text-base font-medium">Sotuvlar topilmadi</p>
-              <p className="text-sm">Filtrlarni o'zgartiring yoki yangi sotuv qiling</p>
-            </div>
-          </div>
-        ) : (
-          <>
-            {/* Desktop Table */}
-            <div className="hidden lg:block table-container">
-              <table className="table table-zebra">
-                <thead>
-                  <tr>
-                    <SortableHeader label="Faktura" sortKey="invoiceNumber" currentSort={sortConfig} onSort={handleSort} />
-                    <SortableHeader label="Sana" sortKey="saleDate" currentSort={sortConfig} onSort={handleSort} />
-                    <SortableHeader label="Mijoz" sortKey="customerName" currentSort={sortConfig} onSort={handleSort} />
-                    <SortableHeader label="Summa" sortKey="totalAmount" currentSort={sortConfig} onSort={handleSort} />
-                    <SortableHeader label="To'lov usuli" sortKey="paymentMethod" currentSort={sortConfig} onSort={handleSort} />
-                    <SortableHeader label="To'lov holati" sortKey="paymentStatus" currentSort={sortConfig} onSort={handleSort} />
-                    <SortableHeader label="Holat" sortKey="status" currentSort={sortConfig} onSort={handleSort} />
-                    <th></th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {filteredSales.map((sale) => (
-                    <tr
-                      key={sale.id}
-                      className={clsx(sale.status === 'CANCELLED' && 'opacity-60')}
-                    >
-                      <td>
-                        <div className="flex items-center gap-2">
-                          <Receipt className="h-4 w-4 text-primary" />
-                          <span className="font-mono text-sm">{sale.invoiceNumber}</span>
-                        </div>
-                      </td>
-                      <td>
-                        <div className="flex items-center gap-2 text-sm">
-                          <Calendar className="h-4 w-4 text-base-content/50" />
-                          {formatDate(sale.saleDate)}
-                        </div>
-                      </td>
-                      <td>
-                        {sale.customerName ? (
-                          <div className="flex items-center gap-2">
-                            <User className="h-4 w-4 text-base-content/50" />
-                            <div>
-                              <div className="font-medium">{sale.customerName}</div>
-                              {sale.customerPhone && (
-                                <div className="text-xs text-base-content/60">
-                                  {sale.customerPhone}
-                                </div>
-                              )}
-                            </div>
-                          </div>
-                        ) : (
-                          <span className="text-base-content/50">-</span>
-                        )}
-                      </td>
-                      <td>
-                        <div className="font-semibold">{formatCurrency(sale.totalAmount)}</div>
-                        {sale.debtAmount > 0 && (
-                          <div className="text-xs text-error">
-                            Qarz: {formatCurrency(sale.debtAmount)}
-                          </div>
-                        )}
-                      </td>
-                      <td>
-                        <div className="flex items-center gap-1.5">
-                          {paymentMethodIcons[sale.paymentMethod]}
-                          <span className="text-sm">
-                            {PAYMENT_METHODS[sale.paymentMethod]?.label}
-                          </span>
-                        </div>
-                      </td>
-                      <td>{getPaymentStatusBadge(sale.paymentStatus)}</td>
-                      <td>{getSaleStatusBadge(sale.status)}</td>
-                      <td>
-                        <div className="flex items-center gap-1">
-                          <button
-                            className="btn btn-ghost btn-sm"
-                            onClick={() => handleViewSale(sale)}
-                            title="Ko'rish"
-                          >
-                            <Eye className="h-4 w-4" />
-                          </button>
-                          {sale.status === 'COMPLETED' && (
-                            <button
-                              className="btn btn-ghost btn-sm text-error"
-                              onClick={() => handleOpenCancelModal(sale)}
-                              title="Bekor qilish"
-                            >
-                              <XCircle className="h-4 w-4" />
-                            </button>
-                          )}
-                        </div>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-
-            {/* Mobile Cards */}
-            <div className="space-y-3 p-4 lg:hidden">
-              {filteredSales.map((sale) => (
-                <div
-                  key={sale.id}
-                  className={clsx(
-                    'surface-panel flex flex-col gap-3 rounded-xl p-4',
-                    sale.status === 'CANCELLED' && 'opacity-60'
-                  )}
-                >
-                  <div className="flex items-start justify-between gap-3">
-                    <div>
-                      <div className="flex items-center gap-2">
-                        <Receipt className="h-4 w-4 text-primary" />
-                        <span className="font-mono text-sm font-medium">
-                          {sale.invoiceNumber}
-                        </span>
-                      </div>
-                      <p className="mt-1 text-xs text-base-content/60">
-                        {formatDate(sale.saleDate)}
-                      </p>
-                    </div>
-                    <div className="flex flex-col items-end gap-1">
-                      {getPaymentStatusBadge(sale.paymentStatus)}
-                      {getSaleStatusBadge(sale.status)}
-                    </div>
-                  </div>
-
-                  {sale.customerName && (
-                    <div className="flex items-center gap-2 text-sm text-base-content/70">
-                      <User className="h-4 w-4" />
-                      {sale.customerName}
-                    </div>
-                  )}
-
-                  <div className="flex items-center justify-between border-t border-base-200 pt-3">
-                    <div>
-                      <div className="font-semibold">{formatCurrency(sale.totalAmount)}</div>
-                      {sale.debtAmount > 0 && (
-                        <div className="text-xs text-error">
-                          Qarz: {formatCurrency(sale.debtAmount)}
-                        </div>
-                      )}
-                    </div>
-                    <div className="flex items-center gap-1">
-                      <button
-                        className="btn btn-ghost btn-sm"
-                        onClick={() => handleViewSale(sale)}
-                      >
-                        <Eye className="h-4 w-4" />
-                        Ko'rish
-                      </button>
-                      {sale.status === 'COMPLETED' && (
-                        <button
-                          className="btn btn-ghost btn-sm text-error"
-                          onClick={() => handleOpenCancelModal(sale)}
-                        >
-                          <XCircle className="h-4 w-4" />
-                        </button>
-                      )}
-                    </div>
-                  </div>
+      <DataTable
+        data={filteredSales}
+        columns={columns}
+        keyExtractor={(sale) => sale.id}
+        loading={loading}
+        emptyIcon={<Receipt className="h-12 w-12" />}
+        emptyTitle="Sotuvlar topilmadi"
+        emptyDescription="Filtrlarni o'zgartiring yoki yangi sotuv qiling"
+        rowClassName={(sale) => (sale.status === 'CANCELLED' ? 'opacity-60' : '')}
+        currentPage={page}
+        totalPages={totalPages}
+        totalElements={totalElements}
+        pageSize={pageSize}
+        onPageChange={setPage}
+        onPageSizeChange={handlePageSizeChange}
+        renderMobileCard={(sale) => (
+          <div className={clsx('surface-panel flex flex-col gap-3 rounded-xl p-4', sale.status === 'CANCELLED' && 'opacity-60')}>
+            <div className="flex items-start justify-between gap-3">
+              <div>
+                <div className="flex items-center gap-2">
+                  <Receipt className="h-4 w-4 text-primary" />
+                  <span className="font-mono text-sm font-medium">{sale.invoiceNumber}</span>
                 </div>
-              ))}
+                <p className="mt-1 text-xs text-base-content/60">{formatDate(sale.saleDate)}</p>
+              </div>
+              <div className="flex flex-col items-end gap-1">
+                {getPaymentStatusBadge(sale.paymentStatus)}
+                {getSaleStatusBadge(sale.status)}
+              </div>
             </div>
-          </>
+            {sale.customerName && (
+              <div className="flex items-center gap-2 text-sm text-base-content/70">
+                <User className="h-4 w-4" />
+                {sale.customerName}
+              </div>
+            )}
+            <div className="flex items-center justify-between border-t border-base-200 pt-3">
+              <div>
+                <div className="font-semibold">{formatCurrency(sale.totalAmount)}</div>
+                {sale.debtAmount > 0 && <div className="text-xs text-error">Qarz: {formatCurrency(sale.debtAmount)}</div>}
+              </div>
+              <div className="flex items-center gap-1">
+                <button className="btn btn-ghost btn-sm" onClick={() => handleViewSale(sale)}>
+                  <Eye className="h-4 w-4" />
+                  Ko'rish
+                </button>
+                {sale.status === 'COMPLETED' && (
+                  <button className="btn btn-ghost btn-sm text-error" onClick={() => handleOpenCancelModal(sale)}>
+                    <XCircle className="h-4 w-4" />
+                  </button>
+                )}
+              </div>
+            </div>
+          </div>
         )}
-
-        {/* Pagination */}
-        <Pagination
-          currentPage={page}
-          totalPages={totalPages}
-          totalElements={totalElements}
-          pageSize={pageSize}
-          onPageChange={setPage}
-          onPageSizeChange={handlePageSizeChange}
-        />
-      </div>
+      />
 
       {/* Sale Detail Modal */}
       {showDetailModal && selectedSale && (
         <div className="modal modal-open">
           <div className="modal-box max-w-2xl">
-            <button
-              className="btn btn-circle btn-ghost btn-sm absolute right-4 top-4"
-              onClick={() => {
-                setShowDetailModal(false);
-                setSelectedSale(null);
-              }}
-            >
+            <button className="btn btn-circle btn-ghost btn-sm absolute right-4 top-4" onClick={() => { setShowDetailModal(false); setSelectedSale(null); }}>
               <X className="h-5 w-5" />
             </button>
-
             <h3 className="text-lg font-bold">Sotuv tafsilotlari</h3>
-            <p className="text-sm text-base-content/60">
-              Faktura: {selectedSale.invoiceNumber}
-            </p>
+            <p className="text-sm text-base-content/60">Faktura: {selectedSale.invoiceNumber}</p>
 
             <div className="mt-6 space-y-4">
-              {/* Sale Info */}
               <div className="grid gap-4 sm:grid-cols-2">
                 <div className="surface-soft rounded-lg p-3">
-                  <p className="text-xs font-semibold uppercase tracking-wider text-base-content/50">
-                    Sana
-                  </p>
+                  <p className="text-xs font-semibold uppercase tracking-wider text-base-content/50">Sana</p>
                   <p className="mt-1 font-medium">{formatDate(selectedSale.saleDate)}</p>
                 </div>
                 <div className="surface-soft rounded-lg p-3">
-                  <p className="text-xs font-semibold uppercase tracking-wider text-base-content/50">
-                    Mijoz
-                  </p>
-                  <p className="mt-1 font-medium">
-                    {selectedSale.customerName || 'Noma\'lum mijoz'}
-                  </p>
-                  {selectedSale.customerPhone && (
-                    <p className="text-sm text-base-content/60">{selectedSale.customerPhone}</p>
-                  )}
+                  <p className="text-xs font-semibold uppercase tracking-wider text-base-content/50">Mijoz</p>
+                  <p className="mt-1 font-medium">{selectedSale.customerName || "Noma'lum mijoz"}</p>
+                  {selectedSale.customerPhone && <p className="text-sm text-base-content/60">{selectedSale.customerPhone}</p>}
                 </div>
                 <div className="surface-soft rounded-lg p-3">
-                  <p className="text-xs font-semibold uppercase tracking-wider text-base-content/50">
-                    To'lov usuli
-                  </p>
+                  <p className="text-xs font-semibold uppercase tracking-wider text-base-content/50">To'lov usuli</p>
                   <div className="mt-1 flex items-center gap-2">
                     {paymentMethodIcons[selectedSale.paymentMethod]}
-                    <span className="font-medium">
-                      {PAYMENT_METHODS[selectedSale.paymentMethod]?.label}
-                    </span>
+                    <span className="font-medium">{PAYMENT_METHODS[selectedSale.paymentMethod]?.label}</span>
                   </div>
                 </div>
                 <div className="surface-soft rounded-lg p-3">
-                  <p className="text-xs font-semibold uppercase tracking-wider text-base-content/50">
-                    Sotuvchi
-                  </p>
+                  <p className="text-xs font-semibold uppercase tracking-wider text-base-content/50">Sotuvchi</p>
                   <p className="mt-1 font-medium">{selectedSale.createdByName || '-'}</p>
                 </div>
               </div>
 
-              {/* Items */}
               <div>
-                <h4 className="mb-2 text-sm font-semibold uppercase tracking-wider text-base-content/50">
-                  Mahsulotlar
-                </h4>
+                <h4 className="mb-2 text-sm font-semibold uppercase tracking-wider text-base-content/50">Mahsulotlar</h4>
                 {loadingDetails ? (
-                  <div className="flex items-center justify-center py-8">
-                    <span className="loading loading-spinner" />
-                  </div>
+                  <div className="flex items-center justify-center py-8"><span className="loading loading-spinner" /></div>
                 ) : selectedSale.items && selectedSale.items.length > 0 ? (
                   <div className="overflow-x-auto">
                     <table className="table table-sm">
@@ -555,66 +385,49 @@ export function SalesPage() {
                             <td>
                               <div>
                                 <div className="font-medium">{item.productName}</div>
-                                {item.sizeString && (
-                                  <div className="text-xs text-base-content/60">
-                                    {item.sizeString}
-                                  </div>
-                                )}
+                                {item.sizeString && <div className="text-xs text-base-content/60">{item.sizeString}</div>}
                               </div>
                             </td>
                             <td className="text-right">{formatCurrency(item.unitPrice)}</td>
                             <td className="text-right">{item.quantity}</td>
-                            <td className="text-right font-medium">
-                              {formatCurrency(item.totalPrice)}
-                            </td>
+                            <td className="text-right font-medium">{formatCurrency(item.totalPrice)}</td>
                           </tr>
                         ))}
                       </tbody>
                     </table>
                   </div>
                 ) : (
-                  <p className="text-center text-sm text-base-content/50 py-4">
-                    Mahsulotlar mavjud emas
-                  </p>
+                  <p className="text-center text-sm text-base-content/50 py-4">Mahsulotlar mavjud emas</p>
                 )}
               </div>
 
-              {/* Totals */}
-              <div className="border-t border-base-200 pt-4">
-                <div className="space-y-2">
-                  <div className="flex justify-between text-sm">
-                    <span className="text-base-content/70">Jami:</span>
-                    <span>{formatCurrency(selectedSale.subtotal)}</span>
-                  </div>
-                  {(selectedSale.discountAmount > 0 || selectedSale.discountPercent > 0) && (
-                    <div className="flex justify-between text-sm text-error">
-                      <span>
-                        Chegirma
-                        {selectedSale.discountPercent > 0 &&
-                          ` (${selectedSale.discountPercent}%)`}
-                        :
-                      </span>
-                      <span>-{formatCurrency(selectedSale.discountAmount)}</span>
-                    </div>
-                  )}
-                  <div className="flex justify-between text-lg font-bold">
-                    <span>Umumiy:</span>
-                    <span>{formatCurrency(selectedSale.totalAmount)}</span>
-                  </div>
-                  <div className="flex justify-between text-sm">
-                    <span className="text-base-content/70">To'langan:</span>
-                    <span className="text-success">{formatCurrency(selectedSale.paidAmount)}</span>
-                  </div>
-                  {selectedSale.debtAmount > 0 && (
-                    <div className="flex justify-between text-sm">
-                      <span className="text-base-content/70">Qarz:</span>
-                      <span className="text-error">{formatCurrency(selectedSale.debtAmount)}</span>
-                    </div>
-                  )}
+              <div className="border-t border-base-200 pt-4 space-y-2">
+                <div className="flex justify-between text-sm">
+                  <span className="text-base-content/70">Jami:</span>
+                  <span>{formatCurrency(selectedSale.subtotal)}</span>
                 </div>
+                {(selectedSale.discountAmount > 0 || selectedSale.discountPercent > 0) && (
+                  <div className="flex justify-between text-sm text-error">
+                    <span>Chegirma{selectedSale.discountPercent > 0 && ` (${selectedSale.discountPercent}%)`}:</span>
+                    <span>-{formatCurrency(selectedSale.discountAmount)}</span>
+                  </div>
+                )}
+                <div className="flex justify-between text-lg font-bold">
+                  <span>Umumiy:</span>
+                  <span>{formatCurrency(selectedSale.totalAmount)}</span>
+                </div>
+                <div className="flex justify-between text-sm">
+                  <span className="text-base-content/70">To'langan:</span>
+                  <span className="text-success">{formatCurrency(selectedSale.paidAmount)}</span>
+                </div>
+                {selectedSale.debtAmount > 0 && (
+                  <div className="flex justify-between text-sm">
+                    <span className="text-base-content/70">Qarz:</span>
+                    <span className="text-error">{formatCurrency(selectedSale.debtAmount)}</span>
+                  </div>
+                )}
               </div>
 
-              {/* Status badges */}
               <div className="flex items-center gap-2">
                 {getPaymentStatusBadge(selectedSale.paymentStatus)}
                 {getSaleStatusBadge(selectedSale.status)}
@@ -622,33 +435,17 @@ export function SalesPage() {
 
               {selectedSale.notes && (
                 <div className="surface-soft rounded-lg p-3">
-                  <p className="text-xs font-semibold uppercase tracking-wider text-base-content/50">
-                    Izoh
-                  </p>
+                  <p className="text-xs font-semibold uppercase tracking-wider text-base-content/50">Izoh</p>
                   <p className="mt-1 text-sm">{selectedSale.notes}</p>
                 </div>
               )}
             </div>
 
             <div className="modal-action">
-              <button
-                className="btn"
-                onClick={() => {
-                  setShowDetailModal(false);
-                  setSelectedSale(null);
-                }}
-              >
-                Yopish
-              </button>
+              <button className="btn" onClick={() => { setShowDetailModal(false); setSelectedSale(null); }}>Yopish</button>
             </div>
           </div>
-          <div
-            className="modal-backdrop"
-            onClick={() => {
-              setShowDetailModal(false);
-              setSelectedSale(null);
-            }}
-          />
+          <div className="modal-backdrop" onClick={() => { setShowDetailModal(false); setSelectedSale(null); }} />
         </div>
       )}
 
@@ -658,43 +455,18 @@ export function SalesPage() {
           <div className="modal-box">
             <h3 className="text-lg font-bold text-error">Sotuvni bekor qilish</h3>
             <p className="mt-4 text-base-content/70">
-              Haqiqatan ham <span className="font-semibold">{selectedSale.invoiceNumber}</span>{' '}
-              raqamli sotuvni bekor qilmoqchimisiz?
+              Haqiqatan ham <span className="font-semibold">{selectedSale.invoiceNumber}</span> raqamli sotuvni bekor qilmoqchimisiz?
             </p>
-            <p className="mt-2 text-sm text-base-content/60">
-              Bu amal mahsulotlar zahirasini qaytaradi va sotuvni bekor qilingan deb belgilaydi.
-            </p>
-
+            <p className="mt-2 text-sm text-base-content/60">Bu amal mahsulotlar zahirasini qaytaradi va sotuvni bekor qilingan deb belgilaydi.</p>
             <div className="modal-action">
-              <button
-                className="btn"
-                onClick={() => {
-                  setShowCancelModal(false);
-                  setSelectedSale(null);
-                }}
-                disabled={cancelling}
-              >
-                Yo'q, ortga
-              </button>
-              <button
-                className="btn btn-error"
-                onClick={handleCancelSale}
-                disabled={cancelling}
-              >
+              <button className="btn" onClick={() => { setShowCancelModal(false); setSelectedSale(null); }} disabled={cancelling}>Yo'q, ortga</button>
+              <button className="btn btn-error" onClick={handleCancelSale} disabled={cancelling}>
                 {cancelling && <span className="loading loading-spinner loading-sm" />}
                 Ha, bekor qilish
               </button>
             </div>
           </div>
-          <div
-            className="modal-backdrop"
-            onClick={() => {
-              if (!cancelling) {
-                setShowCancelModal(false);
-                setSelectedSale(null);
-              }
-            }}
-          />
+          <div className="modal-backdrop" onClick={() => { if (!cancelling) { setShowCancelModal(false); setSelectedSale(null); } }} />
         </div>
       )}
     </div>
