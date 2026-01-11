@@ -6,6 +6,7 @@ import { productsApi } from '../../api/products.api';
 import { salesApi } from '../../api/sales.api';
 import { customersApi } from '../../api/customers.api';
 import { useCartStore } from '../../store/cartStore';
+import { useNotificationsStore } from '../../store/notificationsStore';
 import { formatCurrency, PAYMENT_METHODS } from '../../config/constants';
 import { NumberInput } from '../../components/ui/NumberInput';
 import { ModalPortal } from '../../components/common/Modal';
@@ -26,6 +27,7 @@ export function POSPage() {
   const [loadingCustomers, setLoadingCustomers] = useState(false);
 
   const cart = useCartStore();
+  const { notifications } = useNotificationsStore();
 
   const loadProducts = useCallback(async () => {
     try {
@@ -42,6 +44,13 @@ export function POSPage() {
   useEffect(() => {
     loadProducts();
   }, [loadProducts]);
+
+  // WebSocket orqali yangi notification kelganda mahsulotlarni yangilash (zaxira o'zgarishi)
+  useEffect(() => {
+    if (notifications.length > 0) {
+      loadProducts();
+    }
+  }, [notifications.length, loadProducts]);
 
   const loadCustomers = useCallback(async () => {
     setLoadingCustomers(true);

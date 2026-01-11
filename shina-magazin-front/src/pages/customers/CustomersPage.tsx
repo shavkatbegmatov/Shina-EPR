@@ -5,6 +5,7 @@ import { customersApi } from '../../api/customers.api';
 import { formatCurrency, CUSTOMER_TYPES } from '../../config/constants';
 import { DataTable, Column } from '../../components/ui/DataTable';
 import { ModalPortal } from '../../components/common/Modal';
+import { useNotificationsStore } from '../../store/notificationsStore';
 import type { Customer, CustomerRequest, CustomerType } from '../../types';
 
 const emptyFormData: CustomerRequest = {
@@ -26,6 +27,7 @@ export function CustomersPage() {
   const [formData, setFormData] = useState<CustomerRequest>(emptyFormData);
   const [saving, setSaving] = useState(false);
 
+  const { notifications } = useNotificationsStore();
   const hasSearch = useMemo(() => search.trim().length > 0, [search]);
 
   const handlePageSizeChange = (newSize: number) => {
@@ -122,8 +124,8 @@ export function CustomersPage() {
     },
   ], []);
 
-  const loadCustomers = useCallback(async () => {
-    setLoading(true);
+  const loadCustomers = useCallback(async (showLoading = true) => {
+    if (showLoading) setLoading(true);
     try {
       const data = await customersApi.getAll({
         page,
@@ -143,6 +145,13 @@ export function CustomersPage() {
   useEffect(() => {
     loadCustomers();
   }, [loadCustomers]);
+
+  // WebSocket orqali yangi notification kelganda mijozlarni yangilash
+  useEffect(() => {
+    if (notifications.length > 0) {
+      loadCustomers(false);
+    }
+  }, [notifications.length, loadCustomers]);
 
   const handleOpenNewModal = () => {
     setEditingCustomer(null);

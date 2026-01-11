@@ -6,6 +6,7 @@ import { formatCurrency, SEASONS } from '../../config/constants';
 import { NumberInput } from '../../components/ui/NumberInput';
 import { DataTable, Column } from '../../components/ui/DataTable';
 import { ModalPortal } from '../../components/common/Modal';
+import { useNotificationsStore } from '../../store/notificationsStore';
 import type { Product, Brand, Category, Season, ProductRequest } from '../../types';
 
 const emptyFormData: ProductRequest = {
@@ -31,6 +32,8 @@ export function ProductsPage() {
   const [showNewProductModal, setShowNewProductModal] = useState(false);
   const [formData, setFormData] = useState<ProductRequest>(emptyFormData);
   const [saving, setSaving] = useState(false);
+
+  const { notifications } = useNotificationsStore();
 
   const activeFilters = useMemo(() => {
     let count = 0;
@@ -118,8 +121,8 @@ export function ProductsPage() {
     }
   }, []);
 
-  const loadProducts = useCallback(async () => {
-    setLoading(true);
+  const loadProducts = useCallback(async (showLoading = true) => {
+    if (showLoading) setLoading(true);
     try {
       const data = await productsApi.getAll({
         page,
@@ -146,6 +149,13 @@ export function ProductsPage() {
   useEffect(() => {
     loadProducts();
   }, [loadProducts]);
+
+  // WebSocket orqali yangi notification kelganda mahsulotlarni yangilash
+  useEffect(() => {
+    if (notifications.length > 0) {
+      loadProducts(false);
+    }
+  }, [notifications.length, loadProducts]);
 
   const handleResetFilters = () => {
     setSearch('');

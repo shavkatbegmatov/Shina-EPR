@@ -18,6 +18,7 @@ import { productsApi } from '../../api/products.api';
 import { NumberInput } from '../../components/ui/NumberInput';
 import { DataTable, Column } from '../../components/ui/DataTable';
 import { ModalPortal } from '../../components/common/Modal';
+import { useNotificationsStore } from '../../store/notificationsStore';
 import {
   formatNumber,
   MOVEMENT_TYPES,
@@ -57,6 +58,8 @@ export function WarehousePage() {
   const [productSearch, setProductSearch] = useState('');
   const [searchResults, setSearchResults] = useState<Product[]>([]);
   const [searchLoading, setSearchLoading] = useState(false);
+
+  const { notifications } = useNotificationsStore();
 
   const getMovementIcon = (type: MovementType) => {
     switch (type) {
@@ -206,6 +209,15 @@ export function WarehousePage() {
   useEffect(() => {
     loadMovements();
   }, [loadMovements]);
+
+  // WebSocket orqali yangi notification kelganda ombor ma'lumotlarini yangilash
+  useEffect(() => {
+    if (notifications.length > 0) {
+      loadStats();
+      loadMovements();
+      loadLowStockProducts();
+    }
+  }, [notifications.length, loadStats, loadMovements, loadLowStockProducts]);
 
   const handleSearchProducts = async (query: string) => {
     setProductSearch(query);
