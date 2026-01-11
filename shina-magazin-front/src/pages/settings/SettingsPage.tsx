@@ -7,13 +7,18 @@ import {
   AlertTriangle,
   Pencil,
   Trash2,
+  Palette,
+  Sun,
+  Moon,
+  Monitor,
 } from 'lucide-react';
 import clsx from 'clsx';
 import { brandsApi, categoriesApi } from '../../api/products.api';
 import { ModalPortal } from '../../components/common/Modal';
+import { useUIStore } from '../../store/uiStore';
 import type { Brand, Category } from '../../types';
 
-type Tab = 'brands' | 'categories';
+type Tab = 'appearance' | 'brands' | 'categories';
 
 interface BrandFormData {
   name: string;
@@ -30,7 +35,8 @@ const emptyBrandForm: BrandFormData = { name: '', country: '' };
 const emptyCategoryForm: CategoryFormData = { name: '', description: '', parentId: '' };
 
 export function SettingsPage() {
-  const [activeTab, setActiveTab] = useState<Tab>('brands');
+  const [activeTab, setActiveTab] = useState<Tab>('appearance');
+  const { themeMode, setThemeMode } = useUIStore();
 
   // Brands state
   const [brands, setBrands] = useState<Brand[]>([]);
@@ -207,6 +213,13 @@ export function SettingsPage() {
       {/* Tabs */}
       <div className="tabs tabs-bordered">
         <button
+          className={clsx('tab gap-2', activeTab === 'appearance' && 'tab-active')}
+          onClick={() => setActiveTab('appearance')}
+        >
+          <Palette className="h-4 w-4" />
+          Ko'rinish
+        </button>
+        <button
           className={clsx('tab gap-2', activeTab === 'brands' && 'tab-active')}
           onClick={() => setActiveTab('brands')}
         >
@@ -221,6 +234,86 @@ export function SettingsPage() {
           Kategoriyalar
         </button>
       </div>
+
+      {/* Appearance Tab */}
+      {activeTab === 'appearance' && (
+        <div className="space-y-6">
+          {/* Theme Settings */}
+          <div className="surface-card p-6">
+            <h2 className="text-lg font-semibold mb-4">Mavzu</h2>
+            <p className="text-sm text-base-content/60 mb-6">
+              Interfeys ranglarini tanlang. Tizim rejimi qurilmangiz sozlamalariga mos keladi.
+            </p>
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+              {/* Light Theme */}
+              <button
+                className={clsx(
+                  'flex flex-col items-center gap-3 p-6 rounded-2xl border-2 transition-all',
+                  themeMode === 'light'
+                    ? 'border-primary bg-primary/5 shadow-lg'
+                    : 'border-base-300 hover:border-primary/50 hover:bg-base-200/50'
+                )}
+                onClick={() => setThemeMode('light')}
+              >
+                <div className="w-16 h-16 rounded-xl bg-gradient-to-br from-amber-100 to-orange-200 flex items-center justify-center shadow-inner">
+                  <Sun className="h-8 w-8 text-amber-600" />
+                </div>
+                <div className="text-center">
+                  <p className="font-semibold">Yorug'</p>
+                  <p className="text-xs text-base-content/50">Kunduzgi rejim</p>
+                </div>
+                {themeMode === 'light' && (
+                  <span className="badge badge-primary badge-sm">Tanlangan</span>
+                )}
+              </button>
+
+              {/* Dark Theme */}
+              <button
+                className={clsx(
+                  'flex flex-col items-center gap-3 p-6 rounded-2xl border-2 transition-all',
+                  themeMode === 'dark'
+                    ? 'border-primary bg-primary/5 shadow-lg'
+                    : 'border-base-300 hover:border-primary/50 hover:bg-base-200/50'
+                )}
+                onClick={() => setThemeMode('dark')}
+              >
+                <div className="w-16 h-16 rounded-xl bg-gradient-to-br from-slate-700 to-slate-900 flex items-center justify-center shadow-inner">
+                  <Moon className="h-8 w-8 text-slate-300" />
+                </div>
+                <div className="text-center">
+                  <p className="font-semibold">Qorong'i</p>
+                  <p className="text-xs text-base-content/50">Tungi rejim</p>
+                </div>
+                {themeMode === 'dark' && (
+                  <span className="badge badge-primary badge-sm">Tanlangan</span>
+                )}
+              </button>
+
+              {/* System Theme */}
+              <button
+                className={clsx(
+                  'flex flex-col items-center gap-3 p-6 rounded-2xl border-2 transition-all',
+                  themeMode === 'system'
+                    ? 'border-primary bg-primary/5 shadow-lg'
+                    : 'border-base-300 hover:border-primary/50 hover:bg-base-200/50'
+                )}
+                onClick={() => setThemeMode('system')}
+              >
+                <div className="w-16 h-16 rounded-xl bg-gradient-to-br from-blue-100 to-purple-200 flex items-center justify-center shadow-inner">
+                  <Monitor className="h-8 w-8 text-blue-600" />
+                </div>
+                <div className="text-center">
+                  <p className="font-semibold">Tizim</p>
+                  <p className="text-xs text-base-content/50">Avtomatik</p>
+                </div>
+                {themeMode === 'system' && (
+                  <span className="badge badge-primary badge-sm">Tanlangan</span>
+                )}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Brands Tab */}
       {activeTab === 'brands' && (

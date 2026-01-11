@@ -84,16 +84,17 @@ type RouteHandle = {
 
 export function Header() {
   const { user, logout } = useAuthStore();
-  const { toggleSidebar } = useUIStore();
+  const { toggleSidebar, themeMode, setThemeMode } = useUIStore();
   const { notifications, unreadCount, markAsRead, fetchNotifications } = useNotificationsStore();
   const navigate = useNavigate();
   const matches = useMatches();
   const [searchFocused, setSearchFocused] = useState(false);
-  const [isDark, setIsDark] = useState(false);
   const [userDropdownOpen, setUserDropdownOpen] = useState(false);
   const [notifDropdownOpen, setNotifDropdownOpen] = useState(false);
   const userDropdownRef = useRef<HTMLDivElement>(null);
   const notifDropdownRef = useRef<HTMLDivElement>(null);
+
+  const isDark = themeMode === 'dark' || (themeMode === 'system' && window.matchMedia('(prefers-color-scheme: dark)').matches);
 
   // Fetch notifications on mount
   useEffect(() => {
@@ -132,8 +133,14 @@ export function Header() {
   };
 
   const toggleTheme = () => {
-    setIsDark(!isDark);
-    // Theme toggle logic can be implemented here
+    // Cycle through: light -> dark -> system -> light
+    if (themeMode === 'light') {
+      setThemeMode('dark');
+    } else if (themeMode === 'dark') {
+      setThemeMode('system');
+    } else {
+      setThemeMode('light');
+    }
   };
 
   const getRoleBadgeColor = (role?: string) => {
@@ -218,12 +225,17 @@ export function Header() {
           <button
             className="btn btn-ghost btn-sm btn-square hidden sm:flex"
             onClick={toggleTheme}
-            title={isDark ? "Yorug' rejim" : "Qorong'i rejim"}
+            title={
+              themeMode === 'light' ? "Yorug' rejim" :
+              themeMode === 'dark' ? "Qorong'i rejim" : "Tizim rejimi"
+            }
           >
-            {isDark ? (
+            {themeMode === 'dark' ? (
+              <Moon className="h-4 w-4" />
+            ) : themeMode === 'light' ? (
               <Sun className="h-4 w-4" />
             ) : (
-              <Moon className="h-4 w-4" />
+              isDark ? <Moon className="h-4 w-4 opacity-60" /> : <Sun className="h-4 w-4 opacity-60" />
             )}
           </button>
 
@@ -421,12 +433,17 @@ export function Header() {
                     setUserDropdownOpen(false);
                   }}
                 >
-                  {isDark ? (
+                  {themeMode === 'dark' ? (
+                    <Moon className="h-4 w-4 text-base-content/60" />
+                  ) : themeMode === 'light' ? (
                     <Sun className="h-4 w-4 text-base-content/60" />
                   ) : (
-                    <Moon className="h-4 w-4 text-base-content/60" />
+                    isDark ? <Moon className="h-4 w-4 text-base-content/60 opacity-60" /> : <Sun className="h-4 w-4 text-base-content/60 opacity-60" />
                   )}
-                  <span>{isDark ? "Yorug' rejim" : "Qorong'i rejim"}</span>
+                  <span>
+                    {themeMode === 'light' ? "Yorug' rejim" :
+                     themeMode === 'dark' ? "Qorong'i rejim" : "Tizim rejimi"}
+                  </span>
                 </button>
               </div>
 
