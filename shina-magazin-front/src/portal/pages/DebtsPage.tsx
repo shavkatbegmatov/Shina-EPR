@@ -1,10 +1,15 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import { useTranslation } from 'react-i18next';
+import { useOutletContext } from 'react-router-dom';
 import { CreditCard, AlertTriangle, CheckCircle, Clock } from 'lucide-react';
 import { portalApiClient } from '../api/portal.api';
 import PortalHeader from '../components/layout/PortalHeader';
 import type { PortalDebt } from '../types/portal.types';
 import { format } from 'date-fns';
+
+interface OutletContextType {
+  newNotificationTrigger: number;
+}
 
 function formatMoney(amount: number): string {
   return new Intl.NumberFormat('uz-UZ').format(amount);
@@ -12,28 +17,37 @@ function formatMoney(amount: number): string {
 
 export default function PortalDebtsPage() {
   const { t } = useTranslation();
+  const { newNotificationTrigger } = useOutletContext<OutletContextType>();
   const [debts, setDebts] = useState<PortalDebt[]>([]);
   const [totalDebt, setTotalDebt] = useState(0);
   const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
-    const fetchData = async () => {
-      try {
-        const [debtsData, total] = await Promise.all([
-          portalApiClient.getDebts(),
-          portalApiClient.getTotalDebt(),
-        ]);
-        setDebts(debtsData);
-        setTotalDebt(total);
-      } catch (error) {
-        console.error('Failed to fetch debts', error);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchData();
+  const fetchData = useCallback(async (showLoading = true) => {
+    try {
+      if (showLoading) setLoading(true);
+      const [debtsData, total] = await Promise.all([
+        portalApiClient.getDebts(),
+        portalApiClient.getTotalDebt(),
+      ]);
+      setDebts(debtsData);
+      setTotalDebt(total);
+    } catch (error) {
+      console.error('Failed to fetch debts', error);
+    } finally {
+      setLoading(false);
+    }
   }, []);
+
+  useEffect(() => {
+    fetchData();
+  }, [fetchData]);
+
+  // WebSocket orqali yangi notification kelganda qarzlarni yangilash
+  useEffect(() => {
+    if (newNotificationTrigger > 0) {
+      fetchData(false); // loading ko'rsatmasdan yangilash
+    }
+  }, [newNotificationTrigger, fetchData]);
 
   const getStatusIcon = (status: string, overdue: boolean) => {
     if (status === 'PAID') {
