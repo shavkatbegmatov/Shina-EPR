@@ -48,6 +48,8 @@ public class SecurityConfig {
                         .requestMatchers("/v1/customer-auth/**").permitAll()
                         .requestMatchers("/swagger-ui/**", "/api-docs/**", "/swagger-ui.html").permitAll()
                         .requestMatchers("/actuator/**").permitAll()
+                        // WebSocket endpoint (JWT token interceptor'da tekshiriladi)
+                        .requestMatchers("/ws/**").permitAll()
 
                         // Customer Portal - faqat CUSTOMER roli uchun
                         .requestMatchers("/v1/portal/**").hasRole("CUSTOMER")

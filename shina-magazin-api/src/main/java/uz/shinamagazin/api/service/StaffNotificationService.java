@@ -24,6 +24,7 @@ public class StaffNotificationService {
 
     private final StaffNotificationRepository notificationRepository;
     private final UserRepository userRepository;
+    private final NotificationDispatcher notificationDispatcher;
 
     /**
      * Foydalanuvchi uchun bildirishnomalarni olish
@@ -113,7 +114,12 @@ public class StaffNotificationService {
                 .isRead(false)
                 .build();
 
-        return notificationRepository.save(notification);
+        StaffNotification saved = notificationRepository.save(notification);
+
+        // WebSocket orqali real-time yuborish
+        notificationDispatcher.notifyAllStaff(saved);
+
+        return saved;
     }
 
     /**
@@ -141,7 +147,12 @@ public class StaffNotificationService {
                 .isRead(false)
                 .build();
 
-        return notificationRepository.save(notification);
+        StaffNotification saved = notificationRepository.save(notification);
+
+        // WebSocket orqali real-time yuborish (faqat shu foydalanuvchiga)
+        notificationDispatcher.notifyStaff(userId, saved);
+
+        return saved;
     }
 
     /**

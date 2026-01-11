@@ -1,5 +1,6 @@
 import { create } from 'zustand';
 import { notificationsApi, type StaffNotification, type StaffNotificationType } from '../api/notifications.api';
+import { webSocketService, type WebSocketNotification } from '../services/websocket';
 
 // Frontend uchun notification type mapping
 type FrontendNotificationType = 'warning' | 'success' | 'info' | 'order' | 'payment' | 'customer';
@@ -45,6 +46,7 @@ interface NotificationsState {
   unreadCount: number;
   loading: boolean;
   error: string | null;
+  wsConnected: boolean;
 
   // Actions
   fetchNotifications: () => Promise<void>;
@@ -53,16 +55,34 @@ interface NotificationsState {
   markAllAsRead: () => Promise<void>;
   deleteNotification: (id: number) => Promise<void>;
 
+  // WebSocket
+  connectWebSocket: (token: string) => void;
+  disconnectWebSocket: () => void;
+
   // Local state updates (for optimistic UI)
   setNotifications: (notifications: Notification[]) => void;
   setUnreadCount: (count: number) => void;
+  addNotification: (notification: Notification) => void;
 }
+
+// WebSocket'dan kelgan notification'ni map qilish
+const mapWebSocketNotification = (n: WebSocketNotification): Notification => ({
+  id: n.id,
+  title: n.title,
+  message: n.message,
+  type: mapNotificationType(n.type as StaffNotificationType),
+  isRead: n.isRead,
+  createdAt: n.createdAt,
+  referenceType: n.referenceType,
+  referenceId: n.referenceId,
+});
 
 export const useNotificationsStore = create<NotificationsState>((set, get) => ({
   notifications: [],
   unreadCount: 0,
   loading: false,
   error: null,
+  wsConnected: false,
 
   fetchNotifications: async () => {
     set({ loading: true, error: null });
@@ -141,4 +161,40 @@ export const useNotificationsStore = create<NotificationsState>((set, get) => ({
   },
 
   setUnreadCount: (count) => set({ unreadCount: count }),
+
+  // Yangi notification qo'shish (WebSocket orqali kelganda)
+  addNotification: (notification) => {
+    const { notifications } = get();
+    // Dublikatni tekshirish
+    if (notifications.some((n) => n.id === notification.id)) {
+      return;
+    }
+    // Boshiga qo'shish
+    set({
+      notifications: [notification, ...notifications],
+      unreadCount: get().unreadCount + (notification.isRead ? 0 : 1),
+    });
+  },
+
+  // WebSocket ulanishini boshlash
+  connectWebSocket: (token) => {
+    webSocketService.connect(
+      token,
+      // Notification callback
+      (wsNotification) => {
+        const notification = mapWebSocketNotification(wsNotification);
+        get().addNotification(notification);
+      },
+      // Connection status callback
+      (connected) => {
+        set({ wsConnected: connected });
+      }
+    );
+  },
+
+  // WebSocket ulanishini uzish
+  disconnectWebSocket: () => {
+    webSocketService.disconnect();
+    set({ wsConnected: false });
+  },
 }));

@@ -2,6 +2,7 @@ import { useEffect, useState, useCallback } from 'react';
 import { Outlet, Navigate } from 'react-router-dom';
 import { usePortalAuthStore } from '../../store/portalAuthStore';
 import { portalApiClient } from '../../api/portal.api';
+import { portalWebSocketService } from '../../services/portalWebSocket';
 import BottomNav from './BottomNav';
 
 function useTheme() {
@@ -37,29 +38,34 @@ function useTheme() {
 }
 
 export default function PortalLayout() {
-  const { isAuthenticated } = usePortalAuthStore();
+  const { isAuthenticated, accessToken } = usePortalAuthStore();
   const [unreadCount, setUnreadCount] = useState(0);
 
   // Apply theme
   useTheme();
 
   useEffect(() => {
-    if (isAuthenticated) {
+    if (isAuthenticated && accessToken) {
       // Fetch unread notifications count
       portalApiClient.getUnreadCount()
         .then(setUnreadCount)
         .catch(() => setUnreadCount(0));
 
-      // Poll for new notifications every 30 seconds
-      const interval = setInterval(() => {
-        portalApiClient.getUnreadCount()
-          .then(setUnreadCount)
-          .catch(() => {});
-      }, 30000);
+      // WebSocket ulanishini boshlash
+      portalWebSocketService.connect(
+        accessToken,
+        // Yangi notification kelganda
+        () => {
+          // Unread count'ni oshirish
+          setUnreadCount((prev) => prev + 1);
+        }
+      );
 
-      return () => clearInterval(interval);
+      return () => {
+        portalWebSocketService.disconnect();
+      };
     }
-  }, [isAuthenticated]);
+  }, [isAuthenticated, accessToken]);
 
   if (!isAuthenticated) {
     return <Navigate to="/kabinet/kirish" replace />;

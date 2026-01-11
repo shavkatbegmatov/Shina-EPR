@@ -85,7 +85,8 @@ type RouteHandle = {
 export function Header() {
   const { user, logout } = useAuthStore();
   const { toggleSidebar, themeMode, setThemeMode } = useUIStore();
-  const { notifications, unreadCount, markAsRead, fetchNotifications } = useNotificationsStore();
+  const { notifications, unreadCount, markAsRead, fetchNotifications, connectWebSocket, disconnectWebSocket } = useNotificationsStore();
+  const { accessToken } = useAuthStore();
   const navigate = useNavigate();
   const matches = useMatches();
   const [searchFocused, setSearchFocused] = useState(false);
@@ -96,17 +97,20 @@ export function Header() {
 
   const isDark = themeMode === 'dark' || (themeMode === 'system' && window.matchMedia('(prefers-color-scheme: dark)').matches);
 
-  // Fetch notifications on mount and poll every 30 seconds
+  // WebSocket ulanishini boshlash va dastlabki ma'lumotlarni yuklash
   useEffect(() => {
+    // Dastlabki bildirishnomalarni yuklash
     fetchNotifications();
 
-    // Poll for new notifications every 30 seconds
-    const interval = setInterval(() => {
-      fetchNotifications();
-    }, 30000);
+    // WebSocket ulanishini boshlash
+    if (accessToken) {
+      connectWebSocket(accessToken);
+    }
 
-    return () => clearInterval(interval);
-  }, [fetchNotifications]);
+    return () => {
+      disconnectWebSocket();
+    };
+  }, [accessToken, fetchNotifications, connectWebSocket, disconnectWebSocket]);
 
   // Close dropdowns when clicking outside
   useEffect(() => {

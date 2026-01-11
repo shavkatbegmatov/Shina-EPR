@@ -23,6 +23,7 @@ public class NotificationService {
 
     private final CustomerNotificationRepository notificationRepository;
     private final CustomerRepository customerRepository;
+    private final NotificationDispatcher notificationDispatcher;
 
     public Page<NotificationResponse> getCustomerNotifications(Long customerId, String lang, Pageable pageable) {
         return notificationRepository.findByCustomerIdOrderByCreatedAtDesc(customerId, pageable)
@@ -128,8 +129,11 @@ public class NotificationService {
                 .metadata(metadata)
                 .build();
 
-        notificationRepository.save(notification);
+        CustomerNotification saved = notificationRepository.save(notification);
         log.info("Notification sent to customer {}: {}", customerId, type);
+
+        // WebSocket orqali real-time yuborish
+        notificationDispatcher.notifyCustomer(customerId, saved);
     }
 
     /**
