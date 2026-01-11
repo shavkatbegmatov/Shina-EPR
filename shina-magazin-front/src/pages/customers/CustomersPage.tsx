@@ -3,6 +3,7 @@ import { Plus, Search, Users, Phone, X } from 'lucide-react';
 import clsx from 'clsx';
 import { customersApi } from '../../api/customers.api';
 import { formatCurrency, CUSTOMER_TYPES } from '../../config/constants';
+import { SortableHeader, useSorting, sortData } from '../../components/ui/SortableHeader';
 import type { Customer, CustomerRequest, CustomerType } from '../../types';
 
 const emptyFormData: CustomerRequest = {
@@ -22,6 +23,13 @@ export function CustomersPage() {
   const [editingCustomer, setEditingCustomer] = useState<Customer | null>(null);
   const [formData, setFormData] = useState<CustomerRequest>(emptyFormData);
   const [saving, setSaving] = useState(false);
+
+  // Sorting
+  const { sortConfig, handleSort } = useSorting();
+
+  const sortedCustomers = useMemo(() => {
+    return sortData(customers, sortConfig);
+  }, [customers, sortConfig]);
 
   const hasSearch = useMemo(() => search.trim().length > 0, [search]);
 
@@ -168,16 +176,16 @@ export function CustomersPage() {
               <table className="table table-zebra">
                 <thead>
                   <tr>
-                    <th>Mijoz</th>
-                    <th>Telefon</th>
-                    <th>Turi</th>
-                    <th>Manzil</th>
-                    <th>Balans</th>
+                    <SortableHeader label="Mijoz" sortKey="fullName" currentSort={sortConfig} onSort={handleSort} />
+                    <SortableHeader label="Telefon" sortKey="phone" currentSort={sortConfig} onSort={handleSort} />
+                    <SortableHeader label="Turi" sortKey="customerType" currentSort={sortConfig} onSort={handleSort} />
+                    <SortableHeader label="Manzil" sortKey="address" currentSort={sortConfig} onSort={handleSort} />
+                    <SortableHeader label="Balans" sortKey="balance" currentSort={sortConfig} onSort={handleSort} />
                     <th></th>
                   </tr>
                 </thead>
                 <tbody>
-                  {customers.map((customer) => (
+                  {sortedCustomers.map((customer) => (
                     <tr
                       key={customer.id}
                       className={clsx(customer.hasDebt && 'bg-error/5')}
@@ -251,7 +259,7 @@ export function CustomersPage() {
             </div>
 
             <div className="space-y-3 p-4 lg:hidden">
-              {customers.map((customer) => (
+              {sortedCustomers.map((customer) => (
                 <div
                   key={customer.id}
                   className="surface-panel flex flex-col gap-3 rounded-xl p-4"

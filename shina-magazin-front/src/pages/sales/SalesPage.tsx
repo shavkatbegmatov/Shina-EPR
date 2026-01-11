@@ -23,6 +23,7 @@ import {
   PAYMENT_STATUSES,
   SALE_STATUSES,
 } from '../../config/constants';
+import { SortableHeader, useSorting, sortData } from '../../components/ui/SortableHeader';
 import type { Sale, PaymentStatus, SaleStatus, PaymentMethod } from '../../types';
 
 const paymentMethodIcons: Record<PaymentMethod, React.ReactNode> = {
@@ -52,6 +53,9 @@ export function SalesPage() {
     [search, paymentStatusFilter, statusFilter]
   );
 
+  // Sorting
+  const { sortConfig, handleSort } = useSorting();
+
   const loadSales = useCallback(async () => {
     setLoading(true);
     try {
@@ -75,7 +79,7 @@ export function SalesPage() {
   }, [loadSales]);
 
   const filteredSales = useMemo(() => {
-    return sales.filter((sale) => {
+    const filtered = sales.filter((sale) => {
       if (search.trim() && !sale.invoiceNumber.toLowerCase().includes(search.toLowerCase())) {
         return false;
       }
@@ -87,7 +91,8 @@ export function SalesPage() {
       }
       return true;
     });
-  }, [sales, search, paymentStatusFilter, statusFilter]);
+    return sortData(filtered, sortConfig);
+  }, [sales, search, paymentStatusFilter, statusFilter, sortConfig]);
 
   const handleResetFilters = () => {
     setSearch('');
@@ -291,13 +296,13 @@ export function SalesPage() {
               <table className="table table-zebra">
                 <thead>
                   <tr>
-                    <th>Faktura</th>
-                    <th>Sana</th>
-                    <th>Mijoz</th>
-                    <th>Summa</th>
-                    <th>To'lov usuli</th>
-                    <th>To'lov holati</th>
-                    <th>Holat</th>
+                    <SortableHeader label="Faktura" sortKey="invoiceNumber" currentSort={sortConfig} onSort={handleSort} />
+                    <SortableHeader label="Sana" sortKey="saleDate" currentSort={sortConfig} onSort={handleSort} />
+                    <SortableHeader label="Mijoz" sortKey="customerName" currentSort={sortConfig} onSort={handleSort} />
+                    <SortableHeader label="Summa" sortKey="totalAmount" currentSort={sortConfig} onSort={handleSort} />
+                    <SortableHeader label="To'lov usuli" sortKey="paymentMethod" currentSort={sortConfig} onSort={handleSort} />
+                    <SortableHeader label="To'lov holati" sortKey="paymentStatus" currentSort={sortConfig} onSort={handleSort} />
+                    <SortableHeader label="Holat" sortKey="status" currentSort={sortConfig} onSort={handleSort} />
                     <th></th>
                   </tr>
                 </thead>

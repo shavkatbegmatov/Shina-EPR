@@ -11,6 +11,7 @@ import clsx from 'clsx';
 import { productsApi, brandsApi, categoriesApi } from '../../api/products.api';
 import { formatCurrency, SEASONS } from '../../config/constants';
 import { NumberInput } from '../../components/ui/NumberInput';
+import { SortableHeader, useSorting, sortData } from '../../components/ui/SortableHeader';
 import type { Product, Brand, Category, Season, ProductRequest } from '../../types';
 
 const emptyFormData: ProductRequest = {
@@ -34,6 +35,13 @@ export function ProductsPage() {
   const [showNewProductModal, setShowNewProductModal] = useState(false);
   const [formData, setFormData] = useState<ProductRequest>(emptyFormData);
   const [saving, setSaving] = useState(false);
+
+  // Sorting
+  const { sortConfig, handleSort } = useSorting();
+
+  const sortedProducts = useMemo(() => {
+    return sortData(products, sortConfig);
+  }, [products, sortConfig]);
 
   const activeFilters = useMemo(() => {
     let count = 0;
@@ -272,18 +280,18 @@ export function ProductsPage() {
               <table className="table table-zebra">
                 <thead>
                   <tr>
-                    <th>SKU</th>
-                    <th>Nomi</th>
-                    <th>Brend</th>
-                    <th>O'lcham</th>
-                    <th>Mavsum</th>
-                    <th>Narx</th>
-                    <th>Zaxira</th>
+                    <SortableHeader label="SKU" sortKey="sku" currentSort={sortConfig} onSort={handleSort} />
+                    <SortableHeader label="Nomi" sortKey="name" currentSort={sortConfig} onSort={handleSort} />
+                    <SortableHeader label="Brend" sortKey="brandName" currentSort={sortConfig} onSort={handleSort} />
+                    <SortableHeader label="O'lcham" sortKey="sizeString" currentSort={sortConfig} onSort={handleSort} />
+                    <SortableHeader label="Mavsum" sortKey="season" currentSort={sortConfig} onSort={handleSort} />
+                    <SortableHeader label="Narx" sortKey="sellingPrice" currentSort={sortConfig} onSort={handleSort} />
+                    <SortableHeader label="Zaxira" sortKey="quantity" currentSort={sortConfig} onSort={handleSort} />
                     <th></th>
                   </tr>
                 </thead>
                 <tbody>
-                  {products.map((product) => (
+                  {sortedProducts.map((product) => (
                     <tr
                       key={product.id}
                       className={clsx(
@@ -338,7 +346,7 @@ export function ProductsPage() {
             </div>
 
             <div className="space-y-3 p-4 lg:hidden">
-              {products.map((product) => (
+              {sortedProducts.map((product) => (
                 <div
                   key={product.id}
                   className="surface-panel flex flex-col gap-3 rounded-xl p-4"

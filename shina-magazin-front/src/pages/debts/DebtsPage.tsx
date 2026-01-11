@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import {
   Wallet,
   Phone,
@@ -13,6 +13,7 @@ import clsx from 'clsx';
 import { debtsApi } from '../../api/debts.api';
 import { formatCurrency, DEBT_STATUSES, PAYMENT_METHODS } from '../../config/constants';
 import { NumberInput } from '../../components/ui/NumberInput';
+import { SortableHeader, useSorting, sortData } from '../../components/ui/SortableHeader';
 import type { Debt, DebtStatus, Payment, PaymentMethod } from '../../types';
 
 export function DebtsPage() {
@@ -36,6 +37,13 @@ export function DebtsPage() {
 
   // Stats
   const [totalActiveDebt, setTotalActiveDebt] = useState(0);
+
+  // Sorting
+  const { sortConfig, handleSort } = useSorting();
+
+  const sortedDebts = useMemo(() => {
+    return sortData(debts, sortConfig);
+  }, [debts, sortConfig]);
 
   const loadDebts = useCallback(async () => {
     setLoading(true);
@@ -232,16 +240,16 @@ export function DebtsPage() {
                   <table className="table table-zebra">
                     <thead>
                       <tr>
-                        <th>Mijoz</th>
-                        <th>Faktura</th>
-                        <th>Summa</th>
-                        <th>Qoldiq</th>
-                        <th>Holat</th>
+                        <SortableHeader label="Mijoz" sortKey="customerName" currentSort={sortConfig} onSort={handleSort} />
+                        <SortableHeader label="Faktura" sortKey="invoiceNumber" currentSort={sortConfig} onSort={handleSort} />
+                        <SortableHeader label="Summa" sortKey="originalAmount" currentSort={sortConfig} onSort={handleSort} />
+                        <SortableHeader label="Qoldiq" sortKey="remainingAmount" currentSort={sortConfig} onSort={handleSort} />
+                        <SortableHeader label="Holat" sortKey="status" currentSort={sortConfig} onSort={handleSort} />
                         <th></th>
                       </tr>
                     </thead>
                     <tbody>
-                      {debts.map((debt) => (
+                      {sortedDebts.map((debt) => (
                         <tr
                           key={debt.id}
                           className={clsx(
@@ -294,7 +302,7 @@ export function DebtsPage() {
 
                 {/* Mobile Cards */}
                 <div className="space-y-3 p-4 lg:hidden">
-                  {debts.map((debt) => (
+                  {sortedDebts.map((debt) => (
                     <div
                       key={debt.id}
                       className={clsx(
