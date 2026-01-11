@@ -27,12 +27,12 @@ export const router = createBrowserRouter([
   {
     path: '/login',
     element: <LoginPage />,
-    handle: { title: 'Kirish', description: 'Shaxsiy kabinetingizga kirish' },
+    handle: { title: 'Kirish' },
   },
   {
     path: '/register',
     element: <RegisterPage />,
-    handle: { title: "Ro'yxatdan o'tish", description: "Yangi hisob so'rovi" },
+    handle: { title: "Ro'yxatdan o'tish" },
   },
   {
     path: '/',
@@ -41,42 +41,42 @@ export const router = createBrowserRouter([
       {
         index: true,
         element: <DashboardPage />,
-        handle: { title: 'Dashboard', description: "Umumiy ko'rsatkichlar" },
+        handle: { title: 'Dashboard' },
       },
       {
         path: 'products',
         element: <ProductsPage />,
-        handle: { title: 'Mahsulotlar', description: 'Shina katalogi' },
+        handle: { title: 'Mahsulotlar' },
       },
       {
         path: 'pos',
         element: <POSPage />,
-        handle: { title: 'Kassa (POS)', description: 'Savdo jarayoni' },
+        handle: { title: 'Kassa (POS)' },
       },
       {
         path: 'sales',
         element: <SalesPage />,
-        handle: { title: 'Sotuvlar', description: 'Sotuvlar tarixi' },
+        handle: { title: 'Sotuvlar' },
       },
       {
         path: 'customers',
         element: <CustomersPage />,
-        handle: { title: 'Mijozlar', description: 'Mijozlar bazasi' },
+        handle: { title: 'Mijozlar' },
       },
       {
         path: 'debts',
         element: <DebtsPage />,
-        handle: { title: 'Qarzlar', description: 'Qarz va balans nazorati' },
+        handle: { title: 'Qarzlar' },
       },
       {
         path: 'warehouse',
         element: <WarehousePage />,
-        handle: { title: 'Ombor', description: 'Zaxira va kirim-chiqim' },
+        handle: { title: 'Ombor' },
       },
       {
         path: 'suppliers',
         element: <SuppliersPage />,
-        handle: { title: "Ta'minotchilar", description: "Hamkorlar ro'yxati" },
+        handle: { title: "Ta'minotchilar" },
       },
       {
         path: 'reports',
@@ -86,12 +86,12 @@ export const router = createBrowserRouter([
             description="Analitika, eksport va vizual hisobotlar."
           />
         ),
-        handle: { title: 'Hisobotlar', description: 'Analitika va eksportlar' },
+        handle: { title: 'Hisobotlar' },
       },
       {
         path: 'settings',
         element: <SettingsPage />,
-        handle: { title: 'Sozlamalar', description: 'Tizim sozlamalari' },
+        handle: { title: 'Sozlamalar' },
       },
     ],
   },
@@ -99,7 +99,7 @@ export const router = createBrowserRouter([
   {
     path: '/kabinet/kirish',
     element: <PortalLoginPage />,
-    handle: { title: 'Mijoz Portali - Kirish', description: 'Mijoz shaxsiy kabinetiga kirish' },
+    handle: { title: 'Mijoz Portali - Kirish' },
   },
   {
     path: '/kabinet',
@@ -108,32 +108,32 @@ export const router = createBrowserRouter([
       {
         index: true,
         element: <PortalDashboardPage />,
-        handle: { title: 'Bosh sahifa', description: 'Mijoz bosh sahifasi' },
+        handle: { title: 'Bosh sahifa' },
       },
       {
         path: 'xaridlar',
         element: <PortalPurchasesPage />,
-        handle: { title: 'Xaridlar', description: 'Xaridlar tarixi' },
+        handle: { title: 'Xaridlar' },
       },
       {
         path: 'xaridlar/:id',
         element: <PortalPurchaseDetailPage />,
-        handle: { title: 'Xarid tafsilotlari', description: 'Xarid haqida batafsil' },
+        handle: { title: 'Xarid tafsilotlari' },
       },
       {
         path: 'qarzlar',
         element: <PortalDebtsPage />,
-        handle: { title: 'Qarzlar', description: 'Mijoz qarzlari' },
+        handle: { title: 'Qarzlar' },
       },
       {
         path: 'bildirishnomalar',
         element: <PortalNotificationsPage />,
-        handle: { title: 'Bildirishnomalar', description: 'Xabarlar' },
+        handle: { title: 'Bildirishnomalar' },
       },
       {
         path: 'profil',
         element: <PortalProfilePage />,
-        handle: { title: 'Profil', description: 'Shaxsiy ma\'lumotlar' },
+        handle: { title: 'Profil' },
       },
     ],
   },

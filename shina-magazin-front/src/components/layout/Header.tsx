@@ -20,7 +20,6 @@ import { ROLES } from '../../config/constants';
 
 type RouteHandle = {
   title?: string;
-  description?: string;
 };
 
 export function Header() {
@@ -55,8 +54,6 @@ export function Header() {
     .find((match) => (match.handle as RouteHandle | undefined)?.title);
   const title =
     (activeMatch?.handle as RouteHandle | undefined)?.title || 'Dashboard';
-  const description = (activeMatch?.handle as RouteHandle | undefined)
-    ?.description;
 
   const userInitial =
     user?.fullName?.charAt(0)?.toUpperCase() ||
@@ -353,13 +350,6 @@ export function Header() {
           </div>
         </div>
       </div>
-
-      {/* Optional: Description bar */}
-      {description && (
-        <div className="border-t border-base-200/50 bg-base-200/30 px-4 py-1.5 lg:px-6">
-          <p className="text-xs text-base-content/60">{description}</p>
-        </div>
-      )}
     </header>
   );
 }
