@@ -80,6 +80,17 @@ export const usePortalAuthStore = create<PortalAuthState>()(
         language: state.language,
         theme: state.theme,
       }),
+      onRehydrateStorage: () => (state) => {
+        // Validate that if isAuthenticated is true, token exists in localStorage
+        if (state?.isAuthenticated) {
+          const token = localStorage.getItem('portalAccessToken');
+          if (!token) {
+            // No token found, reset auth state
+            state.isAuthenticated = false;
+            state.customer = null;
+          }
+        }
+      },
     }
   )
 );
