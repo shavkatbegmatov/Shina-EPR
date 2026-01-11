@@ -85,7 +85,7 @@ export function Header() {
 
   return (
     <header className="sticky top-0 z-30 border-b border-base-200/80 bg-base-100/95 backdrop-blur-md">
-      <div className="flex w-full items-center gap-3 px-4 py-2.5 lg:px-6">
+      <div className="flex h-16 w-full items-center gap-3 px-4 lg:px-6">
         {/* Left section - Menu & Title */}
         <div className="flex items-center gap-3">
           <button

@@ -57,28 +57,26 @@ export function Sidebar() {
           sidebarOpen ? 'translate-x-0' : '-translate-x-full'
         )}
       >
-        <div className="relative overflow-hidden border-b border-base-200 px-4 py-2.5">
+        <div className="relative flex h-16 items-center justify-between overflow-hidden border-b border-base-200 px-4">
           <div className="pointer-events-none absolute inset-0 bg-gradient-to-br from-primary/15 via-transparent to-secondary/10" />
-          <div className="relative flex items-center justify-between">
-            <div className="flex items-center gap-3">
-              <div className="grid h-10 w-10 place-items-center rounded-xl bg-primary/15 text-primary shadow-sm">
-                <span className="text-lg font-bold">S</span>
-              </div>
-              <div>
-                <h1 className="text-lg font-bold">Shina Magazin</h1>
-                <p className="text-xs text-base-content/60">
-                  ERP boshqaruv paneli
-                </p>
-              </div>
+          <div className="relative flex items-center gap-3">
+            <div className="grid h-9 w-9 place-items-center rounded-xl bg-primary/15 text-primary shadow-sm">
+              <span className="text-base font-bold">S</span>
             </div>
-            <button
-              className="btn btn-ghost btn-sm lg:hidden"
-              onClick={() => setSidebarOpen(false)}
-              aria-label="Yopish"
-            >
-              <X className="h-5 w-5" />
-            </button>
+            <div>
+              <h1 className="text-base font-bold leading-tight">Shina Magazin</h1>
+              <p className="text-[11px] text-base-content/60">
+                ERP boshqaruv paneli
+              </p>
+            </div>
           </div>
+          <button
+            className="btn btn-ghost btn-sm relative lg:hidden"
+            onClick={() => setSidebarOpen(false)}
+            aria-label="Yopish"
+          >
+            <X className="h-5 w-5" />
+          </button>
         </div>
 
         <nav className="flex-1 p-4" aria-label="Asosiy navigatsiya">
