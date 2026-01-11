@@ -234,17 +234,17 @@ export function DataTable<T>({
   return (
     <div className={clsx('surface-card overflow-hidden', containerClassName)}>
       {/* Desktop Table */}
-      <div className={clsx('hidden lg:block max-h-[calc(100vh-320px)] overflow-auto', className)}>
+      <div className={clsx('hidden lg:block overflow-x-auto', className)}>
         <table className="table table-zebra">
-          <thead className="sticky top-0 z-10">
-            <tr className="bg-base-100">
+          <thead className="sticky top-0 z-20">
+            <tr className="bg-base-100 shadow-[0_1px_3px_-1px_rgba(0,0,0,0.1)]">
               {columns.map((column) => (
                 <th
                   key={column.key}
                   className={clsx(
                     column.sortable !== false && 'cursor-pointer select-none transition-colors hover:bg-base-200/50',
                     sortConfig.key === column.key && 'bg-base-200/30',
-                    'bg-base-100 border-b border-base-200',
+                    '!bg-base-100 border-b border-base-200',
                     column.headerClassName
                   )}
                   onClick={() => column.sortable !== false && handleSort(column.key)}
