@@ -220,7 +220,13 @@ export function Header() {
                 </div>
               </div>
               <div className="border-t border-base-200 p-2">
-                <button className="btn btn-ghost btn-sm w-full">
+                <button
+                  className="btn btn-ghost btn-sm w-full"
+                  onClick={() => {
+                    setNotifDropdownOpen(false);
+                    // TODO: Navigate to notifications page when implemented
+                  }}
+                >
                   Barchasini ko'rish
                 </button>
               </div>
