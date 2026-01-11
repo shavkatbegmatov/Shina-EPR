@@ -52,7 +52,7 @@ export function Sidebar() {
       {/* Sidebar */}
       <aside
         className={clsx(
-          'fixed left-0 top-0 z-50 flex h-screen w-72 flex-col bg-base-100/95 backdrop-blur transition-transform lg:static lg:translate-x-0',
+          'fixed left-0 top-0 z-50 flex h-screen w-72 flex-col bg-base-100/95 backdrop-blur transition-transform lg:sticky lg:translate-x-0',
           'border-r border-base-200 shadow-[var(--shadow-soft)]',
           sidebarOpen ? 'translate-x-0' : '-translate-x-full'
         )}
