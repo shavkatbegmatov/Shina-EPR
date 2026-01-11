@@ -31,4 +31,10 @@ public interface DebtRepository extends JpaRepository<Debt, Long> {
 
     @Query("SELECT COALESCE(SUM(d.remainingAmount), 0) FROM Debt d WHERE d.customer.id = :customerId AND d.status = 'ACTIVE'")
     BigDecimal getCustomerTotalDebt(@Param("customerId") Long customerId);
+
+    /**
+     * Muddati yaqinlashgan qarzlar (3 kun ichida)
+     */
+    @Query("SELECT d FROM Debt d WHERE d.status = 'ACTIVE' AND d.dueDate BETWEEN :today AND :endDate")
+    List<Debt> findDebtsWithUpcomingDueDate(@Param("today") LocalDate today, @Param("endDate") LocalDate endDate);
 }

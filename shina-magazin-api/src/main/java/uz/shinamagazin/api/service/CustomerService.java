@@ -26,6 +26,7 @@ public class CustomerService {
 
     private final CustomerRepository customerRepository;
     private final UserRepository userRepository;
+    private final StaffNotificationService notificationService;
 
     public Page<CustomerResponse> getAllCustomers(Pageable pageable) {
         return customerRepository.findByActiveTrue(pageable)
@@ -61,6 +62,14 @@ public class CustomerService {
         customer.setCreatedBy(getCurrentUser());
 
         Customer savedCustomer = customerRepository.save(customer);
+
+        // Send notification about new customer
+        notificationService.notifyNewCustomer(
+                savedCustomer.getFullName(),
+                savedCustomer.getPhone(),
+                savedCustomer.getId()
+        );
+
         return CustomerResponse.from(savedCustomer);
     }
 

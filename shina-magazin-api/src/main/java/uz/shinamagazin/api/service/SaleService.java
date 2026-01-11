@@ -176,7 +176,7 @@ public class SaleService {
         Sale savedSale = saleRepository.save(sale);
 
         // Send notification about new sale
-        String customerName = customer != null ? customer.getName() : "Noma'lum mijoz";
+        String customerName = customer != null ? customer.getFullName() : "Noma'lum mijoz";
         notificationService.notifyNewOrder(savedSale.getInvoiceNumber(), customerName, savedSale.getId());
 
         // Create debt record if partial/unpaid
