@@ -85,7 +85,7 @@ type RouteHandle = {
 export function Header() {
   const { user, logout } = useAuthStore();
   const { toggleSidebar } = useUIStore();
-  const { notifications, unreadCount, markAsRead } = useNotificationsStore();
+  const { notifications, unreadCount, markAsRead, fetchNotifications } = useNotificationsStore();
   const navigate = useNavigate();
   const matches = useMatches();
   const [searchFocused, setSearchFocused] = useState(false);
@@ -94,6 +94,11 @@ export function Header() {
   const [notifDropdownOpen, setNotifDropdownOpen] = useState(false);
   const userDropdownRef = useRef<HTMLDivElement>(null);
   const notifDropdownRef = useRef<HTMLDivElement>(null);
+
+  // Fetch notifications on mount
+  useEffect(() => {
+    fetchNotifications();
+  }, [fetchNotifications]);
 
   // Close dropdowns when clicking outside
   useEffect(() => {

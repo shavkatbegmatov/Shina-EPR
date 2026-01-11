@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import {
   Bell,
   AlertTriangle,
@@ -10,6 +10,7 @@ import {
   CheckCheck,
   Trash2,
   Filter,
+  RefreshCw,
 } from 'lucide-react';
 import clsx from 'clsx';
 import { useNotificationsStore, type Notification } from '../../store/notificationsStore';
@@ -75,18 +76,27 @@ export function NotificationsPage() {
   const {
     notifications,
     unreadCount,
+    loading,
+    fetchNotifications,
     markAsRead,
     markAllAsRead,
     deleteNotification,
-    clearAll,
   } = useNotificationsStore();
   const [filter, setFilter] = useState<FilterType>('all');
+
+  useEffect(() => {
+    fetchNotifications();
+  }, [fetchNotifications]);
 
   const filteredNotifications = notifications.filter((n) => {
     if (filter === 'all') return true;
     if (filter === 'unread') return !n.isRead;
     return n.type === filter;
   });
+
+  const handleRefresh = () => {
+    fetchNotifications();
+  };
 
   return (
     <div className="space-y-6">
@@ -101,22 +111,20 @@ export function NotificationsPage() {
           </p>
         </div>
         <div className="flex items-center gap-2">
+          <button
+            className="btn btn-ghost btn-sm"
+            onClick={handleRefresh}
+            disabled={loading}
+          >
+            <RefreshCw className={clsx("h-4 w-4", loading && "animate-spin")} />
+          </button>
           {unreadCount > 0 && (
             <button
               className="btn btn-ghost btn-sm"
-              onClick={markAllAsRead}
+              onClick={() => markAllAsRead()}
             >
               <CheckCheck className="h-4 w-4" />
               <span className="hidden sm:inline">Barchasini o'qilgan qilish</span>
-            </button>
-          )}
-          {notifications.length > 0 && (
-            <button
-              className="btn btn-ghost btn-sm text-error"
-              onClick={clearAll}
-            >
-              <Trash2 className="h-4 w-4" />
-              <span className="hidden sm:inline">Tozalash</span>
             </button>
           )}
         </div>
@@ -152,7 +160,11 @@ export function NotificationsPage() {
 
       {/* Notifications List */}
       <div className="surface-card overflow-hidden">
-        {filteredNotifications.length === 0 ? (
+        {loading && notifications.length === 0 ? (
+          <div className="flex items-center justify-center h-64">
+            <span className="loading loading-spinner loading-lg" />
+          </div>
+        ) : filteredNotifications.length === 0 ? (
           <div className="flex flex-col items-center justify-center gap-2 p-10 text-center text-base-content/50">
             <Bell className="h-12 w-12" />
             <div>
