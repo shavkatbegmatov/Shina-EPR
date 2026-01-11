@@ -4,7 +4,6 @@ import {
   LogOut,
   User as UserIcon,
   Bell,
-  Search,
   Settings,
   ChevronDown,
   Sun,
@@ -24,6 +23,7 @@ import { useAuthStore } from '../../store/authStore';
 import { useUIStore } from '../../store/uiStore';
 import { useNotificationsStore, type Notification } from '../../store/notificationsStore';
 import { ROLES } from '../../config/constants';
+import { SearchCommand } from '../common/SearchCommand';
 
 const getNotificationIcon = (type: Notification['type']) => {
   switch (type) {
@@ -88,7 +88,6 @@ export function Header() {
   const { notifications, unreadCount, markAsRead, fetchNotifications, connectWebSocket, disconnectWebSocket } = useNotificationsStore();
   const navigate = useNavigate();
   const matches = useMatches();
-  const [searchFocused, setSearchFocused] = useState(false);
   const [userDropdownOpen, setUserDropdownOpen] = useState(false);
   const [notifDropdownOpen, setNotifDropdownOpen] = useState(false);
   const userDropdownRef = useRef<HTMLDivElement>(null);
@@ -194,41 +193,11 @@ export function Header() {
 
         {/* Center section - Search */}
         <div className="hidden md:flex flex-1 justify-center max-w-xl mx-4">
-          <div
-            className={clsx(
-              'relative w-full transition-all duration-200',
-              searchFocused ? 'scale-[1.02]' : ''
-            )}
-          >
-            <Search
-              className={clsx(
-                'absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 transition-colors',
-                searchFocused ? 'text-primary' : 'text-base-content/40'
-              )}
-            />
-            <input
-              type="text"
-              placeholder="Qidirish... (Ctrl+K)"
-              className={clsx(
-                'input input-sm w-full pl-9 pr-4 bg-base-200/50 border-base-200 transition-all duration-200',
-                'placeholder:text-base-content/40 focus:bg-base-100 focus:border-primary/30',
-                'focus:shadow-[0_0_0_3px_rgba(var(--p),0.1)]'
-              )}
-              onFocus={() => setSearchFocused(true)}
-              onBlur={() => setSearchFocused(false)}
-            />
-            <kbd className="absolute right-3 top-1/2 -translate-y-1/2 hidden lg:inline-flex items-center gap-1 px-1.5 py-0.5 text-[10px] font-medium text-base-content/40 bg-base-300/50 rounded">
-              ⌘K
-            </kbd>
-          </div>
+          <SearchCommand />
         </div>
 
         {/* Right section - Actions & User */}
         <div className="ml-auto flex items-center gap-1">
-          {/* Mobile search button */}
-          <button className="btn btn-ghost btn-sm btn-square md:hidden">
-            <Search className="h-4 w-4" />
-          </button>
 
           {/* Theme toggle */}
           <button
