@@ -236,7 +236,7 @@ export function Header() {
           {/* User dropdown */}
           <div className="relative" ref={userDropdownRef}>
             <button
-              className="btn btn-ghost btn-sm gap-2 pl-2 pr-1.5"
+              className="flex items-center gap-2 rounded-lg px-2 py-1.5 transition-colors hover:bg-base-200/70"
               onClick={() => {
                 setUserDropdownOpen(!userDropdownOpen);
                 setNotifDropdownOpen(false);
