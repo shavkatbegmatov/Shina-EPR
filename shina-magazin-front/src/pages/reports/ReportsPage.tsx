@@ -1,6 +1,5 @@
 import { useEffect, useState } from 'react';
 import {
-  Calendar,
   TrendingUp,
   ShoppingCart,
   Users,
@@ -32,9 +31,9 @@ import {
   exportDebtsReportToExcel,
   exportDebtsReportToPDF,
 } from '../../utils/exportUtils';
+import { DateRangePicker, type DateRangePreset, type DateRange } from '../../components/common/DateRangePicker';
 import type { SalesReport, WarehouseReport, DebtsReport } from '../../types';
 
-type DateRange = 'today' | 'week' | 'month' | 'quarter' | 'year' | 'custom';
 type ReportTab = 'sales' | 'warehouse' | 'debts';
 
 export function ReportsPage() {
@@ -44,16 +43,15 @@ export function ReportsPage() {
   const [debtsReport, setDebtsReport] = useState<DebtsReport | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [dateRange, setDateRange] = useState<DateRange>('month');
-  const [customStart, setCustomStart] = useState('');
-  const [customEnd, setCustomEnd] = useState('');
+  const [dateRangePreset, setDateRangePreset] = useState<DateRangePreset>('month');
+  const [customRange, setCustomRange] = useState<DateRange>({ start: '', end: '' });
 
-  const getDateRange = (range: DateRange): { start: string; end: string } => {
+  const getDateRangeValues = (preset: DateRangePreset): { start: string; end: string } => {
     const today = new Date();
     const end = today.toISOString().split('T')[0];
     let start: Date;
 
-    switch (range) {
+    switch (preset) {
       case 'today':
         start = today;
         break;
@@ -74,7 +72,7 @@ export function ReportsPage() {
         start.setFullYear(start.getFullYear() - 1);
         break;
       case 'custom':
-        return { start: customStart, end: customEnd };
+        return { start: customRange.start, end: customRange.end };
       default:
         start = new Date(today);
         start.setMonth(start.getMonth() - 1);
@@ -87,7 +85,7 @@ export function ReportsPage() {
     setLoading(true);
     setError(null);
     try {
-      const { start, end } = getDateRange(dateRange);
+      const { start, end } = getDateRangeValues(dateRangePreset);
       if (!start || !end) {
         setError("Iltimos, sana oralig'ini tanlang");
         setLoading(false);
@@ -110,22 +108,20 @@ export function ReportsPage() {
   };
 
   useEffect(() => {
-    if (dateRange !== 'custom' || (customStart && customEnd)) {
+    if (dateRangePreset !== 'custom' || (customRange.start && customRange.end)) {
       loadReports();
     }
-  }, [dateRange, customStart, customEnd]);
+  }, [dateRangePreset, customRange]);
 
-  const dateRangeOptions: { value: DateRange; label: string }[] = [
-    { value: 'today', label: 'Bugun' },
-    { value: 'week', label: 'Hafta' },
-    { value: 'month', label: 'Oy' },
-    { value: 'quarter', label: 'Chorak' },
-    { value: 'year', label: 'Yil' },
-    { value: 'custom', label: 'Maxsus' },
-  ];
+  const handleDateRangeChange = (preset: DateRangePreset, range?: DateRange) => {
+    setDateRangePreset(preset);
+    if (range) {
+      setCustomRange(range);
+    }
+  };
 
   const handleExportExcel = () => {
-    const { start, end } = getDateRange(dateRange);
+    const { start, end } = getDateRangeValues(dateRangePreset);
     if (activeTab === 'sales' && salesReport) {
       exportReportToExcel(salesReport, start, end);
     } else if (activeTab === 'warehouse' && warehouseReport) {
@@ -136,7 +132,7 @@ export function ReportsPage() {
   };
 
   const handleExportPDF = () => {
-    const { start, end } = getDateRange(dateRange);
+    const { start, end } = getDateRangeValues(dateRangePreset);
     if (activeTab === 'sales' && salesReport) {
       exportReportToPDF(salesReport, start, end);
     } else if (activeTab === 'warehouse' && warehouseReport) {
@@ -177,38 +173,11 @@ export function ReportsPage() {
         </div>
 
         <div className="flex flex-wrap items-center gap-3">
-          <div className="flex items-center gap-2">
-            <Calendar className="h-4 w-4 text-base-content/60" />
-            <select
-              className="select select-bordered select-sm"
-              value={dateRange}
-              onChange={(e) => setDateRange(e.target.value as DateRange)}
-            >
-              {dateRangeOptions.map((opt) => (
-                <option key={opt.value} value={opt.value}>
-                  {opt.label}
-                </option>
-              ))}
-            </select>
-          </div>
-
-          {dateRange === 'custom' && (
-            <div className="flex items-center gap-2">
-              <input
-                type="date"
-                className="input input-bordered input-sm"
-                value={customStart}
-                onChange={(e) => setCustomStart(e.target.value)}
-              />
-              <span>-</span>
-              <input
-                type="date"
-                className="input input-bordered input-sm"
-                value={customEnd}
-                onChange={(e) => setCustomEnd(e.target.value)}
-              />
-            </div>
-          )}
+          <DateRangePicker
+            value={dateRangePreset}
+            customRange={customRange}
+            onChange={handleDateRangeChange}
+          />
 
           <button
             className="btn btn-outline btn-sm"
