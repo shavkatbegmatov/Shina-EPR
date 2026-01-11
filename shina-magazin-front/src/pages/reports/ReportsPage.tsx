@@ -34,6 +34,7 @@ import {
 } from '../../utils/exportUtils';
 import { DateRangePicker, type DateRangePreset, type DateRange } from '../../components/common/DateRangePicker';
 import type { SalesReport, WarehouseReport, DebtsReport } from '../../types';
+import { useNotificationsStore } from '../../store/notificationsStore';
 
 type ReportTab = 'sales' | 'warehouse' | 'debts';
 
@@ -48,6 +49,7 @@ export function ReportsPage() {
   const [error, setError] = useState<string | null>(null);
   const [dateRangePreset, setDateRangePreset] = useState<DateRangePreset>('month');
   const [customRange, setCustomRange] = useState<DateRange>({ start: '', end: '' });
+  const { notifications } = useNotificationsStore();
 
   const getDateRangeValues = useCallback((preset: DateRangePreset): { start: string; end: string } => {
     const today = new Date();
@@ -128,6 +130,13 @@ export function ReportsPage() {
       loadReports(false);
     }
   }, [dateRangePreset, customRange.start, customRange.end, loadReports]);
+
+  // WebSocket orqali yangi notification kelganda hisobotlarni yangilash
+  useEffect(() => {
+    if (notifications.length > 0) {
+      loadReports(false);
+    }
+  }, [notifications.length, loadReports]);
 
   const handleDateRangeChange = (preset: DateRangePreset, range?: DateRange) => {
     setDateRangePreset(preset);
