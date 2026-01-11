@@ -133,13 +133,11 @@ export function Header() {
   };
 
   const toggleTheme = () => {
-    // Cycle through: light -> dark -> system -> light
-    if (themeMode === 'light') {
-      setThemeMode('dark');
-    } else if (themeMode === 'dark') {
-      setThemeMode('system');
-    } else {
+    // Toggle between light and dark only (system option available in Settings)
+    if (isDark) {
       setThemeMode('light');
+    } else {
+      setThemeMode('dark');
     }
   };
 
@@ -225,17 +223,12 @@ export function Header() {
           <button
             className="btn btn-ghost btn-sm btn-square hidden sm:flex"
             onClick={toggleTheme}
-            title={
-              themeMode === 'light' ? "Yorug' rejim" :
-              themeMode === 'dark' ? "Qorong'i rejim" : "Tizim rejimi"
-            }
+            title={isDark ? "Yorug' rejimga o'tish" : "Qorong'i rejimga o'tish"}
           >
-            {themeMode === 'dark' ? (
+            {isDark ? (
               <Moon className="h-4 w-4" />
-            ) : themeMode === 'light' ? (
-              <Sun className="h-4 w-4" />
             ) : (
-              isDark ? <Moon className="h-4 w-4 opacity-60" /> : <Sun className="h-4 w-4 opacity-60" />
+              <Sun className="h-4 w-4" />
             )}
           </button>
 
@@ -433,16 +426,13 @@ export function Header() {
                     setUserDropdownOpen(false);
                   }}
                 >
-                  {themeMode === 'dark' ? (
+                  {isDark ? (
                     <Moon className="h-4 w-4 text-base-content/60" />
-                  ) : themeMode === 'light' ? (
-                    <Sun className="h-4 w-4 text-base-content/60" />
                   ) : (
-                    isDark ? <Moon className="h-4 w-4 text-base-content/60 opacity-60" /> : <Sun className="h-4 w-4 text-base-content/60 opacity-60" />
+                    <Sun className="h-4 w-4 text-base-content/60" />
                   )}
                   <span>
-                    {themeMode === 'light' ? "Yorug' rejim" :
-                     themeMode === 'dark' ? "Qorong'i rejim" : "Tizim rejimi"}
+                    {isDark ? "Qorong'i rejim" : "Yorug' rejim"}
                   </span>
                 </button>
               </div>
