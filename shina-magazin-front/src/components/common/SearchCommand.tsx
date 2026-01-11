@@ -244,7 +244,9 @@ export function SearchCommand() {
 
   // Keyboard navigation
   const handleKeyDown = (e: React.KeyboardEvent) => {
-    const items = query ? results : [...recentSearches, ...QUICK_ACTIONS];
+    const recentIdsSet = new Set(recentSearches.map((r) => r.id));
+    const filteredActions = QUICK_ACTIONS.filter((action) => !recentIdsSet.has(action.id));
+    const items = query ? results : [...recentSearches, ...filteredActions];
 
     if (e.key === 'ArrowDown') {
       e.preventDefault();
@@ -264,7 +266,10 @@ export function SearchCommand() {
     selectedEl?.scrollIntoView({ block: 'nearest' });
   }, [selectedIndex]);
 
-  const displayItems = query ? results : [...recentSearches, ...QUICK_ACTIONS];
+  // Filter out QUICK_ACTIONS that are already in recentSearches to avoid duplicate keys
+  const recentIds = new Set(recentSearches.map((r) => r.id));
+  const filteredQuickActions = QUICK_ACTIONS.filter((action) => !recentIds.has(action.id));
+  const displayItems = query ? results : [...recentSearches, ...filteredQuickActions];
   const hasRecent = !query && recentSearches.length > 0;
 
   if (!open) {
