@@ -51,7 +51,8 @@ export function PurchaseDetailPage() {
   const [purchase, setPurchase] = useState<PurchaseOrder | null>(null);
   const [payments, setPayments] = useState<PurchasePayment[]>([]);
   const [returns, setReturns] = useState<PurchaseReturn[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [initialLoading, setInitialLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
   const [activeTab, setActiveTab] = useState<TabType>('items');
 
   // Payment modal
@@ -73,16 +74,20 @@ export function PurchaseDetailPage() {
   // Load purchase details
   const loadPurchase = useCallback(async () => {
     if (!id) return;
-    setLoading(true);
+    const isFirstLoad = initialLoading;
+    if (!isFirstLoad) {
+      setRefreshing(true);
+    }
     try {
       const data = await purchasesApi.getById(Number(id));
       setPurchase(data);
     } catch (error) {
       console.error('Failed to load purchase:', error);
     } finally {
-      setLoading(false);
+      setInitialLoading(false);
+      setRefreshing(false);
     }
-  }, [id]);
+  }, [id, initialLoading]);
 
   // Load payments
   const loadPayments = useCallback(async () => {
@@ -261,7 +266,7 @@ export function PurchaseDetailPage() {
   const returnTotal = returnItems.reduce((sum, item) => sum + (item.quantity * item.unitPrice), 0);
   const selectedReturnItemsCount = returnItems.filter(item => item.quantity > 0).length;
 
-  if (loading) {
+  if (initialLoading) {
     return (
       <div className="space-y-6">
         <div className="skeleton h-8 w-48" />
@@ -284,7 +289,15 @@ export function PurchaseDetailPage() {
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 relative">
+      {refreshing && (
+        <div className="absolute inset-0 z-10 flex items-center justify-center rounded-xl bg-base-100/60 backdrop-blur-sm">
+          <div className="flex flex-col items-center gap-3">
+            <span className="loading loading-spinner loading-lg text-primary"></span>
+            <span className="text-sm font-medium text-base-content/70">Yangilanmoqda...</span>
+          </div>
+        </div>
+      )}
       {/* Header */}
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div className="flex items-center gap-4">
