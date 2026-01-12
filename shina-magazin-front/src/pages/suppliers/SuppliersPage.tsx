@@ -60,7 +60,8 @@ export function SuppliersPage() {
 
   // Suppliers state
   const [suppliers, setSuppliers] = useState<Supplier[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [initialLoading, setInitialLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
   const [search, setSearch] = useState('');
   const [page, setPage] = useState(0);
   const [pageSize, setPageSize] = useState(20);
@@ -77,7 +78,8 @@ export function SuppliersPage() {
 
   // Purchases state
   const [purchases, setPurchases] = useState<PurchaseOrder[]>([]);
-  const [purchasesLoading, setPurchasesLoading] = useState(true);
+  const [purchasesInitialLoading, setPurchasesInitialLoading] = useState(true);
+  const [purchasesRefreshing, setPurchasesRefreshing] = useState(false);
   const [purchasesPage, setPurchasesPage] = useState(0);
   const [purchasesPageSize, setPurchasesPageSize] = useState(20);
   const [purchasesTotalPages, setPurchasesTotalPages] = useState(0);
@@ -304,8 +306,11 @@ export function SuppliersPage() {
   ], []);
 
   // Load suppliers
-  const loadSuppliers = useCallback(async (showLoading = true) => {
-    if (showLoading) setLoading(true);
+  const loadSuppliers = useCallback(async () => {
+    const isFirstLoad = initialLoading;
+    if (!isFirstLoad) {
+      setRefreshing(true);
+    }
     try {
       const data = await suppliersApi.getAll({
         page,
@@ -318,9 +323,10 @@ export function SuppliersPage() {
     } catch (error) {
       console.error('Failed to load suppliers:', error);
     } finally {
-      setLoading(false);
+      setInitialLoading(false);
+      setRefreshing(false);
     }
-  }, [page, pageSize, search]);
+  }, [page, pageSize, search, initialLoading]);
 
   // Load all active suppliers (for dropdown)
   const loadAllSuppliers = useCallback(async () => {
@@ -347,8 +353,11 @@ export function SuppliersPage() {
   }, []);
 
   // Load purchases
-  const loadPurchases = useCallback(async (showLoading = true) => {
-    if (showLoading) setPurchasesLoading(true);
+  const loadPurchases = useCallback(async () => {
+    const isFirstLoad = purchasesInitialLoading;
+    if (!isFirstLoad) {
+      setPurchasesRefreshing(true);
+    }
     try {
       const data = await purchasesApi.getAll({
         page: purchasesPage,
@@ -360,9 +369,10 @@ export function SuppliersPage() {
     } catch (error) {
       console.error('Failed to load purchases:', error);
     } finally {
-      setPurchasesLoading(false);
+      setPurchasesInitialLoading(false);
+      setPurchasesRefreshing(false);
     }
-  }, [purchasesPage, purchasesPageSize]);
+  }, [purchasesPage, purchasesPageSize, purchasesInitialLoading]);
 
   // Load purchase stats
   const loadPurchaseStats = useCallback(async () => {
@@ -419,10 +429,10 @@ export function SuppliersPage() {
   // Real-time updates
   useEffect(() => {
     if (notifications.length > 0) {
-      loadSuppliers(false);
+      loadSuppliers();
       loadStats();
       if (activeTab === 'purchases') {
-        loadPurchases(false);
+        loadPurchases();
         loadPurchaseStats();
       }
     }
@@ -680,12 +690,21 @@ export function SuppliersPage() {
           </div>
 
           {/* Suppliers Table */}
-          <DataTable
-            data={suppliers}
-            columns={suppliersColumns}
-            keyExtractor={(supplier) => supplier.id}
-            loading={loading}
-            emptyIcon={<Truck className="h-12 w-12" />}
+          <div className="relative">
+            {refreshing && (
+              <div className="absolute inset-0 z-10 flex items-center justify-center rounded-xl bg-base-100/60 backdrop-blur-sm">
+                <div className="flex flex-col items-center gap-3">
+                  <span className="loading loading-spinner loading-lg text-primary"></span>
+                  <span className="text-sm font-medium text-base-content/70">Yangilanmoqda...</span>
+                </div>
+              </div>
+            )}
+            <DataTable
+              data={suppliers}
+              columns={suppliersColumns}
+              keyExtractor={(supplier) => supplier.id}
+              loading={initialLoading}
+              emptyIcon={<Truck className="h-12 w-12" />}
             emptyTitle="Ta'minotchilar topilmadi"
             emptyDescription="Qidiruv so'zini o'zgartiring"
             rowClassName={(supplier) => (supplier.hasDebt ? 'bg-error/5' : '')}
@@ -753,6 +772,7 @@ export function SuppliersPage() {
               </div>
             )}
           />
+          </div>
         </>
       ) : (
         <>
@@ -808,12 +828,21 @@ export function SuppliersPage() {
           </div>
 
           {/* Purchases Table */}
-          <DataTable
-            data={purchases}
-            columns={purchasesColumns}
-            keyExtractor={(purchase) => purchase.id}
-            loading={purchasesLoading}
-            emptyIcon={<ShoppingCart className="h-12 w-12" />}
+          <div className="relative">
+            {purchasesRefreshing && (
+              <div className="absolute inset-0 z-10 flex items-center justify-center rounded-xl bg-base-100/60 backdrop-blur-sm">
+                <div className="flex flex-col items-center gap-3">
+                  <span className="loading loading-spinner loading-lg text-primary"></span>
+                  <span className="text-sm font-medium text-base-content/70">Yangilanmoqda...</span>
+                </div>
+              </div>
+            )}
+            <DataTable
+              data={purchases}
+              columns={purchasesColumns}
+              keyExtractor={(purchase) => purchase.id}
+              loading={purchasesInitialLoading}
+              emptyIcon={<ShoppingCart className="h-12 w-12" />}
             emptyTitle="Xaridlar topilmadi"
             emptyDescription="Yangi xarid qo'shish uchun tugmani bosing"
             currentPage={purchasesPage}
@@ -859,6 +888,7 @@ export function SuppliersPage() {
               </div>
             )}
           />
+          </div>
         </>
       )}
 
