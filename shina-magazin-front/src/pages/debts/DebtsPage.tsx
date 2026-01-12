@@ -20,7 +20,8 @@ import { useNotificationsStore } from '../../store/notificationsStore';
 
 export function DebtsPage() {
   const [debts, setDebts] = useState<Debt[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [initialLoading, setInitialLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
   const { notifications } = useNotificationsStore();
   const [page, setPage] = useState(0);
   const [pageSize, setPageSize] = useState(20);
@@ -115,8 +116,11 @@ export function DebtsPage() {
     setPage(0);
   };
 
-  const loadDebts = useCallback(async (showLoading = true) => {
-    if (showLoading) setLoading(true);
+  const loadDebts = useCallback(async () => {
+    const isFirstLoad = initialLoading;
+    if (!isFirstLoad) {
+      setRefreshing(true);
+    }
     try {
       const data = await debtsApi.getAll({
         page,
@@ -129,9 +133,10 @@ export function DebtsPage() {
     } catch (error) {
       console.error('Failed to load debts:', error);
     } finally {
-      setLoading(false);
+      setInitialLoading(false);
+      setRefreshing(false);
     }
-  }, [page, pageSize, statusFilter]);
+  }, [page, pageSize, statusFilter, initialLoading]);
 
   const loadTotalDebt = useCallback(async () => {
     try {
@@ -162,7 +167,7 @@ export function DebtsPage() {
   // WebSocket orqali yangi notification kelganda qarzlarni yangilash
   useEffect(() => {
     if (notifications.length > 0) {
-      loadDebts(false);
+      loadDebts();
       loadTotalDebt();
     }
   }, [notifications.length, loadDebts, loadTotalDebt]);
@@ -280,12 +285,20 @@ export function DebtsPage() {
 
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
         {/* Debts List */}
-        <div className="lg:col-span-2">
+        <div className="lg:col-span-2 relative">
+          {refreshing && (
+            <div className="absolute inset-0 z-10 flex items-center justify-center rounded-xl bg-base-100/60 backdrop-blur-sm">
+              <div className="flex flex-col items-center gap-3">
+                <span className="loading loading-spinner loading-lg text-primary"></span>
+                <span className="text-sm font-medium text-base-content/70">Yangilanmoqda...</span>
+              </div>
+            </div>
+          )}
           <DataTable
             data={debts}
             columns={columns}
             keyExtractor={(debt) => debt.id}
-            loading={loading}
+            loading={initialLoading}
             emptyIcon={<Wallet className="h-12 w-12" />}
             emptyTitle="Qarzlar topilmadi"
             emptyDescription="Filtrlarni o'zgartiring"

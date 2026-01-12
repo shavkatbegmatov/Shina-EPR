@@ -79,20 +79,25 @@ function StatCard({
 
 export function DashboardPage() {
   const [stats, setStats] = useState<DashboardStats | null>(null);
-  const [loading, setLoading] = useState(true);
+  const [initialLoading, setInitialLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
   const { notifications } = useNotificationsStore();
 
-  const loadStats = useCallback(async (showLoading = true) => {
+  const loadStats = useCallback(async () => {
     try {
-      if (showLoading) setLoading(true);
+      const isFirstLoad = initialLoading;
+      if (!isFirstLoad) {
+        setRefreshing(true);
+      }
       const data = await dashboardApi.getStats();
       setStats(data);
     } catch (error) {
       console.error('Failed to load stats:', error);
     } finally {
-      setLoading(false);
+      setInitialLoading(false);
+      setRefreshing(false);
     }
-  }, []);
+  }, [initialLoading]);
 
   useEffect(() => {
     loadStats();
@@ -101,11 +106,11 @@ export function DashboardPage() {
   // WebSocket orqali yangi notification kelganda statistikani yangilash
   useEffect(() => {
     if (notifications.length > 0) {
-      loadStats(false);
+      loadStats();
     }
   }, [notifications.length, loadStats]);
 
-  if (loading) {
+  if (initialLoading) {
     return (
       <div className="space-y-6">
         <div>
@@ -126,7 +131,15 @@ export function DashboardPage() {
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 relative">
+      {refreshing && (
+        <div className="absolute inset-0 z-10 flex items-center justify-center rounded-xl bg-base-100/60 backdrop-blur-sm">
+          <div className="flex flex-col items-center gap-3">
+            <span className="loading loading-spinner loading-lg text-primary"></span>
+            <span className="text-sm font-medium text-base-content/70">Yangilanmoqda...</span>
+          </div>
+        </div>
+      )}
       <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
         <div>
           <h1 className="section-title">Dashboard</h1>

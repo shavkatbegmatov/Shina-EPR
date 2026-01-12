@@ -44,7 +44,8 @@ export function WarehousePage() {
   const [movements, setMovements] = useState<StockMovement[]>([]);
   const [lowStockProducts, setLowStockProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
-  const [loadingMovements, setLoadingMovements] = useState(true);
+  const [initialLoadingMovements, setInitialLoadingMovements] = useState(true);
+  const [refreshingMovements, setRefreshingMovements] = useState(false);
   const [page, setPage] = useState(0);
   const [pageSize, setPageSize] = useState(20);
   const [totalPages, setTotalPages] = useState(0);
@@ -173,7 +174,10 @@ export function WarehousePage() {
   }, []);
 
   const loadMovements = useCallback(async () => {
-    setLoadingMovements(true);
+    const isFirstLoad = initialLoadingMovements;
+    if (!isFirstLoad) {
+      setRefreshingMovements(true);
+    }
     try {
       const data = await warehouseApi.getMovements({
         page,
@@ -187,9 +191,10 @@ export function WarehousePage() {
     } catch (error) {
       console.error('Failed to load movements:', error);
     } finally {
-      setLoadingMovements(false);
+      setInitialLoadingMovements(false);
+      setRefreshingMovements(false);
     }
-  }, [page, pageSize, movementTypeFilter, referenceTypeFilter]);
+  }, [page, pageSize, movementTypeFilter, referenceTypeFilter, initialLoadingMovements]);
 
   const loadLowStockProducts = useCallback(async () => {
     try {
@@ -441,12 +446,21 @@ export function WarehousePage() {
             </div>
           </div>
 
-          <DataTable
-            data={movements}
-            columns={columns}
-            keyExtractor={(movement) => movement.id}
-            loading={loadingMovements}
-            emptyIcon={<Package className="h-12 w-12" />}
+          <div className="relative">
+            {refreshingMovements && (
+              <div className="absolute inset-0 z-10 flex items-center justify-center rounded-xl bg-base-100/60 backdrop-blur-sm">
+                <div className="flex flex-col items-center gap-3">
+                  <span className="loading loading-spinner loading-lg text-primary"></span>
+                  <span className="text-sm font-medium text-base-content/70">Yangilanmoqda...</span>
+                </div>
+              </div>
+            )}
+            <DataTable
+              data={movements}
+              columns={columns}
+              keyExtractor={(movement) => movement.id}
+              loading={initialLoadingMovements}
+              emptyIcon={<Package className="h-12 w-12" />}
             emptyTitle="Harakatlar topilmadi"
             emptyDescription="Kirim yoki chiqim qo'shing"
             currentPage={page}
@@ -486,6 +500,7 @@ export function WarehousePage() {
               </div>
             )}
           />
+          </div>
         </div>
 
         {/* Low Stock Alerts */}

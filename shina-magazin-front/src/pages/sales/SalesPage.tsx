@@ -19,7 +19,8 @@ const paymentMethodIcons: Record<PaymentMethod, React.ReactNode> = {
 
 export function SalesPage() {
   const [sales, setSales] = useState<Sale[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [initialLoading, setInitialLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
   const [page, setPage] = useState(0);
   const [pageSize, setPageSize] = useState(20);
   const [totalPages, setTotalPages] = useState(0);
@@ -169,8 +170,11 @@ export function SalesPage() {
     },
   ], []);
 
-  const loadSales = useCallback(async (showLoading = true) => {
-    if (showLoading) setLoading(true);
+  const loadSales = useCallback(async () => {
+    const isFirstLoad = initialLoading;
+    if (!isFirstLoad) {
+      setRefreshing(true);
+    }
     try {
       const data = await salesApi.getAll({ page, size: pageSize });
       setSales(data.content);
@@ -180,9 +184,10 @@ export function SalesPage() {
       console.error('Failed to load sales:', error);
       toast.error('Sotuvlarni yuklashda xatolik');
     } finally {
-      setLoading(false);
+      setInitialLoading(false);
+      setRefreshing(false);
     }
-  }, [page, pageSize]);
+  }, [page, pageSize, initialLoading]);
 
   useEffect(() => {
     loadSales();
@@ -191,7 +196,7 @@ export function SalesPage() {
   // WebSocket orqali yangi notification kelganda sotuvlarni yangilash
   useEffect(() => {
     if (notifications.length > 0) {
-      loadSales(false);
+      loadSales();
     }
   }, [notifications.length, loadSales]);
 
@@ -279,12 +284,21 @@ export function SalesPage() {
       </div>
 
       {/* Sales Table */}
-      <DataTable
-        data={filteredSales}
-        columns={columns}
-        keyExtractor={(sale) => sale.id}
-        loading={loading}
-        emptyIcon={<Receipt className="h-12 w-12" />}
+      <div className="relative">
+        {refreshing && (
+          <div className="absolute inset-0 z-10 flex items-center justify-center rounded-xl bg-base-100/60 backdrop-blur-sm">
+            <div className="flex flex-col items-center gap-3">
+              <span className="loading loading-spinner loading-lg text-primary"></span>
+              <span className="text-sm font-medium text-base-content/70">Yangilanmoqda...</span>
+            </div>
+          </div>
+        )}
+        <DataTable
+          data={filteredSales}
+          columns={columns}
+          keyExtractor={(sale) => sale.id}
+          loading={initialLoading}
+          emptyIcon={<Receipt className="h-12 w-12" />}
         emptyTitle="Sotuvlar topilmadi"
         emptyDescription="Filtrlarni o'zgartiring yoki yangi sotuv qiling"
         rowClassName={(sale) => (sale.status === 'CANCELLED' ? 'opacity-60' : '')}
@@ -335,6 +349,7 @@ export function SalesPage() {
           </div>
         )}
       />
+      </div>
 
       {/* Sale Detail Modal */}
       <ModalPortal isOpen={showDetailModal && !!selectedSale} onClose={() => { setShowDetailModal(false); setSelectedSale(null); }}>

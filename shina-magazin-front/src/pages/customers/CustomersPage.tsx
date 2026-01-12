@@ -16,7 +16,8 @@ const emptyFormData: CustomerRequest = {
 
 export function CustomersPage() {
   const [customers, setCustomers] = useState<Customer[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [initialLoading, setInitialLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
   const [search, setSearch] = useState('');
   const [page, setPage] = useState(0);
   const [pageSize, setPageSize] = useState(20);
@@ -124,8 +125,11 @@ export function CustomersPage() {
     },
   ], []);
 
-  const loadCustomers = useCallback(async (showLoading = true) => {
-    if (showLoading) setLoading(true);
+  const loadCustomers = useCallback(async () => {
+    const isFirstLoad = initialLoading;
+    if (!isFirstLoad) {
+      setRefreshing(true);
+    }
     try {
       const data = await customersApi.getAll({
         page,
@@ -138,9 +142,10 @@ export function CustomersPage() {
     } catch (error) {
       console.error('Failed to load customers:', error);
     } finally {
-      setLoading(false);
+      setInitialLoading(false);
+      setRefreshing(false);
     }
-  }, [page, pageSize, search]);
+  }, [page, pageSize, search, initialLoading]);
 
   useEffect(() => {
     loadCustomers();
@@ -149,7 +154,7 @@ export function CustomersPage() {
   // WebSocket orqali yangi notification kelganda mijozlarni yangilash
   useEffect(() => {
     if (notifications.length > 0) {
-      loadCustomers(false);
+      loadCustomers();
     }
   }, [notifications.length, loadCustomers]);
 
@@ -231,12 +236,21 @@ export function CustomersPage() {
       </div>
 
       {/* Customers Table */}
-      <DataTable
-        data={customers}
-        columns={columns}
-        keyExtractor={(customer) => customer.id}
-        loading={loading}
-        emptyIcon={<Users className="h-12 w-12" />}
+      <div className="relative">
+        {refreshing && (
+          <div className="absolute inset-0 z-10 flex items-center justify-center rounded-xl bg-base-100/60 backdrop-blur-sm">
+            <div className="flex flex-col items-center gap-3">
+              <span className="loading loading-spinner loading-lg text-primary"></span>
+              <span className="text-sm font-medium text-base-content/70">Yangilanmoqda...</span>
+            </div>
+          </div>
+        )}
+        <DataTable
+          data={customers}
+          columns={columns}
+          keyExtractor={(customer) => customer.id}
+          loading={initialLoading}
+          emptyIcon={<Users className="h-12 w-12" />}
         emptyTitle="Mijozlar topilmadi"
         emptyDescription="Qidiruv so'zini o'zgartiring"
         rowClassName={(customer) => (customer.hasDebt ? 'bg-error/5' : '')}
@@ -271,6 +285,7 @@ export function CustomersPage() {
           </div>
         )}
       />
+      </div>
 
       {/* Customer Modal */}
       <ModalPortal isOpen={showModal} onClose={handleCloseModal}>

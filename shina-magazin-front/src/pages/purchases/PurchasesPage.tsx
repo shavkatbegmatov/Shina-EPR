@@ -48,7 +48,8 @@ export function PurchasesPage() {
 
   // Purchases state
   const [purchases, setPurchases] = useState<PurchaseOrder[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [initialLoading, setInitialLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
   const [page, setPage] = useState(0);
   const [pageSize, setPageSize] = useState(20);
   const [totalPages, setTotalPages] = useState(0);
@@ -127,8 +128,11 @@ export function PurchasesPage() {
   }, [customRange.start, customRange.end]);
 
   // Load purchases
-  const loadPurchases = useCallback(async (showLoading = true) => {
-    if (showLoading) setLoading(true);
+  const loadPurchases = useCallback(async () => {
+    const isFirstLoad = initialLoading;
+    if (!isFirstLoad) {
+      setRefreshing(true);
+    }
     try {
       const { start, end } = getDateRangeValues(dateRangePreset);
 
@@ -148,9 +152,10 @@ export function PurchasesPage() {
     } catch (error) {
       console.error('Failed to load purchases:', error);
     } finally {
-      setLoading(false);
+      setInitialLoading(false);
+      setRefreshing(false);
     }
-  }, [page, pageSize, selectedSupplierId, selectedStatus, dateRangePreset, getDateRangeValues]);
+  }, [page, pageSize, selectedSupplierId, selectedStatus, dateRangePreset, getDateRangeValues, initialLoading]);
 
   // Load purchase stats
   const loadPurchaseStats = useCallback(async () => {
@@ -214,10 +219,10 @@ export function PurchasesPage() {
   // Real-time updates
   useEffect(() => {
     if (notifications.length > 0) {
-      loadPurchases(false);
+      loadPurchases();
       loadPurchaseStats();
     }
-  }, [notifications.length]);
+  }, [notifications.length, loadPurchases, loadPurchaseStats]);
 
   const handlePageSizeChange = (newSize: number) => {
     setPageSize(newSize);
@@ -633,12 +638,21 @@ export function PurchasesPage() {
       </div>
 
       {/* Purchases Table */}
-      <DataTable
-        data={purchases}
-        columns={columns}
-        keyExtractor={(purchase) => purchase.id}
-        loading={loading}
-        emptyIcon={<ShoppingCart className="h-12 w-12" />}
+      <div className="relative">
+        {refreshing && (
+          <div className="absolute inset-0 z-10 flex items-center justify-center rounded-xl bg-base-100/60 backdrop-blur-sm">
+            <div className="flex flex-col items-center gap-3">
+              <span className="loading loading-spinner loading-lg text-primary"></span>
+              <span className="text-sm font-medium text-base-content/70">Yangilanmoqda...</span>
+            </div>
+          </div>
+        )}
+        <DataTable
+          data={purchases}
+          columns={columns}
+          keyExtractor={(purchase) => purchase.id}
+          loading={initialLoading}
+          emptyIcon={<ShoppingCart className="h-12 w-12" />}
         emptyTitle="Xaridlar topilmadi"
         emptyDescription="Yangi xarid qo'shish uchun tugmani bosing"
         onRowClick={handleRowClick}
@@ -705,6 +719,7 @@ export function PurchasesPage() {
           </div>
         )}
       />
+      </div>
 
       {/* Purchase Modal */}
       <ModalPortal isOpen={showPurchaseModal} onClose={handleClosePurchaseModal}>

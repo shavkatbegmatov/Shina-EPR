@@ -19,7 +19,8 @@ export function ProductsPage() {
   const [products, setProducts] = useState<Product[]>([]);
   const [brands, setBrands] = useState<Brand[]>([]);
   const [categories, setCategories] = useState<Category[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [initialLoading, setInitialLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
   const [search, setSearch] = useState('');
   const [brandFilter, setBrandFilter] = useState<number | ''>('');
   const [categoryFilter, setCategoryFilter] = useState<number | ''>('');
@@ -121,8 +122,11 @@ export function ProductsPage() {
     }
   }, []);
 
-  const loadProducts = useCallback(async (showLoading = true) => {
-    if (showLoading) setLoading(true);
+  const loadProducts = useCallback(async () => {
+    const isFirstLoad = initialLoading;
+    if (!isFirstLoad) {
+      setRefreshing(true);
+    }
     try {
       const data = await productsApi.getAll({
         page,
@@ -138,9 +142,10 @@ export function ProductsPage() {
     } catch (error) {
       console.error('Failed to load products:', error);
     } finally {
-      setLoading(false);
+      setInitialLoading(false);
+      setRefreshing(false);
     }
-  }, [brandFilter, categoryFilter, page, pageSize, search, seasonFilter]);
+  }, [brandFilter, categoryFilter, page, pageSize, search, seasonFilter, initialLoading]);
 
   useEffect(() => {
     loadData();
@@ -153,7 +158,7 @@ export function ProductsPage() {
   // WebSocket orqali yangi notification kelganda mahsulotlarni yangilash
   useEffect(() => {
     if (notifications.length > 0) {
-      loadProducts(false);
+      loadProducts();
     }
   }, [notifications.length, loadProducts]);
 
@@ -306,12 +311,21 @@ export function ProductsPage() {
       </div>
 
       {/* Products Table */}
-      <DataTable
-        data={products}
-        columns={columns}
-        keyExtractor={(product) => product.id}
-        loading={loading}
-        emptyIcon={<Package className="h-12 w-12" />}
+      <div className="relative">
+        {refreshing && (
+          <div className="absolute inset-0 z-10 flex items-center justify-center rounded-xl bg-base-100/60 backdrop-blur-sm">
+            <div className="flex flex-col items-center gap-3">
+              <span className="loading loading-spinner loading-lg text-primary"></span>
+              <span className="text-sm font-medium text-base-content/70">Yangilanmoqda...</span>
+            </div>
+          </div>
+        )}
+        <DataTable
+          data={products}
+          columns={columns}
+          keyExtractor={(product) => product.id}
+          loading={initialLoading}
+          emptyIcon={<Package className="h-12 w-12" />}
         emptyTitle="Mahsulotlar topilmadi"
         emptyDescription="Filtrlarni o'zgartirib ko'ring"
         rowClassName={(product) => (product.lowStock ? 'bg-error/5' : '')}
@@ -350,6 +364,7 @@ export function ProductsPage() {
           </div>
         )}
       />
+      </div>
 
       {/* Product Detail Modal */}
       <ModalPortal isOpen={!!selectedProduct} onClose={() => setSelectedProduct(null)}>
