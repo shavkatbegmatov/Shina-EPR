@@ -544,43 +544,52 @@ export function EmployeesPage() {
         />
       )}
 
-      {/* Employee Modal */}
+      {/* Employee Modal with Side Panel */}
       <ModalPortal isOpen={showModal} onClose={handleCloseModal}>
-        <div className="w-full max-w-2xl bg-base-100 rounded-2xl shadow-2xl max-h-[90vh] overflow-y-auto">
-          <div className="p-4 sm:p-6">
-            <div className="flex items-start justify-between gap-4">
-              <div>
-                <h3 className="text-xl font-semibold">
-                  {editingEmployee ? 'Xodimni tahrirlash' : 'Yangi xodim'}
-                </h3>
-                <p className="text-sm text-base-content/60">
-                  {editingEmployee ? "Xodim ma'lumotlarini o'zgartirish" : "Yangi xodim qo'shish"}
-                </p>
+        <div className="flex gap-4 items-stretch">
+          {/* Main Modal - Asosiy ma'lumotlar */}
+          <div className={clsx(
+            'bg-base-100 rounded-2xl shadow-2xl max-h-[90vh] overflow-y-auto transition-all duration-300',
+            modalTab === 'extended' ? 'w-[520px]' : 'w-full max-w-2xl'
+          )}>
+            <div className="p-4 sm:p-6">
+              <div className="flex items-start justify-between gap-4">
+                <div>
+                  <h3 className="text-xl font-semibold">
+                    {editingEmployee ? 'Xodimni tahrirlash' : 'Yangi xodim'}
+                  </h3>
+                  <p className="text-sm text-base-content/60">
+                    {editingEmployee ? "Xodim ma'lumotlarini o'zgartirish" : "Yangi xodim qo'shish"}
+                  </p>
+                </div>
+                <button className="btn btn-ghost btn-sm" onClick={handleCloseModal}>
+                  <X className="h-4 w-4" />
+                </button>
               </div>
-              <button className="btn btn-ghost btn-sm" onClick={handleCloseModal}>
-                <X className="h-4 w-4" />
-              </button>
-            </div>
 
-            {/* Tabs */}
-            <div className="tabs tabs-boxed bg-base-200 p-1 mt-4 w-fit">
+              {/* Toggle Button for Side Panel */}
               <button
-                className={clsx('tab', modalTab === 'basic' && 'tab-active')}
-                onClick={() => setModalTab('basic')}
+                className={clsx(
+                  'mt-4 btn btn-sm gap-2 transition-all',
+                  modalTab === 'extended' ? 'btn-primary' : 'btn-ghost border-dashed border-2'
+                )}
+                onClick={() => setModalTab(modalTab === 'extended' ? 'basic' : 'extended')}
               >
-                Asosiy
+                {modalTab === 'extended' ? (
+                  <>
+                    <X className="h-4 w-4" />
+                    Qo'shimcha yopish
+                  </>
+                ) : (
+                  <>
+                    <Plus className="h-4 w-4" />
+                    Qo'shimcha ma'lumotlar
+                  </>
+                )}
               </button>
-              <button
-                className={clsx('tab', modalTab === 'extended' && 'tab-active')}
-                onClick={() => setModalTab('extended')}
-              >
-                Qo'shimcha
-              </button>
-            </div>
 
-            <div className="mt-6 space-y-5">
-              {modalTab === 'basic' ? (
-                <>
+              <div className="mt-6 space-y-5">
+                {/* Asosiy ma'lumotlar - Always visible */}
                   {/* Asosiy ma'lumotlar */}
                   <div className="surface-soft rounded-xl p-4">
                     <h4 className="text-sm font-semibold uppercase tracking-[0.15em] text-base-content/60 mb-4 flex items-center gap-2">
@@ -776,16 +785,67 @@ export function EmployeesPage() {
                       </div>
                     )}
                   </div>
-                </>
-              ) : (
-                <>
+              </div>
+
+              <div className="mt-6 flex justify-between gap-2">
+                <div>
+                  {editingEmployee && (
+                    <button
+                      className="btn btn-error btn-outline"
+                      onClick={handleDeleteEmployee}
+                      disabled={saving}
+                    >
+                      <UserX className="h-4 w-4" />
+                      O'chirish
+                    </button>
+                  )}
+                </div>
+                <div className="flex gap-2">
+                  <button className="btn btn-ghost" onClick={handleCloseModal} disabled={saving}>
+                    Bekor qilish
+                  </button>
+                  <button
+                    className="btn btn-primary"
+                    onClick={handleSaveEmployee}
+                    disabled={saving || !formData.fullName.trim() || !isValidPhone(formData.phone) || !formData.position.trim()}
+                  >
+                    {saving && <span className="loading loading-spinner loading-sm" />}
+                    {editingEmployee ? 'Yangilash' : 'Saqlash'}
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Side Panel - Qo'shimcha ma'lumotlar */}
+          <div
+            className={clsx(
+              'bg-base-100 rounded-2xl shadow-2xl max-h-[90vh] overflow-y-auto transition-all duration-300 origin-left',
+              modalTab === 'extended'
+                ? 'w-[380px] opacity-100 scale-x-100'
+                : 'w-0 opacity-0 scale-x-0'
+            )}
+          >
+            {modalTab === 'extended' && (
+              <div className="p-4 sm:p-6 min-w-[380px]">
+                <div className="flex items-center justify-between mb-6">
+                  <h4 className="text-lg font-semibold">Qo'shimcha</h4>
+                  <button
+                    className="btn btn-ghost btn-sm btn-circle"
+                    onClick={() => setModalTab('basic')}
+                  >
+                    <X className="h-4 w-4" />
+                  </button>
+                </div>
+
+                <div className="space-y-5">
                   {/* Shaxsiy hujjatlar */}
                   <div className="surface-soft rounded-xl p-4">
                     <h4 className="text-sm font-semibold uppercase tracking-[0.15em] text-base-content/60 mb-4 flex items-center gap-2">
                       <CreditCard className="h-4 w-4" />
                       Shaxsiy hujjatlar
                     </h4>
-                    <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                    <div className="grid grid-cols-1 gap-4">
                       <label className="form-control">
                         <span className="label-text mb-1 text-xs font-semibold uppercase tracking-[0.18em] text-base-content/50">
                           Tug'ilgan sana
@@ -809,7 +869,7 @@ export function EmployeesPage() {
                           placeholder="AA 1234567"
                         />
                       </label>
-                      <label className="form-control sm:col-span-2">
+                      <label className="form-control">
                         <span className="label-text mb-1 text-xs font-semibold uppercase tracking-[0.18em] text-base-content/50">
                           Manzil
                         </span>
@@ -821,7 +881,7 @@ export function EmployeesPage() {
                           placeholder="Shahar, tuman, ko'cha..."
                         />
                       </label>
-                      <label className="form-control sm:col-span-2">
+                      <label className="form-control">
                         <span className="label-text mb-1 text-xs font-semibold uppercase tracking-[0.18em] text-base-content/50">
                           Bank hisob raqami
                         </span>
@@ -842,7 +902,7 @@ export function EmployeesPage() {
                       <AlertCircle className="h-4 w-4" />
                       Favqulodda aloqa
                     </h4>
-                    <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                    <div className="grid grid-cols-1 gap-4">
                       <label className="form-control">
                         <span className="label-text mb-1 text-xs font-semibold uppercase tracking-[0.18em] text-base-content/50">
                           Ism
@@ -862,37 +922,9 @@ export function EmployeesPage() {
                       />
                     </div>
                   </div>
-                </>
-              )}
-            </div>
-
-            <div className="mt-6 flex justify-between gap-2">
-              <div>
-                {editingEmployee && (
-                  <button
-                    className="btn btn-error btn-outline"
-                    onClick={handleDeleteEmployee}
-                    disabled={saving}
-                  >
-                    <UserX className="h-4 w-4" />
-                    O'chirish
-                  </button>
-                )}
+                </div>
               </div>
-              <div className="flex gap-2">
-                <button className="btn btn-ghost" onClick={handleCloseModal} disabled={saving}>
-                  Bekor qilish
-                </button>
-                <button
-                  className="btn btn-primary"
-                  onClick={handleSaveEmployee}
-                  disabled={saving || !formData.fullName.trim() || !isValidPhone(formData.phone) || !formData.position.trim()}
-                >
-                  {saving && <span className="loading loading-spinner loading-sm" />}
-                  {editingEmployee ? 'Yangilash' : 'Saqlash'}
-                </button>
-              </div>
-            </div>
+            )}
           </div>
         </div>
       </ModalPortal>
