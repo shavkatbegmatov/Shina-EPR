@@ -9,6 +9,7 @@ import {
   CalendarDays,
 } from 'lucide-react';
 import clsx from 'clsx';
+import { getTashkentToday, getDateDaysAgo, formatDateForApi, getTashkentNow } from '../../config/constants';
 
 export type DateRangePreset = 'all' | 'today' | 'week' | 'month' | 'quarter' | 'year' | 'custom';
 
@@ -120,13 +121,11 @@ export function DateRangePicker({
     if (preset === 'custom') {
       setShowCalendar(true);
       setSelectingStart(true);
-      const today = new Date();
+      const today = getTashkentNow();
       setCurrentMonth(today);
       if (!tempStart) {
-        const weekAgo = new Date(today);
-        weekAgo.setDate(weekAgo.getDate() - 7);
-        setTempStart(weekAgo.toISOString().split('T')[0]);
-        setTempEnd(today.toISOString().split('T')[0]);
+        setTempStart(getDateDaysAgo(7));
+        setTempEnd(getTashkentToday());
       }
     } else {
       onChange(preset);
@@ -136,14 +135,14 @@ export function DateRangePicker({
   };
 
   const handleDateClick = (date: Date) => {
-    const dateStr = date.toISOString().split('T')[0];
+    const dateStr = formatDateForApi(date);
 
     if (selectingStart) {
       setTempStart(dateStr);
       setTempEnd('');
       setSelectingStart(false);
     } else {
-      if (new Date(dateStr) < new Date(tempStart)) {
+      if (dateStr < tempStart) {
         setTempStart(dateStr);
         setTempEnd(tempStart);
       } else {
@@ -184,16 +183,16 @@ export function DateRangePicker({
 
   const isInRange = (date: Date) => {
     if (!tempStart || !tempEnd) return false;
-    const dateStr = date.toISOString().split('T')[0];
+    const dateStr = formatDateForApi(date);
     return dateStr >= tempStart && dateStr <= tempEnd;
   };
 
   const isStartDate = (date: Date) => {
-    return date.toISOString().split('T')[0] === tempStart;
+    return formatDateForApi(date) === tempStart;
   };
 
   const isEndDate = (date: Date) => {
-    return date.toISOString().split('T')[0] === tempEnd;
+    return formatDateForApi(date) === tempEnd;
   };
 
   const isToday = (date: Date) => {

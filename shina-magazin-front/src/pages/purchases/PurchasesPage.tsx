@@ -20,7 +20,14 @@ import clsx from 'clsx';
 import { purchasesApi, type PurchaseFilters } from '../../api/purchases.api';
 import { suppliersApi } from '../../api/suppliers.api';
 import { productsApi } from '../../api/products.api';
-import { formatCurrency, formatDate } from '../../config/constants';
+import {
+  formatCurrency,
+  formatDate,
+  getTashkentToday,
+  getDateDaysAgo,
+  getDateMonthsAgo,
+  getDateYearsAgo,
+} from '../../config/constants';
 import { DataTable, Column } from '../../components/ui/DataTable';
 import { ModalPortal } from '../../components/common/Modal';
 import { DateRangePicker, type DateRangePreset, type DateRange } from '../../components/common/DateRangePicker';
@@ -70,7 +77,7 @@ export function PurchasesPage() {
   const [showPurchaseModal, setShowPurchaseModal] = useState(false);
   const [purchaseSaving, setPurchaseSaving] = useState(false);
   const [selectedSupplier, setSelectedSupplier] = useState<Supplier | null>(null);
-  const [purchaseDate, setPurchaseDate] = useState(new Date().toISOString().split('T')[0]);
+  const [purchaseDate, setPurchaseDate] = useState(getTashkentToday());
   const [cartItems, setCartItems] = useState<CartItem[]>([]);
   const [paidAmount, setPaidAmount] = useState<number>(0);
   const [purchaseNotes, setPurchaseNotes] = useState('');
@@ -91,35 +98,25 @@ export function PurchasesPage() {
   );
   const debtAmount = useMemo(() => Math.max(0, cartTotal - paidAmount), [cartTotal, paidAmount]);
 
+  // Toshkent timezone da sana oralig'ini hisoblash
   const getDateRangeValues = useCallback((preset: DateRangePreset): { start: string; end: string } | null => {
     if (preset === 'all') {
       return null; // Barcha vaqt uchun - sana filtri yo'q
     }
 
-    const today = new Date();
-    const end = today.toISOString().split('T')[0];
-    let start: Date;
+    const end = getTashkentToday();
 
     switch (preset) {
       case 'today':
-        start = today;
-        break;
+        return { start: end, end };
       case 'week':
-        start = new Date(today);
-        start.setDate(start.getDate() - 7);
-        break;
+        return { start: getDateDaysAgo(7), end };
       case 'month':
-        start = new Date(today);
-        start.setMonth(start.getMonth() - 1);
-        break;
+        return { start: getDateMonthsAgo(1), end };
       case 'quarter':
-        start = new Date(today);
-        start.setMonth(start.getMonth() - 3);
-        break;
+        return { start: getDateMonthsAgo(3), end };
       case 'year':
-        start = new Date(today);
-        start.setFullYear(start.getFullYear() - 1);
-        break;
+        return { start: getDateYearsAgo(1), end };
       case 'custom':
         if (customRange.start && customRange.end) {
           return { start: customRange.start, end: customRange.end };
@@ -128,8 +125,6 @@ export function PurchasesPage() {
       default:
         return null;
     }
-
-    return { start: start.toISOString().split('T')[0], end };
   }, [customRange.start, customRange.end]);
 
   // Load purchases
@@ -263,7 +258,7 @@ export function PurchasesPage() {
   // Purchase modal handlers
   const handleOpenPurchaseModal = () => {
     setSelectedSupplier(null);
-    setPurchaseDate(new Date().toISOString().split('T')[0]);
+    setPurchaseDate(getTashkentToday());
     setCartItems([]);
     setPaidAmount(0);
     setPurchaseNotes('');

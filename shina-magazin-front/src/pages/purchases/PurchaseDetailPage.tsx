@@ -18,7 +18,7 @@ import {
 } from 'lucide-react';
 import clsx from 'clsx';
 import { purchasesApi } from '../../api/purchases.api';
-import { formatCurrency, formatDate } from '../../config/constants';
+import { formatCurrency, formatDate, getTashkentToday } from '../../config/constants';
 import { ModalPortal } from '../../components/common/Modal';
 import { useNotificationsStore } from '../../store/notificationsStore';
 import type {
@@ -58,7 +58,7 @@ export function PurchaseDetailPage() {
   // Payment modal
   const [showPaymentModal, setShowPaymentModal] = useState(false);
   const [paymentAmount, setPaymentAmount] = useState<number>(0);
-  const [paymentDate, setPaymentDate] = useState(new Date().toISOString().split('T')[0]);
+  const [paymentDate, setPaymentDate] = useState(getTashkentToday());
   const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>('CASH');
   const [paymentReference, setPaymentReference] = useState('');
   const [paymentNotes, setPaymentNotes] = useState('');
@@ -66,7 +66,7 @@ export function PurchaseDetailPage() {
 
   // Return modal
   const [showReturnModal, setShowReturnModal] = useState(false);
-  const [returnDate, setReturnDate] = useState(new Date().toISOString().split('T')[0]);
+  const [returnDate, setReturnDate] = useState(getTashkentToday());
   const [returnReason, setReturnReason] = useState('');
   const [returnItems, setReturnItems] = useState<ReturnCartItem[]>([]);
   const [returnSaving, setReturnSaving] = useState(false);
@@ -131,7 +131,7 @@ export function PurchaseDetailPage() {
   // Payment modal handlers
   const handleOpenPaymentModal = () => {
     setPaymentAmount(purchase?.debtAmount || 0);
-    setPaymentDate(new Date().toISOString().split('T')[0]);
+    setPaymentDate(getTashkentToday());
     setPaymentMethod('CASH');
     setPaymentReference('');
     setPaymentNotes('');
@@ -183,7 +183,7 @@ export function PurchaseDetailPage() {
     }));
 
     setReturnItems(items);
-    setReturnDate(new Date().toISOString().split('T')[0]);
+    setReturnDate(getTashkentToday());
     setReturnReason('');
     setShowReturnModal(true);
   };

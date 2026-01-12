@@ -22,7 +22,7 @@ import clsx from 'clsx';
 import { suppliersApi } from '../../api/suppliers.api';
 import { purchasesApi } from '../../api/purchases.api';
 import { productsApi } from '../../api/products.api';
-import { formatCurrency, formatDate } from '../../config/constants';
+import { formatCurrency, formatDate, getTashkentToday } from '../../config/constants';
 import { DataTable, Column } from '../../components/ui/DataTable';
 import { ModalPortal } from '../../components/common/Modal';
 import { useNotificationsStore } from '../../store/notificationsStore';
@@ -90,7 +90,7 @@ export function SuppliersPage() {
 
   // Purchase form state
   const [selectedSupplier, setSelectedSupplier] = useState<Supplier | null>(null);
-  const [purchaseDate, setPurchaseDate] = useState(new Date().toISOString().split('T')[0]);
+  const [purchaseDate, setPurchaseDate] = useState(getTashkentToday());
   const [cartItems, setCartItems] = useState<CartItem[]>([]);
   const [paidAmount, setPaidAmount] = useState<number>(0);
   const [purchaseNotes, setPurchaseNotes] = useState('');
@@ -491,7 +491,7 @@ export function SuppliersPage() {
   // Purchase handlers
   const handleOpenPurchaseModal = () => {
     setSelectedSupplier(null);
-    setPurchaseDate(new Date().toISOString().split('T')[0]);
+    setPurchaseDate(getTashkentToday());
     setCartItems([]);
     setPaidAmount(0);
     setPurchaseNotes('');

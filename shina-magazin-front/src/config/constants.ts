@@ -1,5 +1,60 @@
 export const API_BASE_URL = '/api';
 
+// ==================== TIMEZONE CONFIGURATION ====================
+// Loyiha standarti: Asia/Tashkent (UTC+5)
+export const TIMEZONE = 'Asia/Tashkent';
+
+/**
+ * Toshkent vaqtida bugungi sanani YYYY-MM-DD formatida qaytaradi
+ * Backend API uchun ishlatiladi
+ */
+export const getTashkentToday = (): string => {
+  return new Date().toLocaleDateString('sv-SE', { timeZone: TIMEZONE });
+};
+
+/**
+ * Toshkent vaqtida hozirgi Date obyektini qaytaradi
+ */
+export const getTashkentNow = (): Date => {
+  const now = new Date();
+  const tashkentTime = new Date(now.toLocaleString('en-US', { timeZone: TIMEZONE }));
+  return tashkentTime;
+};
+
+/**
+ * Date obyektini API uchun YYYY-MM-DD formatiga o'giradi (Toshkent TZ)
+ */
+export const formatDateForApi = (date: Date): string => {
+  return date.toLocaleDateString('sv-SE', { timeZone: TIMEZONE });
+};
+
+/**
+ * Bugundan N kun oldingi sanani YYYY-MM-DD formatida qaytaradi
+ */
+export const getDateDaysAgo = (days: number): string => {
+  const date = getTashkentNow();
+  date.setDate(date.getDate() - days);
+  return formatDateForApi(date);
+};
+
+/**
+ * Bugundan N oy oldingi sanani YYYY-MM-DD formatida qaytaradi
+ */
+export const getDateMonthsAgo = (months: number): string => {
+  const date = getTashkentNow();
+  date.setMonth(date.getMonth() - months);
+  return formatDateForApi(date);
+};
+
+/**
+ * Bugundan N yil oldingi sanani YYYY-MM-DD formatida qaytaradi
+ */
+export const getDateYearsAgo = (years: number): string => {
+  const date = getTashkentNow();
+  date.setFullYear(date.getFullYear() - years);
+  return formatDateForApi(date);
+};
+
 export const SEASONS = {
   SUMMER: { label: 'Yozgi', value: 'SUMMER' },
   WINTER: { label: 'Qishki', value: 'WINTER' },
@@ -68,24 +123,28 @@ export const formatNumber = (num: number): string => {
   return new Intl.NumberFormat('uz-UZ').format(num);
 };
 
-// Sana formati: dd.mm.yyyy (masalan: 09.02.2026)
+// Sana formati: dd.mm.yyyy (masalan: 09.02.2026) - Toshkent TZ
 export const formatDate = (dateStr: string): string => {
   if (!dateStr) return '—';
   const date = new Date(dateStr);
-  const day = date.getDate().toString().padStart(2, '0');
-  const month = (date.getMonth() + 1).toString().padStart(2, '0');
-  const year = date.getFullYear();
-  return `${day}.${month}.${year}`;
+  return date.toLocaleDateString('ru-RU', {
+    timeZone: TIMEZONE,
+    day: '2-digit',
+    month: '2-digit',
+    year: 'numeric',
+  });
 };
 
-// Sana va vaqt formati: dd.mm.yyyy HH:mm (masalan: 09.02.2026 14:30)
+// Sana va vaqt formati: dd.mm.yyyy HH:mm (masalan: 09.02.2026 14:30) - Toshkent TZ
 export const formatDateTime = (dateStr: string): string => {
   if (!dateStr) return '—';
   const date = new Date(dateStr);
-  const day = date.getDate().toString().padStart(2, '0');
-  const month = (date.getMonth() + 1).toString().padStart(2, '0');
-  const year = date.getFullYear();
-  const hours = date.getHours().toString().padStart(2, '0');
-  const minutes = date.getMinutes().toString().padStart(2, '0');
-  return `${day}.${month}.${year} ${hours}:${minutes}`;
+  return date.toLocaleString('ru-RU', {
+    timeZone: TIMEZONE,
+    day: '2-digit',
+    month: '2-digit',
+    year: 'numeric',
+    hour: '2-digit',
+    minute: '2-digit',
+  });
 };

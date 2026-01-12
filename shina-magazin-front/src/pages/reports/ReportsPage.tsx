@@ -23,7 +23,15 @@ import {
 } from 'lucide-react';
 import clsx from 'clsx';
 import { reportsApi } from '../../api/reports.api';
-import { formatCurrency, formatNumber, formatDate } from '../../config/constants';
+import {
+  formatCurrency,
+  formatNumber,
+  formatDate,
+  getTashkentToday,
+  getDateDaysAgo,
+  getDateMonthsAgo,
+  getDateYearsAgo,
+} from '../../config/constants';
 import {
   exportReportToExcel,
   exportReportToPDF,
@@ -51,39 +59,32 @@ export function ReportsPage() {
   const [customRange, setCustomRange] = useState<DateRange>({ start: '', end: '' });
   const { notifications } = useNotificationsStore();
 
+  // Toshkent timezone da sana oralig'ini hisoblash
   const getDateRangeValues = useCallback((preset: DateRangePreset): { start: string; end: string } => {
-    const today = new Date();
-    const end = today.toISOString().split('T')[0];
-    let start: Date;
+    const end = getTashkentToday();
 
     switch (preset) {
+      case 'all':
+        // Hisobotlar uchun 'all' - so'nggi 1 yil
+        return { start: getDateYearsAgo(1), end };
       case 'today':
-        start = today;
-        break;
+        return { start: end, end };
       case 'week':
-        start = new Date(today);
-        start.setDate(start.getDate() - 7);
-        break;
+        return { start: getDateDaysAgo(7), end };
       case 'month':
-        start = new Date(today);
-        start.setMonth(start.getMonth() - 1);
-        break;
+        return { start: getDateMonthsAgo(1), end };
       case 'quarter':
-        start = new Date(today);
-        start.setMonth(start.getMonth() - 3);
-        break;
+        return { start: getDateMonthsAgo(3), end };
       case 'year':
-        start = new Date(today);
-        start.setFullYear(start.getFullYear() - 1);
-        break;
+        return { start: getDateYearsAgo(1), end };
       case 'custom':
-        return { start: customRange.start, end: customRange.end };
+        if (customRange.start && customRange.end) {
+          return { start: customRange.start, end: customRange.end };
+        }
+        return { start: getDateMonthsAgo(1), end };
       default:
-        start = new Date(today);
-        start.setMonth(start.getMonth() - 1);
+        return { start: getDateMonthsAgo(1), end };
     }
-
-    return { start: start.toISOString().split('T')[0], end };
   }, [customRange.start, customRange.end]);
 
   const loadReports = useCallback(async (isManualRefresh = false) => {
