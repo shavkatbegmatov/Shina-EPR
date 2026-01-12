@@ -1,4 +1,5 @@
-import { useState, useRef, useEffect } from 'react';
+import { useState, useRef, useEffect, useCallback } from 'react';
+import { createPortal } from 'react-dom';
 import {
   Calendar,
   ChevronLeft,
@@ -52,11 +53,40 @@ export function DateRangePicker({
   const [tempEnd, setTempEnd] = useState<string>(customRange.end);
   const [selectingStart, setSelectingStart] = useState(true);
   const [currentMonth, setCurrentMonth] = useState(new Date());
+  const [dropdownPosition, setDropdownPosition] = useState({ top: 0, left: 0 });
+  const triggerRef = useRef<HTMLButtonElement>(null);
   const dropdownRef = useRef<HTMLDivElement>(null);
+
+  // Calculate dropdown position
+  const updatePosition = useCallback(() => {
+    if (triggerRef.current) {
+      const rect = triggerRef.current.getBoundingClientRect();
+      setDropdownPosition({
+        top: rect.bottom + window.scrollY + 8,
+        left: rect.left + window.scrollX,
+      });
+    }
+  }, []);
+
+  useEffect(() => {
+    if (isOpen) {
+      updatePosition();
+      window.addEventListener('scroll', updatePosition, true);
+      window.addEventListener('resize', updatePosition);
+      return () => {
+        window.removeEventListener('scroll', updatePosition, true);
+        window.removeEventListener('resize', updatePosition);
+      };
+    }
+  }, [isOpen, updatePosition]);
 
   useEffect(() => {
     function handleClickOutside(event: MouseEvent) {
-      if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
+      const target = event.target as Node;
+      if (
+        triggerRef.current && !triggerRef.current.contains(target) &&
+        dropdownRef.current && !dropdownRef.current.contains(target)
+      ) {
         setIsOpen(false);
         setShowCalendar(false);
       }
@@ -189,10 +219,189 @@ export function DateRangePicker({
 
   const days = getDaysInMonth(currentMonth);
 
+  const dropdownContent = (
+    <div
+      ref={dropdownRef}
+      style={{
+        position: 'absolute',
+        top: dropdownPosition.top,
+        left: dropdownPosition.left,
+      }}
+      className={clsx(
+        'z-[9999] overflow-hidden rounded-2xl border border-base-300 bg-base-100 shadow-xl',
+        'animate-dropdown',
+        showCalendar ? 'w-[340px]' : 'w-56'
+      )}
+    >
+      {!showCalendar ? (
+        /* Preset Options */
+        <div className="p-2">
+          <div className="mb-2 px-2 text-xs font-medium uppercase tracking-wide text-base-content/50">
+            Tez tanlash
+          </div>
+          {PRESET_OPTIONS.map((option) => (
+            <button
+              key={option.value}
+              onClick={() => handlePresetSelect(option.value)}
+              className={clsx(
+                'flex w-full items-center justify-between rounded-xl px-3 py-2.5 text-left transition-colors',
+                value === option.value && option.value !== 'custom'
+                  ? 'bg-primary text-primary-content'
+                  : 'hover:bg-base-200'
+              )}
+            >
+              <span className="font-medium">{option.label}</span>
+              {value === option.value && option.value !== 'custom' && (
+                <Check className="h-4 w-4" />
+              )}
+              {option.value === 'custom' && (
+                <Calendar className="h-4 w-4 text-base-content/50" />
+              )}
+            </button>
+          ))}
+        </div>
+      ) : (
+        /* Calendar View */
+        <div className="p-4">
+          {/* Calendar Header */}
+          <div className="mb-4 flex items-center justify-between">
+            <button
+              onClick={() => navigateMonth('prev')}
+              className="rounded-lg p-1.5 transition-colors hover:bg-base-200"
+            >
+              <ChevronLeft className="h-5 w-5" />
+            </button>
+            <span className="font-semibold">
+              {MONTHS_UZ[currentMonth.getMonth()]} {currentMonth.getFullYear()}
+            </span>
+            <button
+              onClick={() => navigateMonth('next')}
+              className="rounded-lg p-1.5 transition-colors hover:bg-base-200"
+            >
+              <ChevronRight className="h-5 w-5" />
+            </button>
+          </div>
+
+          {/* Selected Range Display */}
+          <div className="mb-4 flex items-center gap-2 rounded-xl bg-base-200/50 p-2">
+            <div
+              className={clsx(
+                'flex-1 rounded-lg px-3 py-2 text-center text-sm transition-colors',
+                selectingStart
+                  ? 'bg-primary text-primary-content'
+                  : 'bg-base-100'
+              )}
+            >
+              <div className="text-xs opacity-70">Boshlanish</div>
+              <div className="font-medium">
+                {tempStart ? formatDisplayDate(tempStart) : '—'}
+              </div>
+            </div>
+            <div className="text-base-content/30">→</div>
+            <div
+              className={clsx(
+                'flex-1 rounded-lg px-3 py-2 text-center text-sm transition-colors',
+                !selectingStart
+                  ? 'bg-primary text-primary-content'
+                  : 'bg-base-100'
+              )}
+            >
+              <div className="text-xs opacity-70">Tugash</div>
+              <div className="font-medium">
+                {tempEnd ? formatDisplayDate(tempEnd) : '—'}
+              </div>
+            </div>
+          </div>
+
+          {/* Weekday Headers */}
+          <div className="mb-2 grid grid-cols-7 gap-1">
+            {WEEKDAYS_UZ.map((day) => (
+              <div
+                key={day}
+                className="text-center text-xs font-medium text-base-content/50"
+              >
+                {day}
+              </div>
+            ))}
+          </div>
+
+          {/* Calendar Days */}
+          <div className="grid grid-cols-7 gap-1">
+            {days.map((date, index) => {
+              if (!date) {
+                return <div key={`empty-${index}`} className="h-9" />;
+              }
+
+              const inRange = isInRange(date);
+              const isStart = isStartDate(date);
+              const isEnd = isEndDate(date);
+              const isTodayDate = isToday(date);
+
+              return (
+                <button
+                  key={date.toISOString()}
+                  onClick={() => handleDateClick(date)}
+                  className={clsx(
+                    'relative h-9 rounded-lg text-sm font-medium transition-all',
+                    inRange && !isStart && !isEnd && 'bg-primary/20',
+                    (isStart || isEnd) && 'bg-primary text-primary-content',
+                    !inRange && !isStart && !isEnd && 'hover:bg-base-200',
+                    isTodayDate && !isStart && !isEnd && 'ring-2 ring-primary/30'
+                  )}
+                >
+                  {date.getDate()}
+                </button>
+              );
+            })}
+          </div>
+
+          {/* Quick Select */}
+          <div className="mt-4 flex flex-wrap gap-1">
+            {['today', 'week', 'month'].map((preset) => (
+              <button
+                key={preset}
+                onClick={() => {
+                  handlePresetSelect(preset as DateRangePreset);
+                }}
+                className="rounded-lg bg-base-200 px-2 py-1 text-xs font-medium transition-colors hover:bg-base-300"
+              >
+                {PRESET_OPTIONS.find((o) => o.value === preset)?.label}
+              </button>
+            ))}
+          </div>
+
+          {/* Action Buttons */}
+          <div className="mt-4 flex gap-2">
+            <button
+              onClick={() => {
+                setShowCalendar(false);
+                setTempStart(customRange.start);
+                setTempEnd(customRange.end);
+              }}
+              className="btn btn-ghost btn-sm flex-1"
+            >
+              <X className="h-4 w-4" />
+              Bekor
+            </button>
+            <button
+              onClick={handleApplyCustomRange}
+              disabled={!tempStart || !tempEnd}
+              className="btn btn-primary btn-sm flex-1"
+            >
+              <Check className="h-4 w-4" />
+              Qo'llash
+            </button>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+
   return (
-    <div className={clsx('relative', className)} ref={dropdownRef}>
+    <div className={clsx('relative', className)}>
       {/* Trigger Button */}
       <button
+        ref={triggerRef}
         type="button"
         onClick={() => setIsOpen(!isOpen)}
         className={clsx(
@@ -213,178 +422,8 @@ export function DateRangePicker({
         />
       </button>
 
-      {/* Dropdown */}
-      {isOpen && (
-        <div
-          className={clsx(
-            'absolute left-0 top-full z-[100] mt-2 overflow-hidden rounded-2xl border border-base-300 bg-base-100 shadow-xl',
-            'animate-dropdown',
-            showCalendar ? 'w-[340px]' : 'w-56'
-          )}
-        >
-          {!showCalendar ? (
-            /* Preset Options */
-            <div className="p-2">
-              <div className="mb-2 px-2 text-xs font-medium uppercase tracking-wide text-base-content/50">
-                Tez tanlash
-              </div>
-              {PRESET_OPTIONS.map((option) => (
-                <button
-                  key={option.value}
-                  onClick={() => handlePresetSelect(option.value)}
-                  className={clsx(
-                    'flex w-full items-center justify-between rounded-xl px-3 py-2.5 text-left transition-colors',
-                    value === option.value && option.value !== 'custom'
-                      ? 'bg-primary text-primary-content'
-                      : 'hover:bg-base-200'
-                  )}
-                >
-                  <span className="font-medium">{option.label}</span>
-                  {value === option.value && option.value !== 'custom' && (
-                    <Check className="h-4 w-4" />
-                  )}
-                  {option.value === 'custom' && (
-                    <Calendar className="h-4 w-4 text-base-content/50" />
-                  )}
-                </button>
-              ))}
-            </div>
-          ) : (
-            /* Calendar View */
-            <div className="p-4">
-              {/* Calendar Header */}
-              <div className="mb-4 flex items-center justify-between">
-                <button
-                  onClick={() => navigateMonth('prev')}
-                  className="rounded-lg p-1.5 transition-colors hover:bg-base-200"
-                >
-                  <ChevronLeft className="h-5 w-5" />
-                </button>
-                <span className="font-semibold">
-                  {MONTHS_UZ[currentMonth.getMonth()]} {currentMonth.getFullYear()}
-                </span>
-                <button
-                  onClick={() => navigateMonth('next')}
-                  className="rounded-lg p-1.5 transition-colors hover:bg-base-200"
-                >
-                  <ChevronRight className="h-5 w-5" />
-                </button>
-              </div>
-
-              {/* Selected Range Display */}
-              <div className="mb-4 flex items-center gap-2 rounded-xl bg-base-200/50 p-2">
-                <div
-                  className={clsx(
-                    'flex-1 rounded-lg px-3 py-2 text-center text-sm transition-colors',
-                    selectingStart
-                      ? 'bg-primary text-primary-content'
-                      : 'bg-base-100'
-                  )}
-                >
-                  <div className="text-xs opacity-70">Boshlanish</div>
-                  <div className="font-medium">
-                    {tempStart ? formatDisplayDate(tempStart) : '—'}
-                  </div>
-                </div>
-                <div className="text-base-content/30">→</div>
-                <div
-                  className={clsx(
-                    'flex-1 rounded-lg px-3 py-2 text-center text-sm transition-colors',
-                    !selectingStart
-                      ? 'bg-primary text-primary-content'
-                      : 'bg-base-100'
-                  )}
-                >
-                  <div className="text-xs opacity-70">Tugash</div>
-                  <div className="font-medium">
-                    {tempEnd ? formatDisplayDate(tempEnd) : '—'}
-                  </div>
-                </div>
-              </div>
-
-              {/* Weekday Headers */}
-              <div className="mb-2 grid grid-cols-7 gap-1">
-                {WEEKDAYS_UZ.map((day) => (
-                  <div
-                    key={day}
-                    className="text-center text-xs font-medium text-base-content/50"
-                  >
-                    {day}
-                  </div>
-                ))}
-              </div>
-
-              {/* Calendar Days */}
-              <div className="grid grid-cols-7 gap-1">
-                {days.map((date, index) => {
-                  if (!date) {
-                    return <div key={`empty-${index}`} className="h-9" />;
-                  }
-
-                  const inRange = isInRange(date);
-                  const isStart = isStartDate(date);
-                  const isEnd = isEndDate(date);
-                  const isTodayDate = isToday(date);
-
-                  return (
-                    <button
-                      key={date.toISOString()}
-                      onClick={() => handleDateClick(date)}
-                      className={clsx(
-                        'relative h-9 rounded-lg text-sm font-medium transition-all',
-                        inRange && !isStart && !isEnd && 'bg-primary/20',
-                        (isStart || isEnd) && 'bg-primary text-primary-content',
-                        !inRange && !isStart && !isEnd && 'hover:bg-base-200',
-                        isTodayDate && !isStart && !isEnd && 'ring-2 ring-primary/30'
-                      )}
-                    >
-                      {date.getDate()}
-                    </button>
-                  );
-                })}
-              </div>
-
-              {/* Quick Select */}
-              <div className="mt-4 flex flex-wrap gap-1">
-                {['today', 'week', 'month'].map((preset) => (
-                  <button
-                    key={preset}
-                    onClick={() => {
-                      handlePresetSelect(preset as DateRangePreset);
-                    }}
-                    className="rounded-lg bg-base-200 px-2 py-1 text-xs font-medium transition-colors hover:bg-base-300"
-                  >
-                    {PRESET_OPTIONS.find((o) => o.value === preset)?.label}
-                  </button>
-                ))}
-              </div>
-
-              {/* Action Buttons */}
-              <div className="mt-4 flex gap-2">
-                <button
-                  onClick={() => {
-                    setShowCalendar(false);
-                    setTempStart(customRange.start);
-                    setTempEnd(customRange.end);
-                  }}
-                  className="btn btn-ghost btn-sm flex-1"
-                >
-                  <X className="h-4 w-4" />
-                  Bekor
-                </button>
-                <button
-                  onClick={handleApplyCustomRange}
-                  disabled={!tempStart || !tempEnd}
-                  className="btn btn-primary btn-sm flex-1"
-                >
-                  <Check className="h-4 w-4" />
-                  Qo'llash
-                </button>
-              </div>
-            </div>
-          )}
-        </div>
-      )}
+      {/* Dropdown rendered via portal */}
+      {isOpen && createPortal(dropdownContent, document.body)}
     </div>
   );
 }
