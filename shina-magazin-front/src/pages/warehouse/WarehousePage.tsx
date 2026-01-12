@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import {
   Package,
   TrendingUp,
@@ -11,10 +12,13 @@ import {
   ArrowDownCircle,
   ArrowUpCircle,
   RefreshCw,
+  Truck,
+  ExternalLink,
 } from 'lucide-react';
 import clsx from 'clsx';
 import { warehouseApi } from '../../api/warehouse.api';
 import { productsApi } from '../../api/products.api';
+import { suppliersApi } from '../../api/suppliers.api';
 import { NumberInput } from '../../components/ui/NumberInput';
 import { DataTable, Column } from '../../components/ui/DataTable';
 import { ModalPortal } from '../../components/common/Modal';
@@ -29,9 +33,12 @@ import type {
   Product,
   StockMovement,
   WarehouseStats,
+  Supplier,
 } from '../../types';
+import { formatCurrency } from '../../config/constants';
 
 export function WarehousePage() {
+  const navigate = useNavigate();
   const [stats, setStats] = useState<WarehouseStats | null>(null);
   const [movements, setMovements] = useState<StockMovement[]>([]);
   const [lowStockProducts, setLowStockProducts] = useState<Product[]>([]);
@@ -58,6 +65,11 @@ export function WarehousePage() {
   const [productSearch, setProductSearch] = useState('');
   const [searchResults, setSearchResults] = useState<Product[]>([]);
   const [searchLoading, setSearchLoading] = useState(false);
+
+  // Supplier for IN movements
+  const [allSuppliers, setAllSuppliers] = useState<Supplier[]>([]);
+  const [selectedSupplier, setSelectedSupplier] = useState<Supplier | null>(null);
+  const [unitPrice, setUnitPrice] = useState<number>(0);
 
   const { notifications } = useNotificationsStore();
 
@@ -196,11 +208,20 @@ export function WarehousePage() {
     }
   }, []);
 
+  const loadAllSuppliers = useCallback(async () => {
+    try {
+      const data = await suppliersApi.getActive();
+      setAllSuppliers(data);
+    } catch (error) {
+      console.error('Failed to load suppliers:', error);
+    }
+  }, []);
+
   const loadInitialData = useCallback(async () => {
     setLoading(true);
-    await Promise.all([loadStats(), loadLowStockProducts()]);
+    await Promise.all([loadStats(), loadLowStockProducts(), loadAllSuppliers()]);
     setLoading(false);
-  }, [loadStats, loadLowStockProducts]);
+  }, [loadStats, loadLowStockProducts, loadAllSuppliers]);
 
   useEffect(() => {
     loadInitialData();
@@ -250,6 +271,8 @@ export function WarehousePage() {
     setAdjustmentNotes('');
     setProductSearch('');
     setSearchResults([]);
+    setSelectedSupplier(null);
+    setUnitPrice(0);
     setShowAdjustmentModal(true);
   };
 
@@ -258,6 +281,8 @@ export function WarehousePage() {
     setSelectedProduct(null);
     setAdjustmentQuantity('');
     setAdjustmentNotes('');
+    setSelectedSupplier(null);
+    setUnitPrice(0);
   };
 
   const handleSubmitAdjustment = async () => {
@@ -623,6 +648,68 @@ export function WarehousePage() {
                   </span>
                 )}
               </div>
+
+              {/* Supplier section - only for IN movements */}
+              {adjustmentType === 'IN' && (
+                <div className="surface-soft rounded-xl p-4 space-y-4">
+                  <h4 className="text-sm font-semibold uppercase tracking-[0.15em] text-base-content/60 flex items-center gap-2">
+                    <Truck className="h-4 w-4" />
+                    Ta'minotchi (ixtiyoriy)
+                  </h4>
+
+                  <label className="form-control">
+                    <span className="label-text mb-1 text-xs font-semibold uppercase tracking-[0.18em] text-base-content/50">
+                      Ta'minotchi
+                    </span>
+                    <div className="flex gap-2">
+                      <select
+                        className="select select-bordered flex-1"
+                        value={selectedSupplier?.id || ''}
+                        onChange={(e) => {
+                          const supplier = allSuppliers.find(s => s.id === Number(e.target.value));
+                          setSelectedSupplier(supplier || null);
+                        }}
+                      >
+                        <option value="">Ta'minotchisiz</option>
+                        {allSuppliers.map(supplier => (
+                          <option key={supplier.id} value={supplier.id}>
+                            {supplier.name}
+                          </option>
+                        ))}
+                      </select>
+                      <button
+                        type="button"
+                        className="btn btn-outline btn-sm"
+                        onClick={() => navigate('/suppliers')}
+                        title="Yangi ta'minotchi qo'shish"
+                      >
+                        <ExternalLink className="h-4 w-4" />
+                      </button>
+                    </div>
+                  </label>
+
+                  {selectedSupplier && (
+                    <label className="form-control">
+                      <span className="label-text mb-1 text-xs font-semibold uppercase tracking-[0.18em] text-base-content/50">
+                        Birlik narxi
+                      </span>
+                      <input
+                        type="number"
+                        min={0}
+                        className="input input-bordered w-full"
+                        value={unitPrice || ''}
+                        onChange={(e) => setUnitPrice(Number(e.target.value) || 0)}
+                        placeholder="0"
+                      />
+                      {unitPrice > 0 && adjustmentQuantity && (
+                        <span className="label-text-alt mt-1 text-base-content/70">
+                          Jami: {formatCurrency(unitPrice * parseInt(adjustmentQuantity || '0'))}
+                        </span>
+                      )}
+                    </label>
+                  )}
+                </div>
+              )}
 
               <label className="form-control">
                 <span className="label-text mb-1 text-xs font-semibold uppercase tracking-[0.18em] text-base-content/50">

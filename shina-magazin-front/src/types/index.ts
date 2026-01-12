@@ -449,3 +449,55 @@ export interface SupplierRequest {
   bankDetails?: string;
   notes?: string;
 }
+
+// Purchase Order Types
+export type PurchaseStatus = 'DRAFT' | 'RECEIVED' | 'CANCELLED';
+
+export interface PurchaseOrderItem {
+  id: number;
+  productId: number;
+  productName: string;
+  productSku: string;
+  quantity: number;
+  unitPrice: number;
+  totalPrice: number;
+}
+
+export interface PurchaseOrder {
+  id: number;
+  supplierId: number;
+  supplierName: string;
+  orderDate: string;
+  totalAmount: number;
+  paidAmount: number;
+  debtAmount: number;
+  status: PurchaseStatus;
+  notes?: string;
+  items: PurchaseOrderItem[];
+  itemCount: number;
+  totalQuantity: number;
+  createdAt: string;
+  createdByName: string;
+}
+
+export interface PurchaseItemRequest {
+  productId: number;
+  quantity: number;
+  unitPrice: number;
+}
+
+export interface PurchaseRequest {
+  supplierId: number;
+  orderDate: string;
+  paidAmount: number;
+  notes?: string;
+  items: PurchaseItemRequest[];
+}
+
+export interface PurchaseStats {
+  totalPurchases: number;
+  todayPurchases: number;
+  monthPurchases: number;
+  totalAmount: number;
+  totalDebt: number;
+}
