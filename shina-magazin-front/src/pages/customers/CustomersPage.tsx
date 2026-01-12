@@ -5,6 +5,7 @@ import { customersApi } from '../../api/customers.api';
 import { formatCurrency, CUSTOMER_TYPES } from '../../config/constants';
 import { DataTable, Column } from '../../components/ui/DataTable';
 import { ModalPortal } from '../../components/common/Modal';
+import { PhoneInput } from '../../components/ui/PhoneInput';
 import { useNotificationsStore } from '../../store/notificationsStore';
 import type { Customer, CustomerRequest, CustomerType } from '../../types';
 
@@ -315,14 +316,17 @@ export function CustomersPage() {
                   <span className="label-text mb-1 text-xs font-semibold uppercase tracking-[0.18em] text-base-content/50">To'liq ism *</span>
                   <input type="text" className="input input-bordered w-full" value={formData.fullName} onChange={(e) => handleFormChange('fullName', e.target.value)} placeholder="Ism Familiya" />
                 </label>
-                <label className="form-control">
-                  <span className="label-text mb-1 text-xs font-semibold uppercase tracking-[0.18em] text-base-content/50">Telefon *</span>
-                  <input type="tel" className="input input-bordered w-full" value={formData.phone} onChange={(e) => handleFormChange('phone', e.target.value)} placeholder="+998 90 123 45 67" />
-                </label>
-                <label className="form-control">
-                  <span className="label-text mb-1 text-xs font-semibold uppercase tracking-[0.18em] text-base-content/50">Qo'shimcha telefon</span>
-                  <input type="tel" className="input input-bordered w-full" value={formData.phone2 || ''} onChange={(e) => handleFormChange('phone2', e.target.value || undefined)} placeholder="+998 90 123 45 67" />
-                </label>
+                <PhoneInput
+                  label="Telefon"
+                  value={formData.phone}
+                  onChange={(value) => handleFormChange('phone', value)}
+                  required
+                />
+                <PhoneInput
+                  label="Qo'shimcha telefon"
+                  value={formData.phone2 || ''}
+                  onChange={(value) => handleFormChange('phone2', value || undefined)}
+                />
               </div>
               <label className="form-control">
                 <span className="label-text mb-1 text-xs font-semibold uppercase tracking-[0.18em] text-base-content/50">Mijoz turi</span>

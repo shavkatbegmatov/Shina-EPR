@@ -25,6 +25,7 @@ import { productsApi } from '../../api/products.api';
 import { formatCurrency, formatDate, getTashkentToday } from '../../config/constants';
 import { DataTable, Column } from '../../components/ui/DataTable';
 import { ModalPortal } from '../../components/common/Modal';
+import { PhoneInput } from '../../components/ui/PhoneInput';
 import { useNotificationsStore } from '../../store/notificationsStore';
 import type {
   Supplier,
@@ -955,18 +956,11 @@ export function SuppliersPage() {
                       placeholder="Ism Familiya"
                     />
                   </label>
-                  <label className="form-control">
-                    <span className="label-text mb-1 text-xs font-semibold uppercase tracking-[0.18em] text-base-content/50">
-                      Telefon
-                    </span>
-                    <input
-                      type="tel"
-                      className="input input-bordered w-full"
-                      value={formData.phone}
-                      onChange={(e) => handleFormChange('phone', e.target.value)}
-                      placeholder="+998 90 123 45 67"
-                    />
-                  </label>
+                  <PhoneInput
+                    label="Telefon"
+                    value={formData.phone || ''}
+                    onChange={(value) => handleFormChange('phone', value)}
+                  />
                 </div>
               </div>
 

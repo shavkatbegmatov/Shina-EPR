@@ -1,9 +1,10 @@
 import { useState, useEffect, useCallback } from 'react';
-import { useForm } from 'react-hook-form';
+import { useForm, Controller } from 'react-hook-form';
 import { useTranslation } from 'react-i18next';
 import { useNavigate, Navigate } from 'react-router-dom';
-import { LogIn, Phone, Lock, Globe, AlertCircle, Sun, Moon } from 'lucide-react';
+import { LogIn, Lock, Globe, AlertCircle, Sun, Moon } from 'lucide-react';
 import toast from 'react-hot-toast';
+import { PhoneInput } from '../../components/ui/PhoneInput';
 import { portalAuthApi } from '../api/portalAuth.api';
 import { usePortalAuthStore } from '../store/portalAuthStore';
 import type { CustomerLoginRequest } from '../types/portal.types';
@@ -40,10 +41,11 @@ export default function PortalLoginPage() {
   const {
     register,
     handleSubmit,
+    control,
     formState: { errors },
   } = useForm<CustomerLoginRequest>({
     defaultValues: {
-      phone: '+998',
+      phone: '',
       pin: '',
     },
   });
@@ -132,32 +134,26 @@ export default function PortalLoginPage() {
 
           <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
             {/* Phone Input */}
-            <div className="form-control">
-              <label className="label">
-                <span className="label-text font-medium">{t('auth.phone')}</span>
-              </label>
-              <div className="relative">
-                <Phone className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-base-content/40" />
-                <input
-                  type="tel"
-                  {...register('phone', {
-                    required: t('auth.phone') + ' kiritilishi shart',
-                    pattern: {
-                      value: /^\+998[0-9]{9}$/,
-                      message: t('auth.phonePlaceholder'),
-                    },
-                  })}
-                  className="input input-bordered w-full pl-10"
-                  placeholder={t('auth.phonePlaceholder')}
-                  inputMode="tel"
+            <Controller
+              name="phone"
+              control={control}
+              rules={{
+                required: t('auth.phone') + ' kiritilishi shart',
+                pattern: {
+                  value: /^\+998[0-9]{9}$/,
+                  message: t('auth.phonePlaceholder'),
+                },
+              }}
+              render={({ field }) => (
+                <PhoneInput
+                  label={t('auth.phone')}
+                  value={field.value || ''}
+                  onChange={field.onChange}
+                  error={errors.phone?.message}
+                  required
                 />
-              </div>
-              {errors.phone && (
-                <label className="label">
-                  <span className="label-text-alt text-error">{errors.phone.message}</span>
-                </label>
               )}
-            </div>
+            />
 
             {/* PIN Input */}
             <div className="form-control">

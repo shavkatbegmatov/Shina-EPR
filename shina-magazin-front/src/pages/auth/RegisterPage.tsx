@@ -1,8 +1,9 @@
 import { useState } from 'react';
-import { useForm } from 'react-hook-form';
+import { useForm, Controller } from 'react-hook-form';
 import { Link } from 'react-router-dom';
 import { UserPlus } from 'lucide-react';
 import toast from 'react-hot-toast';
+import { PhoneInput } from '../../components/ui/PhoneInput';
 
 type RegisterRequest = {
   fullName: string;
@@ -17,6 +18,7 @@ export function RegisterPage() {
   const {
     register,
     handleSubmit,
+    control,
     formState: { errors },
     reset,
   } = useForm<RegisterRequest>({
@@ -64,22 +66,20 @@ export function RegisterPage() {
               )}
             </label>
 
-            <label className="form-control">
-              <span className="label-text text-sm">Telefon</span>
-              <input
-                type="tel"
-                className={`input input-bordered w-full ${errors.phone ? 'input-error' : ''}`}
-                placeholder="+998 90 123 45 67"
-                {...register('phone', {
-                  required: 'Telefon raqam kiritilishi shart',
-                })}
-              />
-              {errors.phone && (
-                <span className="mt-1 text-xs text-error">
-                  {errors.phone.message}
-                </span>
+            <Controller
+              name="phone"
+              control={control}
+              rules={{ required: 'Telefon raqam kiritilishi shart' }}
+              render={({ field }) => (
+                <PhoneInput
+                  label="Telefon"
+                  value={field.value || ''}
+                  onChange={field.onChange}
+                  error={errors.phone?.message}
+                  required
+                />
               )}
-            </label>
+            />
 
             <label className="form-control">
               <span className="label-text text-sm">Kompaniya (ixtiyoriy)</span>
