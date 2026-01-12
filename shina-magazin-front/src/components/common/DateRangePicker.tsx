@@ -217,7 +217,7 @@ export function DateRangePicker({
       {isOpen && (
         <div
           className={clsx(
-            'absolute right-0 top-full z-50 mt-2 overflow-hidden rounded-2xl border border-base-300 bg-base-100 shadow-xl',
+            'absolute left-0 top-full z-[100] mt-2 overflow-hidden rounded-2xl border border-base-300 bg-base-100 shadow-xl',
             'animate-dropdown',
             showCalendar ? 'w-[340px]' : 'w-56'
           )}
