@@ -9,6 +9,7 @@ import { useCartStore } from '../../store/cartStore';
 import { useNotificationsStore } from '../../store/notificationsStore';
 import { formatCurrency, PAYMENT_METHODS } from '../../config/constants';
 import { NumberInput } from '../../components/ui/NumberInput';
+import { CurrencyInput } from '../../components/ui/CurrencyInput';
 import { ModalPortal } from '../../components/common/Modal';
 import type { Product, PaymentMethod, Customer } from '../../types';
 
@@ -334,17 +335,13 @@ export function POSPage() {
               <span className="font-medium">{formatCurrency(subtotal)}</span>
             </div>
             <div className="grid grid-cols-2 gap-2">
-              <NumberInput
+              <CurrencyInput
                 label="Chegirma (so'm)"
                 value={cart.discount}
-                onChange={(val) => {
-                  const num = typeof val === 'string' ? parseFloat(val) || 0 : val;
-                  cart.setDiscount(Math.min(subtotal, Math.max(0, num)));
-                }}
+                onChange={(val) => cart.setDiscount(Math.min(subtotal, Math.max(0, val)))}
                 min={0}
                 max={subtotal}
                 size="sm"
-                allowEmpty={false}
               />
               <NumberInput
                 label="Chegirma (%)"
@@ -413,28 +410,13 @@ export function POSPage() {
                 </select>
               </label>
 
-              <div className="form-control">
-                <div className="flex items-end gap-2">
-                  <NumberInput
-                    label="To'langan summa"
-                    value={paidAmount}
-                    onChange={(val) => {
-                      const num = typeof val === 'string' ? parseFloat(val) || 0 : val;
-                      setPaidAmount(Math.max(0, num));
-                    }}
-                    min={0}
-                    step={1000}
-                    allowEmpty={false}
-                    className="flex-1"
-                  />
-                  <button
-                    className="btn btn-ghost btn-sm mb-0.5"
-                    onClick={() => setPaidAmount(total)}
-                  >
-                    To'liq
-                  </button>
-                </div>
-              </div>
+              <CurrencyInput
+                label="To'langan summa"
+                value={paidAmount}
+                onChange={(val) => setPaidAmount(Math.max(0, val))}
+                min={0}
+                showQuickButtons
+              />
 
               <div className="surface-soft rounded-xl p-4">
                 <div className="flex justify-between text-sm">

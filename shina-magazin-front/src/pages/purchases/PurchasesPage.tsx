@@ -31,6 +31,7 @@ import { DataTable, Column } from '../../components/ui/DataTable';
 import { ModalPortal } from '../../components/common/Modal';
 import { DateRangePicker, type DateRangePreset, type DateRange } from '../../components/common/DateRangePicker';
 import { ProductSearchCombobox } from '../../components/common/ProductSearchCombobox';
+import { CurrencyInput } from '../../components/ui/CurrencyInput';
 import { useNotificationsStore } from '../../store/notificationsStore';
 import type {
   Supplier,
@@ -824,12 +825,11 @@ export function PurchasesPage() {
                               />
                             </td>
                             <td>
-                              <input
-                                type="number"
-                                min={0}
-                                className="input input-bordered input-sm w-full"
+                              <CurrencyInput
                                 value={item.unitPrice}
-                                onChange={(e) => handleUpdateCartItem(item.product.id, 'unitPrice', Number(e.target.value) || 0)}
+                                onChange={(val) => handleUpdateCartItem(item.product.id, 'unitPrice', val)}
+                                size="sm"
+                                min={0}
                               />
                             </td>
                             <td className="text-right font-semibold">

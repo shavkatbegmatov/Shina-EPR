@@ -4,6 +4,7 @@ import clsx from 'clsx';
 import { productsApi, brandsApi, categoriesApi } from '../../api/products.api';
 import { formatCurrency, SEASONS } from '../../config/constants';
 import { NumberInput } from '../../components/ui/NumberInput';
+import { CurrencyInput } from '../../components/ui/CurrencyInput';
 import { DataTable, Column } from '../../components/ui/DataTable';
 import { ModalPortal } from '../../components/common/Modal';
 import { useNotificationsStore } from '../../store/notificationsStore';
@@ -544,8 +545,8 @@ export function ProductsPage() {
               </div>
 
               <div className="grid grid-cols-2 gap-4 sm:grid-cols-4">
-                <NumberInput label="Kelish narxi" value={formData.purchasePrice ?? ''} onChange={(val) => handleFormChange('purchasePrice', val === '' ? undefined : Number(val))} placeholder="0" showButtons={false} min={0} />
-                <NumberInput label="Sotish narxi *" value={formData.sellingPrice ?? ''} onChange={(val) => handleFormChange('sellingPrice', val === '' ? 0 : Number(val))} placeholder="0" showButtons={false} min={0} allowEmpty={false} />
+                <CurrencyInput label="Kelish narxi" value={formData.purchasePrice ?? 0} onChange={(val) => handleFormChange('purchasePrice', val || undefined)} min={0} />
+                <CurrencyInput label="Sotish narxi *" value={formData.sellingPrice ?? 0} onChange={(val) => handleFormChange('sellingPrice', val)} min={0} />
                 <NumberInput label="Miqdor" value={formData.quantity ?? ''} onChange={(val) => handleFormChange('quantity', val === '' ? undefined : Number(val))} placeholder="0" min={0} />
                 <NumberInput label="Min zaxira" value={formData.minStockLevel ?? ''} onChange={(val) => handleFormChange('minStockLevel', val === '' ? undefined : Number(val))} placeholder="5" min={0} />
               </div>

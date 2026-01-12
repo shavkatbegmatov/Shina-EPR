@@ -20,6 +20,7 @@ import clsx from 'clsx';
 import { purchasesApi } from '../../api/purchases.api';
 import { formatCurrency, formatDate, getTashkentToday } from '../../config/constants';
 import { ModalPortal } from '../../components/common/Modal';
+import { CurrencyInput } from '../../components/ui/CurrencyInput';
 import { useNotificationsStore } from '../../store/notificationsStore';
 import type {
   PurchaseOrder,
@@ -681,19 +682,14 @@ export function PurchaseDetailPage() {
             </div>
 
             <div className="mt-6 space-y-4">
-              <label className="form-control">
-                <span className="label-text mb-1 text-xs font-semibold uppercase tracking-[0.18em] text-base-content/50">
-                  Summa *
-                </span>
-                <input
-                  type="number"
-                  min={0}
-                  max={purchase.debtAmount}
-                  className="input input-bordered w-full"
-                  value={paymentAmount}
-                  onChange={(e) => setPaymentAmount(Number(e.target.value) || 0)}
-                />
-              </label>
+              <CurrencyInput
+                label="Summa *"
+                value={paymentAmount}
+                onChange={setPaymentAmount}
+                min={0}
+                max={purchase.debtAmount}
+                showQuickButtons
+              />
 
               <label className="form-control">
                 <span className="label-text mb-1 text-xs font-semibold uppercase tracking-[0.18em] text-base-content/50">

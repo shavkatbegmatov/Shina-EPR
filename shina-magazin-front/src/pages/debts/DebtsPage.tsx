@@ -12,7 +12,7 @@ import {
 import clsx from 'clsx';
 import { debtsApi } from '../../api/debts.api';
 import { formatCurrency, formatDate, formatDateTime, DEBT_STATUSES, PAYMENT_METHODS } from '../../config/constants';
-import { NumberInput } from '../../components/ui/NumberInput';
+import { CurrencyInput } from '../../components/ui/CurrencyInput';
 import { DataTable, Column } from '../../components/ui/DataTable';
 import { ModalPortal } from '../../components/common/Modal';
 import type { Debt, DebtStatus, Payment, PaymentMethod } from '../../types';
@@ -34,7 +34,7 @@ export function DebtsPage() {
   const [loadingPayments, setLoadingPayments] = useState(false);
 
   // Payment form state
-  const [paymentAmount, setPaymentAmount] = useState('');
+  const [paymentAmount, setPaymentAmount] = useState(0);
   const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>('CASH');
   const [paymentNotes, setPaymentNotes] = useState('');
   const [isFullPayment, setIsFullPayment] = useState(false);
@@ -192,9 +192,9 @@ export function DebtsPage() {
   const handleOpenPaymentModal = (fullPayment: boolean) => {
     setIsFullPayment(fullPayment);
     if (fullPayment && selectedDebt) {
-      setPaymentAmount(selectedDebt.remainingAmount.toString());
+      setPaymentAmount(selectedDebt.remainingAmount);
     } else {
-      setPaymentAmount('');
+      setPaymentAmount(0);
     }
     setPaymentMethod('CASH');
     setPaymentNotes('');
@@ -203,15 +203,13 @@ export function DebtsPage() {
 
   const handleClosePaymentModal = () => {
     setShowPaymentModal(false);
-    setPaymentAmount('');
+    setPaymentAmount(0);
     setPaymentNotes('');
   };
 
   const handleSubmitPayment = async () => {
     if (!selectedDebt) return;
-
-    const amount = parseFloat(paymentAmount);
-    if (isNaN(amount) || amount <= 0) return;
+    if (paymentAmount <= 0) return;
 
     setSubmitting(true);
     try {
@@ -222,7 +220,7 @@ export function DebtsPage() {
         });
       } else {
         await debtsApi.makePayment(selectedDebt.id, {
-          amount,
+          amount: paymentAmount,
           method: paymentMethod,
           notes: paymentNotes || undefined,
         });
@@ -499,23 +497,15 @@ export function DebtsPage() {
               </div>
 
               <div className="mt-6 space-y-4">
-                <div className="form-control">
-                  <NumberInput
-                    label="To'lov summasi *"
-                    value={paymentAmount}
-                    onChange={(val) => setPaymentAmount(String(val))}
-                    disabled={isFullPayment}
-                    min={0}
-                    max={selectedDebt.remainingAmount}
-                    step={1000}
-                    placeholder="0"
-                  />
-                  {!isFullPayment && (
-                    <span className="label-text-alt mt-1 text-base-content/50">
-                      Maksimum: {formatCurrency(selectedDebt.remainingAmount)}
-                    </span>
-                  )}
-                </div>
+                <CurrencyInput
+                  label="To'lov summasi *"
+                  value={paymentAmount}
+                  onChange={setPaymentAmount}
+                  disabled={isFullPayment}
+                  min={0}
+                  max={selectedDebt.remainingAmount}
+                  showQuickButtons={!isFullPayment}
+                />
 
                 <label className="form-control">
                   <span className="label-text mb-1 text-xs font-semibold uppercase tracking-[0.18em] text-base-content/50">
@@ -568,10 +558,7 @@ export function DebtsPage() {
                 <button
                   className="btn btn-primary"
                   onClick={handleSubmitPayment}
-                  disabled={
-                    submitting ||
-                    (!isFullPayment && (isNaN(parseFloat(paymentAmount)) || parseFloat(paymentAmount) <= 0))
-                  }
+                  disabled={submitting || (!isFullPayment && paymentAmount <= 0)}
                 >
                   {submitting && <span className="loading loading-spinner loading-sm" />}
                   {isFullPayment ? "To'liq to'lash" : "To'lash"}
