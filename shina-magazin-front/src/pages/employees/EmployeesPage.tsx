@@ -546,8 +546,9 @@ export function EmployeesPage() {
 
       {/* Employee Modal */}
       <ModalPortal isOpen={showModal} onClose={handleCloseModal}>
-        <div className="w-full max-w-2xl bg-base-100 rounded-2xl shadow-2xl max-h-[90vh] overflow-y-auto">
-          <div className="p-4 sm:p-6">
+        <div className="w-full max-w-2xl bg-base-100 rounded-2xl shadow-2xl h-[85vh] flex flex-col">
+          {/* Header - Fixed */}
+          <div className="p-4 sm:p-6 pb-0 flex-shrink-0 border-b border-base-200">
             <div className="flex items-start justify-between gap-4">
               <div>
                 <h3 className="text-xl font-semibold">
@@ -563,7 +564,7 @@ export function EmployeesPage() {
             </div>
 
             {/* Tabs */}
-            <div className="tabs tabs-boxed bg-base-200 p-1 mt-4 w-fit">
+            <div className="tabs tabs-boxed bg-base-200 p-1 mt-4 mb-4 w-fit">
               <button
                 className={clsx('tab', modalTab === 'basic' && 'tab-active')}
                 onClick={() => setModalTab('basic')}
@@ -577,8 +578,11 @@ export function EmployeesPage() {
                 Qo'shimcha
               </button>
             </div>
+          </div>
 
-            <div className="mt-6 space-y-5">
+          {/* Content - Scrollable */}
+          <div className="flex-1 overflow-y-auto p-4 sm:p-6">
+            <div className="space-y-5">
               {modalTab === 'basic' ? (
                 <>
                   {/* Asosiy ma'lumotlar */}
@@ -865,8 +869,11 @@ export function EmployeesPage() {
                 </>
               )}
             </div>
+          </div>
 
-            <div className="mt-6 flex justify-between gap-2">
+          {/* Footer - Fixed */}
+          <div className="p-4 sm:p-6 pt-4 flex-shrink-0 border-t border-base-200">
+            <div className="flex justify-between gap-2">
               <div>
                 {editingEmployee && (
                   <button
