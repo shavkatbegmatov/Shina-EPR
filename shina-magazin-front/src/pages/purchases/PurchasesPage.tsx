@@ -20,7 +20,7 @@ import clsx from 'clsx';
 import { purchasesApi, type PurchaseFilters } from '../../api/purchases.api';
 import { suppliersApi } from '../../api/suppliers.api';
 import { productsApi } from '../../api/products.api';
-import { formatCurrency } from '../../config/constants';
+import { formatCurrency, formatDate } from '../../config/constants';
 import { DataTable, Column } from '../../components/ui/DataTable';
 import { ModalPortal } from '../../components/common/Modal';
 import { DateRangePicker, type DateRangePreset, type DateRange } from '../../components/common/DateRangePicker';
@@ -355,7 +355,7 @@ export function PurchasesPage() {
       render: (purchase) => (
         <div className="flex items-center gap-2">
           <Calendar className="h-4 w-4 text-base-content/50" />
-          <span>{new Date(purchase.orderDate).toLocaleDateString('uz-UZ')}</span>
+          <span>{formatDate(purchase.orderDate)}</span>
         </div>
       ),
     },
@@ -662,7 +662,7 @@ export function PurchasesPage() {
                 <p className="font-mono font-semibold">{purchase.orderNumber}</p>
                 <p className="text-sm font-medium text-base-content/80">{purchase.supplierName}</p>
                 <p className="text-xs text-base-content/60">
-                  {new Date(purchase.orderDate).toLocaleDateString('uz-UZ')}
+                  {formatDate(purchase.orderDate)}
                 </p>
               </div>
               <div className="flex flex-col items-end gap-1">

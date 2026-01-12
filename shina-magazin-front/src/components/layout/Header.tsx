@@ -74,7 +74,10 @@ const formatTimeAgo = (dateString: string) => {
   } else if (diffDays < 7) {
     return `${diffDays} kun oldin`;
   } else {
-    return date.toLocaleDateString('uz-UZ');
+    const day = date.getDate().toString().padStart(2, '0');
+    const month = (date.getMonth() + 1).toString().padStart(2, '0');
+    const year = date.getFullYear();
+    return `${day}.${month}.${year}`;
   }
 };
 

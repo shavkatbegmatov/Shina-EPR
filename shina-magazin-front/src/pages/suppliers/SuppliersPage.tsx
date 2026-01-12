@@ -22,7 +22,7 @@ import clsx from 'clsx';
 import { suppliersApi } from '../../api/suppliers.api';
 import { purchasesApi } from '../../api/purchases.api';
 import { productsApi } from '../../api/products.api';
-import { formatCurrency } from '../../config/constants';
+import { formatCurrency, formatDate } from '../../config/constants';
 import { DataTable, Column } from '../../components/ui/DataTable';
 import { ModalPortal } from '../../components/common/Modal';
 import { useNotificationsStore } from '../../store/notificationsStore';
@@ -240,7 +240,7 @@ export function SuppliersPage() {
       render: (purchase) => (
         <div className="flex items-center gap-2">
           <Calendar className="h-4 w-4 text-base-content/50" />
-          <span>{new Date(purchase.orderDate).toLocaleDateString('uz-UZ')}</span>
+          <span>{formatDate(purchase.orderDate)}</span>
         </div>
       ),
     },
@@ -828,7 +828,7 @@ export function SuppliersPage() {
                   <div>
                     <p className="font-semibold">{purchase.supplierName}</p>
                     <p className="text-xs text-base-content/60">
-                      {new Date(purchase.orderDate).toLocaleDateString('uz-UZ')}
+                      {formatDate(purchase.orderDate)}
                     </p>
                   </div>
                   <span className={clsx(

@@ -67,3 +67,25 @@ export const formatCurrency = (amount: number): string => {
 export const formatNumber = (num: number): string => {
   return new Intl.NumberFormat('uz-UZ').format(num);
 };
+
+// Sana formati: dd.mm.yyyy (masalan: 09.02.2026)
+export const formatDate = (dateStr: string): string => {
+  if (!dateStr) return '—';
+  const date = new Date(dateStr);
+  const day = date.getDate().toString().padStart(2, '0');
+  const month = (date.getMonth() + 1).toString().padStart(2, '0');
+  const year = date.getFullYear();
+  return `${day}.${month}.${year}`;
+};
+
+// Sana va vaqt formati: dd.mm.yyyy HH:mm (masalan: 09.02.2026 14:30)
+export const formatDateTime = (dateStr: string): string => {
+  if (!dateStr) return '—';
+  const date = new Date(dateStr);
+  const day = date.getDate().toString().padStart(2, '0');
+  const month = (date.getMonth() + 1).toString().padStart(2, '0');
+  const year = date.getFullYear();
+  const hours = date.getHours().toString().padStart(2, '0');
+  const minutes = date.getMinutes().toString().padStart(2, '0');
+  return `${day}.${month}.${year} ${hours}:${minutes}`;
+};

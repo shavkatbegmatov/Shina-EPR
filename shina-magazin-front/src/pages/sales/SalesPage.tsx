@@ -4,7 +4,7 @@ import { Search, ShoppingCart, Receipt, Eye, XCircle, Calendar, User, X, CreditC
 import clsx from 'clsx';
 import toast from 'react-hot-toast';
 import { salesApi } from '../../api/sales.api';
-import { formatCurrency, PAYMENT_METHODS, PAYMENT_STATUSES, SALE_STATUSES } from '../../config/constants';
+import { formatCurrency, formatDateTime, PAYMENT_METHODS, PAYMENT_STATUSES, SALE_STATUSES } from '../../config/constants';
 import { DataTable, Column } from '../../components/ui/DataTable';
 import { ModalPortal } from '../../components/common/Modal';
 import type { Sale, PaymentStatus, SaleStatus, PaymentMethod } from '../../types';
@@ -52,10 +52,6 @@ export function SalesPage() {
       return true;
     });
   }, [sales, search, paymentStatusFilter, statusFilter]);
-
-  const formatDate = (dateStr: string) => {
-    return new Date(dateStr).toLocaleDateString('uz-UZ', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' });
-  };
 
   const getPaymentStatusBadge = (status: PaymentStatus) => {
     const styles: Record<PaymentStatus, string> = { PAID: 'badge-success', PARTIAL: 'badge-warning', UNPAID: 'badge-error' };
@@ -107,7 +103,7 @@ export function SalesPage() {
       render: (sale) => (
         <div className="flex items-center gap-2 text-sm">
           <Calendar className="h-4 w-4 text-base-content/50" />
-          {formatDate(sale.saleDate)}
+          {formatDateTime(sale.saleDate)}
         </div>
       ),
     },
@@ -306,7 +302,7 @@ export function SalesPage() {
                   <Receipt className="h-4 w-4 text-primary" />
                   <span className="font-mono text-sm font-medium">{sale.invoiceNumber}</span>
                 </div>
-                <p className="mt-1 text-xs text-base-content/60">{formatDate(sale.saleDate)}</p>
+                <p className="mt-1 text-xs text-base-content/60">{formatDateTime(sale.saleDate)}</p>
               </div>
               <div className="flex flex-col items-end gap-1">
                 {getPaymentStatusBadge(sale.paymentStatus)}
@@ -355,7 +351,7 @@ export function SalesPage() {
                 <div className="grid gap-4 sm:grid-cols-2">
                   <div className="surface-soft rounded-lg p-3">
                     <p className="text-xs font-semibold uppercase tracking-wider text-base-content/50">Sana</p>
-                    <p className="mt-1 font-medium">{formatDate(selectedSale.saleDate)}</p>
+                    <p className="mt-1 font-medium">{formatDateTime(selectedSale.saleDate)}</p>
                   </div>
                   <div className="surface-soft rounded-lg p-3">
                     <p className="text-xs font-semibold uppercase tracking-wider text-base-content/50">Mijoz</p>

@@ -18,7 +18,7 @@ import {
 } from 'lucide-react';
 import clsx from 'clsx';
 import { purchasesApi } from '../../api/purchases.api';
-import { formatCurrency } from '../../config/constants';
+import { formatCurrency, formatDate } from '../../config/constants';
 import { ModalPortal } from '../../components/common/Modal';
 import { useNotificationsStore } from '../../store/notificationsStore';
 import type {
@@ -335,7 +335,7 @@ export function PurchaseDetailPage() {
             </div>
             <div>
               <p className="text-xs text-base-content/60">Sana</p>
-              <p className="font-semibold">{new Date(purchase.orderDate).toLocaleDateString('uz-UZ')}</p>
+              <p className="font-semibold">{formatDate(purchase.orderDate)}</p>
             </div>
           </div>
         </div>
@@ -485,7 +485,7 @@ export function PurchaseDetailPage() {
                   <tbody>
                     {payments.map((payment) => (
                       <tr key={payment.id}>
-                        <td>{new Date(payment.paymentDate).toLocaleDateString('uz-UZ')}</td>
+                        <td>{formatDate(payment.paymentDate)}</td>
                         <td className="font-semibold text-success">{formatCurrency(payment.amount)}</td>
                         <td>
                           <span className="badge badge-sm badge-ghost">
@@ -550,7 +550,7 @@ export function PurchaseDetailPage() {
                         </div>
                         <p className="text-sm text-base-content/70">
                           <Calendar className="h-4 w-4 inline mr-1" />
-                          {new Date(returnItem.returnDate).toLocaleDateString('uz-UZ')}
+                          {formatDate(returnItem.returnDate)}
                         </p>
                         <p className="text-sm text-base-content/70 mt-1">
                           Sabab: {returnItem.reason}

@@ -25,6 +25,8 @@ import { ModalPortal } from '../../components/common/Modal';
 import { useNotificationsStore } from '../../store/notificationsStore';
 import {
   formatNumber,
+  formatCurrency,
+  formatDateTime,
   MOVEMENT_TYPES,
   REFERENCE_TYPES,
 } from '../../config/constants';
@@ -35,7 +37,6 @@ import type {
   WarehouseStats,
   Supplier,
 } from '../../types';
-import { formatCurrency } from '../../config/constants';
 
 export function WarehousePage() {
   const navigate = useNavigate();
@@ -82,15 +83,6 @@ export function WarehousePage() {
       case 'ADJUSTMENT':
         return <RefreshCw className="h-4 w-4 text-info" />;
     }
-  };
-
-  const formatDateTime = (dateStr: string) => {
-    return new Date(dateStr).toLocaleString('uz-UZ', {
-      month: 'short',
-      day: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit',
-    });
   };
 
   // Table columns
