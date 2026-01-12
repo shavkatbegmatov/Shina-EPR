@@ -241,6 +241,66 @@ export interface DashboardStats {
   totalDebt: number;
 }
 
+// Chart Data Types
+export interface ChartData {
+  salesTrend: SalesTrendItem[];
+  topProducts: TopProductItem[];
+  paymentMethods: PaymentMethodItem[];
+  categorySales: CategorySalesItem[];
+  weekdaySales: WeekdaySalesItem[];
+  hourlySales: HourlySalesItem[];
+  thisWeekRevenue: number;
+  lastWeekRevenue: number;
+  thisMonthRevenue: number;
+  lastMonthRevenue: number;
+  revenueGrowthPercent: number;
+  salesGrowthPercent: number;
+}
+
+export interface SalesTrendItem {
+  date: string;
+  salesCount: number;
+  revenue: number;
+}
+
+export interface TopProductItem {
+  productId: number;
+  productName: string;
+  productSku: string;
+  quantitySold: number;
+  revenue: number;
+}
+
+export interface PaymentMethodItem {
+  method: string;
+  methodLabel: string;
+  count: number;
+  amount: number;
+  percentage: number;
+}
+
+export interface CategorySalesItem {
+  categoryId: number;
+  categoryName: string;
+  quantitySold: number;
+  revenue: number;
+  percentage: number;
+}
+
+export interface WeekdaySalesItem {
+  day: string;
+  dayOfWeek: number;
+  salesCount: number;
+  revenue: number;
+}
+
+export interface HourlySalesItem {
+  hour: number;
+  hourLabel: string;
+  salesCount: number;
+  revenue: number;
+}
+
 // Cart Types (for POS)
 export interface CartItem {
   product: Product;

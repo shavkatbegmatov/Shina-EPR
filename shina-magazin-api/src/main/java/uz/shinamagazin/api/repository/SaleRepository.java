@@ -46,4 +46,67 @@ public interface SaleRepository extends JpaRepository<Sale, Long> {
 
     @Query("SELECT MAX(CAST(SUBSTRING(s.invoiceNumber, 12) AS integer)) FROM Sale s WHERE s.invoiceNumber LIKE :prefix%")
     Integer findMaxInvoiceNumber(@Param("prefix") String prefix);
+
+    // ==================== CHART DATA QUERIES ====================
+
+    // Sotuvlar trendi - kunlik
+    @Query(value = """
+        SELECT DATE(s.sale_date) as date,
+               COUNT(*) as count,
+               COALESCE(SUM(s.total_amount), 0) as revenue
+        FROM sales s
+        WHERE s.sale_date >= :startDate
+          AND s.status = 'COMPLETED'
+        GROUP BY DATE(s.sale_date)
+        ORDER BY DATE(s.sale_date)
+        """, nativeQuery = true)
+    List<Object[]> getSalesTrend(@Param("startDate") LocalDateTime startDate);
+
+    // To'lov usullari bo'yicha
+    @Query(value = """
+        SELECT s.payment_method,
+               COUNT(*) as count,
+               COALESCE(SUM(s.total_amount), 0) as amount
+        FROM sales s
+        WHERE s.sale_date >= :startDate
+          AND s.status = 'COMPLETED'
+        GROUP BY s.payment_method
+        """, nativeQuery = true)
+    List<Object[]> getPaymentMethodStats(@Param("startDate") LocalDateTime startDate);
+
+    // Hafta kunlari bo'yicha
+    @Query(value = """
+        SELECT EXTRACT(DOW FROM s.sale_date) as day_of_week,
+               COUNT(*) as count,
+               COALESCE(SUM(s.total_amount), 0) as revenue
+        FROM sales s
+        WHERE s.sale_date >= :startDate
+          AND s.status = 'COMPLETED'
+        GROUP BY EXTRACT(DOW FROM s.sale_date)
+        ORDER BY day_of_week
+        """, nativeQuery = true)
+    List<Object[]> getWeekdaySales(@Param("startDate") LocalDateTime startDate);
+
+    // Soatlar bo'yicha (bugungi)
+    @Query(value = """
+        SELECT EXTRACT(HOUR FROM s.sale_date) as hour,
+               COUNT(*) as count,
+               COALESCE(SUM(s.total_amount), 0) as revenue
+        FROM sales s
+        WHERE s.sale_date >= :startDate AND s.sale_date < :endDate
+          AND s.status = 'COMPLETED'
+        GROUP BY EXTRACT(HOUR FROM s.sale_date)
+        ORDER BY hour
+        """, nativeQuery = true)
+    List<Object[]> getHourlySales(
+            @Param("startDate") LocalDateTime startDate,
+            @Param("endDate") LocalDateTime endDate);
+
+    // Daromad - ma'lum davr uchun
+    @Query("SELECT COALESCE(SUM(s.totalAmount), 0) FROM Sale s WHERE s.saleDate >= :start AND s.saleDate < :end AND s.status = 'COMPLETED'")
+    BigDecimal getRevenueForPeriod(@Param("start") LocalDateTime start, @Param("end") LocalDateTime end);
+
+    // Sotuvlar soni - ma'lum davr uchun
+    @Query("SELECT COUNT(s) FROM Sale s WHERE s.saleDate >= :start AND s.saleDate < :end AND s.status = 'COMPLETED'")
+    Long getSalesCountForPeriod(@Param("start") LocalDateTime start, @Param("end") LocalDateTime end);
 }
