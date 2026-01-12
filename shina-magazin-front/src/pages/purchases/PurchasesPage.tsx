@@ -23,7 +23,8 @@ import { productsApi } from '../../api/products.api';
 import { formatCurrency, formatDate } from '../../config/constants';
 import { DataTable, Column } from '../../components/ui/DataTable';
 import { ModalPortal } from '../../components/common/Modal';
-import { DateRangePicker, type DateRangePreset, type DateRange } from '../../components/common/DateRangePicker';
+// TODO: Sana filtri backend tomonidan qo'shilgach aktivlashtirish
+// import { DateRangePicker, type DateRangePreset, type DateRange } from '../../components/common/DateRangePicker';
 import { useNotificationsStore } from '../../store/notificationsStore';
 import type {
   Supplier,
@@ -57,8 +58,9 @@ export function PurchasesPage() {
   const [purchaseStats, setPurchaseStats] = useState<PurchaseStats | null>(null);
 
   // Filter state
-  const [dateRangePreset, setDateRangePreset] = useState<DateRangePreset>('month');
-  const [customRange, setCustomRange] = useState<DateRange>({ start: '', end: '' });
+  // TODO: Sana filtri backend tomonidan qo'shilgach aktivlashtirish
+  // const [dateRangePreset, setDateRangePreset] = useState<DateRangePreset>('month');
+  // const [customRange, setCustomRange] = useState<DateRange>({ start: '', end: '' });
   const [selectedSupplierId, setSelectedSupplierId] = useState<number | undefined>(undefined);
   const [selectedStatus, setSelectedStatus] = useState<PurchaseStatus | ''>('');
   const [selectedPaymentStatus, setSelectedPaymentStatus] = useState<PaymentStatus | ''>('');
@@ -91,57 +93,58 @@ export function PurchasesPage() {
   );
   const debtAmount = useMemo(() => Math.max(0, cartTotal - paidAmount), [cartTotal, paidAmount]);
 
-  // Get date range values
-  const getDateRangeValues = useCallback((preset: DateRangePreset): { start: string; end: string } => {
-    const today = new Date();
-    const end = today.toISOString().split('T')[0];
-    let start: Date;
-
-    switch (preset) {
-      case 'today':
-        start = today;
-        break;
-      case 'week':
-        start = new Date(today);
-        start.setDate(start.getDate() - 7);
-        break;
-      case 'month':
-        start = new Date(today);
-        start.setMonth(start.getMonth() - 1);
-        break;
-      case 'quarter':
-        start = new Date(today);
-        start.setMonth(start.getMonth() - 3);
-        break;
-      case 'year':
-        start = new Date(today);
-        start.setFullYear(start.getFullYear() - 1);
-        break;
-      case 'custom':
-        return { start: customRange.start, end: customRange.end };
-      default:
-        start = new Date(today);
-        start.setMonth(start.getMonth() - 1);
-    }
-
-    return { start: start.toISOString().split('T')[0], end };
-  }, [customRange.start, customRange.end]);
+  // TODO: Sana filtri backend tomonidan qo'shilgach aktivlashtirish
+  // const getDateRangeValues = useCallback((preset: DateRangePreset): { start: string; end: string } => {
+  //   const today = new Date();
+  //   const end = today.toISOString().split('T')[0];
+  //   let start: Date;
+  //
+  //   switch (preset) {
+  //     case 'today':
+  //       start = today;
+  //       break;
+  //     case 'week':
+  //       start = new Date(today);
+  //       start.setDate(start.getDate() - 7);
+  //       break;
+  //     case 'month':
+  //       start = new Date(today);
+  //       start.setMonth(start.getMonth() - 1);
+  //       break;
+  //     case 'quarter':
+  //       start = new Date(today);
+  //       start.setMonth(start.getMonth() - 3);
+  //       break;
+  //     case 'year':
+  //       start = new Date(today);
+  //       start.setFullYear(start.getFullYear() - 1);
+  //       break;
+  //     case 'custom':
+  //       return { start: customRange.start, end: customRange.end };
+  //     default:
+  //       start = new Date(today);
+  //       start.setMonth(start.getMonth() - 1);
+  //   }
+  //
+  //   return { start: start.toISOString().split('T')[0], end };
+  // }, [customRange.start, customRange.end]);
 
   // Load purchases
+  // TODO: Backend hozircha startDate/endDate ni qo'llab-quvvatlamaydi
+  // Sana filtri backend tomonidan qo'shilgach aktivlashtirish kerak
   const loadPurchases = useCallback(async (isInitial = false) => {
     if (!isInitial) {
       setRefreshing(true);
     }
     try {
-      const { start, end } = getDateRangeValues(dateRangePreset);
-
       const filters: PurchaseFilters = {
         page,
         size: pageSize,
         supplierId: selectedSupplierId,
         status: selectedStatus || undefined,
-        startDate: start || undefined,
-        endDate: end || undefined,
+        // Sana filtrlarini hozircha o'chirib qo'yamiz chunki backend qo'llab-quvvatlamaydi
+        // startDate: start || undefined,
+        // endDate: end || undefined,
       };
 
       const data = await purchasesApi.getAll(filters);
@@ -154,7 +157,7 @@ export function PurchasesPage() {
       setInitialLoading(false);
       setRefreshing(false);
     }
-  }, [page, pageSize, selectedSupplierId, selectedStatus, dateRangePreset, getDateRangeValues]);
+  }, [page, pageSize, selectedSupplierId, selectedStatus]);
 
   // Load purchase stats
   const loadPurchaseStats = useCallback(async () => {
@@ -211,10 +214,9 @@ export function PurchasesPage() {
 
   // Reload when filters change
   useEffect(() => {
-    if (dateRangePreset !== 'custom' || (customRange.start && customRange.end)) {
-      loadPurchases();
-    }
-  }, [page, pageSize, selectedSupplierId, selectedStatus, dateRangePreset, customRange.start, customRange.end]);
+    loadPurchases();
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [page, pageSize, selectedSupplierId, selectedStatus]);
 
   // Real-time updates
   useEffect(() => {
@@ -229,29 +231,29 @@ export function PurchasesPage() {
     setPage(0);
   };
 
-  const handleDateRangeChange = (preset: DateRangePreset, range?: DateRange) => {
-    setDateRangePreset(preset);
-    if (range) {
-      setCustomRange(range);
-    }
-    setPage(0);
-  };
+  // TODO: Sana filtri backend tomonidan qo'shilgach aktivlashtirish
+  // const handleDateRangeChange = (preset: DateRangePreset, range?: DateRange) => {
+  //   setDateRangePreset(preset);
+  //   if (range) {
+  //     setCustomRange(range);
+  //   }
+  //   setPage(0);
+  // };
 
   const handleClearFilters = () => {
     setSelectedSupplierId(undefined);
     setSelectedStatus('');
     setSelectedPaymentStatus('');
-    setDateRangePreset('month');
-    setCustomRange({ start: '', end: '' });
+    // setDateRangePreset('month');
+    // setCustomRange({ start: '', end: '' });
     setPage(0);
   };
 
   const hasActiveFilters = useMemo(() =>
     selectedSupplierId !== undefined ||
     selectedStatus !== '' ||
-    selectedPaymentStatus !== '' ||
-    dateRangePreset !== 'month',
-    [selectedSupplierId, selectedStatus, selectedPaymentStatus, dateRangePreset]
+    selectedPaymentStatus !== '',
+    [selectedSupplierId, selectedStatus, selectedPaymentStatus]
   );
 
   // Purchase modal handlers
@@ -541,8 +543,8 @@ export function PurchasesPage() {
       <div className="surface-card p-4">
         <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
           <div className="flex flex-wrap items-end gap-3">
-            {/* Date Range */}
-            <div>
+            {/* Date Range - Backend qo'llab-quvvatlaguncha yashirilgan */}
+            {/* <div>
               <span className="block mb-1 text-xs font-semibold uppercase tracking-[0.18em] text-base-content/50">
                 Davr
               </span>
@@ -551,7 +553,7 @@ export function PurchasesPage() {
                 customRange={customRange}
                 onChange={handleDateRangeChange}
               />
-            </div>
+            </div> */}
 
             {/* Supplier Filter */}
             <label className="form-control">
