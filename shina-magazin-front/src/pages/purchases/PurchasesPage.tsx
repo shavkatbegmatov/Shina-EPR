@@ -2,7 +2,6 @@ import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
   Plus,
-  Search,
   ShoppingCart,
   Calendar,
   TrendingUp,
@@ -31,6 +30,7 @@ import {
 import { DataTable, Column } from '../../components/ui/DataTable';
 import { ModalPortal } from '../../components/common/Modal';
 import { DateRangePicker, type DateRangePreset, type DateRange } from '../../components/common/DateRangePicker';
+import { ProductSearchCombobox } from '../../components/common/ProductSearchCombobox';
 import { useNotificationsStore } from '../../store/notificationsStore';
 import type {
   Supplier,
@@ -781,46 +781,16 @@ export function PurchasesPage() {
                   Mahsulotlar
                 </h4>
 
-                {/* Product search */}
-                <div className="relative mb-4">
-                  <div className="input-group">
-                    <span className="bg-base-200"><Search className="h-5 w-5" /></span>
-                    <input
-                      type="text"
-                      placeholder="Mahsulot qidirish..."
-                      className="input input-bordered w-full"
-                      value={productSearch}
-                      onChange={(e) => setProductSearch(e.target.value)}
-                    />
-                  </div>
-                  {/* Search results dropdown */}
-                  {productResults.length > 0 && (
-                    <div className="absolute z-50 top-full left-0 right-0 mt-1 bg-base-100 border border-base-300 rounded-lg shadow-lg max-h-60 overflow-y-auto">
-                      {productResults.map(product => (
-                        <button
-                          key={product.id}
-                          className="w-full p-3 text-left hover:bg-base-200 flex items-center justify-between"
-                          onClick={() => handleAddToCart(product)}
-                        >
-                          <div>
-                            <p className="font-medium">{product.name}</p>
-                            <p className="text-xs text-base-content/60">
-                              {product.sku} {product.sizeString && `| ${product.sizeString}`}
-                            </p>
-                          </div>
-                          <span className="text-sm font-semibold">
-                            {formatCurrency(product.purchasePrice || Math.round(product.sellingPrice * 0.7))}
-                          </span>
-                        </button>
-                      ))}
-                    </div>
-                  )}
-                  {productSearchLoading && (
-                    <div className="absolute z-50 top-full left-0 right-0 mt-1 bg-base-100 border border-base-300 rounded-lg p-4 text-center">
-                      <span className="loading loading-spinner loading-sm" />
-                    </div>
-                  )}
-                </div>
+                {/* Product search with Portal-based dropdown */}
+                <ProductSearchCombobox
+                  value={productSearch}
+                  onChange={setProductSearch}
+                  onSelect={handleAddToCart}
+                  products={productResults}
+                  isLoading={productSearchLoading}
+                  placeholder="Mahsulot qidirish..."
+                  className="mb-4"
+                />
 
                 {/* Cart items table */}
                 {cartItems.length > 0 ? (
