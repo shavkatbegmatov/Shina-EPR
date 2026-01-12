@@ -11,12 +11,12 @@ import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import uz.shinamagazin.api.dto.request.PaymentRequest;
 import uz.shinamagazin.api.dto.request.PurchaseRequest;
-import uz.shinamagazin.api.dto.response.ApiResponse;
-import uz.shinamagazin.api.dto.response.PagedResponse;
-import uz.shinamagazin.api.dto.response.PurchaseOrderResponse;
-import uz.shinamagazin.api.dto.response.PurchaseStatsResponse;
+import uz.shinamagazin.api.dto.request.ReturnRequest;
+import uz.shinamagazin.api.dto.response.*;
 import uz.shinamagazin.api.enums.PurchaseOrderStatus;
+import uz.shinamagazin.api.enums.PurchaseReturnStatus;
 import uz.shinamagazin.api.service.PurchaseService;
 
 import java.time.LocalDate;
@@ -29,6 +29,8 @@ import java.util.List;
 public class PurchaseController {
 
     private final PurchaseService purchaseService;
+
+    // ==================== PURCHASE ORDERS ====================
 
     @GetMapping
     @Operation(summary = "Get all purchases", description = "Barcha xaridlarni olish (filtr bilan)")
@@ -87,5 +89,41 @@ public class PurchaseController {
     public ResponseEntity<ApiResponse<Void>> deletePurchase(@PathVariable Long id) {
         purchaseService.deletePurchase(id);
         return ResponseEntity.ok(ApiResponse.success("Xarid o'chirildi"));
+    }
+
+    // ==================== PAYMENTS ====================
+
+    @GetMapping("/{id}/payments")
+    @Operation(summary = "Get payments", description = "Xarid uchun to'lovlar ro'yxati")
+    public ResponseEntity<ApiResponse<List<PurchasePaymentResponse>>> getPayments(@PathVariable Long id) {
+        return ResponseEntity.ok(ApiResponse.success(purchaseService.getPayments(id)));
+    }
+
+    @PostMapping("/{id}/payments")
+    @Operation(summary = "Add payment", description = "Xarid uchun to'lov qo'shish")
+    public ResponseEntity<ApiResponse<PurchasePaymentResponse>> addPayment(
+            @PathVariable Long id,
+            @Valid @RequestBody PaymentRequest request) {
+        PurchasePaymentResponse payment = purchaseService.addPayment(id, request);
+        return ResponseEntity.status(HttpStatus.CREATED)
+                .body(ApiResponse.success("To'lov qo'shildi", payment));
+    }
+
+    // ==================== RETURNS ====================
+
+    @GetMapping("/{id}/returns")
+    @Operation(summary = "Get returns", description = "Xarid uchun qaytarishlar ro'yxati")
+    public ResponseEntity<ApiResponse<List<PurchaseReturnResponse>>> getReturns(@PathVariable Long id) {
+        return ResponseEntity.ok(ApiResponse.success(purchaseService.getReturns(id)));
+    }
+
+    @PostMapping("/{id}/returns")
+    @Operation(summary = "Create return", description = "Xarid uchun qaytarish yaratish")
+    public ResponseEntity<ApiResponse<PurchaseReturnResponse>> createReturn(
+            @PathVariable Long id,
+            @Valid @RequestBody ReturnRequest request) {
+        PurchaseReturnResponse returnResponse = purchaseService.createReturn(id, request);
+        return ResponseEntity.status(HttpStatus.CREATED)
+                .body(ApiResponse.success("Qaytarish yaratildi", returnResponse));
     }
 }

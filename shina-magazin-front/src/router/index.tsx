@@ -10,6 +10,8 @@ import { SalesPage } from '../pages/sales/SalesPage';
 import { DebtsPage } from '../pages/debts/DebtsPage';
 import { WarehousePage } from '../pages/warehouse/WarehousePage';
 import { SuppliersPage } from '../pages/suppliers/SuppliersPage';
+import { PurchasesPage } from '../pages/purchases/PurchasesPage';
+import { PurchaseDetailPage } from '../pages/purchases/PurchaseDetailPage';
 import { SettingsPage } from '../pages/settings/SettingsPage';
 import { NotificationsPage } from '../pages/notifications/NotificationsPage';
 import { ReportsPage } from '../pages/reports/ReportsPage';
@@ -78,6 +80,16 @@ export const router = createBrowserRouter([
         path: 'suppliers',
         element: <SuppliersPage />,
         handle: { title: "Ta'minotchilar" },
+      },
+      {
+        path: 'purchases',
+        element: <PurchasesPage />,
+        handle: { title: 'Xaridlar' },
+      },
+      {
+        path: 'purchases/:id',
+        element: <PurchaseDetailPage />,
+        handle: { title: 'Xarid tafsiloti' },
       },
       {
         path: 'reports',

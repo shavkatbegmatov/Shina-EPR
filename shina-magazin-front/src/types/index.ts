@@ -452,6 +452,7 @@ export interface SupplierRequest {
 
 // Purchase Order Types
 export type PurchaseStatus = 'DRAFT' | 'RECEIVED' | 'CANCELLED';
+export type PurchaseReturnStatus = 'PENDING' | 'APPROVED' | 'COMPLETED' | 'REJECTED';
 
 export interface PurchaseOrderItem {
   id: number;
@@ -465,17 +466,22 @@ export interface PurchaseOrderItem {
 
 export interface PurchaseOrder {
   id: number;
+  orderNumber: string;
   supplierId: number;
   supplierName: string;
   orderDate: string;
+  dueDate?: string;
   totalAmount: number;
   paidAmount: number;
   debtAmount: number;
   status: PurchaseStatus;
+  paymentStatus: PaymentStatus;
   notes?: string;
   items: PurchaseOrderItem[];
   itemCount: number;
   totalQuantity: number;
+  paymentCount: number;
+  returnCount: number;
   createdAt: string;
   createdByName: string;
 }
@@ -500,4 +506,66 @@ export interface PurchaseStats {
   monthPurchases: number;
   totalAmount: number;
   totalDebt: number;
+  pendingReturns: number;
+}
+
+// Purchase Payment Types
+export interface PurchasePayment {
+  id: number;
+  purchaseOrderId: number;
+  amount: number;
+  paymentDate: string;
+  paymentMethod: PaymentMethod;
+  referenceNumber?: string;
+  notes?: string;
+  receivedByName: string;
+  createdAt: string;
+}
+
+export interface PurchasePaymentRequest {
+  amount: number;
+  paymentDate: string;
+  paymentMethod: PaymentMethod;
+  referenceNumber?: string;
+  notes?: string;
+}
+
+// Purchase Return Types
+export interface PurchaseReturnItem {
+  id: number;
+  productId: number;
+  productName: string;
+  productSku: string;
+  returnedQuantity: number;
+  unitPrice: number;
+  totalPrice: number;
+}
+
+export interface PurchaseReturn {
+  id: number;
+  returnNumber: string;
+  purchaseOrderId: number;
+  purchaseOrderNumber: string;
+  supplierId: number;
+  supplierName: string;
+  returnDate: string;
+  reason: string;
+  status: PurchaseReturnStatus;
+  refundAmount: number;
+  items: PurchaseReturnItem[];
+  createdByName: string;
+  approvedByName?: string;
+  approvedAt?: string;
+  createdAt: string;
+}
+
+export interface PurchaseReturnItemRequest {
+  productId: number;
+  quantity: number;
+}
+
+export interface PurchaseReturnRequest {
+  returnDate: string;
+  reason: string;
+  items: PurchaseReturnItemRequest[];
 }

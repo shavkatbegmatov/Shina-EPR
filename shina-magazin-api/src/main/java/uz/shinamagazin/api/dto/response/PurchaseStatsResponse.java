@@ -17,4 +17,5 @@ public class PurchaseStatsResponse {
     private Long monthPurchases;
     private BigDecimal totalAmount;
     private BigDecimal totalDebt;
+    private Long pendingReturns;
 }
