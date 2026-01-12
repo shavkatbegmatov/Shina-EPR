@@ -43,7 +43,7 @@ export function ReportsPage() {
   const [salesReport, setSalesReport] = useState<SalesReport | null>(null);
   const [warehouseReport, setWarehouseReport] = useState<WarehouseReport | null>(null);
   const [debtsReport, setDebtsReport] = useState<DebtsReport | null>(null);
-  const [loading, setLoading] = useState(true);
+  const [initialLoading, setInitialLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [refreshSuccess, setRefreshSuccess] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -87,19 +87,24 @@ export function ReportsPage() {
   }, [customRange.start, customRange.end]);
 
   const loadReports = useCallback(async (isManualRefresh = false) => {
-    if (isManualRefresh) {
+    // Agar birinchi yuklash bo'lmasa, smooth refresh uchun refreshing holati ishlatiladi
+    const isFirstLoad = initialLoading;
+
+    if (!isFirstLoad) {
       setRefreshing(true);
-      setRefreshSuccess(false);
-    } else {
-      setLoading(true);
     }
+
+    if (isManualRefresh) {
+      setRefreshSuccess(false);
+    }
+
     setError(null);
 
     try {
       const { start, end } = getDateRangeValues(dateRangePreset);
       if (!start || !end) {
         setError("Iltimos, sana oralig'ini tanlang");
-        setLoading(false);
+        setInitialLoading(false);
         setRefreshing(false);
         return;
       }
@@ -120,10 +125,10 @@ export function ReportsPage() {
       console.error('Failed to load reports:', err);
       setError('Hisobotlarni yuklashda xatolik yuz berdi');
     } finally {
-      setLoading(false);
+      setInitialLoading(false);
       setRefreshing(false);
     }
-  }, [dateRangePreset, getDateRangeValues]);
+  }, [dateRangePreset, getDateRangeValues, initialLoading]);
 
   useEffect(() => {
     if (dateRangePreset !== 'custom' || (customRange.start && customRange.end)) {
@@ -167,7 +172,7 @@ export function ReportsPage() {
     }
   };
 
-  if (loading) {
+  if (initialLoading) {
     return (
       <div className="space-y-6">
         <div className="flex items-center justify-between">
@@ -210,7 +215,7 @@ export function ReportsPage() {
               refreshSuccess ? 'btn-success' : 'btn-outline'
             )}
             onClick={() => loadReports(true)}
-            disabled={loading || refreshing}
+            disabled={initialLoading || refreshing}
           >
             {refreshSuccess ? (
               <>
