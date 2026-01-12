@@ -47,6 +47,13 @@ const emptyFormData: SupplierRequest = {
   notes: '',
 };
 
+// Validate phone: empty is ok (optional), but if provided must be complete
+const isValidPhoneOrEmpty = (phone: string): boolean => {
+  if (!phone || phone.trim() === '') return true;
+  const cleaned = phone.replace(/\D/g, '');
+  return cleaned.length === 12 && cleaned.startsWith('998');
+};
+
 type TabType = 'suppliers' | 'purchases';
 
 interface CartItem {
@@ -1040,7 +1047,7 @@ export function SuppliersPage() {
               <button
                 className="btn btn-primary"
                 onClick={handleSaveSupplier}
-                disabled={saving || !formData.name.trim()}
+                disabled={saving || !formData.name.trim() || !isValidPhoneOrEmpty(formData.phone || '')}
               >
                 {saving && <span className="loading loading-spinner loading-sm" />}
                 {editingSupplier ? 'Yangilash' : 'Saqlash'}

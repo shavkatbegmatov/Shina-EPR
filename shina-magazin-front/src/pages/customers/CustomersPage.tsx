@@ -15,6 +15,12 @@ const emptyFormData: CustomerRequest = {
   customerType: 'INDIVIDUAL',
 };
 
+// Validate phone number: +998 followed by exactly 9 digits
+const isValidPhone = (phone: string): boolean => {
+  const cleaned = phone.replace(/\D/g, '');
+  return cleaned.length === 12 && cleaned.startsWith('998');
+};
+
 export function CustomersPage() {
   const [customers, setCustomers] = useState<Customer[]>([]);
   const [initialLoading, setInitialLoading] = useState(true);
@@ -354,7 +360,7 @@ export function CustomersPage() {
 
             <div className="mt-6 flex justify-end gap-2">
               <button className="btn btn-ghost" onClick={handleCloseModal} disabled={saving}>Bekor qilish</button>
-              <button className="btn btn-primary" onClick={handleSaveCustomer} disabled={saving || !formData.fullName.trim() || !formData.phone.trim()}>
+              <button className="btn btn-primary" onClick={handleSaveCustomer} disabled={saving || !formData.fullName.trim() || !isValidPhone(formData.phone)}>
                 {saving && <span className="loading loading-spinner loading-sm" />}
                 {editingCustomer ? 'Yangilash' : 'Saqlash'}
               </button>

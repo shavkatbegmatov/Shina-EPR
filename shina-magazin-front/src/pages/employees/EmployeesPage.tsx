@@ -49,6 +49,12 @@ const emptyFormData: EmployeeRequest = {
 
 type ModalTab = 'basic' | 'extended';
 
+// Validate phone number: +998 followed by exactly 9 digits
+const isValidPhone = (phone: string): boolean => {
+  const cleaned = phone.replace(/\D/g, '');
+  return cleaned.length === 12 && cleaned.startsWith('998');
+};
+
 export function EmployeesPage() {
   const [employees, setEmployees] = useState<Employee[]>([]);
   const [initialLoading, setInitialLoading] = useState(true);
@@ -880,7 +886,7 @@ export function EmployeesPage() {
                 <button
                   className="btn btn-primary"
                   onClick={handleSaveEmployee}
-                  disabled={saving || !formData.fullName.trim() || !formData.phone.trim() || !formData.position.trim()}
+                  disabled={saving || !formData.fullName.trim() || !isValidPhone(formData.phone) || !formData.position.trim()}
                 >
                   {saving && <span className="loading loading-spinner loading-sm" />}
                   {editingEmployee ? 'Yangilash' : 'Saqlash'}
