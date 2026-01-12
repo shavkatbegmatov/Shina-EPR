@@ -548,10 +548,7 @@ export function EmployeesPage() {
       <ModalPortal isOpen={showModal} onClose={handleCloseModal}>
         <div className="flex gap-4 items-stretch">
           {/* Main Modal - Asosiy ma'lumotlar */}
-          <div className={clsx(
-            'bg-base-100 rounded-2xl shadow-2xl max-h-[90vh] overflow-y-auto transition-all duration-300',
-            modalTab === 'extended' ? 'w-[520px]' : 'w-full max-w-2xl'
-          )}>
+          <div className="w-full max-w-2xl bg-base-100 rounded-2xl shadow-2xl max-h-[90vh] overflow-y-auto">
             <div className="p-4 sm:p-6">
               <div className="flex items-start justify-between gap-4">
                 <div>
