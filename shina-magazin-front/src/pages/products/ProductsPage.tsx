@@ -122,9 +122,8 @@ export function ProductsPage() {
     }
   }, []);
 
-  const loadProducts = useCallback(async () => {
-    const isFirstLoad = initialLoading;
-    if (!isFirstLoad) {
+  const loadProducts = useCallback(async (isInitial = false) => {
+    if (!isInitial) {
       setRefreshing(true);
     }
     try {
@@ -145,22 +144,27 @@ export function ProductsPage() {
       setInitialLoading(false);
       setRefreshing(false);
     }
-  }, [brandFilter, categoryFilter, page, pageSize, search, seasonFilter, initialLoading]);
+  }, [brandFilter, categoryFilter, page, pageSize, search, seasonFilter]);
 
   useEffect(() => {
     loadData();
-  }, [loadData]);
+    loadProducts(true);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
+  // Reload when filters change
   useEffect(() => {
     loadProducts();
-  }, [loadProducts]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [page, pageSize, search, brandFilter, categoryFilter, seasonFilter]);
 
   // WebSocket orqali yangi notification kelganda mahsulotlarni yangilash
   useEffect(() => {
     if (notifications.length > 0) {
       loadProducts();
     }
-  }, [notifications.length, loadProducts]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [notifications.length]);
 
   const handleResetFilters = () => {
     setSearch('');

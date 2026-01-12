@@ -170,9 +170,8 @@ export function SalesPage() {
     },
   ], []);
 
-  const loadSales = useCallback(async () => {
-    const isFirstLoad = initialLoading;
-    if (!isFirstLoad) {
+  const loadSales = useCallback(async (isInitial = false) => {
+    if (!isInitial) {
       setRefreshing(true);
     }
     try {
@@ -187,18 +186,26 @@ export function SalesPage() {
       setInitialLoading(false);
       setRefreshing(false);
     }
-  }, [page, pageSize, initialLoading]);
+  }, [page, pageSize]);
 
   useEffect(() => {
+    loadSales(true);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  // Reload when page/pageSize changes
+  useEffect(() => {
     loadSales();
-  }, [loadSales]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [page, pageSize]);
 
   // WebSocket orqali yangi notification kelganda sotuvlarni yangilash
   useEffect(() => {
     if (notifications.length > 0) {
       loadSales();
     }
-  }, [notifications.length, loadSales]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [notifications.length]);
 
   const handleResetFilters = () => {
     setSearch('');

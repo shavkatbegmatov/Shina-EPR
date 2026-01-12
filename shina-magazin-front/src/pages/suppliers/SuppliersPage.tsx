@@ -306,9 +306,8 @@ export function SuppliersPage() {
   ], []);
 
   // Load suppliers
-  const loadSuppliers = useCallback(async () => {
-    const isFirstLoad = initialLoading;
-    if (!isFirstLoad) {
+  const loadSuppliers = useCallback(async (isInitial = false) => {
+    if (!isInitial) {
       setRefreshing(true);
     }
     try {
@@ -326,7 +325,7 @@ export function SuppliersPage() {
       setInitialLoading(false);
       setRefreshing(false);
     }
-  }, [page, pageSize, search, initialLoading]);
+  }, [page, pageSize, search]);
 
   // Load all active suppliers (for dropdown)
   const loadAllSuppliers = useCallback(async () => {
@@ -353,9 +352,8 @@ export function SuppliersPage() {
   }, []);
 
   // Load purchases
-  const loadPurchases = useCallback(async () => {
-    const isFirstLoad = purchasesInitialLoading;
-    if (!isFirstLoad) {
+  const loadPurchases = useCallback(async (isInitial = false) => {
+    if (!isInitial) {
       setPurchasesRefreshing(true);
     }
     try {
@@ -372,7 +370,7 @@ export function SuppliersPage() {
       setPurchasesInitialLoading(false);
       setPurchasesRefreshing(false);
     }
-  }, [purchasesPage, purchasesPageSize, purchasesInitialLoading]);
+  }, [purchasesPage, purchasesPageSize]);
 
   // Load purchase stats
   const loadPurchaseStats = useCallback(async () => {
@@ -409,22 +407,36 @@ export function SuppliersPage() {
     return () => clearTimeout(timer);
   }, [productSearch, searchProducts]);
 
-  // Load data on mount
+  // Initial load for suppliers
   useEffect(() => {
-    loadSuppliers();
-  }, [loadSuppliers]);
-
-  useEffect(() => {
+    loadSuppliers(true);
     loadStats();
     loadAllSuppliers();
-  }, [loadStats, loadAllSuppliers]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
+  // Reload when supplier filters change
+  useEffect(() => {
+    loadSuppliers();
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [page, pageSize, search]);
+
+  // Initial load for purchases tab
+  useEffect(() => {
+    if (activeTab === 'purchases') {
+      loadPurchases(true);
+      loadPurchaseStats();
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [activeTab]);
+
+  // Reload when purchase filters change
   useEffect(() => {
     if (activeTab === 'purchases') {
       loadPurchases();
-      loadPurchaseStats();
     }
-  }, [activeTab, loadPurchases, loadPurchaseStats]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [purchasesPage, purchasesPageSize]);
 
   // Real-time updates
   useEffect(() => {
@@ -436,7 +448,8 @@ export function SuppliersPage() {
         loadPurchaseStats();
       }
     }
-  }, [notifications.length, loadSuppliers, loadStats, activeTab, loadPurchases, loadPurchaseStats]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [notifications.length, activeTab]);
 
   // Supplier handlers
   const handleOpenNewModal = () => {

@@ -128,9 +128,8 @@ export function PurchasesPage() {
   }, [customRange.start, customRange.end]);
 
   // Load purchases
-  const loadPurchases = useCallback(async () => {
-    const isFirstLoad = initialLoading;
-    if (!isFirstLoad) {
+  const loadPurchases = useCallback(async (isInitial = false) => {
+    if (!isInitial) {
       setRefreshing(true);
     }
     try {
@@ -155,7 +154,7 @@ export function PurchasesPage() {
       setInitialLoading(false);
       setRefreshing(false);
     }
-  }, [page, pageSize, selectedSupplierId, selectedStatus, dateRangePreset, getDateRangeValues, initialLoading]);
+  }, [page, pageSize, selectedSupplierId, selectedStatus, dateRangePreset, getDateRangeValues]);
 
   // Load purchase stats
   const loadPurchaseStats = useCallback(async () => {
@@ -204,9 +203,10 @@ export function PurchasesPage() {
 
   // Initial load
   useEffect(() => {
-    loadPurchases();
+    loadPurchases(true);
     loadPurchaseStats();
     loadSuppliers();
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   // Reload when filters change

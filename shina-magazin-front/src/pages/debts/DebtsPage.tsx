@@ -116,9 +116,8 @@ export function DebtsPage() {
     setPage(0);
   };
 
-  const loadDebts = useCallback(async () => {
-    const isFirstLoad = initialLoading;
-    if (!isFirstLoad) {
+  const loadDebts = useCallback(async (isInitial = false) => {
+    if (!isInitial) {
       setRefreshing(true);
     }
     try {
@@ -136,7 +135,7 @@ export function DebtsPage() {
       setInitialLoading(false);
       setRefreshing(false);
     }
-  }, [page, pageSize, statusFilter, initialLoading]);
+  }, [page, pageSize, statusFilter]);
 
   const loadTotalDebt = useCallback(async () => {
     try {
@@ -160,9 +159,16 @@ export function DebtsPage() {
   }, []);
 
   useEffect(() => {
-    loadDebts();
+    loadDebts(true);
     loadTotalDebt();
-  }, [loadDebts, loadTotalDebt]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  // Reload when filters change
+  useEffect(() => {
+    loadDebts();
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [page, pageSize, statusFilter]);
 
   // WebSocket orqali yangi notification kelganda qarzlarni yangilash
   useEffect(() => {
@@ -170,7 +176,8 @@ export function DebtsPage() {
       loadDebts();
       loadTotalDebt();
     }
-  }, [notifications.length, loadDebts, loadTotalDebt]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [notifications.length]);
 
   const handleSelectDebt = (debt: Debt) => {
     setSelectedDebt(debt);

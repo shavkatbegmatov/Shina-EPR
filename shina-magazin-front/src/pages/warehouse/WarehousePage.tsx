@@ -173,9 +173,8 @@ export function WarehousePage() {
     }
   }, []);
 
-  const loadMovements = useCallback(async () => {
-    const isFirstLoad = initialLoadingMovements;
-    if (!isFirstLoad) {
+  const loadMovements = useCallback(async (isInitial = false) => {
+    if (!isInitial) {
       setRefreshingMovements(true);
     }
     try {
@@ -194,7 +193,7 @@ export function WarehousePage() {
       setInitialLoadingMovements(false);
       setRefreshingMovements(false);
     }
-  }, [page, pageSize, movementTypeFilter, referenceTypeFilter, initialLoadingMovements]);
+  }, [page, pageSize, movementTypeFilter, referenceTypeFilter]);
 
   const loadLowStockProducts = useCallback(async () => {
     try {
@@ -222,11 +221,15 @@ export function WarehousePage() {
 
   useEffect(() => {
     loadInitialData();
-  }, [loadInitialData]);
+    loadMovements(true);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
+  // Reload when filters change
   useEffect(() => {
     loadMovements();
-  }, [loadMovements]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [page, pageSize, movementTypeFilter, referenceTypeFilter]);
 
   // WebSocket orqali yangi notification kelganda ombor ma'lumotlarini yangilash
   useEffect(() => {
@@ -235,7 +238,8 @@ export function WarehousePage() {
       loadMovements();
       loadLowStockProducts();
     }
-  }, [notifications.length, loadStats, loadMovements, loadLowStockProducts]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [notifications.length]);
 
   const handleSearchProducts = async (query: string) => {
     setProductSearch(query);

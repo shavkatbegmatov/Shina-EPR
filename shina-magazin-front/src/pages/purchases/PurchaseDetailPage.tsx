@@ -72,10 +72,9 @@ export function PurchaseDetailPage() {
   const [returnSaving, setReturnSaving] = useState(false);
 
   // Load purchase details
-  const loadPurchase = useCallback(async () => {
+  const loadPurchase = useCallback(async (isInitial = false) => {
     if (!id) return;
-    const isFirstLoad = initialLoading;
-    if (!isFirstLoad) {
+    if (!isInitial) {
       setRefreshing(true);
     }
     try {
@@ -87,7 +86,7 @@ export function PurchaseDetailPage() {
       setInitialLoading(false);
       setRefreshing(false);
     }
-  }, [id, initialLoading]);
+  }, [id]);
 
   // Load payments
   const loadPayments = useCallback(async () => {
@@ -113,10 +112,11 @@ export function PurchaseDetailPage() {
 
   // Initial load
   useEffect(() => {
-    loadPurchase();
+    loadPurchase(true);
     loadPayments();
     loadReturns();
-  }, [loadPurchase, loadPayments, loadReturns]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [id]);
 
   // Real-time updates
   useEffect(() => {
@@ -125,7 +125,8 @@ export function PurchaseDetailPage() {
       loadPayments();
       loadReturns();
     }
-  }, [notifications.length, loadPurchase, loadPayments, loadReturns]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [notifications.length]);
 
   // Payment modal handlers
   const handleOpenPaymentModal = () => {

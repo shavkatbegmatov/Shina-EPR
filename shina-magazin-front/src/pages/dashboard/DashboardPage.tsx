@@ -83,10 +83,9 @@ export function DashboardPage() {
   const [refreshing, setRefreshing] = useState(false);
   const { notifications } = useNotificationsStore();
 
-  const loadStats = useCallback(async () => {
+  const loadStats = useCallback(async (isInitial = false) => {
     try {
-      const isFirstLoad = initialLoading;
-      if (!isFirstLoad) {
+      if (!isInitial) {
         setRefreshing(true);
       }
       const data = await dashboardApi.getStats();
@@ -97,18 +96,21 @@ export function DashboardPage() {
       setInitialLoading(false);
       setRefreshing(false);
     }
-  }, [initialLoading]);
+  }, []);
 
+  // Initial load
   useEffect(() => {
-    loadStats();
-  }, [loadStats]);
+    loadStats(true);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   // WebSocket orqali yangi notification kelganda statistikani yangilash
   useEffect(() => {
     if (notifications.length > 0) {
       loadStats();
     }
-  }, [notifications.length, loadStats]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [notifications.length]);
 
   if (initialLoading) {
     return (

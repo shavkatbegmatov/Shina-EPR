@@ -125,9 +125,8 @@ export function CustomersPage() {
     },
   ], []);
 
-  const loadCustomers = useCallback(async () => {
-    const isFirstLoad = initialLoading;
-    if (!isFirstLoad) {
+  const loadCustomers = useCallback(async (isInitial = false) => {
+    if (!isInitial) {
       setRefreshing(true);
     }
     try {
@@ -145,18 +144,27 @@ export function CustomersPage() {
       setInitialLoading(false);
       setRefreshing(false);
     }
-  }, [page, pageSize, search, initialLoading]);
+  }, [page, pageSize, search]);
 
+  // Initial load
+  useEffect(() => {
+    loadCustomers(true);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  // Reload when filters change
   useEffect(() => {
     loadCustomers();
-  }, [loadCustomers]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [page, pageSize, search]);
 
   // WebSocket orqali yangi notification kelganda mijozlarni yangilash
   useEffect(() => {
     if (notifications.length > 0) {
       loadCustomers();
     }
-  }, [notifications.length, loadCustomers]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [notifications.length]);
 
   const handleOpenNewModal = () => {
     setEditingCustomer(null);
