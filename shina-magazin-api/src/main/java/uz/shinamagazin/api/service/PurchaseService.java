@@ -43,7 +43,9 @@ public class PurchaseService {
     public Page<PurchaseOrderResponse> getAllPurchases(
             Long supplierId, PurchaseOrderStatus status,
             LocalDate startDate, LocalDate endDate, Pageable pageable) {
-        return purchaseOrderRepository.findAllWithFilters(supplierId, status, startDate, endDate, pageable)
+        // Native query uchun enum ni String ga o'giramiz
+        String statusStr = status != null ? status.name() : null;
+        return purchaseOrderRepository.findAllWithFilters(supplierId, statusStr, startDate, endDate, pageable)
                 .map(this::mapToResponse);
     }
 

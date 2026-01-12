@@ -44,16 +44,22 @@ public interface PurchaseOrderRepository extends JpaRepository<PurchaseOrder, Lo
     @Query("SELECT COALESCE(SUM(p.totalAmount - p.paidAmount), 0) FROM PurchaseOrder p WHERE p.status != 'CANCELLED'")
     BigDecimal sumTotalDebt();
 
-    // Filter qidiruv
-    @Query("SELECT p FROM PurchaseOrder p WHERE " +
-           "(:supplierId IS NULL OR p.supplier.id = :supplierId) AND " +
-           "(:status IS NULL OR p.status = :status) AND " +
-           "(:startDate IS NULL OR p.orderDate >= :startDate) AND " +
-           "(:endDate IS NULL OR p.orderDate <= :endDate) " +
-           "ORDER BY p.orderDate DESC, p.id DESC")
+    // Filter qidiruv - PostgreSQL uchun CAST bilan
+    @Query(value = "SELECT * FROM purchase_orders p WHERE " +
+           "(CAST(:supplierId AS BIGINT) IS NULL OR p.supplier_id = :supplierId) AND " +
+           "(CAST(:status AS VARCHAR) IS NULL OR p.status = :status) AND " +
+           "(CAST(:startDate AS DATE) IS NULL OR p.order_date >= :startDate) AND " +
+           "(CAST(:endDate AS DATE) IS NULL OR p.order_date <= :endDate) " +
+           "ORDER BY p.order_date DESC, p.id DESC",
+           countQuery = "SELECT COUNT(*) FROM purchase_orders p WHERE " +
+           "(CAST(:supplierId AS BIGINT) IS NULL OR p.supplier_id = :supplierId) AND " +
+           "(CAST(:status AS VARCHAR) IS NULL OR p.status = :status) AND " +
+           "(CAST(:startDate AS DATE) IS NULL OR p.order_date >= :startDate) AND " +
+           "(CAST(:endDate AS DATE) IS NULL OR p.order_date <= :endDate)",
+           nativeQuery = true)
     Page<PurchaseOrder> findAllWithFilters(
             @Param("supplierId") Long supplierId,
-            @Param("status") PurchaseOrderStatus status,
+            @Param("status") String status,
             @Param("startDate") LocalDate startDate,
             @Param("endDate") LocalDate endDate,
             Pageable pageable);
