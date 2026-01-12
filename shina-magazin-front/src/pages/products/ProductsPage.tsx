@@ -31,6 +31,7 @@ export function ProductsPage() {
   const [totalElements, setTotalElements] = useState(0);
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
   const [showNewProductModal, setShowNewProductModal] = useState(false);
+  const [editingProductId, setEditingProductId] = useState<number | null>(null);
   const [formData, setFormData] = useState<ProductRequest>(emptyFormData);
   const [saving, setSaving] = useState(false);
 
@@ -103,7 +104,7 @@ export function ProductsPage() {
           <button className="btn btn-ghost btn-sm" onClick={(e) => { e.stopPropagation(); setSelectedProduct(product); }}>
             Tafsilotlar
           </button>
-          <button className="btn btn-ghost btn-sm">Tahrirlash</button>
+          <button className="btn btn-ghost btn-sm" onClick={(e) => { e.stopPropagation(); handleEditProduct(product); }}>Tahrirlash</button>
         </div>
       ),
     },
@@ -186,7 +187,31 @@ export function ProductsPage() {
 
   const handleCloseNewProductModal = () => {
     setShowNewProductModal(false);
+    setEditingProductId(null);
     setFormData(emptyFormData);
+  };
+
+  const handleEditProduct = (product: Product) => {
+    setEditingProductId(product.id);
+    setFormData({
+      sku: product.sku,
+      name: product.name,
+      brandId: product.brandId,
+      categoryId: product.categoryId,
+      width: product.width,
+      profile: product.profile,
+      diameter: product.diameter,
+      loadIndex: product.loadIndex,
+      speedRating: product.speedRating,
+      season: product.season,
+      purchasePrice: product.purchasePrice,
+      sellingPrice: product.sellingPrice,
+      quantity: product.quantity,
+      minStockLevel: product.minStockLevel,
+      description: product.description,
+      imageUrl: product.imageUrl,
+    });
+    setShowNewProductModal(true);
   };
 
   const handleFormChange = (field: keyof ProductRequest, value: string | number | undefined) => {
@@ -199,7 +224,11 @@ export function ProductsPage() {
     }
     setSaving(true);
     try {
-      await productsApi.create(formData);
+      if (editingProductId) {
+        await productsApi.update(editingProductId, formData);
+      } else {
+        await productsApi.create(formData);
+      }
       handleCloseNewProductModal();
       loadProducts();
     } catch (error) {
@@ -362,7 +391,7 @@ export function ProductsPage() {
                 <button className="btn btn-ghost btn-sm min-h-[44px]" onClick={() => setSelectedProduct(product)}>
                   Tafsilotlar
                 </button>
-                <button className="btn btn-ghost btn-sm min-h-[44px]">Tahrirlash</button>
+                <button className="btn btn-ghost btn-sm min-h-[44px]" onClick={() => handleEditProduct(product)}>Tahrirlash</button>
               </div>
             </div>
           </div>
@@ -456,8 +485,8 @@ export function ProductsPage() {
           <div className="p-4 sm:p-6">
             <div className="flex items-start justify-between gap-4">
               <div>
-                <h3 className="text-xl font-semibold">Yangi mahsulot</h3>
-                <p className="text-sm text-base-content/60">Yangi shina qo'shish</p>
+                <h3 className="text-xl font-semibold">{editingProductId ? 'Mahsulotni tahrirlash' : 'Yangi mahsulot'}</h3>
+                <p className="text-sm text-base-content/60">{editingProductId ? 'Mahsulot ma\'lumotlarini yangilash' : 'Yangi shina qo\'shish'}</p>
               </div>
               <button className="btn btn-ghost btn-sm" onClick={handleCloseNewProductModal}>
                 <X className="h-4 w-4" />
