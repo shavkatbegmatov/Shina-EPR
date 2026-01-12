@@ -9,7 +9,7 @@ import {
 } from 'lucide-react';
 import clsx from 'clsx';
 
-export type DateRangePreset = 'today' | 'week' | 'month' | 'quarter' | 'year' | 'custom';
+export type DateRangePreset = 'all' | 'today' | 'week' | 'month' | 'quarter' | 'year' | 'custom';
 
 export interface DateRange {
   start: string;
@@ -24,6 +24,7 @@ interface DateRangePickerProps {
 }
 
 const PRESET_OPTIONS: { value: DateRangePreset; label: string; icon?: string }[] = [
+  { value: 'all', label: 'Barchasi' },
   { value: 'today', label: 'Bugun' },
   { value: 'week', label: 'Hafta' },
   { value: 'month', label: 'Oy' },
