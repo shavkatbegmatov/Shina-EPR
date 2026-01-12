@@ -17,6 +17,7 @@ import {
   AlertCircle,
 } from 'lucide-react';
 import clsx from 'clsx';
+import toast from 'react-hot-toast';
 import { employeesApi } from '../../api/employees.api';
 import { formatCurrency, formatDate, EMPLOYEE_STATUSES, ROLES, getTashkentToday } from '../../config/constants';
 import { DataTable, Column } from '../../components/ui/DataTable';
@@ -303,8 +304,10 @@ export function EmployeesPage() {
       let result;
       if (editingEmployee) {
         result = await employeesApi.update(editingEmployee.id, dataToSend);
+        toast.success('Xodim muvaffaqiyatli yangilandi');
       } else {
         result = await employeesApi.create(dataToSend);
+        toast.success('Yangi xodim muvaffaqiyatli qo\'shildi');
       }
 
       // Check if credentials were returned (new user created)
@@ -316,7 +319,17 @@ export function EmployeesPage() {
       handleCloseModal();
       loadEmployees();
       loadStats();
-    } catch (error) {
+    } catch (error: unknown) {
+      const err = error as { response?: { data?: { message?: string; data?: Record<string, string> } } };
+
+      // Check if it's a validation error with field-specific messages
+      if (err.response?.data?.data && typeof err.response.data.data === 'object') {
+        const validationErrors = err.response.data.data;
+        const errorMessages = Object.values(validationErrors).join('\n');
+        toast.error(errorMessages || 'Validatsiya xatosi', { duration: 5000 });
+      } else {
+        toast.error(err.response?.data?.message || 'Xodimni saqlashda xatolik yuz berdi');
+      }
       console.error('Failed to save employee:', error);
     } finally {
       setSaving(false);
@@ -330,10 +343,13 @@ export function EmployeesPage() {
     setSaving(true);
     try {
       await employeesApi.delete(editingEmployee.id);
+      toast.success('Xodim muvaffaqiyatli o\'chirildi');
       handleCloseModal();
       loadEmployees();
       loadStats();
-    } catch (error) {
+    } catch (error: unknown) {
+      const err = error as { response?: { data?: { message?: string } } };
+      toast.error(err.response?.data?.message || 'Xodimni o\'chirishda xatolik yuz berdi');
       console.error('Failed to delete employee:', error);
     } finally {
       setSaving(false);
