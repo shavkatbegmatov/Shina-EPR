@@ -1,26 +1,58 @@
 package uz.shinamagazin.api.security;
 
-import lombok.AllArgsConstructor;
 import lombok.Getter;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
+import uz.shinamagazin.api.entity.RoleEntity;
 import uz.shinamagazin.api.entity.User;
 
 import java.util.Collection;
-import java.util.Collections;
+import java.util.HashSet;
+import java.util.Set;
+import java.util.stream.Collectors;
 
 @Getter
-@AllArgsConstructor
 public class CustomUserDetails implements UserDetails {
 
     private final User user;
+    private final Set<String> permissions;
+    private final Set<String> roleCodes;
+
+    public CustomUserDetails(User user) {
+        this.user = user;
+        this.permissions = new HashSet<>();
+        this.roleCodes = new HashSet<>();
+
+        // Extract permissions and role codes from user's roles
+        for (RoleEntity role : user.getRoles()) {
+            if (role.getIsActive()) {
+                roleCodes.add(role.getCode());
+                role.getPermissions().forEach(p -> permissions.add(p.getCode()));
+            }
+        }
+
+        // Fallback to legacy role if no new roles assigned
+        if (roleCodes.isEmpty() && user.getRole() != null) {
+            roleCodes.add(user.getRole().name());
+        }
+    }
 
     @Override
     public Collection<? extends GrantedAuthority> getAuthorities() {
-        return Collections.singletonList(
-                new SimpleGrantedAuthority("ROLE_" + user.getRole().name())
-        );
+        Set<GrantedAuthority> authorities = new HashSet<>();
+
+        // Add role authorities (prefixed with ROLE_)
+        for (String roleCode : roleCodes) {
+            authorities.add(new SimpleGrantedAuthority("ROLE_" + roleCode));
+        }
+
+        // Add permission authorities (prefixed with PERM_)
+        for (String permission : permissions) {
+            authorities.add(new SimpleGrantedAuthority("PERM_" + permission));
+        }
+
+        return authorities;
     }
 
     @Override
@@ -59,5 +91,43 @@ public class CustomUserDetails implements UserDetails {
 
     public String getFullName() {
         return user.getFullName();
+    }
+
+    /**
+     * Check if user has a specific permission
+     */
+    public boolean hasPermission(String permissionCode) {
+        return permissions.contains(permissionCode);
+    }
+
+    /**
+     * Check if user has any of the specified permissions
+     */
+    public boolean hasAnyPermission(String... permissionCodes) {
+        for (String code : permissionCodes) {
+            if (permissions.contains(code)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    /**
+     * Check if user has all of the specified permissions
+     */
+    public boolean hasAllPermissions(String... permissionCodes) {
+        for (String code : permissionCodes) {
+            if (!permissions.contains(code)) {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    /**
+     * Get primary role code (first one if multiple)
+     */
+    public String getPrimaryRoleCode() {
+        return roleCodes.isEmpty() ? null : roleCodes.iterator().next();
     }
 }

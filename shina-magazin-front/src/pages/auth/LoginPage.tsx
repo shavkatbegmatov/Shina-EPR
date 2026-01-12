@@ -30,7 +30,13 @@ export function LoginPage() {
     setLoading(true);
     try {
       const response = await authApi.login(data);
-      setAuth(response.user, response.accessToken, response.refreshToken);
+      setAuth(
+        response.user,
+        response.accessToken,
+        response.refreshToken,
+        response.permissions,
+        response.roles
+      );
       toast.success('Muvaffaqiyatli kirish!');
       navigate('/');
     } catch (error: unknown) {

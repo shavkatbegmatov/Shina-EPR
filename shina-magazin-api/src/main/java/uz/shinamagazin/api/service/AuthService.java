@@ -35,29 +35,47 @@ public class AuthService {
 
         CustomUserDetails userDetails = (CustomUserDetails) authentication.getPrincipal();
         Long userId = userDetails.getUser().getId();
-        String accessToken = tokenProvider.generateStaffToken(userDetails.getUsername(), userId);
+
+        // Generate token with permissions
+        String accessToken = tokenProvider.generateStaffTokenWithPermissions(
+                userDetails.getUsername(),
+                userId,
+                userDetails.getRoleCodes(),
+                userDetails.getPermissions()
+        );
         String refreshToken = tokenProvider.generateStaffRefreshToken(userDetails.getUsername(), userId);
 
         return JwtResponse.builder()
                 .accessToken(accessToken)
                 .refreshToken(refreshToken)
                 .user(UserResponse.from(userDetails.getUser()))
+                .permissions(userDetails.getPermissions())
+                .roles(userDetails.getRoleCodes())
                 .build();
     }
 
     public JwtResponse refreshToken(String refreshToken) {
         if (tokenProvider.validateToken(refreshToken)) {
             String username = tokenProvider.getUsernameFromToken(refreshToken);
-            User user = userRepository.findByUsername(username)
+            User user = userRepository.findByUsernameWithRolesAndPermissions(username)
                     .orElseThrow(() -> new ResourceNotFoundException("Foydalanuvchi", "username", username));
 
-            String newAccessToken = tokenProvider.generateStaffToken(username, user.getId());
+            CustomUserDetails userDetails = new CustomUserDetails(user);
+
+            String newAccessToken = tokenProvider.generateStaffTokenWithPermissions(
+                    username,
+                    user.getId(),
+                    userDetails.getRoleCodes(),
+                    userDetails.getPermissions()
+            );
             String newRefreshToken = tokenProvider.generateStaffRefreshToken(username, user.getId());
 
             return JwtResponse.builder()
                     .accessToken(newAccessToken)
                     .refreshToken(newRefreshToken)
                     .user(UserResponse.from(user))
+                    .permissions(userDetails.getPermissions())
+                    .roles(userDetails.getRoleCodes())
                     .build();
         }
         throw new RuntimeException("Refresh token yaroqsiz");

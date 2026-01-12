@@ -11,7 +11,7 @@ import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.stereotype.Component;
 
 import javax.crypto.SecretKey;
-import java.util.Date;
+import java.util.*;
 
 @Component
 @Slf4j
@@ -36,6 +36,15 @@ public class JwtTokenProvider {
 
     public String generateToken(Authentication authentication) {
         UserDetails userDetails = (UserDetails) authentication.getPrincipal();
+        if (userDetails instanceof CustomUserDetails) {
+            CustomUserDetails customUserDetails = (CustomUserDetails) userDetails;
+            return generateStaffTokenWithPermissions(
+                    customUserDetails.getUsername(),
+                    customUserDetails.getId(),
+                    customUserDetails.getRoleCodes(),
+                    customUserDetails.getPermissions()
+            );
+        }
         return generateToken(userDetails.getUsername());
     }
 
@@ -60,6 +69,25 @@ public class JwtTokenProvider {
         if (userId != null) {
             builder.claim("userId", userId);
         }
+
+        return builder.signWith(key).compact();
+    }
+
+    /**
+     * Generate token with permissions for staff users
+     */
+    public String generateStaffTokenWithPermissions(String username, Long userId, Set<String> roles, Set<String> permissions) {
+        Date now = new Date();
+        Date expiryDate = new Date(now.getTime() + jwtExpiration);
+
+        var builder = Jwts.builder()
+                .subject(username)
+                .claim("type", "STAFF")
+                .claim("userId", userId)
+                .claim("roles", new ArrayList<>(roles))
+                .claim("permissions", new ArrayList<>(permissions))
+                .issuedAt(now)
+                .expiration(expiryDate);
 
         return builder.signWith(key).compact();
     }
@@ -125,6 +153,20 @@ public class JwtTokenProvider {
 
     public boolean isCustomerToken(String token) {
         return "CUSTOMER".equals(getTokenType(token));
+    }
+
+    @SuppressWarnings("unchecked")
+    public Set<String> getRolesFromToken(String token) {
+        Claims claims = getClaims(token);
+        List<String> roles = claims.get("roles", List.class);
+        return roles != null ? new HashSet<>(roles) : new HashSet<>();
+    }
+
+    @SuppressWarnings("unchecked")
+    public Set<String> getPermissionsFromToken(String token) {
+        Claims claims = getClaims(token);
+        List<String> permissions = claims.get("permissions", List.class);
+        return permissions != null ? new HashSet<>(permissions) : new HashSet<>();
     }
 
     private Claims getClaims(String token) {

@@ -14,33 +14,37 @@ import {
   Settings,
   X,
   UserCog,
+  Shield,
 } from 'lucide-react';
 import { useAuthStore } from '../../store/authStore';
 import { useUIStore } from '../../store/uiStore';
+import { PermissionCode } from '../../hooks/usePermission';
 import clsx from 'clsx';
 
+// Menu items with permission-based visibility
 const menuItems = [
-  { path: '/', icon: LayoutDashboard, label: 'Dashboard', roles: ['ADMIN', 'MANAGER', 'SELLER'] },
-  { path: '/products', icon: Package, label: 'Mahsulotlar', roles: ['ADMIN', 'MANAGER', 'SELLER'] },
-  { path: '/pos', icon: ShoppingCart, label: 'Kassa (POS)', roles: ['ADMIN', 'MANAGER', 'SELLER'] },
-  { path: '/sales', icon: CreditCard, label: 'Sotuvlar', roles: ['ADMIN', 'MANAGER', 'SELLER'] },
-  { path: '/customers', icon: Users, label: 'Mijozlar', roles: ['ADMIN', 'MANAGER', 'SELLER'] },
-  { path: '/debts', icon: CreditCard, label: 'Qarzlar', roles: ['ADMIN', 'MANAGER', 'SELLER'] },
-  { path: '/warehouse', icon: Warehouse, label: 'Ombor', roles: ['ADMIN', 'MANAGER'] },
-  { path: '/suppliers', icon: TruckIcon, label: "Ta'minotchilar", roles: ['ADMIN', 'MANAGER'] },
-  { path: '/purchases', icon: ShoppingBag, label: 'Xaridlar', roles: ['ADMIN', 'MANAGER'] },
-  { path: '/reports', icon: BarChart3, label: 'Hisobotlar', roles: ['ADMIN', 'MANAGER'] },
-  { path: '/notifications', icon: Bell, label: 'Bildirishnomalar', roles: ['ADMIN', 'MANAGER', 'SELLER'] },
-  { path: '/employees', icon: UserCog, label: 'Xodimlar', roles: ['ADMIN'] },
-  { path: '/settings', icon: Settings, label: 'Sozlamalar', roles: ['ADMIN'] },
+  { path: '/', icon: LayoutDashboard, label: 'Dashboard', permission: PermissionCode.DASHBOARD_VIEW },
+  { path: '/products', icon: Package, label: 'Mahsulotlar', permission: PermissionCode.PRODUCTS_VIEW },
+  { path: '/pos', icon: ShoppingCart, label: 'Kassa (POS)', permission: PermissionCode.SALES_CREATE },
+  { path: '/sales', icon: CreditCard, label: 'Sotuvlar', permission: PermissionCode.SALES_VIEW },
+  { path: '/customers', icon: Users, label: 'Mijozlar', permission: PermissionCode.CUSTOMERS_VIEW },
+  { path: '/debts', icon: CreditCard, label: 'Qarzlar', permission: PermissionCode.DEBTS_VIEW },
+  { path: '/warehouse', icon: Warehouse, label: 'Ombor', permission: PermissionCode.WAREHOUSE_VIEW },
+  { path: '/suppliers', icon: TruckIcon, label: "Ta'minotchilar", permission: PermissionCode.SUPPLIERS_VIEW },
+  { path: '/purchases', icon: ShoppingBag, label: 'Xaridlar', permission: PermissionCode.PURCHASES_VIEW },
+  { path: '/reports', icon: BarChart3, label: 'Hisobotlar', permission: PermissionCode.REPORTS_VIEW_SALES },
+  { path: '/notifications', icon: Bell, label: 'Bildirishnomalar', permission: PermissionCode.NOTIFICATIONS_VIEW },
+  { path: '/employees', icon: UserCog, label: 'Xodimlar', permission: PermissionCode.EMPLOYEES_VIEW },
+  { path: '/roles', icon: Shield, label: 'Rollar', permission: PermissionCode.ROLES_VIEW },
+  { path: '/settings', icon: Settings, label: 'Sozlamalar', permission: PermissionCode.SETTINGS_VIEW },
 ];
 
 export function Sidebar() {
-  const { user } = useAuthStore();
+  const { hasPermission } = useAuthStore();
   const { sidebarOpen, setSidebarOpen } = useUIStore();
 
   const filteredItems = menuItems.filter(
-    (item) => user && item.roles.includes(user.role)
+    (item) => hasPermission(item.permission)
   );
 
   return (

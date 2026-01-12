@@ -19,6 +19,54 @@ export interface JwtResponse {
   refreshToken: string;
   tokenType: string;
   user: User;
+  permissions?: string[];
+  roles?: string[];
+}
+
+// Permission Types
+export interface Permission {
+  id: number;
+  code: string;
+  module: string;
+  action: string;
+  description?: string;
+}
+
+// Role Types
+export interface Role {
+  id: number;
+  name: string;
+  code: string;
+  description?: string;
+  isSystem: boolean;
+  isActive: boolean;
+  permissions?: string[];
+  permissionCount?: number;
+  userCount?: number;
+  createdAt?: string;
+  updatedAt?: string;
+}
+
+export interface RoleRequest {
+  name: string;
+  code: string;
+  description?: string;
+  permissions?: string[];
+}
+
+// Audit Log Types
+export interface AuditLog {
+  id: number;
+  entityType: string;
+  entityId?: number;
+  action: string;
+  oldValue?: Record<string, unknown>;
+  newValue?: Record<string, unknown>;
+  userId?: number;
+  username?: string;
+  ipAddress?: string;
+  userAgent?: string;
+  createdAt: string;
 }
 
 // API Response Types

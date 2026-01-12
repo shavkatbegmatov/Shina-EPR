@@ -18,7 +18,8 @@ public class CustomUserDetailsService implements UserDetailsService {
     @Override
     @Transactional(readOnly = true)
     public UserDetails loadUserByUsername(String username) throws UsernameNotFoundException {
-        User user = userRepository.findByUsername(username)
+        // Fetch user with roles and permissions eagerly loaded
+        User user = userRepository.findByUsernameWithRolesAndPermissions(username)
                 .orElseThrow(() -> new UsernameNotFoundException(
                         "Foydalanuvchi topilmadi: " + username
                 ));
@@ -28,7 +29,8 @@ public class CustomUserDetailsService implements UserDetailsService {
 
     @Transactional(readOnly = true)
     public UserDetails loadUserById(Long id) {
-        User user = userRepository.findById(id)
+        // Fetch user with roles and permissions eagerly loaded
+        User user = userRepository.findByIdWithRolesAndPermissions(id)
                 .orElseThrow(() -> new UsernameNotFoundException(
                         "Foydalanuvchi topilmadi: " + id
                 ));
