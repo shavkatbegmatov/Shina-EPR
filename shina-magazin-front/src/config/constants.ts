@@ -111,6 +111,12 @@ export const ROLES = {
   SELLER: { label: 'Sotuvchi', value: 'SELLER' },
 } as const;
 
+export const EMPLOYEE_STATUSES = {
+  ACTIVE: { label: 'Faol', value: 'ACTIVE', color: 'badge-success' },
+  ON_LEAVE: { label: "Ta'tilda", value: 'ON_LEAVE', color: 'badge-warning' },
+  TERMINATED: { label: 'Ishdan chiqqan', value: 'TERMINATED', color: 'badge-error' },
+} as const;
+
 export const formatCurrency = (amount: number): string => {
   return new Intl.NumberFormat('uz-UZ', {
     style: 'decimal',

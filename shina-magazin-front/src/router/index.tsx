@@ -15,6 +15,7 @@ import { PurchaseDetailPage } from '../pages/purchases/PurchaseDetailPage';
 import { SettingsPage } from '../pages/settings/SettingsPage';
 import { NotificationsPage } from '../pages/notifications/NotificationsPage';
 import { ReportsPage } from '../pages/reports/ReportsPage';
+import { EmployeesPage } from '../pages/employees/EmployeesPage';
 
 // Portal imports
 import PortalLayout from '../portal/components/layout/PortalLayout';
@@ -100,6 +101,11 @@ export const router = createBrowserRouter([
         path: 'settings',
         element: <SettingsPage />,
         handle: { title: 'Sozlamalar' },
+      },
+      {
+        path: 'employees',
+        element: <EmployeesPage />,
+        handle: { title: 'Xodimlar' },
       },
       {
         path: 'notifications',

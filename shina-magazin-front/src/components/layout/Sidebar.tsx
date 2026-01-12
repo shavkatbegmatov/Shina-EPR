@@ -13,6 +13,7 @@ import {
   Bell,
   Settings,
   X,
+  UserCog,
 } from 'lucide-react';
 import { useAuthStore } from '../../store/authStore';
 import { useUIStore } from '../../store/uiStore';
@@ -30,6 +31,7 @@ const menuItems = [
   { path: '/purchases', icon: ShoppingBag, label: 'Xaridlar', roles: ['ADMIN', 'MANAGER'] },
   { path: '/reports', icon: BarChart3, label: 'Hisobotlar', roles: ['ADMIN', 'MANAGER'] },
   { path: '/notifications', icon: Bell, label: 'Bildirishnomalar', roles: ['ADMIN', 'MANAGER', 'SELLER'] },
+  { path: '/employees', icon: UserCog, label: 'Xodimlar', roles: ['ADMIN'] },
   { path: '/settings', icon: Settings, label: 'Sozlamalar', roles: ['ADMIN'] },
 ];
 

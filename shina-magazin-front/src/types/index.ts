@@ -629,3 +629,49 @@ export interface PurchaseReturnRequest {
   reason: string;
   items: PurchaseReturnItemRequest[];
 }
+
+// Employee Types
+export type EmployeeStatus = 'ACTIVE' | 'ON_LEAVE' | 'TERMINATED';
+
+export interface Employee {
+  id: number;
+  // Asosiy maydonlar
+  fullName: string;
+  phone: string;
+  email?: string;
+  position: string;
+  department?: string;
+  salary?: number;
+  hireDate: string;
+  status: EmployeeStatus;
+  // Kengaytirilgan maydonlar
+  birthDate?: string;
+  passportNumber?: string;
+  address?: string;
+  bankAccountNumber?: string;
+  emergencyContactName?: string;
+  emergencyContactPhone?: string;
+  // User ma'lumotlari
+  userId?: number;
+  username?: string;
+  userRole?: string;
+  hasUserAccount: boolean;
+}
+
+export interface EmployeeRequest {
+  fullName: string;
+  phone: string;
+  email?: string;
+  position: string;
+  department?: string;
+  salary?: number;
+  hireDate: string;
+  status?: EmployeeStatus;
+  birthDate?: string;
+  passportNumber?: string;
+  address?: string;
+  bankAccountNumber?: string;
+  emergencyContactName?: string;
+  emergencyContactPhone?: string;
+  userId?: number;
+}
