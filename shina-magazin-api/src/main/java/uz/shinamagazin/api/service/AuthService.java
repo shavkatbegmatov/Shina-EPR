@@ -45,12 +45,16 @@ public class AuthService {
         );
         String refreshToken = tokenProvider.generateStaffRefreshToken(userDetails.getUsername(), userId);
 
+        // Check if user must change password
+        Boolean mustChangePassword = Boolean.TRUE.equals(userDetails.getUser().getMustChangePassword());
+
         return JwtResponse.builder()
                 .accessToken(accessToken)
                 .refreshToken(refreshToken)
                 .user(UserResponse.from(userDetails.getUser()))
                 .permissions(userDetails.getPermissions())
                 .roles(userDetails.getRoleCodes())
+                .requiresPasswordChange(mustChangePassword)
                 .build();
     }
 

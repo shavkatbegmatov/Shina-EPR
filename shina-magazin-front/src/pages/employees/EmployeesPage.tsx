@@ -22,7 +22,8 @@ import { formatCurrency, formatDate, EMPLOYEE_STATUSES, ROLES, getTashkentToday 
 import { DataTable, Column } from '../../components/ui/DataTable';
 import { ModalPortal } from '../../components/common/Modal';
 import { CurrencyInput } from '../../components/ui/CurrencyInput';
-import type { Employee, EmployeeRequest, EmployeeStatus, User } from '../../types';
+import { CredentialsModal } from './components/CredentialsModal';
+import type { CredentialsInfo, Employee, EmployeeRequest, EmployeeStatus, User } from '../../types';
 
 const emptyFormData: EmployeeRequest = {
   fullName: '',
@@ -40,6 +41,8 @@ const emptyFormData: EmployeeRequest = {
   emergencyContactName: '',
   emergencyContactPhone: '',
   userId: undefined,
+  createUserAccount: false,
+  roleCode: 'SELLER',
 };
 
 type ModalTab = 'basic' | 'extended';
@@ -65,6 +68,10 @@ export function EmployeesPage() {
 
   // Available users for linking
   const [availableUsers, setAvailableUsers] = useState<User[]>([]);
+
+  // Credentials modal for newly created user
+  const [newCredentials, setNewCredentials] = useState<CredentialsInfo | null>(null);
+  const [credentialsEmployeeName, setCredentialsEmployeeName] = useState('');
 
   const hasSearch = useMemo(() => search.trim().length > 0, [search]);
 
@@ -272,7 +279,7 @@ export function EmployeesPage() {
     setModalTab('basic');
   };
 
-  const handleFormChange = (field: keyof EmployeeRequest, value: string | number | undefined) => {
+  const handleFormChange = (field: keyof EmployeeRequest, value: string | number | boolean | undefined) => {
     setFormData((prev) => ({ ...prev, [field]: value }));
   };
 
@@ -288,14 +295,24 @@ export function EmployeesPage() {
         bankAccountNumber: formData.bankAccountNumber || undefined,
         emergencyContactName: formData.emergencyContactName || undefined,
         emergencyContactPhone: formData.emergencyContactPhone || undefined,
-        userId: formData.userId || undefined,
+        userId: formData.createUserAccount ? undefined : (formData.userId || undefined),
+        createUserAccount: formData.createUserAccount || undefined,
+        roleCode: formData.createUserAccount ? formData.roleCode : undefined,
       };
 
+      let result;
       if (editingEmployee) {
-        await employeesApi.update(editingEmployee.id, dataToSend);
+        result = await employeesApi.update(editingEmployee.id, dataToSend);
       } else {
-        await employeesApi.create(dataToSend);
+        result = await employeesApi.create(dataToSend);
       }
+
+      // Check if credentials were returned (new user created)
+      if (result.newCredentials) {
+        setCredentialsEmployeeName(result.fullName);
+        setNewCredentials(result.newCredentials);
+      }
+
       handleCloseModal();
       loadEmployees();
       loadStats();
@@ -495,6 +512,15 @@ export function EmployeesPage() {
         />
       </div>
 
+      {/* Credentials Modal */}
+      {newCredentials && (
+        <CredentialsModal
+          credentials={newCredentials}
+          employeeName={credentialsEmployeeName}
+          onClose={() => setNewCredentials(null)}
+        />
+      )}
+
       {/* Employee Modal */}
       <ModalPortal isOpen={showModal} onClose={handleCloseModal}>
         <div className="w-full max-w-2xl bg-base-100 rounded-2xl shadow-2xl max-h-[90vh] overflow-y-auto">
@@ -653,31 +679,85 @@ export function EmployeesPage() {
                       <Shield className="h-4 w-4" />
                       Tizim kirish huquqi
                     </h4>
-                    <label className="form-control">
-                      <span className="label-text mb-1 text-xs font-semibold uppercase tracking-[0.18em] text-base-content/50">
-                        Foydalanuvchi akkaunti
-                      </span>
-                      <select
-                        className="select select-bordered w-full"
-                        value={formData.userId || ''}
-                        onChange={(e) => handleFormChange('userId', e.target.value ? Number(e.target.value) : undefined)}
-                      >
-                        <option value="">Bog'lanmagan</option>
-                        {editingEmployee?.userId && (
-                          <option value={editingEmployee.userId}>
-                            {editingEmployee.username} ({ROLES[editingEmployee.userRole as keyof typeof ROLES]?.label || editingEmployee.userRole})
-                          </option>
+
+                    {/* Show existing user if already linked */}
+                    {editingEmployee?.hasUserAccount ? (
+                      <div className="alert alert-success">
+                        <Shield className="h-5 w-5" />
+                        <div>
+                          <p className="font-medium">Foydalanuvchi akkaunti mavjud</p>
+                          <p className="text-sm">
+                            Username: <code className="bg-base-200 px-2 py-0.5 rounded">{editingEmployee.username}</code>
+                            {' '} | Rol: {ROLES[editingEmployee.userRole as keyof typeof ROLES]?.label || editingEmployee.userRole}
+                          </p>
+                        </div>
+                      </div>
+                    ) : (
+                      <div className="space-y-4">
+                        {/* Create new user account checkbox */}
+                        <label className="flex items-start gap-3 cursor-pointer p-3 rounded-lg hover:bg-base-200/50 transition-colors">
+                          <input
+                            type="checkbox"
+                            className="checkbox checkbox-primary mt-0.5"
+                            checked={formData.createUserAccount || false}
+                            onChange={(e) => {
+                              handleFormChange('createUserAccount', e.target.checked);
+                              if (e.target.checked) {
+                                handleFormChange('userId', undefined);
+                              }
+                            }}
+                          />
+                          <div>
+                            <p className="font-medium">Yangi foydalanuvchi hisobi yaratish</p>
+                            <p className="text-sm text-base-content/60">
+                              Tizim avtomatik username va vaqtinchalik parol generatsiya qiladi
+                            </p>
+                          </div>
+                        </label>
+
+                        {/* Role selection when creating new user */}
+                        {formData.createUserAccount && (
+                          <label className="form-control">
+                            <span className="label-text mb-1 text-xs font-semibold uppercase tracking-[0.18em] text-base-content/50">
+                              Rol
+                            </span>
+                            <select
+                              className="select select-bordered w-full"
+                              value={formData.roleCode || 'SELLER'}
+                              onChange={(e) => handleFormChange('roleCode', e.target.value)}
+                            >
+                              {Object.entries(ROLES).map(([key, { label }]) => (
+                                <option key={key} value={key}>{label}</option>
+                              ))}
+                            </select>
+                          </label>
                         )}
-                        {availableUsers.map(user => (
-                          <option key={user.id} value={user.id}>
-                            {user.username} ({ROLES[user.role]?.label})
-                          </option>
-                        ))}
-                      </select>
-                      <span className="label-text-alt mt-1 text-base-content/50">
-                        Foydalanuvchi tizimga kira olishi uchun akkaunt bog'lash kerak
-                      </span>
-                    </label>
+
+                        {/* Existing user linking (when not creating new) */}
+                        {!formData.createUserAccount && (
+                          <label className="form-control">
+                            <span className="label-text mb-1 text-xs font-semibold uppercase tracking-[0.18em] text-base-content/50">
+                              Mavjud akkaunti bog'lash
+                            </span>
+                            <select
+                              className="select select-bordered w-full"
+                              value={formData.userId || ''}
+                              onChange={(e) => handleFormChange('userId', e.target.value ? Number(e.target.value) : undefined)}
+                            >
+                              <option value="">Bog'lanmagan</option>
+                              {availableUsers.map(user => (
+                                <option key={user.id} value={user.id}>
+                                  {user.username} ({ROLES[user.role]?.label})
+                                </option>
+                              ))}
+                            </select>
+                            <span className="label-text-alt mt-1 text-base-content/50">
+                              Mavjud foydalanuvchi akkaunti bilan bog'lash
+                            </span>
+                          </label>
+                        )}
+                      </div>
+                    )}
                   </div>
                 </>
               ) : (

@@ -2,6 +2,7 @@ import { createBrowserRouter, Navigate } from 'react-router-dom';
 import { MainLayout } from '../components/layout/MainLayout';
 import { LoginPage } from '../pages/auth/LoginPage';
 import { RegisterPage } from '../pages/auth/RegisterPage';
+import { ChangePasswordPage } from '../pages/auth/ChangePasswordPage';
 import { DashboardPage } from '../pages/dashboard/DashboardPage';
 import { ProductsPage } from '../pages/products/ProductsPage';
 import { CustomersPage } from '../pages/customers/CustomersPage';
@@ -38,6 +39,11 @@ export const router = createBrowserRouter([
     path: '/register',
     element: <RegisterPage />,
     handle: { title: "Ro'yxatdan o'tish" },
+  },
+  {
+    path: '/change-password',
+    element: <ChangePasswordPage />,
+    handle: { title: "Parolni o'zgartirish" },
   },
   {
     path: '/',

@@ -65,4 +65,18 @@ public class EmployeeRequest {
 
     // User bog'lanish (ixtiyoriy)
     private Long userId;
+
+    // User yaratish (yangi xodim uchun)
+    /**
+     * If true, a user account will be created for this employee
+     * with auto-generated username and temporary password.
+     */
+    private Boolean createUserAccount;
+
+    /**
+     * Role code to assign when creating user account.
+     * Defaults to SELLER if not specified.
+     */
+    @Size(max = 50, message = "Rol kodi 50 ta belgidan oshmasligi kerak")
+    private String roleCode;
 }

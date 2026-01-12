@@ -5,6 +5,7 @@ import lombok.*;
 import uz.shinamagazin.api.entity.base.BaseEntity;
 import uz.shinamagazin.api.enums.Role;
 
+import java.time.LocalDateTime;
 import java.util.HashSet;
 import java.util.Set;
 
@@ -43,6 +44,17 @@ public class User extends BaseEntity {
     @Column(nullable = false)
     @Builder.Default
     private Boolean active = true;
+
+    @Column(name = "must_change_password")
+    @Builder.Default
+    private Boolean mustChangePassword = false;
+
+    @Column(name = "password_changed_at")
+    private LocalDateTime passwordChangedAt;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "created_by")
+    private User createdBy;
 
     @ManyToMany(fetch = FetchType.LAZY)
     @JoinTable(

@@ -41,6 +41,13 @@ public class EmployeeResponse {
     private String userRole;
     private Boolean hasUserAccount;
 
+    /**
+     * Credentials for newly created user account.
+     * Only populated when a new user is created.
+     * Shown only once - admin must communicate to employee.
+     */
+    private CredentialsInfo newCredentials;
+
     public static EmployeeResponse from(Employee employee) {
         EmployeeResponseBuilder builder = EmployeeResponse.builder()
                 .id(employee.getId())

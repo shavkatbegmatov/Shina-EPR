@@ -21,6 +21,20 @@ export interface JwtResponse {
   user: User;
   permissions?: string[];
   roles?: string[];
+  requiresPasswordChange?: boolean;
+}
+
+export interface ChangePasswordRequest {
+  currentPassword: string;
+  newPassword: string;
+  confirmPassword: string;
+}
+
+export interface CredentialsInfo {
+  username: string;
+  temporaryPassword: string;
+  message: string;
+  mustChangePassword: boolean;
 }
 
 // Permission Types
@@ -704,6 +718,8 @@ export interface Employee {
   username?: string;
   userRole?: string;
   hasUserAccount: boolean;
+  // Yangi yaratilgan credential'lar (faqat bir marta ko'rsatiladi)
+  newCredentials?: CredentialsInfo;
 }
 
 export interface EmployeeRequest {
@@ -722,4 +738,7 @@ export interface EmployeeRequest {
   emergencyContactName?: string;
   emergencyContactPhone?: string;
   userId?: number;
+  // User yaratish
+  createUserAccount?: boolean;
+  roleCode?: string;
 }

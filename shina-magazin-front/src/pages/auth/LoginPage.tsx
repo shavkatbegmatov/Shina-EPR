@@ -37,8 +37,15 @@ export function LoginPage() {
         response.permissions,
         response.roles
       );
-      toast.success('Muvaffaqiyatli kirish!');
-      navigate('/');
+
+      // Check if user must change password
+      if (response.requiresPasswordChange) {
+        toast('Parolingizni o\'zgartirish kerak', { icon: '🔐' });
+        navigate('/change-password');
+      } else {
+        toast.success('Muvaffaqiyatli kirish!');
+        navigate('/');
+      }
     } catch (error: unknown) {
       const err = error as { response?: { data?: { message?: string } } };
       toast.error(err.response?.data?.message || 'Kirish xatosi');

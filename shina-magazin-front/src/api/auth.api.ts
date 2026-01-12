@@ -1,5 +1,5 @@
 import api from './axios';
-import type { ApiResponse, JwtResponse, LoginRequest, User } from '../types';
+import type { ApiResponse, ChangePasswordRequest, JwtResponse, LoginRequest, User } from '../types';
 
 export const authApi = {
   login: async (data: LoginRequest): Promise<JwtResponse> => {
@@ -19,5 +19,9 @@ export const authApi = {
       { params: { refreshToken } }
     );
     return response.data.data;
+  },
+
+  changePassword: async (data: ChangePasswordRequest): Promise<void> => {
+    await api.post<ApiResponse<void>>('/v1/auth/change-password', data);
   },
 };

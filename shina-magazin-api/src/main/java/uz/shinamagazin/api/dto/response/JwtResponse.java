@@ -19,4 +19,10 @@ public class JwtResponse {
     private UserResponse user;
     private Set<String> permissions;
     private Set<String> roles;
+
+    /**
+     * Indicates if user must change password on first login.
+     * Frontend should redirect to change-password page if true.
+     */
+    private Boolean requiresPasswordChange;
 }

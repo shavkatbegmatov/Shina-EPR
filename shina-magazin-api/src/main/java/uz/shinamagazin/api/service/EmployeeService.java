@@ -1,11 +1,13 @@
 package uz.shinamagazin.api.service;
 
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import uz.shinamagazin.api.dto.request.EmployeeRequest;
+import uz.shinamagazin.api.dto.response.CredentialsInfo;
 import uz.shinamagazin.api.dto.response.EmployeeResponse;
 import uz.shinamagazin.api.entity.Employee;
 import uz.shinamagazin.api.entity.User;
@@ -20,10 +22,14 @@ import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
+@Slf4j
 public class EmployeeService {
+
+    private static final String DEFAULT_ROLE_CODE = "SELLER";
 
     private final EmployeeRepository employeeRepository;
     private final UserRepository userRepository;
+    private final UserService userService;
 
     public Page<EmployeeResponse> getAllEmployees(Pageable pageable) {
         return employeeRepository.findByStatusNot(EmployeeStatus.TERMINATED, pageable)
@@ -50,12 +56,32 @@ public class EmployeeService {
         Employee employee = new Employee();
         mapRequestToEmployee(request, employee);
 
-        if (request.getUserId() != null) {
+        CredentialsInfo newCredentials = null;
+
+        // Handle user account creation
+        if (Boolean.TRUE.equals(request.getCreateUserAccount())) {
+            // Create user for employee
+            String roleCode = request.getRoleCode() != null ? request.getRoleCode() : DEFAULT_ROLE_CODE;
+            newCredentials = userService.createUserForEmployee(employee, roleCode);
+
+            // Link the created user to employee
+            User createdUser = userService.getUserByUsername(newCredentials.getUsername());
+            employee.setUser(createdUser);
+
+            log.info("Created user account for employee: {} with username: {}",
+                    employee.getFullName(), newCredentials.getUsername());
+        } else if (request.getUserId() != null) {
+            // Link existing user to employee
             linkUserToEmployee(employee, request.getUserId());
         }
 
         Employee savedEmployee = employeeRepository.save(employee);
-        return EmployeeResponse.from(savedEmployee);
+        EmployeeResponse response = EmployeeResponse.from(savedEmployee);
+
+        // Include credentials in response (one-time display)
+        response.setNewCredentials(newCredentials);
+
+        return response;
     }
 
     @Transactional
@@ -70,8 +96,22 @@ public class EmployeeService {
 
         mapRequestToEmployee(request, employee);
 
-        // User bog'lanishni yangilash
-        if (request.getUserId() != null) {
+        CredentialsInfo newCredentials = null;
+
+        // Handle user account creation or linking
+        if (Boolean.TRUE.equals(request.getCreateUserAccount()) && employee.getUser() == null) {
+            // Create new user for employee (only if doesn't have one yet)
+            String roleCode = request.getRoleCode() != null ? request.getRoleCode() : DEFAULT_ROLE_CODE;
+            newCredentials = userService.createUserForEmployee(employee, roleCode);
+
+            // Link the created user to employee
+            User createdUser = userService.getUserByUsername(newCredentials.getUsername());
+            employee.setUser(createdUser);
+
+            log.info("Created user account for existing employee: {} with username: {}",
+                    employee.getFullName(), newCredentials.getUsername());
+        } else if (request.getUserId() != null) {
+            // Link existing user
             if (employee.getUser() == null || !employee.getUser().getId().equals(request.getUserId())) {
                 // Tekshirish: user boshqa xodimga bog'langanmi
                 if (employeeRepository.existsByUserIdAndIdNot(request.getUserId(), id)) {
@@ -79,12 +119,18 @@ public class EmployeeService {
                 }
                 linkUserToEmployee(employee, request.getUserId());
             }
-        } else {
+        } else if (!Boolean.TRUE.equals(request.getCreateUserAccount())) {
+            // Only unlink if not trying to create new user
             employee.setUser(null);
         }
 
         Employee savedEmployee = employeeRepository.save(employee);
-        return EmployeeResponse.from(savedEmployee);
+        EmployeeResponse response = EmployeeResponse.from(savedEmployee);
+
+        // Include credentials in response (one-time display)
+        response.setNewCredentials(newCredentials);
+
+        return response;
     }
 
     @Transactional
