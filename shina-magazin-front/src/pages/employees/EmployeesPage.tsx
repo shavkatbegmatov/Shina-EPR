@@ -12,12 +12,14 @@ import {
   Shield,
   UserCheck,
   UserX,
+  UserPlus,
   Clock,
   CreditCard,
   AlertCircle,
   Edit3,
   Check,
   Key,
+  Link2,
 } from 'lucide-react';
 import clsx from 'clsx';
 import toast from 'react-hot-toast';
@@ -94,6 +96,9 @@ export function EmployeesPage() {
   const [isEditingRole, setIsEditingRole] = useState(false);
   const [selectedNewRoleCode, setSelectedNewRoleCode] = useState<string>('');
   const [changingRole, setChangingRole] = useState(false);
+
+  // Access type: 'none' | 'create' | 'link'
+  const [accessType, setAccessType] = useState<'none' | 'create' | 'link'>('none');
 
   const { highlightId, clearHighlight } = useHighlight();
   const hasSearch = useMemo(() => search.trim().length > 0, [search]);
@@ -302,6 +307,7 @@ export function EmployeesPage() {
     setEditingEmployee(null);
     setFormData(emptyFormData);
     setModalTab('basic');
+    setAccessType('none');
     loadAvailableUsers();
     loadRoles();
     setShowModal(true);
@@ -312,6 +318,7 @@ export function EmployeesPage() {
     setEditingEmployee(null);
     setFormData(emptyFormData);
     setModalTab('basic');
+    setAccessType('none');
     setIsEditingRole(false);
     setSelectedNewRoleCode('');
   };
@@ -875,68 +882,136 @@ export function EmployeesPage() {
                         </div>
                       </div>
                     ) : (
-                      <div className="space-y-4">
-                        {/* Create new user account checkbox */}
+                      <div className="space-y-3">
+                        {/* Option 1: No system access */}
                         <label
                           className={clsx(
                             'flex items-start gap-3 cursor-pointer p-4 rounded-xl border-2 transition-all duration-200',
-                            formData.createUserAccount
-                              ? 'border-primary bg-primary/10'
-                              : 'border-base-300 bg-base-100 hover:border-primary/50 hover:bg-primary/5'
+                            accessType === 'none'
+                              ? 'border-base-content/30 bg-base-200/50'
+                              : 'border-base-300 bg-base-100 hover:border-base-content/30'
                           )}
                         >
                           <input
-                            type="checkbox"
-                            className="checkbox checkbox-primary mt-0.5"
-                            checked={formData.createUserAccount || false}
-                            onChange={(e) => {
-                              handleFormChange('createUserAccount', e.target.checked);
-                              if (e.target.checked) {
-                                handleFormChange('userId', undefined);
-                              }
+                            type="radio"
+                            name="accessType"
+                            className="radio radio-sm mt-0.5"
+                            checked={accessType === 'none'}
+                            onChange={() => {
+                              setAccessType('none');
+                              handleFormChange('createUserAccount', false);
+                              handleFormChange('userId', undefined);
+                              handleFormChange('roleCode', undefined);
                             }}
                           />
                           <div className="flex-1">
-                            <p className="font-semibold text-base-content">Yangi foydalanuvchi hisobi yaratish</p>
-                            <p className="text-sm text-base-content/60 mt-0.5">
-                              Tizim avtomatik username va vaqtinchalik parol generatsiya qiladi
+                            <div className="flex items-center gap-2">
+                              <UserX className="h-4 w-4 text-base-content/50" />
+                              <p className="font-medium text-base-content">Tizimga kirish kerak emas</p>
+                            </div>
+                            <p className="text-sm text-base-content/50 mt-1">
+                              Xodim faqat HR ma'lumotlar bazasida saqlanadi
+                            </p>
+                          </div>
+                        </label>
+
+                        {/* Option 2: Create new account */}
+                        <label
+                          className={clsx(
+                            'flex items-start gap-3 cursor-pointer p-4 rounded-xl border-2 transition-all duration-200',
+                            accessType === 'create'
+                              ? 'border-primary bg-primary/5'
+                              : 'border-base-300 bg-base-100 hover:border-primary/50'
+                          )}
+                        >
+                          <input
+                            type="radio"
+                            name="accessType"
+                            className="radio radio-primary radio-sm mt-0.5"
+                            checked={accessType === 'create'}
+                            onChange={() => {
+                              setAccessType('create');
+                              handleFormChange('createUserAccount', true);
+                              handleFormChange('userId', undefined);
+                            }}
+                          />
+                          <div className="flex-1">
+                            <div className="flex items-center gap-2">
+                              <UserPlus className="h-4 w-4 text-primary" />
+                              <p className="font-medium text-base-content">Yangi akkount yaratish</p>
+                            </div>
+                            <p className="text-sm text-base-content/50 mt-1">
+                              Avtomatik login va vaqtinchalik parol generatsiya qilinadi
                             </p>
                           </div>
                         </label>
 
                         {/* Role selection when creating new user */}
-                        {formData.createUserAccount && (
-                          <div className="pl-4 border-l-2 border-primary/30">
+                        {accessType === 'create' && (
+                          <div className="ml-7 pl-4 border-l-2 border-primary/30">
                             <Select
-                              label="Rol tanlang"
+                              label="Tizim roli"
                               value={formData.roleCode || ''}
                               onChange={(value) => handleFormChange('roleCode', value as string)}
                               placeholder="Rol tanlang..."
                               options={roles.map((role) => ({
                                 value: role.code,
                                 label: role.name,
+                                description: role.description,
                               }))}
                             />
                           </div>
                         )}
 
-                        {/* Existing user linking (when not creating new) */}
-                        {!formData.createUserAccount && (
-                          <div className="p-4 rounded-xl bg-base-100 border border-base-300">
-                            <Select
-                              label="Yoki mavjud akkountni bog'lang"
-                              value={formData.userId || ''}
-                              onChange={(value) => handleFormChange('userId', value ? Number(value) : undefined)}
-                              placeholder="— Tanlanmagan —"
-                              options={availableUsers.map(user => ({
-                                value: user.id,
-                                label: `${user.username} (${ROLES[user.role]?.label})`,
-                              }))}
-                            />
-                            <span className="label-text-alt mt-1.5 text-base-content/50">
-                              Mavjud foydalanuvchi akkaunti bilan bog'lash
-                            </span>
-                          </div>
+                        {/* Option 3: Link existing account (only show if available users exist) */}
+                        {availableUsers.length > 0 && (
+                          <>
+                            <label
+                              className={clsx(
+                                'flex items-start gap-3 cursor-pointer p-4 rounded-xl border-2 transition-all duration-200',
+                                accessType === 'link'
+                                  ? 'border-secondary bg-secondary/5'
+                                  : 'border-base-300 bg-base-100 hover:border-secondary/50'
+                              )}
+                            >
+                              <input
+                                type="radio"
+                                name="accessType"
+                                className="radio radio-secondary radio-sm mt-0.5"
+                                checked={accessType === 'link'}
+                                onChange={() => {
+                                  setAccessType('link');
+                                  handleFormChange('createUserAccount', false);
+                                }}
+                              />
+                              <div className="flex-1">
+                                <div className="flex items-center gap-2">
+                                  <Link2 className="h-4 w-4 text-secondary" />
+                                  <p className="font-medium text-base-content">Mavjud akkountni bog'lash</p>
+                                </div>
+                                <p className="text-sm text-base-content/50 mt-1">
+                                  {availableUsers.length} ta bo'sh akkount mavjud
+                                </p>
+                              </div>
+                            </label>
+
+                            {/* User selection when linking existing */}
+                            {accessType === 'link' && (
+                              <div className="ml-7 pl-4 border-l-2 border-secondary/30">
+                                <Select
+                                  label="Foydalanuvchi"
+                                  value={formData.userId || ''}
+                                  onChange={(value) => handleFormChange('userId', value ? Number(value) : undefined)}
+                                  placeholder="Akkount tanlang..."
+                                  options={availableUsers.map(user => ({
+                                    value: user.id,
+                                    label: user.fullName || user.username,
+                                    description: `@${user.username} · ${ROLES[user.role]?.label || user.role}`,
+                                  }))}
+                                />
+                              </div>
+                            )}
+                          </>
                         )}
                       </div>
                     )}
