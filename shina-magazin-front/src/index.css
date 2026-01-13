@@ -94,6 +94,34 @@
   .nav-chip {
     @apply inline-flex items-center gap-2 rounded-full border border-base-300 bg-base-100/80 px-3 py-1 text-xs font-medium text-base-content/70;
   }
+
+  /* Professional focus styling for all form elements */
+  .input,
+  .select,
+  .textarea {
+    @apply transition-all duration-200;
+  }
+
+  .input:focus,
+  .input:focus-within,
+  .select:focus,
+  .textarea:focus {
+    @apply border-primary ring-2 ring-primary/20 outline-none;
+  }
+
+  /* Checkbox and radio focus */
+  .checkbox:focus,
+  .radio:focus,
+  .toggle:focus {
+    @apply ring-2 ring-primary/20 ring-offset-2 ring-offset-base-100;
+  }
+
+  /* Remove default browser outline for form elements */
+  .input:focus-visible,
+  .select:focus-visible,
+  .textarea:focus-visible {
+    outline: none;
+  }
 }
 
 @layer utilities {
