@@ -642,7 +642,7 @@ export function PurchasesPage() {
           data={purchases}
           columns={columns}
           keyExtractor={(purchase) => purchase.id}
-          loading={initialLoading}
+          loading={initialLoading && !refreshing}
           emptyIcon={<ShoppingCart className="h-12 w-12" />}
         emptyTitle="Xaridlar topilmadi"
         emptyDescription="Yangi xarid qo'shish uchun tugmani bosing"

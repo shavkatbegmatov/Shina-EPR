@@ -313,7 +313,7 @@ export function SalesPage() {
           data={filteredSales}
           columns={columns}
           keyExtractor={(sale) => sale.id}
-          loading={initialLoading}
+          loading={initialLoading && !refreshing}
           emptyIcon={<Receipt className="h-12 w-12" />}
         emptyTitle="Sotuvlar topilmadi"
         emptyDescription="Filtrlarni o'zgartiring yoki yangi sotuv qiling"

@@ -335,7 +335,7 @@ export function ProductsPage() {
           data={products}
           columns={columns}
           keyExtractor={(product) => product.id}
-          loading={initialLoading}
+          loading={initialLoading && !refreshing}
           emptyIcon={<Package className="h-12 w-12" />}
         emptyTitle="Mahsulotlar topilmadi"
         emptyDescription="Filtrlarni o'zgartirib ko'ring"

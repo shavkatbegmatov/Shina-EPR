@@ -725,7 +725,7 @@ export function SuppliersPage() {
               data={suppliers}
               columns={suppliersColumns}
               keyExtractor={(supplier) => supplier.id}
-              loading={initialLoading}
+              loading={initialLoading && !refreshing}
               emptyIcon={<Truck className="h-12 w-12" />}
             emptyTitle="Ta'minotchilar topilmadi"
             emptyDescription="Qidiruv so'zini o'zgartiring"

@@ -265,7 +265,7 @@ export function CustomersPage() {
           data={customers}
           columns={columns}
           keyExtractor={(customer) => customer.id}
-          loading={initialLoading}
+          loading={initialLoading && !refreshing}
           emptyIcon={<Users className="h-12 w-12" />}
         emptyTitle="Mijozlar topilmadi"
         emptyDescription="Qidiruv so'zini o'zgartiring"

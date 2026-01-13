@@ -302,7 +302,7 @@ export function DebtsPage() {
             data={debts}
             columns={columns}
             keyExtractor={(debt) => debt.id}
-            loading={initialLoading}
+            loading={initialLoading && !refreshing}
             emptyIcon={<Wallet className="h-12 w-12" />}
             emptyTitle="Qarzlar topilmadi"
             emptyDescription="Filtrlarni o'zgartiring"

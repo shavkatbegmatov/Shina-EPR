@@ -492,7 +492,7 @@ export function EmployeesPage() {
           data={employees}
           columns={columns}
           keyExtractor={(employee) => employee.id}
-          loading={initialLoading}
+          loading={initialLoading && !refreshing}
           emptyIcon={<UserCog className="h-12 w-12" />}
           emptyTitle="Xodimlar topilmadi"
           emptyDescription="Yangi xodim qo'shish uchun tugmani bosing"
