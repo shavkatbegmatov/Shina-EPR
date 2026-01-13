@@ -123,6 +123,7 @@ export function EmployeesPage() {
       userId: employee.userId,
     });
     setModalTab('basic');
+    loadRoles(); // Load roles for role display and editing
     setShowModal(true);
   };
 
@@ -869,7 +870,10 @@ export function EmployeesPage() {
                               <div className="flex items-center gap-2 px-3 py-2 rounded-lg bg-primary/10 border border-primary/20">
                                 <Shield className="h-4 w-4 text-primary" />
                                 <span className="font-medium text-primary">
-                                  {ROLES[editingEmployee.userRole as keyof typeof ROLES]?.label || editingEmployee.userRole}
+                                  {roles.find(r => r.code === editingEmployee.userRole)?.name ||
+                                   ROLES[editingEmployee.userRole as keyof typeof ROLES]?.label ||
+                                   editingEmployee.userRole ||
+                                   'Noma\'lum rol'}
                                 </span>
                               </div>
                               {roles.find(r => r.code === editingEmployee.userRole)?.permissionCount !== undefined && (
