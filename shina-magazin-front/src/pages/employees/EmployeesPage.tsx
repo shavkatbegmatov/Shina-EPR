@@ -19,13 +19,14 @@ import {
 import clsx from 'clsx';
 import toast from 'react-hot-toast';
 import { employeesApi } from '../../api/employees.api';
+import { rolesApi } from '../../api/roles.api';
 import { formatCurrency, formatDate, EMPLOYEE_STATUSES, ROLES, getTashkentToday } from '../../config/constants';
 import { DataTable, Column } from '../../components/ui/DataTable';
 import { ModalPortal } from '../../components/common/Modal';
 import { CurrencyInput } from '../../components/ui/CurrencyInput';
 import { PhoneInput } from '../../components/ui/PhoneInput';
 import { CredentialsModal } from './components/CredentialsModal';
-import type { CredentialsInfo, Employee, EmployeeRequest, EmployeeStatus, User } from '../../types';
+import type { CredentialsInfo, Employee, EmployeeRequest, EmployeeStatus, Role, User } from '../../types';
 
 const emptyFormData: EmployeeRequest = {
   fullName: '',
@@ -44,7 +45,7 @@ const emptyFormData: EmployeeRequest = {
   emergencyContactPhone: '',
   userId: undefined,
   createUserAccount: false,
-  roleCode: 'SELLER',
+  roleCode: '',
 };
 
 type ModalTab = 'basic' | 'extended';
@@ -76,6 +77,9 @@ export function EmployeesPage() {
 
   // Available users for linking
   const [availableUsers, setAvailableUsers] = useState<User[]>([]);
+
+  // Available roles for new user account
+  const [roles, setRoles] = useState<Role[]>([]);
 
   // Credentials modal for newly created user
   const [newCredentials, setNewCredentials] = useState<CredentialsInfo | null>(null);
@@ -259,6 +263,16 @@ export function EmployeesPage() {
     }
   }, []);
 
+  const loadRoles = useCallback(async () => {
+    try {
+      const data = await rolesApi.getAll();
+      // Filter only active roles
+      setRoles(data.filter(role => role.isActive));
+    } catch (error) {
+      console.error('Failed to load roles:', error);
+    }
+  }, []);
+
   // Initial load
   useEffect(() => {
     loadEmployees(true);
@@ -277,6 +291,7 @@ export function EmployeesPage() {
     setFormData(emptyFormData);
     setModalTab('basic');
     loadAvailableUsers();
+    loadRoles();
     setShowModal(true);
   };
 
@@ -764,11 +779,12 @@ export function EmployeesPage() {
                               </span>
                               <select
                                 className="select select-bordered w-full bg-base-100"
-                                value={formData.roleCode || 'SELLER'}
+                                value={formData.roleCode || ''}
                                 onChange={(e) => handleFormChange('roleCode', e.target.value)}
                               >
-                                {Object.entries(ROLES).map(([key, { label }]) => (
-                                  <option key={key} value={key}>{label}</option>
+                                <option value="" disabled>Rol tanlang...</option>
+                                {roles.map((role) => (
+                                  <option key={role.code} value={role.code}>{role.name}</option>
                                 ))}
                               </select>
                             </label>
