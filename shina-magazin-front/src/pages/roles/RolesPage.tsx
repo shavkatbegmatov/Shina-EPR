@@ -9,9 +9,11 @@ import {
   Users,
   Key,
   Lock,
+  X,
 } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { rolesApi, permissionsApi } from '../../api/roles.api';
+import { ModalPortal } from '../../components/common/Modal';
 import { PermissionCode } from '../../hooks/usePermission';
 import { PermissionGate } from '../../components/common/PermissionGate';
 import type { Role, RoleRequest } from '../../types';
@@ -286,14 +288,24 @@ export function RolesPage() {
       )}
 
       {/* Create/Edit Modal */}
-      {showModal && (
-        <div className="modal modal-open">
-          <div className="modal-box max-w-4xl">
-            <h3 className="text-lg font-bold">
-              {selectedRole ? 'Rolni tahrirlash' : 'Yangi rol yaratish'}
-            </h3>
+      <ModalPortal isOpen={showModal} onClose={closeModal}>
+        <div className="w-full max-w-4xl bg-base-100 rounded-2xl shadow-2xl max-h-[90vh] overflow-y-auto">
+          <div className="p-4 sm:p-6">
+            <div className="flex items-start justify-between gap-4">
+              <div>
+                <h3 className="text-xl font-semibold">
+                  {selectedRole ? 'Rolni tahrirlash' : 'Yangi rol yaratish'}
+                </h3>
+                <p className="text-sm text-base-content/60">
+                  {selectedRole ? "Rol ma'lumotlari va huquqlarini o'zgartirish" : "Yangi rol va huquqlarni belgilash"}
+                </p>
+              </div>
+              <button className="btn btn-ghost btn-sm" onClick={closeModal}>
+                <X className="h-4 w-4" />
+              </button>
+            </div>
 
-            <div className="mt-4 space-y-4">
+            <div className="mt-6 space-y-4">
               <div className="grid gap-4 sm:grid-cols-2">
                 <label className="form-control">
                   <span className="label-text">Rol nomi *</span>
@@ -393,7 +405,7 @@ export function RolesPage() {
               </div>
             </div>
 
-            <div className="modal-action">
+            <div className="mt-6 flex justify-end gap-2">
               <button className="btn btn-ghost" onClick={closeModal}>
                 Bekor qilish
               </button>
@@ -414,9 +426,8 @@ export function RolesPage() {
               </button>
             </div>
           </div>
-          <div className="modal-backdrop" onClick={closeModal} />
         </div>
-      )}
+      </ModalPortal>
     </div>
   );
 }
