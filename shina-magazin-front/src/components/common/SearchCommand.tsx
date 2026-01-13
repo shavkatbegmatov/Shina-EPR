@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
+import { createPortal } from 'react-dom';
 import { useNavigate } from 'react-router-dom';
 import {
   Search,
@@ -99,6 +100,9 @@ export function SearchCommand() {
   const [results, setResults] = useState<SearchResult[]>([]);
   const [recentSearches, setRecentSearches] = useState<SearchResult[]>([]);
   const [selectedIndex, setSelectedIndex] = useState(0);
+  const [dropdownPosition, setDropdownPosition] = useState({ top: 0, left: 0, width: 0 });
+
+  const triggerRef = useRef<HTMLButtonElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
   const listRef = useRef<HTMLDivElement>(null);
   const navigate = useNavigate();
@@ -125,6 +129,18 @@ export function SearchCommand() {
     });
   }, []);
 
+  // Calculate dropdown position
+  const updatePosition = useCallback(() => {
+    if (triggerRef.current) {
+      const rect = triggerRef.current.getBoundingClientRect();
+      setDropdownPosition({
+        top: rect.bottom + 8,
+        left: rect.left,
+        width: Math.max(rect.width, 400),
+      });
+    }
+  }, []);
+
   // Global keyboard shortcut
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -141,15 +157,24 @@ export function SearchCommand() {
     return () => document.removeEventListener('keydown', handleKeyDown);
   }, [open]);
 
-  // Focus input when opened
+  // Focus input and update position when opened
   useEffect(() => {
     if (open) {
+      updatePosition();
       setTimeout(() => inputRef.current?.focus(), 0);
       setQuery('');
       setResults([]);
       setSelectedIndex(0);
     }
-  }, [open]);
+  }, [open, updatePosition]);
+
+  // Update position on resize
+  useEffect(() => {
+    if (open) {
+      window.addEventListener('resize', updatePosition);
+      return () => window.removeEventListener('resize', updatePosition);
+    }
+  }, [open, updatePosition]);
 
   // Search function
   const performSearch = useCallback(async (searchQuery: string) => {
@@ -272,179 +297,188 @@ export function SearchCommand() {
   const displayItems = query ? results : [...recentSearches, ...filteredQuickActions];
   const hasRecent = !query && recentSearches.length > 0;
 
-  if (!open) {
-    return (
-      <>
-        {/* Desktop trigger */}
-        <button
-          onClick={() => setOpen(true)}
-          className={clsx(
-            'hidden md:flex items-center gap-2 w-full max-w-md px-3 py-2 rounded-lg',
-            'bg-base-200/50 border border-base-200 transition-all duration-200',
-            'hover:bg-base-200 hover:border-base-300',
-            'text-base-content/50 text-sm'
-          )}
-        >
-          <Search className="h-4 w-4" />
-          <span className="flex-1 text-left">Qidirish...</span>
-          <kbd className="hidden lg:inline-flex items-center gap-1 px-1.5 py-0.5 text-[10px] font-medium bg-base-300/50 rounded">
-            ⌘K
-          </kbd>
-        </button>
-
-        {/* Mobile trigger */}
-        <button
-          onClick={() => setOpen(true)}
-          className="btn btn-ghost btn-sm btn-square md:hidden"
-          title="Qidirish"
-        >
-          <Search className="h-4 w-4" />
-        </button>
-      </>
-    );
-  }
-
   return (
     <>
-      {/* Backdrop */}
-      <div
-        className="fixed inset-0 z-50 bg-black/50 backdrop-blur-sm"
-        onClick={() => setOpen(false)}
-      />
+      {/* Desktop trigger */}
+      <button
+        ref={triggerRef}
+        onClick={() => setOpen(true)}
+        className={clsx(
+          'hidden md:flex items-center gap-2 w-full max-w-md px-3 py-2 rounded-xl',
+          'bg-base-200/50 border border-base-300 transition-all duration-200',
+          'hover:bg-base-200 hover:border-base-content/20',
+          'text-base-content/50 text-sm',
+          open && 'border-primary ring-2 ring-primary/20'
+        )}
+      >
+        <Search className="h-4 w-4" />
+        <span className="flex-1 text-left">Qidirish...</span>
+        <kbd className="hidden lg:inline-flex items-center gap-1 px-1.5 py-0.5 text-[10px] font-medium bg-base-300/50 rounded">
+          ⌘K
+        </kbd>
+      </button>
 
-      {/* Modal */}
-      <div className="fixed inset-x-4 top-20 z-50 mx-auto max-w-xl">
-        <div className="surface-card overflow-hidden shadow-2xl">
-          {/* Search input */}
-          <div className="flex items-center gap-3 border-b border-base-200 px-4">
-            {loading ? (
-              <Loader2 className="h-5 w-5 text-primary animate-spin" />
-            ) : (
-              <Search className="h-5 w-5 text-base-content/40" />
-            )}
-            <input
-              ref={inputRef}
-              type="text"
-              value={query}
-              onChange={(e) => setQuery(e.target.value)}
-              onKeyDown={handleKeyDown}
-              placeholder="Mahsulot, mijoz yoki sahifa qidiring..."
-              className="flex-1 bg-transparent py-4 text-base outline-none placeholder:text-base-content/40"
-            />
-            <button
-              onClick={() => setOpen(false)}
-              className="btn btn-ghost btn-sm btn-square"
-            >
-              <X className="h-4 w-4" />
-            </button>
-          </div>
+      {/* Mobile trigger */}
+      <button
+        onClick={() => setOpen(true)}
+        className="btn btn-ghost btn-sm btn-square md:hidden"
+        title="Qidirish"
+      >
+        <Search className="h-4 w-4" />
+      </button>
 
-          {/* Results */}
-          <div ref={listRef} className="max-h-[60vh] overflow-y-auto p-2">
-            {displayItems.length === 0 && query && !loading && (
-              <div className="py-8 text-center text-base-content/50">
-                <Search className="h-8 w-8 mx-auto mb-2 opacity-50" />
-                <p>"{query}" bo'yicha natija topilmadi</p>
+      {/* Dropdown via Portal */}
+      {open && createPortal(
+        <>
+          {/* Backdrop */}
+          <div
+            className="fixed inset-0 z-50 bg-black/30"
+            onClick={() => setOpen(false)}
+          />
+
+          {/* Dropdown */}
+          <div
+            className="fixed z-50 w-full max-w-xl"
+            style={{
+              top: dropdownPosition.top,
+              left: dropdownPosition.left,
+              minWidth: dropdownPosition.width,
+            }}
+          >
+            <div className="bg-base-100 rounded-xl border border-base-300 shadow-[0_4px_30px_rgba(0,0,0,0.15)] overflow-hidden">
+              {/* Search input */}
+              <div className="flex items-center gap-3 border-b border-base-200 px-4">
+                {loading ? (
+                  <Loader2 className="h-5 w-5 text-primary animate-spin" />
+                ) : (
+                  <Search className="h-5 w-5 text-base-content/40" />
+                )}
+                <input
+                  ref={inputRef}
+                  type="text"
+                  value={query}
+                  onChange={(e) => setQuery(e.target.value)}
+                  onKeyDown={handleKeyDown}
+                  placeholder="Mahsulot, mijoz yoki sahifa qidiring..."
+                  className="flex-1 bg-transparent py-3 text-base outline-none placeholder:text-base-content/40"
+                />
+                <button
+                  onClick={() => setOpen(false)}
+                  className="btn btn-ghost btn-sm btn-circle"
+                >
+                  <X className="h-4 w-4" />
+                </button>
               </div>
-            )}
 
-            {hasRecent && (
-              <div className="px-2 py-1.5 text-xs font-medium text-base-content/50 flex items-center gap-2">
-                <Clock className="h-3 w-3" />
-                So'nggi qidiruvlar
-              </div>
-            )}
+              {/* Results */}
+              <div ref={listRef} className="max-h-[50vh] overflow-y-auto p-2">
+                {displayItems.length === 0 && query && !loading && (
+                  <div className="py-8 text-center text-base-content/50">
+                    <Search className="h-8 w-8 mx-auto mb-2 opacity-50" />
+                    <p>"{query}" bo'yicha natija topilmadi</p>
+                  </div>
+                )}
 
-            {displayItems.map((item, index) => {
-              const isQuickAction = !query && index >= recentSearches.length;
-              const showQuickActionHeader = isQuickAction && index === recentSearches.length;
-              const Icon = getResultIcon(item);
+                {hasRecent && (
+                  <div className="px-2 py-1.5 text-xs font-medium text-base-content/50 flex items-center gap-2">
+                    <Clock className="h-3 w-3" />
+                    So'nggi qidiruvlar
+                  </div>
+                )}
 
-              return (
-                <div key={item.id}>
-                  {showQuickActionHeader && (
-                    <div className="px-2 py-1.5 text-xs font-medium text-base-content/50 mt-2">
-                      Tez havolalar
-                    </div>
-                  )}
-                  <button
-                    data-index={index}
-                    onClick={() => handleSelect(item)}
-                    className={clsx(
-                      'flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-left transition-colors',
-                      selectedIndex === index
-                        ? 'bg-primary text-primary-content'
-                        : 'hover:bg-base-200/70'
-                    )}
-                  >
-                    <div
-                      className={clsx(
-                        'grid h-8 w-8 place-items-center rounded-lg',
-                        getIconColorClass(item.type, selectedIndex === index)
-                      )}
-                    >
-                      <Icon className="h-4 w-4" />
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <div className="font-medium truncate">{item.title}</div>
-                      {item.subtitle && (
-                        <div
-                          className={clsx(
-                            'text-xs truncate',
-                            selectedIndex === index
-                              ? 'text-primary-content/70'
-                              : 'text-base-content/50'
-                          )}
-                        >
-                          {item.subtitle}
+                {displayItems.map((item, index) => {
+                  const isQuickAction = !query && index >= recentSearches.length;
+                  const showQuickActionHeader = isQuickAction && index === recentSearches.length;
+                  const Icon = getResultIcon(item);
+
+                  return (
+                    <div key={item.id}>
+                      {showQuickActionHeader && (
+                        <div className="px-2 py-1.5 text-xs font-medium text-base-content/50 mt-2">
+                          Tez havolalar
                         </div>
                       )}
-                    </div>
-                    {item.meta && (
-                      <div
+                      <button
+                        data-index={index}
+                        onClick={() => handleSelect(item)}
                         className={clsx(
-                          'text-sm font-medium',
+                          'flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-left transition-colors',
                           selectedIndex === index
-                            ? 'text-primary-content/80'
-                            : 'text-base-content/60'
+                            ? 'bg-primary text-primary-content'
+                            : 'hover:bg-base-200/70'
                         )}
                       >
-                        {item.meta}
-                      </div>
-                    )}
-                    <ArrowRight
-                      className={clsx(
-                        'h-4 w-4 transition-transform',
-                        selectedIndex === index
-                          ? 'translate-x-0 opacity-100'
-                          : '-translate-x-2 opacity-0'
-                      )}
-                    />
-                  </button>
-                </div>
-              );
-            })}
-          </div>
+                        <div
+                          className={clsx(
+                            'grid h-8 w-8 place-items-center rounded-lg',
+                            getIconColorClass(item.type, selectedIndex === index)
+                          )}
+                        >
+                          <Icon className="h-4 w-4" />
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <div className="font-medium truncate">{item.title}</div>
+                          {item.subtitle && (
+                            <div
+                              className={clsx(
+                                'text-xs truncate',
+                                selectedIndex === index
+                                  ? 'text-primary-content/70'
+                                  : 'text-base-content/50'
+                              )}
+                            >
+                              {item.subtitle}
+                            </div>
+                          )}
+                        </div>
+                        {item.meta && (
+                          <div
+                            className={clsx(
+                              'text-sm font-medium',
+                              selectedIndex === index
+                                ? 'text-primary-content/80'
+                                : 'text-base-content/60'
+                            )}
+                          >
+                            {item.meta}
+                          </div>
+                        )}
+                        <ArrowRight
+                          className={clsx(
+                            'h-4 w-4 transition-transform',
+                            selectedIndex === index
+                              ? 'translate-x-0 opacity-100'
+                              : '-translate-x-2 opacity-0'
+                          )}
+                        />
+                      </button>
+                    </div>
+                  );
+                })}
+              </div>
 
-          {/* Footer */}
-          <div className="flex items-center justify-between border-t border-base-200 px-4 py-2 text-xs text-base-content/50">
-            <div className="flex items-center gap-3">
-              <span className="flex items-center gap-1">
-                <kbd className="px-1.5 py-0.5 bg-base-200 rounded">↑↓</kbd>
-                navigatsiya
-              </span>
-              <span className="flex items-center gap-1">
-                <kbd className="px-1.5 py-0.5 bg-base-200 rounded">↵</kbd>
-                tanlash
-              </span>
-              <span className="flex items-center gap-1">
-                <kbd className="px-1.5 py-0.5 bg-base-200 rounded">esc</kbd>
-                yopish
-              </span>
+              {/* Footer */}
+              <div className="flex items-center justify-between border-t border-base-200 px-4 py-2 text-xs text-base-content/50">
+                <div className="flex items-center gap-3">
+                  <span className="flex items-center gap-1">
+                    <kbd className="px-1.5 py-0.5 bg-base-200 rounded">↑↓</kbd>
+                    navigatsiya
+                  </span>
+                  <span className="flex items-center gap-1">
+                    <kbd className="px-1.5 py-0.5 bg-base-200 rounded">↵</kbd>
+                    tanlash
+                  </span>
+                  <span className="flex items-center gap-1">
+                    <kbd className="px-1.5 py-0.5 bg-base-200 rounded">esc</kbd>
+                    yopish
+                  </span>
+                </div>
+              </div>
             </div>
           </div>
-        </div>
-      </div>
+        </>,
+        document.body
+      )}
     </>
   );
 }
