@@ -152,15 +152,15 @@ export function NumberInput({
   };
 
   const sizeClasses = {
-    sm: 'h-8 text-sm',
-    md: 'h-10 text-base',
-    lg: 'h-12 text-lg',
+    sm: 'h-9 text-sm',
+    md: 'h-11 text-base',
+    lg: 'h-13 text-lg',
   };
 
   const buttonSizeClasses = {
-    sm: 'w-8 h-8',
-    md: 'w-10 h-10',
-    lg: 'w-12 h-12',
+    sm: 'w-9 h-9',
+    md: 'w-11 h-11',
+    lg: 'w-13 h-13',
   };
 
   const iconSizeClasses = {
@@ -181,7 +181,7 @@ export function NumberInput({
       )}
       <div
         className={clsx(
-          'number-input-wrapper flex items-stretch rounded-lg border transition-all duration-200',
+          'number-input-wrapper flex items-stretch rounded-xl border bg-base-100 transition-all duration-200',
           isFocused
             ? 'border-primary ring-2 ring-primary/20'
             : 'border-base-300 hover:border-base-content/30',
@@ -192,7 +192,7 @@ export function NumberInput({
           <button
             type="button"
             className={clsx(
-              'number-input-btn flex items-center justify-center rounded-l-lg border-r border-base-300 bg-base-200/50 transition-colors',
+              'number-input-btn flex items-center justify-center rounded-l-[10px] border-r border-base-300 bg-base-200/50 transition-colors',
               'hover:bg-base-300 active:bg-base-300/80',
               'disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:bg-base-200/50',
               buttonSizeClasses[size]
@@ -219,7 +219,7 @@ export function NumberInput({
             'number-input-field flex-1 min-w-0 bg-transparent text-center font-medium outline-none',
             'placeholder:text-base-content/40',
             sizeClasses[size],
-            !showButtons && 'px-3 rounded-lg'
+            !showButtons && 'px-3 rounded-xl'
           )}
           value={value}
           onChange={handleInputChange}
@@ -235,7 +235,7 @@ export function NumberInput({
           <button
             type="button"
             className={clsx(
-              'number-input-btn flex items-center justify-center rounded-r-lg border-l border-base-300 bg-base-200/50 transition-colors',
+              'number-input-btn flex items-center justify-center rounded-r-[10px] border-l border-base-300 bg-base-200/50 transition-colors',
               'hover:bg-base-300 active:bg-base-300/80',
               'disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:bg-base-200/50',
               buttonSizeClasses[size]
