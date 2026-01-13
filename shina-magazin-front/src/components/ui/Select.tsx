@@ -165,7 +165,7 @@ export function Select({
         {isOpen && (
           <div
             ref={listRef}
-            className="absolute left-0 right-0 top-full z-50 mt-1 max-h-60 overflow-auto rounded-xl border border-base-300 bg-base-100 py-1 shadow-[0_4px_20px_rgba(0,0,0,0.15)]"
+            className="absolute left-0 right-0 top-full z-50 mt-1 max-h-60 overflow-auto rounded-xl border border-base-300 bg-base-100 shadow-[0_4px_20px_rgba(0,0,0,0.15)]"
             role="listbox"
           >
             {options.length === 0 ? (
@@ -178,7 +178,7 @@ export function Select({
                   key={option.value}
                   data-selected={option.value === value}
                   className={clsx(
-                    'flex items-center gap-2 px-3 py-2.5 cursor-pointer transition-colors',
+                    'flex items-center gap-2 px-3 py-2.5 cursor-pointer transition-colors first:rounded-t-[10px] last:rounded-b-[10px]',
                     option.value === value
                       ? 'bg-primary/10 text-primary font-medium'
                       : 'hover:bg-base-200/80',
