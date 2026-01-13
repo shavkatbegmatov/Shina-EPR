@@ -27,6 +27,7 @@ import { CurrencyInput } from '../../components/ui/CurrencyInput';
 import { PhoneInput } from '../../components/ui/PhoneInput';
 import { Select } from '../../components/ui/Select';
 import { CredentialsModal } from './components/CredentialsModal';
+import { useHighlight } from '../../hooks/useHighlight';
 import type { CredentialsInfo, Employee, EmployeeRequest, EmployeeStatus, Role, User } from '../../types';
 
 const emptyFormData: EmployeeRequest = {
@@ -86,6 +87,7 @@ export function EmployeesPage() {
   const [newCredentials, setNewCredentials] = useState<CredentialsInfo | null>(null);
   const [credentialsEmployeeName, setCredentialsEmployeeName] = useState('');
 
+  const { highlightId, clearHighlight } = useHighlight();
   const hasSearch = useMemo(() => search.trim().length > 0, [search]);
 
   const handlePageSizeChange = (newSize: number) => {
@@ -493,6 +495,8 @@ export function EmployeesPage() {
           columns={columns}
           keyExtractor={(employee) => employee.id}
           loading={initialLoading && !refreshing}
+          highlightId={highlightId}
+          onHighlightComplete={clearHighlight}
           emptyIcon={<UserCog className="h-12 w-12" />}
           emptyTitle="Xodimlar topilmadi"
           emptyDescription="Yangi xodim qo'shish uchun tugmani bosing"

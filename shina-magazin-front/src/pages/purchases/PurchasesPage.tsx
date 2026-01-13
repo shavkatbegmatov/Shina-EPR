@@ -34,6 +34,7 @@ import { ProductSearchCombobox } from '../../components/common/ProductSearchComb
 import { CurrencyInput } from '../../components/ui/CurrencyInput';
 import { Select } from '../../components/ui/Select';
 import { useNotificationsStore } from '../../store/notificationsStore';
+import { useHighlight } from '../../hooks/useHighlight';
 import type {
   Supplier,
   PurchaseOrder,
@@ -99,6 +100,8 @@ export function PurchasesPage() {
     [cartItems]
   );
   const debtAmount = useMemo(() => Math.max(0, cartTotal - paidAmount), [cartTotal, paidAmount]);
+
+  const { highlightId, clearHighlight } = useHighlight();
 
   // Toshkent timezone da sana oralig'ini hisoblash
   const getDateRangeValues = useCallback((preset: DateRangePreset): { start: string; end: string } | null => {
@@ -643,6 +646,8 @@ export function PurchasesPage() {
           columns={columns}
           keyExtractor={(purchase) => purchase.id}
           loading={initialLoading && !refreshing}
+          highlightId={highlightId}
+          onHighlightComplete={clearHighlight}
           emptyIcon={<ShoppingCart className="h-12 w-12" />}
         emptyTitle="Xaridlar topilmadi"
         emptyDescription="Yangi xarid qo'shish uchun tugmani bosing"

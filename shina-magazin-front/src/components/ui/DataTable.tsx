@@ -1,4 +1,4 @@
-import { useState, useMemo, ReactNode } from 'react';
+import { useState, useMemo, useEffect, useRef, ReactNode } from 'react';
 import { ArrowUpDown, ArrowUp, ArrowDown, ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight } from 'lucide-react';
 import clsx from 'clsx';
 import { Select } from './Select';
@@ -51,6 +51,10 @@ export interface DataTableProps<T> {
   // Row customization
   onRowClick?: (item: T) => void;
   rowClassName?: (item: T) => string;
+
+  // Highlight row (for search results)
+  highlightId?: string | number | null;
+  onHighlightComplete?: () => void;
 
   // Mobile card
   renderMobileCard?: (item: T, index: number) => ReactNode;
@@ -121,6 +125,8 @@ export function DataTable<T>({
   emptyDescription = "Filtrlarni o'zgartirib ko'ring",
   onRowClick,
   rowClassName,
+  highlightId,
+  onHighlightComplete,
   renderMobileCard,
   className,
   containerClassName,
@@ -130,6 +136,43 @@ export function DataTable<T>({
     key: '',
     direction: null,
   });
+
+  // Highlight animation state
+  const [activeHighlight, setActiveHighlight] = useState<string | number | null>(null);
+  const highlightTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const tableRef = useRef<HTMLDivElement>(null);
+
+  // Handle highlight
+  useEffect(() => {
+    if (highlightId != null && data.length > 0) {
+      // Find the item
+      const itemExists = data.some(item => keyExtractor(item) === highlightId);
+
+      if (itemExists) {
+        setActiveHighlight(highlightId);
+
+        // Scroll to highlighted row
+        setTimeout(() => {
+          const row = tableRef.current?.querySelector(`[data-highlight-id="${highlightId}"]`);
+          if (row) {
+            row.scrollIntoView({ behavior: 'smooth', block: 'center' });
+          }
+        }, 100);
+
+        // Clear highlight after animation
+        highlightTimeoutRef.current = setTimeout(() => {
+          setActiveHighlight(null);
+          onHighlightComplete?.();
+        }, 3000);
+      }
+    }
+
+    return () => {
+      if (highlightTimeoutRef.current) {
+        clearTimeout(highlightTimeoutRef.current);
+      }
+    };
+  }, [highlightId, data, keyExtractor, onHighlightComplete]);
 
   const sortConfig = externalSortConfig || internalSortConfig;
 
@@ -233,7 +276,7 @@ export function DataTable<T>({
   }
 
   return (
-    <div className={clsx('surface-card', containerClassName)}>
+    <div ref={tableRef} className={clsx('surface-card', containerClassName)}>
       {/* Desktop Table */}
       <div className={clsx('hidden lg:block', className)}>
         <table className="table table-zebra w-full">
@@ -259,13 +302,19 @@ export function DataTable<T>({
             </tr>
           </thead>
           <tbody>
-            {sortedData.map((item, index) => (
+            {sortedData.map((item, index) => {
+              const itemId = keyExtractor(item);
+              const isHighlighted = activeHighlight === itemId;
+
+              return (
               <tr
-                key={keyExtractor(item)}
+                key={itemId}
+                data-highlight-id={itemId}
                 className={clsx(
                   'transition',
                   onRowClick && 'cursor-pointer hover:bg-base-200/50',
-                  rowClassName?.(item)
+                  rowClassName?.(item),
+                  isHighlighted && 'animate-highlight-row'
                 )}
                 onClick={() => onRowClick?.(item)}
               >
@@ -277,7 +326,8 @@ export function DataTable<T>({
                   </td>
                 ))}
               </tr>
-            ))}
+              );
+            })}
           </tbody>
         </table>
       </div>
@@ -285,11 +335,21 @@ export function DataTable<T>({
       {/* Mobile Cards */}
       {renderMobileCard && (
         <div className="space-y-3 p-4 lg:hidden">
-          {sortedData.map((item, index) => (
-            <div key={keyExtractor(item)} onClick={() => onRowClick?.(item)}>
-              {renderMobileCard(item, index)}
-            </div>
-          ))}
+          {sortedData.map((item, index) => {
+            const itemId = keyExtractor(item);
+            const isHighlighted = activeHighlight === itemId;
+
+            return (
+              <div
+                key={itemId}
+                data-highlight-id={itemId}
+                className={clsx(isHighlighted && 'animate-highlight-row rounded-xl')}
+                onClick={() => onRowClick?.(item)}
+              >
+                {renderMobileCard(item, index)}
+              </div>
+            );
+          })}
         </div>
       )}
 

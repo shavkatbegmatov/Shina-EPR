@@ -8,6 +8,7 @@ import { formatCurrency, formatDateTime, PAYMENT_METHODS, PAYMENT_STATUSES, SALE
 import { DataTable, Column } from '../../components/ui/DataTable';
 import { Select } from '../../components/ui/Select';
 import { ModalPortal } from '../../components/common/Modal';
+import { useHighlight } from '../../hooks/useHighlight';
 import type { Sale, PaymentStatus, SaleStatus, PaymentMethod } from '../../types';
 import { useNotificationsStore } from '../../store/notificationsStore';
 
@@ -35,6 +36,7 @@ export function SalesPage() {
   const [cancelling, setCancelling] = useState(false);
   const [loadingDetails, setLoadingDetails] = useState(false);
   const { notifications } = useNotificationsStore();
+  const { highlightId, clearHighlight } = useHighlight();
 
   const hasFilters = useMemo(
     () => search.trim().length > 0 || paymentStatusFilter !== '' || statusFilter !== '',
@@ -314,10 +316,12 @@ export function SalesPage() {
           columns={columns}
           keyExtractor={(sale) => sale.id}
           loading={initialLoading && !refreshing}
+          highlightId={highlightId}
+          onHighlightComplete={clearHighlight}
           emptyIcon={<Receipt className="h-12 w-12" />}
-        emptyTitle="Sotuvlar topilmadi"
-        emptyDescription="Filtrlarni o'zgartiring yoki yangi sotuv qiling"
-        rowClassName={(sale) => (sale.status === 'CANCELLED' ? 'opacity-60' : '')}
+          emptyTitle="Sotuvlar topilmadi"
+          emptyDescription="Filtrlarni o'zgartiring yoki yangi sotuv qiling"
+          rowClassName={(sale) => (sale.status === 'CANCELLED' ? 'opacity-60' : '')}
         currentPage={page}
         totalPages={totalPages}
         totalElements={totalElements}

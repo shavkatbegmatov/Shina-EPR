@@ -28,6 +28,7 @@ import { ModalPortal } from '../../components/common/Modal';
 import { PhoneInput } from '../../components/ui/PhoneInput';
 import { Select } from '../../components/ui/Select';
 import { useNotificationsStore } from '../../store/notificationsStore';
+import { useHighlight } from '../../hooks/useHighlight';
 import type {
   Supplier,
   SupplierRequest,
@@ -111,6 +112,7 @@ export function SuppliersPage() {
   const [allSuppliers, setAllSuppliers] = useState<Supplier[]>([]);
 
   const { notifications } = useNotificationsStore();
+  const { highlightId, clearHighlight } = useHighlight();
   const hasSearch = useMemo(() => search.trim().length > 0, [search]);
 
   // Calculate totals
@@ -726,10 +728,12 @@ export function SuppliersPage() {
               columns={suppliersColumns}
               keyExtractor={(supplier) => supplier.id}
               loading={initialLoading && !refreshing}
+              highlightId={highlightId}
+              onHighlightComplete={clearHighlight}
               emptyIcon={<Truck className="h-12 w-12" />}
-            emptyTitle="Ta'minotchilar topilmadi"
-            emptyDescription="Qidiruv so'zini o'zgartiring"
-            rowClassName={(supplier) => (supplier.hasDebt ? 'bg-error/5' : '')}
+              emptyTitle="Ta'minotchilar topilmadi"
+              emptyDescription="Qidiruv so'zini o'zgartiring"
+              rowClassName={(supplier) => (supplier.hasDebt ? 'bg-error/5' : '')}
             currentPage={page}
             totalPages={totalPages}
             totalElements={totalElements}

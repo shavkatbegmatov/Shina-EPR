@@ -9,6 +9,7 @@ import { Select } from '../../components/ui/Select';
 import { DataTable, Column } from '../../components/ui/DataTable';
 import { ModalPortal } from '../../components/common/Modal';
 import { useNotificationsStore } from '../../store/notificationsStore';
+import { useHighlight } from '../../hooks/useHighlight';
 import type { Product, Brand, Category, Season, ProductRequest } from '../../types';
 
 const emptyFormData: ProductRequest = {
@@ -38,6 +39,7 @@ export function ProductsPage() {
   const [saving, setSaving] = useState(false);
 
   const { notifications } = useNotificationsStore();
+  const { highlightId, clearHighlight } = useHighlight();
 
   const activeFilters = useMemo(() => {
     let count = 0;
@@ -336,10 +338,12 @@ export function ProductsPage() {
           columns={columns}
           keyExtractor={(product) => product.id}
           loading={initialLoading && !refreshing}
+          highlightId={highlightId}
+          onHighlightComplete={clearHighlight}
           emptyIcon={<Package className="h-12 w-12" />}
-        emptyTitle="Mahsulotlar topilmadi"
-        emptyDescription="Filtrlarni o'zgartirib ko'ring"
-        rowClassName={(product) => (product.lowStock ? 'bg-error/5' : '')}
+          emptyTitle="Mahsulotlar topilmadi"
+          emptyDescription="Filtrlarni o'zgartirib ko'ring"
+          rowClassName={(product) => (product.lowStock ? 'bg-error/5' : '')}
         currentPage={page}
         totalPages={totalPages}
         totalElements={totalElements}

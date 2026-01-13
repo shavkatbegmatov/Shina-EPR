@@ -8,6 +8,7 @@ import { ModalPortal } from '../../components/common/Modal';
 import { PhoneInput } from '../../components/ui/PhoneInput';
 import { Select } from '../../components/ui/Select';
 import { useNotificationsStore } from '../../store/notificationsStore';
+import { useHighlight } from '../../hooks/useHighlight';
 import type { Customer, CustomerRequest, CustomerType } from '../../types';
 
 const emptyFormData: CustomerRequest = {
@@ -37,6 +38,7 @@ export function CustomersPage() {
   const [saving, setSaving] = useState(false);
 
   const { notifications } = useNotificationsStore();
+  const { highlightId, clearHighlight } = useHighlight();
   const hasSearch = useMemo(() => search.trim().length > 0, [search]);
 
   const handlePageSizeChange = (newSize: number) => {
@@ -266,10 +268,12 @@ export function CustomersPage() {
           columns={columns}
           keyExtractor={(customer) => customer.id}
           loading={initialLoading && !refreshing}
+          highlightId={highlightId}
+          onHighlightComplete={clearHighlight}
           emptyIcon={<Users className="h-12 w-12" />}
-        emptyTitle="Mijozlar topilmadi"
-        emptyDescription="Qidiruv so'zini o'zgartiring"
-        rowClassName={(customer) => (customer.hasDebt ? 'bg-error/5' : '')}
+          emptyTitle="Mijozlar topilmadi"
+          emptyDescription="Qidiruv so'zini o'zgartiring"
+          rowClassName={(customer) => (customer.hasDebt ? 'bg-error/5' : '')}
         currentPage={page}
         totalPages={totalPages}
         totalElements={totalElements}

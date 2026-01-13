@@ -234,7 +234,7 @@ export function SearchCommand() {
           type: 'product',
           title: product.name,
           subtitle: product.sku,
-          href: `/products?search=${encodeURIComponent(product.name)}`,
+          href: `/products?highlight=${product.id}`,
           meta: formatCurrency(product.sellingPrice),
         });
       });
@@ -246,7 +246,7 @@ export function SearchCommand() {
           type: 'customer',
           title: customer.fullName,
           subtitle: customer.phone,
-          href: `/customers?search=${encodeURIComponent(customer.fullName)}`,
+          href: `/customers?highlight=${customer.id}`,
           meta: customer.balance < 0 ? `Qarz: ${formatCurrency(Math.abs(customer.balance))}` : undefined,
         });
       });
@@ -260,7 +260,7 @@ export function SearchCommand() {
             type: 'sale',
             title: sale.invoiceNumber,
             subtitle: sale.customerName || "Noma'lum mijoz",
-            href: `/sales?search=${encodeURIComponent(sale.invoiceNumber)}`,
+            href: `/sales?highlight=${sale.id}`,
             meta: formatCurrency(sale.totalAmount),
           });
         });
@@ -277,7 +277,7 @@ export function SearchCommand() {
             type: 'debt',
             title: debt.customerName,
             subtitle: debt.invoiceNumber || debt.customerPhone,
-            href: '/debts',
+            href: `/debts?highlight=${debt.id}`,
             meta: `Qarz: ${formatCurrency(debt.remainingAmount)}`,
           });
         });
@@ -294,7 +294,7 @@ export function SearchCommand() {
             type: 'purchase',
             title: purchase.orderNumber || `Xarid #${purchase.id}`,
             subtitle: purchase.supplierName || "Noma'lum ta'minotchi",
-            href: `/purchases/${purchase.id}`,
+            href: `/purchases?highlight=${purchase.id}`,
             meta: formatCurrency(purchase.totalAmount),
           });
         });
@@ -306,7 +306,7 @@ export function SearchCommand() {
           type: 'supplier',
           title: supplier.name,
           subtitle: supplier.phone || supplier.contactPerson,
-          href: `/suppliers?search=${encodeURIComponent(supplier.name)}`,
+          href: `/suppliers?highlight=${supplier.id}`,
         });
       });
 
@@ -317,7 +317,7 @@ export function SearchCommand() {
           type: 'employee',
           title: employee.fullName,
           subtitle: employee.phone || employee.position,
-          href: `/employees?search=${encodeURIComponent(employee.fullName)}`,
+          href: `/employees?highlight=${employee.id}`,
         });
       });
 

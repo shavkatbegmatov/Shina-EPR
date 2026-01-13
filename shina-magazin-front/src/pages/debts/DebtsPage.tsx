@@ -25,6 +25,7 @@ import { DataTable, Column } from '../../components/ui/DataTable';
 import { ModalPortal } from '../../components/common/Modal';
 import type { Debt, DebtStatus, Payment, PaymentMethod } from '../../types';
 import { useNotificationsStore } from '../../store/notificationsStore';
+import { useHighlight } from '../../hooks/useHighlight';
 
 type TabType = 'all' | 'by-customer' | 'overdue' | 'stats';
 
@@ -69,6 +70,8 @@ export function DebtsPage() {
 
   // Stats - used for header display
   const [, setTotalActiveDebt] = useState(0);
+
+  const { highlightId, clearHighlight } = useHighlight();
 
   // Tabs configuration
   const tabs = [
@@ -616,6 +619,8 @@ export function DebtsPage() {
                     columns={columns}
                     keyExtractor={(debt) => debt.id}
                     loading={initialLoading && !refreshing}
+                    highlightId={highlightId}
+                    onHighlightComplete={clearHighlight}
                     emptyIcon={<Wallet className="h-12 w-12" />}
                     emptyTitle="Qarzlar topilmadi"
                     emptyDescription="Filtrlarni o'zgartiring"
