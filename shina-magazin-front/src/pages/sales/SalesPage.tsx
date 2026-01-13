@@ -490,8 +490,15 @@ export function SalesPage() {
       {/* Cancel Confirmation Modal */}
       <ModalPortal isOpen={showCancelModal && !!selectedSale} onClose={() => { if (!cancelling) { setShowCancelModal(false); setSelectedSale(null); } }}>
         {selectedSale && (
-          <div className="w-full max-w-md bg-base-100 rounded-2xl shadow-2xl">
+          <div className="w-full max-w-md bg-base-100 rounded-2xl shadow-2xl relative">
             <div className="p-4 sm:p-6">
+              <button
+                className="btn btn-circle btn-ghost btn-sm absolute right-4 top-4"
+                onClick={() => { setShowCancelModal(false); setSelectedSale(null); }}
+                disabled={cancelling}
+              >
+                <X className="h-5 w-5" />
+              </button>
               <h3 className="text-lg font-bold text-error">Sotuvni bekor qilish</h3>
               <p className="mt-4 text-base-content/70">
                 Haqiqatan ham <span className="font-semibold">{selectedSale.invoiceNumber}</span> raqamli sotuvni bekor qilmoqchimisiz?

@@ -388,8 +388,14 @@ export function POSPage() {
 
       {/* Payment Modal */}
       <ModalPortal isOpen={showPayment} onClose={() => setShowPayment(false)}>
-        <div className="w-full max-w-lg bg-base-100 rounded-2xl shadow-2xl">
+        <div className="w-full max-w-lg bg-base-100 rounded-2xl shadow-2xl relative">
           <div className="p-4 sm:p-6">
+            <button
+              className="btn btn-circle btn-ghost btn-sm absolute right-4 top-4"
+              onClick={() => setShowPayment(false)}
+            >
+              <X className="h-5 w-5" />
+            </button>
             <h3 className="text-lg font-semibold">To'lov</h3>
             <p className="text-sm text-base-content/60">
               {itemCount} ta mahsulot · {formatCurrency(total)}

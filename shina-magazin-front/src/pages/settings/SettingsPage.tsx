@@ -700,8 +700,15 @@ export function SettingsPage() {
 
       {/* Delete Brand Confirmation Modal */}
       <ModalPortal isOpen={!!deletingBrand} onClose={() => setDeletingBrand(null)}>
-        <div className="w-full max-w-sm bg-base-100 rounded-2xl shadow-2xl">
+        <div className="w-full max-w-sm bg-base-100 rounded-2xl shadow-2xl relative">
           <div className="p-4 sm:p-6">
+            <button
+              className="btn btn-circle btn-ghost btn-sm absolute right-3 top-3"
+              onClick={() => setDeletingBrand(null)}
+              disabled={brandDeleting}
+            >
+              <X className="h-5 w-5" />
+            </button>
             <div className="flex flex-col items-center gap-4 text-center">
               <div className="flex h-12 w-12 items-center justify-center rounded-full bg-error/10">
                 <AlertTriangle className="h-6 w-6 text-error" />
@@ -736,8 +743,15 @@ export function SettingsPage() {
 
       {/* Delete Category Confirmation Modal */}
       <ModalPortal isOpen={!!deletingCategory} onClose={() => setDeletingCategory(null)}>
-        <div className="w-full max-w-sm bg-base-100 rounded-2xl shadow-2xl">
+        <div className="w-full max-w-sm bg-base-100 rounded-2xl shadow-2xl relative">
           <div className="p-4 sm:p-6">
+            <button
+              className="btn btn-circle btn-ghost btn-sm absolute right-3 top-3"
+              onClick={() => setDeletingCategory(null)}
+              disabled={categoryDeleting}
+            >
+              <X className="h-5 w-5" />
+            </button>
             <div className="flex flex-col items-center gap-4 text-center">
               <div className="flex h-12 w-12 items-center justify-center rounded-full bg-error/10">
                 <AlertTriangle className="h-6 w-6 text-error" />
