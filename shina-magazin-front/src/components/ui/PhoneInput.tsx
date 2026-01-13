@@ -134,7 +134,7 @@ export function PhoneInput({
 
       <div
         className={clsx(
-          'relative flex items-center rounded-xl border bg-base-100 transition-all duration-200 h-12',
+          'relative flex items-center rounded-xl border bg-base-100 transition-all duration-200 h-12 cursor-text',
           isFocused
             ? 'border-primary ring-2 ring-primary/20'
             : error
@@ -142,6 +142,7 @@ export function PhoneInput({
               : 'border-base-300 hover:border-base-content/30',
           disabled && 'opacity-50 pointer-events-none bg-base-200'
         )}
+        onClick={() => inputRef.current?.focus()}
       >
         {/* Phone icon */}
         <div className="pl-3 text-base-content/40">
