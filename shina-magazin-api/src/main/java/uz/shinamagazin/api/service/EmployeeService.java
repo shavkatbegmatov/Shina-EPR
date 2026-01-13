@@ -204,6 +204,15 @@ public class EmployeeService {
         User user = employee.getUser();
         user.getRoles().clear();
         user.getRoles().add(newRole);
+
+        // Also update legacy role field for backward compatibility
+        try {
+            user.setRole(uz.shinamagazin.api.enums.Role.valueOf(roleCode));
+        } catch (IllegalArgumentException e) {
+            // Custom role, not in legacy enum - leave as is
+            log.debug("Role {} is not in legacy enum, skipping legacy field update", roleCode);
+        }
+
         userRepository.save(user);
 
         // 6. Clear permission cache for this user

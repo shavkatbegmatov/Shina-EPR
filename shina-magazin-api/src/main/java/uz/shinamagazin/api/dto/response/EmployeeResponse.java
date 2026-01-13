@@ -69,8 +69,14 @@ public class EmployeeResponse {
 
         if (employee.getUser() != null) {
             builder.userId(employee.getUser().getId())
-                   .username(employee.getUser().getUsername())
-                   .userRole(employee.getUser().getRole().name());
+                   .username(employee.getUser().getUsername());
+
+            // Get role from new RBAC system (roles collection), fallback to legacy role field
+            if (!employee.getUser().getRoles().isEmpty()) {
+                builder.userRole(employee.getUser().getRoles().iterator().next().getCode());
+            } else {
+                builder.userRole(employee.getUser().getRole().name());
+            }
         }
 
         return builder.build();
