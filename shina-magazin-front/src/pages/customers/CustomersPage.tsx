@@ -6,6 +6,7 @@ import { formatCurrency, CUSTOMER_TYPES } from '../../config/constants';
 import { DataTable, Column } from '../../components/ui/DataTable';
 import { ModalPortal } from '../../components/common/Modal';
 import { PhoneInput } from '../../components/ui/PhoneInput';
+import { Select } from '../../components/ui/Select';
 import { useNotificationsStore } from '../../store/notificationsStore';
 import type { Customer, CustomerRequest, CustomerType } from '../../types';
 
@@ -334,14 +335,16 @@ export function CustomersPage() {
                   onChange={(value) => handleFormChange('phone2', value || undefined)}
                 />
               </div>
-              <label className="form-control">
-                <span className="label-text mb-1 text-xs font-semibold uppercase tracking-[0.18em] text-base-content/50">Mijoz turi</span>
-                <select className="select select-bordered w-full" value={formData.customerType || 'INDIVIDUAL'} onChange={(e) => handleFormChange('customerType', e.target.value as CustomerType)}>
-                  {Object.entries(CUSTOMER_TYPES).map(([key, { label }]) => (
-                    <option key={key} value={key}>{label}</option>
-                  ))}
-                </select>
-              </label>
+              <Select
+                label="Mijoz turi"
+                value={formData.customerType || 'INDIVIDUAL'}
+                onChange={(val) => handleFormChange('customerType', val as CustomerType)}
+                options={Object.entries(CUSTOMER_TYPES).map(([key, { label }]) => ({
+                  value: key,
+                  label,
+                }))}
+                placeholder="Mijoz turini tanlang"
+              />
               {formData.customerType === 'BUSINESS' && (
                 <label className="form-control">
                   <span className="label-text mb-1 text-xs font-semibold uppercase tracking-[0.18em] text-base-content/50">Kompaniya nomi</span>

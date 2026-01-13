@@ -13,6 +13,7 @@ import clsx from 'clsx';
 import { debtsApi } from '../../api/debts.api';
 import { formatCurrency, formatDate, formatDateTime, DEBT_STATUSES, PAYMENT_METHODS } from '../../config/constants';
 import { CurrencyInput } from '../../components/ui/CurrencyInput';
+import { Select } from '../../components/ui/Select';
 import { DataTable, Column } from '../../components/ui/DataTable';
 import { ModalPortal } from '../../components/common/Modal';
 import type { Debt, DebtStatus, Payment, PaymentMethod } from '../../types';
@@ -268,23 +269,21 @@ export function DebtsPage() {
               {statusFilter ? DEBT_STATUSES[statusFilter]?.label + " qarzlar" : "Barcha qarzlar"}
             </p>
           </div>
-          <div className="flex items-center gap-2">
-            <select
-              className="select select-bordered select-sm"
-              value={statusFilter}
-              onChange={(e) => {
-                setStatusFilter(e.target.value as DebtStatus | '');
-                setPage(0);
-              }}
-            >
-              <option value="">Barcha holatlar</option>
-              {Object.entries(DEBT_STATUSES).map(([key, { label }]) => (
-                <option key={key} value={key}>
-                  {label}
-                </option>
-              ))}
-            </select>
-          </div>
+          <Select
+            value={statusFilter || undefined}
+            onChange={(val) => {
+              setStatusFilter((val as DebtStatus | '') || '');
+              setPage(0);
+            }}
+            options={[
+              { value: '', label: 'Barcha holatlar' },
+              ...Object.entries(DEBT_STATUSES).map(([key, { label }]) => ({
+                value: key,
+                label,
+              })),
+            ]}
+            placeholder="Barcha holatlar"
+          />
         </div>
       </div>
 

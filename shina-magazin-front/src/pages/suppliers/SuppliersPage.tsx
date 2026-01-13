@@ -26,6 +26,7 @@ import { formatCurrency, formatDate, getTashkentToday } from '../../config/const
 import { DataTable, Column } from '../../components/ui/DataTable';
 import { ModalPortal } from '../../components/common/Modal';
 import { PhoneInput } from '../../components/ui/PhoneInput';
+import { Select } from '../../components/ui/Select';
 import { useNotificationsStore } from '../../store/notificationsStore';
 import type {
   Supplier,
@@ -1076,26 +1077,19 @@ export function SuppliersPage() {
             <div className="mt-6 space-y-5">
               {/* Ta'minotchi va sana */}
               <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-                <label className="form-control">
-                  <span className="label-text mb-1 text-xs font-semibold uppercase tracking-[0.18em] text-base-content/50">
-                    Ta'minotchi *
-                  </span>
-                  <select
-                    className="select select-bordered w-full"
-                    value={selectedSupplier?.id || ''}
-                    onChange={(e) => {
-                      const supplier = allSuppliers.find(s => s.id === Number(e.target.value));
-                      setSelectedSupplier(supplier || null);
-                    }}
-                  >
-                    <option value="">Ta'minotchini tanlang</option>
-                    {allSuppliers.map(supplier => (
-                      <option key={supplier.id} value={supplier.id}>
-                        {supplier.name}
-                      </option>
-                    ))}
-                  </select>
-                </label>
+                <Select
+                  label="Ta'minotchi *"
+                  value={selectedSupplier?.id || ''}
+                  onChange={(value) => {
+                    const supplier = allSuppliers.find(s => s.id === Number(value));
+                    setSelectedSupplier(supplier || null);
+                  }}
+                  placeholder="Ta'minotchini tanlang"
+                  options={allSuppliers.map(supplier => ({
+                    value: supplier.id,
+                    label: supplier.name,
+                  }))}
+                />
                 <label className="form-control">
                   <span className="label-text mb-1 text-xs font-semibold uppercase tracking-[0.18em] text-base-content/50">
                     Sana *

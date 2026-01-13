@@ -10,6 +10,7 @@ import { useNotificationsStore } from '../../store/notificationsStore';
 import { formatCurrency, PAYMENT_METHODS } from '../../config/constants';
 import { NumberInput } from '../../components/ui/NumberInput';
 import { CurrencyInput } from '../../components/ui/CurrencyInput';
+import { Select } from '../../components/ui/Select';
 import { ModalPortal } from '../../components/common/Modal';
 import type { Product, PaymentMethod, Customer } from '../../types';
 
@@ -393,22 +394,16 @@ export function POSPage() {
             </p>
 
             <div className="mt-6 space-y-4">
-              <label className="form-control">
-                <span className="label-text">To'lov usuli</span>
-                <select
-                  className="select select-bordered w-full"
-                  value={paymentMethod}
-                  onChange={(e) =>
-                    setPaymentMethod(e.target.value as PaymentMethod)
-                  }
-                >
-                  {Object.entries(PAYMENT_METHODS).map(([key, { label }]) => (
-                    <option key={key} value={key}>
-                      {label}
-                    </option>
-                  ))}
-                </select>
-              </label>
+              <Select
+                label="To'lov usuli"
+                value={paymentMethod}
+                onChange={(val) => setPaymentMethod(val as PaymentMethod)}
+                options={Object.entries(PAYMENT_METHODS).map(([key, { label }]) => ({
+                  value: key,
+                  label,
+                }))}
+                placeholder="To'lov usulini tanlang"
+              />
 
               <CurrencyInput
                 label="To'langan summa"

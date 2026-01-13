@@ -4,6 +4,7 @@ import { Link } from 'react-router-dom';
 import { UserPlus } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { PhoneInput } from '../../components/ui/PhoneInput';
+import { Select } from '../../components/ui/Select';
 
 type RegisterRequest = {
   fullName: string;
@@ -91,17 +92,23 @@ export function RegisterPage() {
               />
             </label>
 
-            <label className="form-control">
-              <span className="label-text text-sm">Rol</span>
-              <select
-                className="select select-bordered w-full"
-                {...register('role')}
-              >
-                <option value="SELLER">Sotuvchi</option>
-                <option value="MANAGER">Menejer</option>
-                <option value="ADMIN">Administrator</option>
-              </select>
-            </label>
+            <Controller
+              name="role"
+              control={control}
+              render={({ field }) => (
+                <Select
+                  label="Rol"
+                  value={field.value}
+                  onChange={(val) => field.onChange(val)}
+                  options={[
+                    { value: 'SELLER', label: 'Sotuvchi' },
+                    { value: 'MANAGER', label: 'Menejer' },
+                    { value: 'ADMIN', label: 'Administrator' },
+                  ]}
+                  placeholder="Rolni tanlang"
+                />
+              )}
+            />
 
             <label className="form-control">
               <span className="label-text text-sm">Izoh (ixtiyoriy)</span>

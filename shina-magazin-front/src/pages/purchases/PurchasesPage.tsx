@@ -32,6 +32,7 @@ import { ModalPortal } from '../../components/common/Modal';
 import { DateRangePicker, type DateRangePreset, type DateRange } from '../../components/common/DateRangePicker';
 import { ProductSearchCombobox } from '../../components/common/ProductSearchCombobox';
 import { CurrencyInput } from '../../components/ui/CurrencyInput';
+import { Select } from '../../components/ui/Select';
 import { useNotificationsStore } from '../../store/notificationsStore';
 import type {
   Supplier,
@@ -556,66 +557,54 @@ export function PurchasesPage() {
             </div>
 
             {/* Supplier Filter */}
-            <label className="form-control">
-              <span className="label-text mb-1 text-xs font-semibold uppercase tracking-[0.18em] text-base-content/50">
-                Ta'minotchi
-              </span>
-              <select
-                className="select select-bordered select-sm w-44"
-                value={selectedSupplierId || ''}
-                onChange={(e) => {
-                  setSelectedSupplierId(e.target.value ? Number(e.target.value) : undefined);
-                  setPage(0);
-                }}
-              >
-                <option value="">Barchasi</option>
-                {suppliers.map(supplier => (
-                  <option key={supplier.id} value={supplier.id}>
-                    {supplier.name}
-                  </option>
-                ))}
-              </select>
-            </label>
+            <Select
+              label="Ta'minotchi"
+              value={selectedSupplierId || ''}
+              onChange={(value) => {
+                setSelectedSupplierId(value ? Number(value) : undefined);
+                setPage(0);
+              }}
+              placeholder="Barchasi"
+              options={suppliers.map(supplier => ({
+                value: supplier.id,
+                label: supplier.name,
+              }))}
+              className="w-44"
+            />
 
             {/* Status Filter */}
-            <label className="form-control">
-              <span className="label-text mb-1 text-xs font-semibold uppercase tracking-[0.18em] text-base-content/50">
-                Status
-              </span>
-              <select
-                className="select select-bordered select-sm w-36"
-                value={selectedStatus}
-                onChange={(e) => {
-                  setSelectedStatus(e.target.value as PurchaseStatus | '');
-                  setPage(0);
-                }}
-              >
-                <option value="">Barchasi</option>
-                <option value="RECEIVED">Qabul qilingan</option>
-                <option value="DRAFT">Qoralama</option>
-                <option value="CANCELLED">Bekor qilingan</option>
-              </select>
-            </label>
+            <Select
+              label="Status"
+              value={selectedStatus}
+              onChange={(value) => {
+                setSelectedStatus(value as PurchaseStatus | '');
+                setPage(0);
+              }}
+              placeholder="Barchasi"
+              options={[
+                { value: 'RECEIVED', label: 'Qabul qilingan' },
+                { value: 'DRAFT', label: 'Qoralama' },
+                { value: 'CANCELLED', label: 'Bekor qilingan' },
+              ]}
+              className="w-36"
+            />
 
             {/* Payment Status Filter */}
-            <label className="form-control">
-              <span className="label-text mb-1 text-xs font-semibold uppercase tracking-[0.18em] text-base-content/50">
-                To'lov
-              </span>
-              <select
-                className="select select-bordered select-sm w-36"
-                value={selectedPaymentStatus}
-                onChange={(e) => {
-                  setSelectedPaymentStatus(e.target.value as PaymentStatus | '');
-                  setPage(0);
-                }}
-              >
-                <option value="">Barchasi</option>
-                <option value="PAID">To'langan</option>
-                <option value="PARTIAL">Qisman</option>
-                <option value="UNPAID">To'lanmagan</option>
-              </select>
-            </label>
+            <Select
+              label="To'lov"
+              value={selectedPaymentStatus}
+              onChange={(value) => {
+                setSelectedPaymentStatus(value as PaymentStatus | '');
+                setPage(0);
+              }}
+              placeholder="Barchasi"
+              options={[
+                { value: 'PAID', label: "To'langan" },
+                { value: 'PARTIAL', label: 'Qisman' },
+                { value: 'UNPAID', label: "To'lanmagan" },
+              ]}
+              className="w-36"
+            />
           </div>
 
           <div className="flex items-center gap-2">
@@ -742,26 +731,19 @@ export function PurchasesPage() {
             <div className="mt-6 space-y-5">
               {/* Ta'minotchi va sana */}
               <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-                <label className="form-control">
-                  <span className="label-text mb-1 text-xs font-semibold uppercase tracking-[0.18em] text-base-content/50">
-                    Ta'minotchi *
-                  </span>
-                  <select
-                    className="select select-bordered w-full"
-                    value={selectedSupplier?.id || ''}
-                    onChange={(e) => {
-                      const supplier = suppliers.find(s => s.id === Number(e.target.value));
-                      setSelectedSupplier(supplier || null);
-                    }}
-                  >
-                    <option value="">Ta'minotchini tanlang</option>
-                    {suppliers.map(supplier => (
-                      <option key={supplier.id} value={supplier.id}>
-                        {supplier.name}
-                      </option>
-                    ))}
-                  </select>
-                </label>
+                <Select
+                  label="Ta'minotchi *"
+                  value={selectedSupplier?.id || ''}
+                  onChange={(value) => {
+                    const supplier = suppliers.find(s => s.id === Number(value));
+                    setSelectedSupplier(supplier || null);
+                  }}
+                  placeholder="Ta'minotchini tanlang"
+                  options={suppliers.map(supplier => ({
+                    value: supplier.id,
+                    label: supplier.name,
+                  }))}
+                />
                 <label className="form-control">
                   <span className="label-text mb-1 text-xs font-semibold uppercase tracking-[0.18em] text-base-content/50">
                     Sana *

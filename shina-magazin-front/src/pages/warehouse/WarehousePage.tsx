@@ -20,6 +20,7 @@ import { warehouseApi } from '../../api/warehouse.api';
 import { productsApi } from '../../api/products.api';
 import { suppliersApi } from '../../api/suppliers.api';
 import { NumberInput } from '../../components/ui/NumberInput';
+import { Select } from '../../components/ui/Select';
 import { DataTable, Column } from '../../components/ui/DataTable';
 import { ModalPortal } from '../../components/common/Modal';
 import { useNotificationsStore } from '../../store/notificationsStore';
@@ -416,36 +417,36 @@ export function WarehousePage() {
                 Kirim-chiqim tarixi
               </h2>
               <div className="flex flex-wrap items-center gap-2">
-                <select
-                  className="select select-bordered select-sm"
-                  value={movementTypeFilter}
-                  onChange={(e) => {
-                    setMovementTypeFilter(e.target.value as MovementType | '');
+                <Select
+                  value={movementTypeFilter || undefined}
+                  onChange={(val) => {
+                    setMovementTypeFilter((val as MovementType | '') || '');
                     setPage(0);
                   }}
-                >
-                  <option value="">Barcha turlar</option>
-                  {Object.entries(MOVEMENT_TYPES).map(([key, { label }]) => (
-                    <option key={key} value={key}>
-                      {label}
-                    </option>
-                  ))}
-                </select>
-                <select
-                  className="select select-bordered select-sm"
-                  value={referenceTypeFilter}
-                  onChange={(e) => {
-                    setReferenceTypeFilter(e.target.value);
+                  options={[
+                    { value: '', label: 'Barcha turlar' },
+                    ...Object.entries(MOVEMENT_TYPES).map(([key, { label }]) => ({
+                      value: key,
+                      label,
+                    })),
+                  ]}
+                  placeholder="Barcha turlar"
+                />
+                <Select
+                  value={referenceTypeFilter || undefined}
+                  onChange={(val) => {
+                    setReferenceTypeFilter((val as string) || '');
                     setPage(0);
                   }}
-                >
-                  <option value="">Barcha manbalar</option>
-                  {Object.entries(REFERENCE_TYPES).map(([key, { label }]) => (
-                    <option key={key} value={key}>
-                      {label}
-                    </option>
-                  ))}
-                </select>
+                  options={[
+                    { value: '', label: 'Barcha manbalar' },
+                    ...Object.entries(REFERENCE_TYPES).map(([key, { label }]) => ({
+                      value: key,
+                      label,
+                    })),
+                  ]}
+                  placeholder="Barcha manbalar"
+                />
               </div>
             </div>
           </div>
@@ -673,21 +674,22 @@ export function WarehousePage() {
                       Ta'minotchi
                     </span>
                     <div className="flex gap-2">
-                      <select
-                        className="select select-bordered flex-1"
-                        value={selectedSupplier?.id || ''}
-                        onChange={(e) => {
-                          const supplier = allSuppliers.find(s => s.id === Number(e.target.value));
+                      <Select
+                        value={selectedSupplier?.id || undefined}
+                        onChange={(val) => {
+                          const supplier = allSuppliers.find(s => s.id === Number(val));
                           setSelectedSupplier(supplier || null);
                         }}
-                      >
-                        <option value="">Ta'minotchisiz</option>
-                        {allSuppliers.map(supplier => (
-                          <option key={supplier.id} value={supplier.id}>
-                            {supplier.name}
-                          </option>
-                        ))}
-                      </select>
+                        options={[
+                          { value: '', label: "Ta'minotchisiz" },
+                          ...allSuppliers.map(supplier => ({
+                            value: supplier.id,
+                            label: supplier.name,
+                          })),
+                        ]}
+                        placeholder="Ta'minotchisiz"
+                        className="flex-1"
+                      />
                       <button
                         type="button"
                         className="btn btn-outline btn-sm"

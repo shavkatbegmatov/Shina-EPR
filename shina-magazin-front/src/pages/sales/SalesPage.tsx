@@ -6,6 +6,7 @@ import toast from 'react-hot-toast';
 import { salesApi } from '../../api/sales.api';
 import { formatCurrency, formatDateTime, PAYMENT_METHODS, PAYMENT_STATUSES, SALE_STATUSES } from '../../config/constants';
 import { DataTable, Column } from '../../components/ui/DataTable';
+import { Select } from '../../components/ui/Select';
 import { ModalPortal } from '../../components/common/Modal';
 import type { Sale, PaymentStatus, SaleStatus, PaymentMethod } from '../../types';
 import { useNotificationsStore } from '../../store/notificationsStore';
@@ -269,24 +270,32 @@ export function SalesPage() {
               <input type="text" placeholder="INV... bo'yicha qidirish" className="input input-bordered w-full" value={search} onChange={(e) => setSearch(e.target.value)} />
             </div>
           </label>
-          <label className="form-control">
-            <span className="label-text mb-1 text-xs font-semibold uppercase tracking-[0.18em] text-base-content/50">To'lov holati</span>
-            <select className="select select-bordered w-full" value={paymentStatusFilter} onChange={(e) => setPaymentStatusFilter(e.target.value as PaymentStatus | '')}>
-              <option value="">Barchasi</option>
-              {Object.values(PAYMENT_STATUSES).map((status) => (
-                <option key={status.value} value={status.value}>{status.label}</option>
-              ))}
-            </select>
-          </label>
-          <label className="form-control">
-            <span className="label-text mb-1 text-xs font-semibold uppercase tracking-[0.18em] text-base-content/50">Sotuv holati</span>
-            <select className="select select-bordered w-full" value={statusFilter} onChange={(e) => setStatusFilter(e.target.value as SaleStatus | '')}>
-              <option value="">Barchasi</option>
-              {Object.values(SALE_STATUSES).map((status) => (
-                <option key={status.value} value={status.value}>{status.label}</option>
-              ))}
-            </select>
-          </label>
+          <Select
+            label="To'lov holati"
+            value={paymentStatusFilter || undefined}
+            onChange={(val) => setPaymentStatusFilter((val as PaymentStatus | '') || '')}
+            options={[
+              { value: '', label: 'Barchasi' },
+              ...Object.values(PAYMENT_STATUSES).map((status) => ({
+                value: status.value,
+                label: status.label,
+              })),
+            ]}
+            placeholder="Barchasi"
+          />
+          <Select
+            label="Sotuv holati"
+            value={statusFilter || undefined}
+            onChange={(val) => setStatusFilter((val as SaleStatus | '') || '')}
+            options={[
+              { value: '', label: 'Barchasi' },
+              ...Object.values(SALE_STATUSES).map((status) => ({
+                value: status.value,
+                label: status.label,
+              })),
+            ]}
+            placeholder="Barchasi"
+          />
         </div>
       </div>
 

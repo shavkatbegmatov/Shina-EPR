@@ -1,6 +1,7 @@
 import { useState, useMemo, ReactNode } from 'react';
 import { ArrowUpDown, ArrowUp, ArrowDown, ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight } from 'lucide-react';
 import clsx from 'clsx';
+import { Select } from './Select';
 
 // Types
 export type SortDirection = 'asc' | 'desc' | null;
@@ -309,17 +310,15 @@ export function DataTable<T>({
             {onPageSizeChange && (
               <div className="flex items-center gap-2">
                 <span className="text-base-content/50 text-xs hidden sm:inline">Ko'rsatish:</span>
-                <select
-                  className="select select-bordered select-xs bg-base-100"
+                <Select
                   value={pageSize}
-                  onChange={(e) => onPageSizeChange(Number(e.target.value))}
-                >
-                  {pageSizeOptions.map((size) => (
-                    <option key={size} value={size}>
-                      {size} ta
-                    </option>
-                  ))}
-                </select>
+                  onChange={(val) => onPageSizeChange(Number(val))}
+                  options={pageSizeOptions.map((size) => ({
+                    value: size,
+                    label: `${size} ta`,
+                  }))}
+                  className="w-24"
+                />
               </div>
             )}
           </div>

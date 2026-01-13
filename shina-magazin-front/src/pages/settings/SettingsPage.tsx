@@ -14,6 +14,7 @@ import {
 } from 'lucide-react';
 import clsx from 'clsx';
 import { brandsApi, categoriesApi } from '../../api/products.api';
+import { Select } from '../../components/ui/Select';
 import { ModalPortal } from '../../components/common/Modal';
 import { useUIStore } from '../../store/uiStore';
 import type { Brand, Category } from '../../types';
@@ -654,30 +655,26 @@ export function SettingsPage() {
                 />
               </label>
 
-              <label className="form-control">
-                <span className="label-text mb-1 text-xs font-semibold uppercase tracking-[0.18em] text-base-content/50">
-                  Asosiy kategoriya
-                </span>
-                <select
-                  className="select select-bordered w-full"
-                  value={categoryForm.parentId}
-                  onChange={(e) =>
-                    setCategoryForm((prev) => ({
-                      ...prev,
-                      parentId: e.target.value ? Number(e.target.value) : '',
-                    }))
-                  }
-                >
-                  <option value="">Yo'q (asosiy kategoriya)</option>
-                  {categories
+              <Select
+                label="Asosiy kategoriya"
+                value={categoryForm.parentId || undefined}
+                onChange={(val) =>
+                  setCategoryForm((prev) => ({
+                    ...prev,
+                    parentId: val ? Number(val) : '',
+                  }))
+                }
+                options={[
+                  { value: '', label: "Yo'q (asosiy kategoriya)" },
+                  ...categories
                     .filter((c) => c.id !== editingCategory?.id)
-                    .map((category) => (
-                      <option key={category.id} value={category.id}>
-                        {category.name}
-                      </option>
-                    ))}
-                </select>
-              </label>
+                    .map((category) => ({
+                      value: category.id,
+                      label: category.name,
+                    })),
+                ]}
+                placeholder="Asosiy kategoriyani tanlang"
+              />
             </div>
 
             <div className="mt-6 flex justify-end gap-2">

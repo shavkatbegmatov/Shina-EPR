@@ -25,6 +25,7 @@ import { DataTable, Column } from '../../components/ui/DataTable';
 import { ModalPortal } from '../../components/common/Modal';
 import { CurrencyInput } from '../../components/ui/CurrencyInput';
 import { PhoneInput } from '../../components/ui/PhoneInput';
+import { Select } from '../../components/ui/Select';
 import { CredentialsModal } from './components/CredentialsModal';
 import type { CredentialsInfo, Employee, EmployeeRequest, EmployeeStatus, Role, User } from '../../types';
 
@@ -694,20 +695,15 @@ export function EmployeesPage() {
                           placeholder="0"
                         />
                       </label>
-                      <label className="form-control">
-                        <span className="label-text mb-1 text-xs font-semibold uppercase tracking-[0.18em] text-base-content/50">
-                          Status
-                        </span>
-                        <select
-                          className="select select-bordered w-full"
-                          value={formData.status || 'ACTIVE'}
-                          onChange={(e) => handleFormChange('status', e.target.value as EmployeeStatus)}
-                        >
-                          {Object.entries(EMPLOYEE_STATUSES).map(([key, { label }]) => (
-                            <option key={key} value={key}>{label}</option>
-                          ))}
-                        </select>
-                      </label>
+                      <Select
+                        label="Status"
+                        value={formData.status || 'ACTIVE'}
+                        onChange={(value) => handleFormChange('status', value as EmployeeStatus)}
+                        options={Object.entries(EMPLOYEE_STATUSES).map(([key, { label }]) => ({
+                          value: key,
+                          label,
+                        }))}
+                      />
                     </div>
                   </div>
 
@@ -773,47 +769,35 @@ export function EmployeesPage() {
                         {/* Role selection when creating new user */}
                         {formData.createUserAccount && (
                           <div className="pl-4 border-l-2 border-primary/30">
-                            <label className="form-control">
-                              <span className="label-text mb-1.5 text-xs font-semibold uppercase tracking-[0.18em] text-base-content/60">
-                                Rol tanlang
-                              </span>
-                              <select
-                                className="select select-bordered w-full bg-base-100"
-                                value={formData.roleCode || ''}
-                                onChange={(e) => handleFormChange('roleCode', e.target.value)}
-                              >
-                                <option value="" disabled>Rol tanlang...</option>
-                                {roles.map((role) => (
-                                  <option key={role.code} value={role.code}>{role.name}</option>
-                                ))}
-                              </select>
-                            </label>
+                            <Select
+                              label="Rol tanlang"
+                              value={formData.roleCode || ''}
+                              onChange={(value) => handleFormChange('roleCode', value as string)}
+                              placeholder="Rol tanlang..."
+                              options={roles.map((role) => ({
+                                value: role.code,
+                                label: role.name,
+                              }))}
+                            />
                           </div>
                         )}
 
                         {/* Existing user linking (when not creating new) */}
                         {!formData.createUserAccount && (
                           <div className="p-4 rounded-xl bg-base-100 border border-base-300">
-                            <label className="form-control">
-                              <span className="label-text mb-1.5 text-xs font-semibold uppercase tracking-[0.18em] text-base-content/60">
-                                Yoki mavjud akkountni bog'lang
-                              </span>
-                              <select
-                                className="select select-bordered w-full"
-                                value={formData.userId || ''}
-                                onChange={(e) => handleFormChange('userId', e.target.value ? Number(e.target.value) : undefined)}
-                              >
-                                <option value="">— Tanlanmagan —</option>
-                                {availableUsers.map(user => (
-                                  <option key={user.id} value={user.id}>
-                                    {user.username} ({ROLES[user.role]?.label})
-                                  </option>
-                                ))}
-                              </select>
-                              <span className="label-text-alt mt-1.5 text-base-content/50">
-                                Mavjud foydalanuvchi akkaunti bilan bog'lash
-                              </span>
-                            </label>
+                            <Select
+                              label="Yoki mavjud akkountni bog'lang"
+                              value={formData.userId || ''}
+                              onChange={(value) => handleFormChange('userId', value ? Number(value) : undefined)}
+                              placeholder="— Tanlanmagan —"
+                              options={availableUsers.map(user => ({
+                                value: user.id,
+                                label: `${user.username} (${ROLES[user.role]?.label})`,
+                              }))}
+                            />
+                            <span className="label-text-alt mt-1.5 text-base-content/50">
+                              Mavjud foydalanuvchi akkaunti bilan bog'lash
+                            </span>
                           </div>
                         )}
                       </div>

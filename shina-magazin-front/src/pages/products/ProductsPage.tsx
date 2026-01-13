@@ -5,6 +5,7 @@ import { productsApi, brandsApi, categoriesApi } from '../../api/products.api';
 import { formatCurrency, SEASONS } from '../../config/constants';
 import { NumberInput } from '../../components/ui/NumberInput';
 import { CurrencyInput } from '../../components/ui/CurrencyInput';
+import { Select } from '../../components/ui/Select';
 import { DataTable, Column } from '../../components/ui/DataTable';
 import { ModalPortal } from '../../components/common/Modal';
 import { useNotificationsStore } from '../../store/notificationsStore';
@@ -294,53 +295,29 @@ export function ProductsPage() {
             </div>
           </label>
 
-          <label className="form-control">
-            <span className="label-text mb-1 text-xs font-semibold uppercase tracking-[0.18em] text-base-content/50">
-              Brend
-            </span>
-            <select
-              className="select select-bordered w-full"
-              value={brandFilter}
-              onChange={(e) => { setBrandFilter(e.target.value ? Number(e.target.value) : ''); setPage(0); }}
-            >
-              <option value="">Barcha brendlar</option>
-              {brands.map((brand) => (
-                <option key={brand.id} value={brand.id}>{brand.name}</option>
-              ))}
-            </select>
-          </label>
+          <Select
+            label="Brend"
+            value={brandFilter}
+            onChange={(value) => { setBrandFilter(value ? Number(value) : ''); setPage(0); }}
+            placeholder="Barcha brendlar"
+            options={brands.map((brand) => ({ value: brand.id, label: brand.name }))}
+          />
 
-          <label className="form-control">
-            <span className="label-text mb-1 text-xs font-semibold uppercase tracking-[0.18em] text-base-content/50">
-              Kategoriya
-            </span>
-            <select
-              className="select select-bordered w-full"
-              value={categoryFilter}
-              onChange={(e) => { setCategoryFilter(e.target.value ? Number(e.target.value) : ''); setPage(0); }}
-            >
-              <option value="">Barcha kategoriyalar</option>
-              {categories.map((category) => (
-                <option key={category.id} value={category.id}>{category.name}</option>
-              ))}
-            </select>
-          </label>
+          <Select
+            label="Kategoriya"
+            value={categoryFilter}
+            onChange={(value) => { setCategoryFilter(value ? Number(value) : ''); setPage(0); }}
+            placeholder="Barcha kategoriyalar"
+            options={categories.map((category) => ({ value: category.id, label: category.name }))}
+          />
 
-          <label className="form-control">
-            <span className="label-text mb-1 text-xs font-semibold uppercase tracking-[0.18em] text-base-content/50">
-              Mavsum
-            </span>
-            <select
-              className="select select-bordered w-full"
-              value={seasonFilter}
-              onChange={(e) => { setSeasonFilter(e.target.value as Season | ''); setPage(0); }}
-            >
-              <option value="">Barcha mavsumlar</option>
-              {Object.entries(SEASONS).map(([key, { label }]) => (
-                <option key={key} value={key}>{label}</option>
-              ))}
-            </select>
-          </label>
+          <Select
+            label="Mavsum"
+            value={seasonFilter}
+            onChange={(value) => { setSeasonFilter(value as Season | ''); setPage(0); }}
+            placeholder="Barcha mavsumlar"
+            options={Object.entries(SEASONS).map(([key, { label }]) => ({ value: key, label }))}
+          />
         </div>
       </div>
 
@@ -507,20 +484,20 @@ export function ProductsPage() {
               </div>
 
               <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-                <label className="form-control">
-                  <span className="label-text mb-1 text-xs font-semibold uppercase tracking-[0.18em] text-base-content/50">Brend</span>
-                  <select className="select select-bordered w-full" value={formData.brandId || ''} onChange={(e) => handleFormChange('brandId', e.target.value ? Number(e.target.value) : undefined)}>
-                    <option value="">Tanlang...</option>
-                    {brands.map((brand) => <option key={brand.id} value={brand.id}>{brand.name}</option>)}
-                  </select>
-                </label>
-                <label className="form-control">
-                  <span className="label-text mb-1 text-xs font-semibold uppercase tracking-[0.18em] text-base-content/50">Kategoriya</span>
-                  <select className="select select-bordered w-full" value={formData.categoryId || ''} onChange={(e) => handleFormChange('categoryId', e.target.value ? Number(e.target.value) : undefined)}>
-                    <option value="">Tanlang...</option>
-                    {categories.map((category) => <option key={category.id} value={category.id}>{category.name}</option>)}
-                  </select>
-                </label>
+                <Select
+                  label="Brend"
+                  value={formData.brandId || ''}
+                  onChange={(value) => handleFormChange('brandId', value ? Number(value) : undefined)}
+                  placeholder="Tanlang..."
+                  options={brands.map((brand) => ({ value: brand.id, label: brand.name }))}
+                />
+                <Select
+                  label="Kategoriya"
+                  value={formData.categoryId || ''}
+                  onChange={(value) => handleFormChange('categoryId', value ? Number(value) : undefined)}
+                  placeholder="Tanlang..."
+                  options={categories.map((category) => ({ value: category.id, label: category.name }))}
+                />
               </div>
 
               <div className="grid grid-cols-3 gap-4 sm:grid-cols-6">
@@ -535,13 +512,13 @@ export function ProductsPage() {
                   <span className="label-text mb-1 text-xs font-semibold uppercase tracking-[0.18em] text-base-content/50">Tezlik</span>
                   <input type="text" className="input input-bordered w-full" value={formData.speedRating || ''} onChange={(e) => handleFormChange('speedRating', e.target.value || undefined)} placeholder="V" />
                 </label>
-                <label className="form-control">
-                  <span className="label-text mb-1 text-xs font-semibold uppercase tracking-[0.18em] text-base-content/50">Mavsum</span>
-                  <select className="select select-bordered w-full" value={formData.season || ''} onChange={(e) => handleFormChange('season', e.target.value as Season || undefined)}>
-                    <option value="">—</option>
-                    {Object.entries(SEASONS).map(([key, { label }]) => <option key={key} value={key}>{label}</option>)}
-                  </select>
-                </label>
+                <Select
+                  label="Mavsum"
+                  value={formData.season || ''}
+                  onChange={(value) => handleFormChange('season', value as Season || undefined)}
+                  placeholder="—"
+                  options={Object.entries(SEASONS).map(([key, { label }]) => ({ value: key, label }))}
+                />
               </div>
 
               <div className="grid grid-cols-2 gap-4 sm:grid-cols-4">

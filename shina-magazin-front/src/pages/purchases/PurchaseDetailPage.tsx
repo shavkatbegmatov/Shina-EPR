@@ -20,6 +20,7 @@ import clsx from 'clsx';
 import { purchasesApi } from '../../api/purchases.api';
 import { formatCurrency, formatDate, getTashkentToday } from '../../config/constants';
 import { ModalPortal } from '../../components/common/Modal';
+import { Select } from '../../components/ui/Select';
 import { CurrencyInput } from '../../components/ui/CurrencyInput';
 import { useNotificationsStore } from '../../store/notificationsStore';
 import type {
@@ -703,20 +704,18 @@ export function PurchaseDetailPage() {
                 />
               </label>
 
-              <label className="form-control">
-                <span className="label-text mb-1 text-xs font-semibold uppercase tracking-[0.18em] text-base-content/50">
-                  To'lov usuli *
-                </span>
-                <select
-                  className="select select-bordered w-full"
-                  value={paymentMethod}
-                  onChange={(e) => setPaymentMethod(e.target.value as PaymentMethod)}
-                >
-                  <option value="CASH">Naqd pul</option>
-                  <option value="CARD">Karta</option>
-                  <option value="TRANSFER">Bank o'tkazmasi</option>
-                </select>
-              </label>
+              <Select
+                label="To'lov usuli"
+                required
+                value={paymentMethod}
+                onChange={(val) => setPaymentMethod(val as PaymentMethod)}
+                options={[
+                  { value: 'CASH', label: 'Naqd pul' },
+                  { value: 'CARD', label: 'Karta' },
+                  { value: 'TRANSFER', label: "Bank o'tkazmasi" },
+                ]}
+                placeholder="To'lov usulini tanlang"
+              />
 
               <label className="form-control">
                 <span className="label-text mb-1 text-xs font-semibold uppercase tracking-[0.18em] text-base-content/50">
