@@ -15,6 +15,10 @@ import {
   Clock,
   ArrowRight,
   Loader2,
+  Wallet,
+  Truck,
+  UserCog,
+  Shield,
   type LucideIcon,
 } from 'lucide-react';
 import clsx from 'clsx';
@@ -50,7 +54,12 @@ const PAGE_ICONS: Record<string, LucideIcon> = {
   'page-products': Package,
   'page-customers': Users,
   'page-sales': CreditCard,
+  'page-debts': Wallet,
+  'page-purchases': Truck,
+  'page-suppliers': Truck,
   'page-warehouse': Warehouse,
+  'page-employees': UserCog,
+  'page-roles': Shield,
   'page-reports': BarChart3,
   'page-settings': Settings,
 };
@@ -61,7 +70,12 @@ const QUICK_ACTIONS: SearchResult[] = [
   { id: 'page-products', type: 'page', title: 'Mahsulotlar', href: '/products' },
   { id: 'page-customers', type: 'page', title: 'Mijozlar', href: '/customers' },
   { id: 'page-sales', type: 'page', title: 'Sotuvlar', href: '/sales' },
-  { id: 'page-warehouse', type: 'page', title: 'Ombor', href: '/warehouse' },
+  { id: 'page-debts', type: 'page', title: 'Qarzlar', subtitle: 'Qarzdorlik nazorati', href: '/debts' },
+  { id: 'page-purchases', type: 'page', title: 'Xaridlar', subtitle: 'Kirim hujjatlari', href: '/purchases' },
+  { id: 'page-suppliers', type: 'page', title: "Ta'minotchilar", href: '/suppliers' },
+  { id: 'page-warehouse', type: 'page', title: 'Ombor', subtitle: 'Zaxira nazorati', href: '/warehouse' },
+  { id: 'page-employees', type: 'page', title: 'Xodimlar', href: '/employees' },
+  { id: 'page-roles', type: 'page', title: 'Rollar', subtitle: 'Ruxsatlar boshqaruvi', href: '/roles' },
   { id: 'page-reports', type: 'page', title: 'Hisobotlar', href: '/reports' },
   { id: 'page-settings', type: 'page', title: 'Sozlamalar', href: '/settings' },
 ];
