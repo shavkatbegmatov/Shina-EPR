@@ -127,11 +127,9 @@ export function PhoneInput({
   return (
     <div className={clsx('form-control', className)}>
       {label && (
-        <label className="label py-1">
-          <span className="label-text text-xs font-semibold uppercase tracking-[0.18em] text-base-content/50">
-            {label} {required && <span className="text-error">*</span>}
-          </span>
-        </label>
+        <span className="label-text mb-1 text-xs font-semibold uppercase tracking-[0.18em] text-base-content/50">
+          {label} {required && <span className="text-error">*</span>}
+        </span>
       )}
 
       <div
