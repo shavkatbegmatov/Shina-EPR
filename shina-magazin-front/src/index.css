@@ -95,11 +95,14 @@
     @apply inline-flex items-center gap-2 rounded-full border border-base-300 bg-base-100/80 px-3 py-1 text-xs font-medium text-base-content/70;
   }
 
-  /* Professional focus styling for all form elements */
+  /* Standardized form element styling - matching PhoneInput design */
   .input,
-  .select,
+  .select {
+    @apply h-12 rounded-xl bg-base-100 transition-all duration-200;
+  }
+
   .textarea {
-    @apply transition-all duration-200;
+    @apply rounded-xl bg-base-100 transition-all duration-200;
   }
 
   .input:focus,
