@@ -74,8 +74,10 @@ public class UserService {
                 .active(true)
                 .mustChangePassword(true)
                 .createdBy(createdBy)
-                .roles(new HashSet<>(Set.of(role)))
                 .build();
+
+        // Add role to user (ensures proper persistence of user_roles join table)
+        user.getRoles().add(role);
 
         userRepository.save(user);
 

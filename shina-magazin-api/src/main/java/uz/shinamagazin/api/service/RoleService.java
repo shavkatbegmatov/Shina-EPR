@@ -113,30 +113,16 @@ public class RoleService {
     }
 
     /**
-     * Update existing role
+     * Update existing role.
+     * System roles can only have their permissions updated, not name/code/description.
      */
     @Transactional
     public RoleResponse updateRole(Long id, RoleRequest request, Long currentUserId) {
         RoleEntity role = roleRepository.findByIdWithPermissions(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Rol", "id", id));
 
-        // System roles cannot be modified
-        if (role.getIsSystem()) {
-            throw new BadRequestException("Tizim rollarini o'zgartirish mumkin emas");
-        }
-
         // Store old state for audit
         RoleEntity oldRole = cloneRole(role);
-
-        // Check code uniqueness
-        if (!role.getCode().equals(request.getCode()) && roleRepository.existsByCode(request.getCode())) {
-            throw new BadRequestException("Bu rol kodi allaqachon mavjud: " + request.getCode());
-        }
-
-        // Check name uniqueness
-        if (!role.getName().equals(request.getName()) && roleRepository.existsByName(request.getName())) {
-            throw new BadRequestException("Bu rol nomi allaqachon mavjud: " + request.getName());
-        }
 
         // Get new permissions
         Set<Permission> permissions = new HashSet<>();
@@ -147,10 +133,27 @@ public class RoleService {
             }
         }
 
-        role.setName(request.getName());
-        role.setCode(request.getCode());
-        role.setDescription(request.getDescription());
-        role.setPermissions(permissions);
+        // System roles: only permissions can be updated
+        if (role.getIsSystem()) {
+            role.setPermissions(permissions);
+            log.info("System role permissions updated: {} by user {}", role.getCode(), currentUserId);
+        } else {
+            // Non-system roles: all fields can be updated
+            // Check code uniqueness
+            if (!role.getCode().equals(request.getCode()) && roleRepository.existsByCode(request.getCode())) {
+                throw new BadRequestException("Bu rol kodi allaqachon mavjud: " + request.getCode());
+            }
+
+            // Check name uniqueness
+            if (!role.getName().equals(request.getName()) && roleRepository.existsByName(request.getName())) {
+                throw new BadRequestException("Bu rol nomi allaqachon mavjud: " + request.getName());
+            }
+
+            role.setName(request.getName());
+            role.setCode(request.getCode());
+            role.setDescription(request.getDescription());
+            role.setPermissions(permissions);
+        }
 
         role = roleRepository.save(role);
 

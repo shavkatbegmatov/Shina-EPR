@@ -56,4 +56,12 @@ export const employeesApi = {
   delete: async (id: number): Promise<void> => {
     await api.delete(`/v1/employees/${id}`);
   },
+
+  changeRole: async (employeeId: number, roleCode: string): Promise<Employee> => {
+    const response = await api.put<ApiResponse<Employee>>(
+      `/v1/employees/${employeeId}/role`,
+      { roleCode }
+    );
+    return response.data.data;
+  },
 };

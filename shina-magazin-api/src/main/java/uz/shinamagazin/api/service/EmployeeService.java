@@ -10,11 +10,13 @@ import uz.shinamagazin.api.dto.request.EmployeeRequest;
 import uz.shinamagazin.api.dto.response.CredentialsInfo;
 import uz.shinamagazin.api.dto.response.EmployeeResponse;
 import uz.shinamagazin.api.entity.Employee;
+import uz.shinamagazin.api.entity.RoleEntity;
 import uz.shinamagazin.api.entity.User;
 import uz.shinamagazin.api.enums.EmployeeStatus;
 import uz.shinamagazin.api.exception.BadRequestException;
 import uz.shinamagazin.api.exception.ResourceNotFoundException;
 import uz.shinamagazin.api.repository.EmployeeRepository;
+import uz.shinamagazin.api.repository.RoleRepository;
 import uz.shinamagazin.api.repository.UserRepository;
 
 import java.util.List;
@@ -29,7 +31,9 @@ public class EmployeeService {
 
     private final EmployeeRepository employeeRepository;
     private final UserRepository userRepository;
+    private final RoleRepository roleRepository;
     private final UserService userService;
+    private final PermissionService permissionService;
 
     public Page<EmployeeResponse> getAllEmployees(Pageable pageable) {
         return employeeRepository.findByStatusNot(EmployeeStatus.TERMINATED, pageable)
@@ -166,6 +170,54 @@ public class EmployeeService {
         return userRepository.findByActiveTrue().stream()
                 .filter(user -> !linkedUserIds.contains(user.getId()))
                 .collect(Collectors.toList());
+    }
+
+    /**
+     * Change the role of an employee's linked user account.
+     * This is an HR operation, separate from system user management.
+     *
+     * @param employeeId the employee ID
+     * @param roleCode the new role code
+     * @return updated employee response
+     */
+    @Transactional
+    public EmployeeResponse changeEmployeeRole(Long employeeId, String roleCode) {
+        // 1. Find employee
+        Employee employee = employeeRepository.findById(employeeId)
+                .orElseThrow(() -> new ResourceNotFoundException("Xodim", "id", employeeId));
+
+        // 2. Check if employee has linked user account
+        if (employee.getUser() == null) {
+            throw new BadRequestException("Xodimning tizim akkounti yo'q. Avval akkount yarating.");
+        }
+
+        // 3. Find the new role
+        RoleEntity newRole = roleRepository.findByCode(roleCode)
+                .orElseThrow(() -> new ResourceNotFoundException("Rol", "code", roleCode));
+
+        // 4. Security check: prevent assigning system-only roles (except ADMIN)
+        if (Boolean.TRUE.equals(newRole.getIsSystem()) && !"ADMIN".equals(roleCode)) {
+            throw new BadRequestException("Tizim rollarini xodimlarga biriktirish mumkin emas");
+        }
+
+        // 5. Check if role is active
+        if (!Boolean.TRUE.equals(newRole.getIsActive())) {
+            throw new BadRequestException("Bu rol faol emas: " + newRole.getName());
+        }
+
+        // 6. Clear existing roles and assign new one
+        User user = employee.getUser();
+        user.getRoles().clear();
+        user.getRoles().add(newRole);
+        userRepository.save(user);
+
+        // 7. Clear permission cache for this user
+        permissionService.clearUserPermissionsCache(user.getId());
+
+        log.info("Changed role for employee {} (user: {}) to {}",
+                employee.getFullName(), user.getUsername(), roleCode);
+
+        return EmployeeResponse.from(employee);
     }
 
     private void mapRequestToEmployee(EmployeeRequest request, Employee employee) {

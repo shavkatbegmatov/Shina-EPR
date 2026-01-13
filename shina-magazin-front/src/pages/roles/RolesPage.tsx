@@ -262,7 +262,6 @@ export function RolesPage() {
                     <button
                       className="btn btn-ghost btn-sm"
                       onClick={() => openModal(role)}
-                      disabled={role.isSystem}
                     >
                       <Edit2 className="h-4 w-4" />
                     </button>
@@ -306,6 +305,14 @@ export function RolesPage() {
             </div>
 
             <div className="mt-6 space-y-4">
+              {/* System role warning */}
+              {selectedRole?.isSystem && (
+                <div className="alert alert-warning">
+                  <Lock className="h-4 w-4" />
+                  <span>Bu tizim roli. Faqat huquqlarni o'zgartirish mumkin.</span>
+                </div>
+              )}
+
               <div className="grid gap-4 sm:grid-cols-2">
                 <label className="form-control">
                   <span className="label-text">Rol nomi *</span>
@@ -315,6 +322,7 @@ export function RolesPage() {
                     value={formData.name}
                     onChange={(e) => setFormData({ ...formData, name: e.target.value })}
                     placeholder="Masalan: Katta sotuvchi"
+                    disabled={selectedRole?.isSystem}
                   />
                 </label>
                 <label className="form-control">
@@ -338,6 +346,7 @@ export function RolesPage() {
                   value={formData.description}
                   onChange={(e) => setFormData({ ...formData, description: e.target.value })}
                   placeholder="Rol haqida qisqacha ma'lumot..."
+                  disabled={selectedRole?.isSystem}
                 />
               </label>
 

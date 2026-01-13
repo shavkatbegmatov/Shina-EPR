@@ -392,30 +392,19 @@ export function EmployeesPage() {
     }
   };
 
-  // Handle role change for existing user
+  // Handle role change for existing user - uses dedicated employee role endpoint
   const handleChangeRole = async () => {
-    if (!editingEmployee?.userId || !selectedNewRoleCode) return;
+    if (!editingEmployee?.id || !selectedNewRoleCode) return;
 
-    // Find the new role by code
+    // Find the new role by code for display
     const newRole = roles.find(r => r.code === selectedNewRoleCode);
-    if (!newRole) {
-      toast.error('Rol topilmadi');
-      return;
-    }
-
-    // Find the current role by code
-    const currentRole = roles.find(r => r.code === editingEmployee.userRole);
 
     setChangingRole(true);
     try {
-      // Remove old role if exists
-      if (currentRole) {
-        await rolesApi.removeFromUser(currentRole.id, editingEmployee.userId);
-      }
-      // Assign new role
-      await rolesApi.assignToUser(newRole.id, editingEmployee.userId);
+      // Use dedicated employee role change endpoint
+      await employeesApi.changeRole(editingEmployee.id, selectedNewRoleCode);
 
-      toast.success(`Rol "${newRole.name}" ga o'zgartirildi`);
+      toast.success(`Rol "${newRole?.name || selectedNewRoleCode}" ga o'zgartirildi`);
       setIsEditingRole(false);
       setSelectedNewRoleCode('');
       // Reload to get updated data

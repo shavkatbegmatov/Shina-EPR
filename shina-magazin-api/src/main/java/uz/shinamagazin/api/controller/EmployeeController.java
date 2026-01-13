@@ -11,12 +11,15 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
+import uz.shinamagazin.api.dto.request.ChangeRoleRequest;
 import uz.shinamagazin.api.dto.request.EmployeeRequest;
 import uz.shinamagazin.api.dto.response.ApiResponse;
 import uz.shinamagazin.api.dto.response.EmployeeResponse;
 import uz.shinamagazin.api.dto.response.PagedResponse;
 import uz.shinamagazin.api.dto.response.UserResponse;
 import uz.shinamagazin.api.enums.EmployeeStatus;
+import uz.shinamagazin.api.enums.PermissionCode;
+import uz.shinamagazin.api.security.RequiresPermission;
 import uz.shinamagazin.api.service.EmployeeService;
 
 import java.util.List;
@@ -105,5 +108,17 @@ public class EmployeeController {
     public ResponseEntity<ApiResponse<Void>> deleteEmployee(@PathVariable Long id) {
         employeeService.deleteEmployee(id);
         return ResponseEntity.ok(ApiResponse.success("Xodim o'chirildi"));
+    }
+
+    @PutMapping("/{id}/role")
+    @Operation(summary = "Change employee role", description = "Xodim rolini o'zgartirish")
+    @RequiresPermission(PermissionCode.EMPLOYEES_CHANGE_ROLE)
+    public ResponseEntity<ApiResponse<EmployeeResponse>> changeEmployeeRole(
+            @PathVariable Long id,
+            @Valid @RequestBody ChangeRoleRequest request) {
+        return ResponseEntity.ok(ApiResponse.success(
+                "Rol o'zgartirildi",
+                employeeService.changeEmployeeRole(id, request.getRoleCode())
+        ));
     }
 }
