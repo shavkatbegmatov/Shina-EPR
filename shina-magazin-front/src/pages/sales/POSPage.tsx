@@ -8,8 +8,8 @@ import { customersApi } from '../../api/customers.api';
 import { useCartStore } from '../../store/cartStore';
 import { useNotificationsStore } from '../../store/notificationsStore';
 import { formatCurrency, PAYMENT_METHODS } from '../../config/constants';
-import { NumberInput } from '../../components/ui/NumberInput';
 import { CurrencyInput } from '../../components/ui/CurrencyInput';
+import { PercentInput } from '../../components/ui/PercentInput';
 import { Select } from '../../components/ui/Select';
 import { ModalPortal } from '../../components/common/Modal';
 import type { Product, PaymentMethod, Customer } from '../../types';
@@ -344,17 +344,13 @@ export function POSPage() {
                 max={subtotal}
                 size="sm"
               />
-              <NumberInput
+              <PercentInput
                 label="Chegirma (%)"
                 value={cart.discountPercent}
-                onChange={(val) => {
-                  const num = typeof val === 'string' ? parseFloat(val) || 0 : val;
-                  cart.setDiscountPercent(Math.min(100, Math.max(0, num)));
-                }}
+                onChange={(val) => cart.setDiscountPercent(val)}
                 min={0}
                 max={100}
                 size="sm"
-                allowEmpty={false}
               />
             </div>
             {discountSummary && (
