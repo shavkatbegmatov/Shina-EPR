@@ -1,4 +1,5 @@
 import { useState, useRef, useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import clsx from 'clsx';
 import { ChevronDown, Check } from 'lucide-react';
 
@@ -35,15 +36,34 @@ export function Select({
 }: SelectProps) {
   const [isOpen, setIsOpen] = useState(false);
   const [isFocused, setIsFocused] = useState(false);
+  const [dropdownPosition, setDropdownPosition] = useState({ top: 0, left: 0, width: 0 });
   const containerRef = useRef<HTMLDivElement>(null);
+  const triggerRef = useRef<HTMLDivElement>(null);
   const listRef = useRef<HTMLDivElement>(null);
 
   const selectedOption = options.find((opt) => opt.value === value);
 
+  // Calculate dropdown position
+  const updateDropdownPosition = () => {
+    if (triggerRef.current) {
+      const rect = triggerRef.current.getBoundingClientRect();
+      setDropdownPosition({
+        top: rect.bottom + window.scrollY + 4,
+        left: rect.left + window.scrollX,
+        width: rect.width,
+      });
+    }
+  };
+
   // Close dropdown when clicking outside
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
-      if (containerRef.current && !containerRef.current.contains(event.target as Node)) {
+      if (
+        containerRef.current &&
+        !containerRef.current.contains(event.target as Node) &&
+        listRef.current &&
+        !listRef.current.contains(event.target as Node)
+      ) {
         setIsOpen(false);
         setIsFocused(false);
       }
@@ -52,6 +72,22 @@ export function Select({
     document.addEventListener('mousedown', handleClickOutside);
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
+
+  // Update position when opening and on scroll/resize
+  useEffect(() => {
+    if (isOpen) {
+      updateDropdownPosition();
+
+      const handleUpdate = () => updateDropdownPosition();
+      window.addEventListener('scroll', handleUpdate, true);
+      window.addEventListener('resize', handleUpdate);
+
+      return () => {
+        window.removeEventListener('scroll', handleUpdate, true);
+        window.removeEventListener('resize', handleUpdate);
+      };
+    }
+  }, [isOpen]);
 
   // Scroll selected option into view when dropdown opens
   useEffect(() => {
@@ -117,6 +153,7 @@ export function Select({
       )}
 
       <div
+        ref={triggerRef}
         className={clsx(
           'relative flex items-center rounded-xl border bg-base-100 transition-all duration-200 h-12 cursor-pointer select-none',
           isFocused || isOpen
@@ -160,50 +197,56 @@ export function Select({
             )}
           />
         </div>
-
-        {/* Dropdown */}
-        {isOpen && (
-          <div
-            ref={listRef}
-            className="absolute left-0 right-0 top-full z-50 mt-1 max-h-60 overflow-auto rounded-xl border border-base-300 bg-base-100 shadow-[0_4px_20px_rgba(0,0,0,0.15)]"
-            role="listbox"
-          >
-            {options.length === 0 ? (
-              <div className="px-3 py-2 text-sm text-base-content/50">
-                Ma'lumot topilmadi
-              </div>
-            ) : (
-              options.map((option) => (
-                <div
-                  key={option.value}
-                  data-selected={option.value === value}
-                  className={clsx(
-                    'flex items-center gap-2 px-3 py-2.5 cursor-pointer transition-colors first:rounded-t-[10px] last:rounded-b-[10px]',
-                    option.value === value
-                      ? 'bg-primary/10 text-primary font-medium'
-                      : 'hover:bg-base-200/80',
-                    option.disabled && 'opacity-50 cursor-not-allowed'
-                  )}
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    if (!option.disabled) {
-                      handleSelect(option.value);
-                    }
-                  }}
-                  role="option"
-                  aria-selected={option.value === value}
-                  aria-disabled={option.disabled}
-                >
-                  <span className="flex-1 truncate">{option.label}</span>
-                  {option.value === value && (
-                    <Check className="h-4 w-4 flex-shrink-0" />
-                  )}
-                </div>
-              ))
-            )}
-          </div>
-        )}
       </div>
+
+      {/* Dropdown Portal */}
+      {isOpen && createPortal(
+        <div
+          ref={listRef}
+          className="fixed z-[9999] max-h-60 overflow-auto rounded-xl border border-base-300 bg-base-100 shadow-[0_4px_20px_rgba(0,0,0,0.15)]"
+          style={{
+            top: dropdownPosition.top,
+            left: dropdownPosition.left,
+            width: dropdownPosition.width,
+          }}
+          role="listbox"
+        >
+          {options.length === 0 ? (
+            <div className="px-3 py-2 text-sm text-base-content/50">
+              Ma'lumot topilmadi
+            </div>
+          ) : (
+            options.map((option) => (
+              <div
+                key={option.value}
+                data-selected={option.value === value}
+                className={clsx(
+                  'flex items-center gap-2 px-3 py-2.5 cursor-pointer transition-colors first:rounded-t-[10px] last:rounded-b-[10px]',
+                  option.value === value
+                    ? 'bg-primary/10 text-primary font-medium'
+                    : 'hover:bg-base-200/80',
+                  option.disabled && 'opacity-50 cursor-not-allowed'
+                )}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  if (!option.disabled) {
+                    handleSelect(option.value);
+                  }
+                }}
+                role="option"
+                aria-selected={option.value === value}
+                aria-disabled={option.disabled}
+              >
+                <span className="flex-1 truncate">{option.label}</span>
+                {option.value === value && (
+                  <Check className="h-4 w-4 flex-shrink-0" />
+                )}
+              </div>
+            ))
+          )}
+        </div>,
+        document.body
+      )}
 
       {/* Error message */}
       {error && (
