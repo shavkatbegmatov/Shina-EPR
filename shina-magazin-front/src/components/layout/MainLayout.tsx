@@ -16,7 +16,7 @@ export function MainLayout() {
       <Sidebar />
       <div className="flex min-w-0 flex-1 flex-col overflow-hidden">
         <Header />
-        <main className="flex-1 overflow-y-auto overflow-x-hidden px-4 pb-6 pt-6 lg:px-8">
+        <main className="flex-1 overflow-y-auto overflow-x-hidden px-4 pb-6 pt-6 lg:px-8" style={{ scrollbarGutter: 'stable' }}>
           <Outlet />
         </main>
         <Footer />
