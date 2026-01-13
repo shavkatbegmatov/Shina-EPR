@@ -152,18 +152,20 @@ export function Select({
         </div>
 
         {/* Chevron */}
-        <div className={clsx(
-          'pr-3 text-base-content/40 transition-transform duration-200',
-          isOpen && 'rotate-180'
-        )}>
-          <ChevronDown className="h-5 w-5" />
+        <div className="pr-3 text-base-content/40">
+          <ChevronDown
+            className={clsx(
+              'h-5 w-5 transition-transform duration-200',
+              isOpen && 'rotate-180'
+            )}
+          />
         </div>
 
         {/* Dropdown */}
         {isOpen && (
           <div
             ref={listRef}
-            className="absolute left-0 right-0 top-full z-50 mt-1 max-h-60 overflow-auto rounded-xl border border-base-300 bg-base-100 py-1 shadow-lg"
+            className="absolute left-0 right-0 top-full z-50 mt-1 max-h-60 overflow-auto rounded-xl border border-base-300 bg-base-100 py-1 shadow-[0_4px_20px_rgba(0,0,0,0.15)]"
             role="listbox"
           >
             {options.length === 0 ? (
@@ -179,7 +181,7 @@ export function Select({
                     'flex items-center gap-2 px-3 py-2.5 cursor-pointer transition-colors',
                     option.value === value
                       ? 'bg-primary/10 text-primary font-medium'
-                      : 'hover:bg-base-200',
+                      : 'hover:bg-base-200/80',
                     option.disabled && 'opacity-50 cursor-not-allowed'
                   )}
                   onClick={(e) => {
