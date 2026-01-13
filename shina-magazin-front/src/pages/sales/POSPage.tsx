@@ -127,14 +127,11 @@ export function POSPage() {
   const isDebt = change < 0;
 
   const discountSummary = useMemo(() => {
-    if (cart.discount > 0) {
-      return `-${formatCurrency(cart.discount)}`;
-    }
-    if (cart.discountPercent > 0) {
-      return `-${cart.discountPercent}%`;
+    if (discountAmount > 0) {
+      return `-${formatCurrency(discountAmount)}`;
     }
     return null;
-  }, [cart.discount, cart.discountPercent]);
+  }, [discountAmount]);
 
   return (
     <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_380px]">
