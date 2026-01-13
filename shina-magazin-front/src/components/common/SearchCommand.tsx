@@ -25,10 +25,14 @@ import clsx from 'clsx';
 import { productsApi } from '../../api/products.api';
 import { customersApi } from '../../api/customers.api';
 import { salesApi } from '../../api/sales.api';
+import { debtsApi } from '../../api/debts.api';
+import { purchasesApi } from '../../api/purchases.api';
+import { suppliersApi } from '../../api/suppliers.api';
+import { employeesApi } from '../../api/employees.api';
 import { formatCurrency } from '../../config/constants';
-import type { Product, Customer, Sale } from '../../types';
+import type { Product, Customer, Sale, Debt, PurchaseOrder, Supplier, Employee } from '../../types';
 
-type ResultType = 'product' | 'customer' | 'sale' | 'page';
+type ResultType = 'product' | 'customer' | 'sale' | 'debt' | 'purchase' | 'supplier' | 'employee' | 'page';
 
 interface SearchResult {
   id: string;
@@ -44,6 +48,10 @@ const ICON_MAP: Record<ResultType, LucideIcon> = {
   product: Package,
   customer: Users,
   sale: CreditCard,
+  debt: Wallet,
+  purchase: Truck,
+  supplier: Truck,
+  employee: UserCog,
   page: LayoutDashboard,
 };
 
@@ -199,10 +207,14 @@ export function SearchCommand() {
 
     setLoading(true);
     try {
-      const [productsRes, customersRes, salesRes] = await Promise.all([
+      const [productsRes, customersRes, salesRes, debtsRes, purchasesRes, suppliersRes, employeesRes] = await Promise.all([
         productsApi.getAll({ search: searchQuery, size: 5 }),
         customersApi.getAll({ search: searchQuery, size: 5 }),
         salesApi.getAll({ page: 0, size: 5 }),
+        debtsApi.getAll({ page: 0, size: 5 }),
+        purchasesApi.getAll({ page: 0, size: 5 }),
+        suppliersApi.getAll({ search: searchQuery, size: 5 }),
+        employeesApi.getAll({ search: searchQuery, size: 5 }),
       ]);
 
       const searchResults: SearchResult[] = [];
@@ -252,6 +264,62 @@ export function SearchCommand() {
             meta: formatCurrency(sale.totalAmount),
           });
         });
+
+      // Debts (filter by customer name or phone)
+      debtsRes.content
+        .filter((debt: Debt) =>
+          debt.customerName.toLowerCase().includes(searchQuery.toLowerCase()) ||
+          debt.customerPhone.includes(searchQuery)
+        )
+        .forEach((debt: Debt) => {
+          searchResults.push({
+            id: `debt-${debt.id}`,
+            type: 'debt',
+            title: debt.customerName,
+            subtitle: debt.invoiceNumber || debt.customerPhone,
+            href: '/debts',
+            meta: `Qarz: ${formatCurrency(debt.remainingAmount)}`,
+          });
+        });
+
+      // Purchases (filter by order number or supplier)
+      purchasesRes.content
+        .filter((purchase: PurchaseOrder) =>
+          purchase.orderNumber?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+          purchase.supplierName?.toLowerCase().includes(searchQuery.toLowerCase())
+        )
+        .forEach((purchase: PurchaseOrder) => {
+          searchResults.push({
+            id: `purchase-${purchase.id}`,
+            type: 'purchase',
+            title: purchase.orderNumber || `Xarid #${purchase.id}`,
+            subtitle: purchase.supplierName || "Noma'lum ta'minotchi",
+            href: `/purchases/${purchase.id}`,
+            meta: formatCurrency(purchase.totalAmount),
+          });
+        });
+
+      // Suppliers
+      suppliersRes.content.forEach((supplier: Supplier) => {
+        searchResults.push({
+          id: `supplier-${supplier.id}`,
+          type: 'supplier',
+          title: supplier.name,
+          subtitle: supplier.phone || supplier.contactPerson,
+          href: `/suppliers?search=${encodeURIComponent(supplier.name)}`,
+        });
+      });
+
+      // Employees
+      employeesRes.content.forEach((employee: Employee) => {
+        searchResults.push({
+          id: `employee-${employee.id}`,
+          type: 'employee',
+          title: employee.fullName,
+          subtitle: employee.phone || employee.position,
+          href: `/employees?search=${encodeURIComponent(employee.fullName)}`,
+        });
+      });
 
       setResults(searchResults);
       setSelectedIndex(0);
