@@ -15,6 +15,7 @@
   html {
     font-family: var(--font-sans);
     scroll-behavior: smooth;
+    scrollbar-gutter: stable;
   }
 
   body {
