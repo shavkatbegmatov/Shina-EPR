@@ -404,10 +404,10 @@ export function DateRangePicker({
         type="button"
         onClick={() => setIsOpen(!isOpen)}
         className={clsx(
-          'flex items-center gap-2 rounded-xl border px-4 py-2 transition-all',
-          'hover:border-primary/50 hover:bg-base-200/50',
+          'flex items-center gap-2 h-12 rounded-xl border px-4 transition-all duration-200',
+          'hover:border-base-content/30',
           isOpen
-            ? 'border-primary bg-primary/5 ring-2 ring-primary/20'
+            ? 'border-primary ring-2 ring-primary/20'
             : 'border-base-300 bg-base-100'
         )}
       >

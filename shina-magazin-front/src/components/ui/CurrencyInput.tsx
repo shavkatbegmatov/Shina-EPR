@@ -146,10 +146,11 @@ export function CurrencyInput({
     inputRef.current?.focus();
   };
 
+  // Standardized heights: sm=40px, md=48px (standard), lg=56px
   const sizeClasses = {
-    sm: 'h-9 text-sm',
-    md: 'h-11 text-base',
-    lg: 'h-13 text-lg',
+    sm: 'h-10 text-sm',
+    md: 'h-12 text-base',  // Standard height matching other form elements
+    lg: 'h-14 text-lg',
   };
 
   const quickButtonSizeClasses = {
