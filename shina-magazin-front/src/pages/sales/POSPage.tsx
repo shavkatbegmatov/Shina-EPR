@@ -357,11 +357,13 @@ export function POSPage() {
                 size="sm"
               />
             </div>
-            {discountSummary && (
-              <div className="text-xs text-success">
-                Umumiy chegirma: {discountSummary}
-              </div>
-            )}
+            <div className={clsx(
+              'flex items-center justify-between text-sm transition-opacity duration-200',
+              discountSummary ? 'opacity-100' : 'opacity-0'
+            )}>
+              <span className="text-base-content/60">Chegirma:</span>
+              <span className="font-semibold text-success">{discountSummary || '-'}</span>
+            </div>
           </div>
         </div>
 
