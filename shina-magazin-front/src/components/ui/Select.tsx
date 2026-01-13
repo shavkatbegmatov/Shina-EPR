@@ -207,7 +207,8 @@ export function Select({
           style={{
             top: dropdownPosition.top,
             left: dropdownPosition.left,
-            width: dropdownPosition.width,
+            minWidth: Math.max(dropdownPosition.width, 200),
+            width: 'auto',
           }}
           role="listbox"
         >
