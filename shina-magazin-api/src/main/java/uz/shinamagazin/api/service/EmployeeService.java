@@ -195,23 +195,18 @@ public class EmployeeService {
         RoleEntity newRole = roleRepository.findByCode(roleCode)
                 .orElseThrow(() -> new ResourceNotFoundException("Rol", "code", roleCode));
 
-        // 4. Security check: prevent assigning system-only roles (except ADMIN)
-        if (Boolean.TRUE.equals(newRole.getIsSystem()) && !"ADMIN".equals(roleCode)) {
-            throw new BadRequestException("Tizim rollarini xodimlarga biriktirish mumkin emas");
-        }
-
-        // 5. Check if role is active
+        // 4. Check if role is active
         if (!Boolean.TRUE.equals(newRole.getIsActive())) {
             throw new BadRequestException("Bu rol faol emas: " + newRole.getName());
         }
 
-        // 6. Clear existing roles and assign new one
+        // 5. Clear existing roles and assign new one
         User user = employee.getUser();
         user.getRoles().clear();
         user.getRoles().add(newRole);
         userRepository.save(user);
 
-        // 7. Clear permission cache for this user
+        // 6. Clear permission cache for this user
         permissionService.clearUserPermissionsCache(user.getId());
 
         log.info("Changed role for employee {} (user: {}) to {}",
