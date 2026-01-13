@@ -15,6 +15,9 @@ import {
   Clock,
   CreditCard,
   AlertCircle,
+  Edit3,
+  Check,
+  Key,
 } from 'lucide-react';
 import clsx from 'clsx';
 import toast from 'react-hot-toast';
@@ -86,6 +89,11 @@ export function EmployeesPage() {
   // Credentials modal for newly created user
   const [newCredentials, setNewCredentials] = useState<CredentialsInfo | null>(null);
   const [credentialsEmployeeName, setCredentialsEmployeeName] = useState('');
+
+  // Role change state
+  const [isEditingRole, setIsEditingRole] = useState(false);
+  const [selectedNewRoleCode, setSelectedNewRoleCode] = useState<string>('');
+  const [changingRole, setChangingRole] = useState(false);
 
   const { highlightId, clearHighlight } = useHighlight();
   const hasSearch = useMemo(() => search.trim().length > 0, [search]);
@@ -303,6 +311,8 @@ export function EmployeesPage() {
     setEditingEmployee(null);
     setFormData(emptyFormData);
     setModalTab('basic');
+    setIsEditingRole(false);
+    setSelectedNewRoleCode('');
   };
 
   const handleFormChange = (field: keyof EmployeeRequest, value: string | number | boolean | undefined) => {
@@ -379,6 +389,57 @@ export function EmployeesPage() {
     } finally {
       setSaving(false);
     }
+  };
+
+  // Handle role change for existing user
+  const handleChangeRole = async () => {
+    if (!editingEmployee?.userId || !selectedNewRoleCode) return;
+
+    // Find the new role by code
+    const newRole = roles.find(r => r.code === selectedNewRoleCode);
+    if (!newRole) {
+      toast.error('Rol topilmadi');
+      return;
+    }
+
+    // Find the current role by code
+    const currentRole = roles.find(r => r.code === editingEmployee.userRole);
+
+    setChangingRole(true);
+    try {
+      // Remove old role if exists
+      if (currentRole) {
+        await rolesApi.removeFromUser(currentRole.id, editingEmployee.userId);
+      }
+      // Assign new role
+      await rolesApi.assignToUser(newRole.id, editingEmployee.userId);
+
+      toast.success(`Rol "${newRole.name}" ga o'zgartirildi`);
+      setIsEditingRole(false);
+      setSelectedNewRoleCode('');
+      // Reload to get updated data
+      loadEmployees();
+      // Update local state immediately for better UX
+      setEditingEmployee(prev => prev ? { ...prev, userRole: selectedNewRoleCode } : null);
+    } catch (error: unknown) {
+      const err = error as { response?: { data?: { message?: string } } };
+      toast.error(err.response?.data?.message || 'Rolni o\'zgartirishda xatolik yuz berdi');
+      console.error('Failed to change role:', error);
+    } finally {
+      setChangingRole(false);
+    }
+  };
+
+  const handleCancelRoleEdit = () => {
+    setIsEditingRole(false);
+    setSelectedNewRoleCode('');
+  };
+
+  const handleStartRoleEdit = () => {
+    if (editingEmployee?.userRole) {
+      setSelectedNewRoleCode(editingEmployee.userRole);
+    }
+    setIsEditingRole(true);
   };
 
   return (
@@ -722,22 +783,102 @@ export function EmployeesPage() {
 
                     {/* Show existing user if already linked */}
                     {editingEmployee?.hasUserAccount ? (
-                      <div className="flex items-start gap-3 p-3 rounded-xl bg-success/10 border border-success/20">
-                        <div className="p-2 rounded-lg bg-success/20 text-success">
-                          <UserCheck className="h-5 w-5" />
-                        </div>
-                        <div className="flex-1 min-w-0">
-                          <p className="font-semibold text-success">Akkount faol</p>
-                          <div className="mt-2 flex flex-wrap gap-2">
-                            <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-base-100 border border-base-300 text-sm font-medium">
-                              <span className="text-base-content/50">Login:</span>
-                              <code className="text-base-content">{editingEmployee.username}</code>
-                            </span>
-                            <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-base-100 border border-base-300 text-sm font-medium">
-                              <span className="text-base-content/50">Rol:</span>
-                              <span className="text-base-content">{ROLES[editingEmployee.userRole as keyof typeof ROLES]?.label || editingEmployee.userRole}</span>
-                            </span>
+                      <div className="space-y-4">
+                        {/* Account status header */}
+                        <div className="flex items-center gap-3 p-3 rounded-xl bg-success/10 border border-success/20">
+                          <div className="p-2 rounded-lg bg-success/20 text-success">
+                            <UserCheck className="h-5 w-5" />
                           </div>
+                          <div className="flex-1 min-w-0">
+                            <p className="font-semibold text-success">Akkount faol</p>
+                            <p className="text-sm text-success/70">
+                              Login: <code className="font-mono">{editingEmployee.username}</code>
+                            </p>
+                          </div>
+                        </div>
+
+                        {/* Role management section */}
+                        <div className="p-4 rounded-xl bg-base-100 border border-base-300">
+                          <div className="flex items-center justify-between mb-3">
+                            <div className="flex items-center gap-2">
+                              <Key className="h-4 w-4 text-base-content/50" />
+                              <span className="text-sm font-semibold text-base-content/70">Foydalanuvchi roli</span>
+                            </div>
+                            {!isEditingRole && (
+                              <button
+                                type="button"
+                                className="btn btn-ghost btn-xs gap-1"
+                                onClick={handleStartRoleEdit}
+                              >
+                                <Edit3 className="h-3.5 w-3.5" />
+                                O'zgartirish
+                              </button>
+                            )}
+                          </div>
+
+                          {isEditingRole ? (
+                            <div className="space-y-3">
+                              <Select
+                                label=""
+                                value={selectedNewRoleCode}
+                                onChange={(value) => setSelectedNewRoleCode(value as string)}
+                                placeholder="Yangi rol tanlang..."
+                                options={roles.map((role) => ({
+                                  value: role.code,
+                                  label: role.name,
+                                  description: role.description || `${role.permissionCount || 0} ta huquq`,
+                                }))}
+                              />
+
+                              {/* Role change info */}
+                              {selectedNewRoleCode && selectedNewRoleCode !== editingEmployee.userRole && (
+                                <div className="flex items-center gap-2 p-2 rounded-lg bg-warning/10 border border-warning/20 text-sm">
+                                  <AlertCircle className="h-4 w-4 text-warning shrink-0" />
+                                  <span className="text-warning">
+                                    Rol o'zgartirilganda foydalanuvchi huquqlari yangilanadi
+                                  </span>
+                                </div>
+                              )}
+
+                              <div className="flex items-center justify-end gap-2 pt-2 border-t border-base-200">
+                                <button
+                                  type="button"
+                                  className="btn btn-ghost btn-sm"
+                                  onClick={handleCancelRoleEdit}
+                                  disabled={changingRole}
+                                >
+                                  Bekor qilish
+                                </button>
+                                <button
+                                  type="button"
+                                  className="btn btn-primary btn-sm"
+                                  onClick={handleChangeRole}
+                                  disabled={changingRole || !selectedNewRoleCode || selectedNewRoleCode === editingEmployee.userRole}
+                                >
+                                  {changingRole ? (
+                                    <span className="loading loading-spinner loading-xs" />
+                                  ) : (
+                                    <Check className="h-4 w-4" />
+                                  )}
+                                  Saqlash
+                                </button>
+                              </div>
+                            </div>
+                          ) : (
+                            <div className="flex items-center gap-3">
+                              <div className="flex items-center gap-2 px-3 py-2 rounded-lg bg-primary/10 border border-primary/20">
+                                <Shield className="h-4 w-4 text-primary" />
+                                <span className="font-medium text-primary">
+                                  {ROLES[editingEmployee.userRole as keyof typeof ROLES]?.label || editingEmployee.userRole}
+                                </span>
+                              </div>
+                              {roles.find(r => r.code === editingEmployee.userRole)?.permissionCount !== undefined && (
+                                <span className="text-sm text-base-content/50">
+                                  {roles.find(r => r.code === editingEmployee.userRole)?.permissionCount} ta huquq
+                                </span>
+                              )}
+                            </div>
+                          )}
                         </div>
                       </div>
                     ) : (
