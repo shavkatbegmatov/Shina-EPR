@@ -18,6 +18,7 @@ import { NotificationsPage } from '../pages/notifications/NotificationsPage';
 import { ReportsPage } from '../pages/reports/ReportsPage';
 import { EmployeesPage } from '../pages/employees/EmployeesPage';
 import { RolesPage } from '../pages/roles/RolesPage';
+import { ProfilePage } from '../pages/profile/ProfilePage';
 
 // Portal imports
 import PortalLayout from '../portal/components/layout/PortalLayout';
@@ -123,6 +124,11 @@ export const router = createBrowserRouter([
         path: 'notifications',
         element: <NotificationsPage />,
         handle: { title: 'Bildirishnomalar' },
+      },
+      {
+        path: 'profile',
+        element: <ProfilePage />,
+        handle: { title: 'Profil' },
       },
     ],
   },

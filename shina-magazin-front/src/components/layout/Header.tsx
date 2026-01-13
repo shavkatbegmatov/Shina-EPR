@@ -391,13 +391,14 @@ export function Header() {
 
               {/* Menu items */}
               <div className="p-2">
-                <button
+                <Link
+                  to="/profile"
                   className="flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-sm transition-colors hover:bg-base-200/70"
                   onClick={() => setUserDropdownOpen(false)}
                 >
                   <UserIcon className="h-4 w-4 text-base-content/60" />
                   <span>Profil sozlamalari</span>
-                </button>
+                </Link>
                 <Link
                   to="/settings"
                   className="flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-sm transition-colors hover:bg-base-200/70"
