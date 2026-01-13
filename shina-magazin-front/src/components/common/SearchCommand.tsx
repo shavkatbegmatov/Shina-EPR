@@ -313,7 +313,7 @@ export function SearchCommand() {
       />
 
       {/* Modal */}
-      <div className="fixed inset-x-4 top-[15%] z-50 mx-auto max-w-xl">
+      <div className="fixed inset-x-4 top-20 z-50 mx-auto max-w-xl">
         <div className="surface-card overflow-hidden shadow-2xl">
           {/* Search input */}
           <div className="flex items-center gap-3 border-b border-base-200 px-4">
