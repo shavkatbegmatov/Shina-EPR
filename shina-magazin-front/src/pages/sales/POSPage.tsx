@@ -127,11 +127,18 @@ export function POSPage() {
   const isDebt = change < 0;
 
   const discountSummary = useMemo(() => {
-    if (discountAmount > 0) {
-      return `-${formatCurrency(discountAmount)}`;
+    // So'm kiritilsa → foizda ko'rsat
+    if (cart.discount > 0 && subtotal > 0) {
+      const percent = ((cart.discount / subtotal) * 100).toFixed(1);
+      return `-${percent}%`;
+    }
+    // Foiz kiritilsa → so'mda ko'rsat
+    if (cart.discountPercent > 0) {
+      const amount = (subtotal * cart.discountPercent) / 100;
+      return `-${formatCurrency(amount)}`;
     }
     return null;
-  }, [discountAmount]);
+  }, [cart.discount, cart.discountPercent, subtotal]);
 
   return (
     <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_380px]">
