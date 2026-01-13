@@ -71,6 +71,9 @@ public class RoleResponse {
                 .description(role.getDescription())
                 .isSystem(role.getIsSystem())
                 .isActive(role.getIsActive())
+                .permissions(role.getPermissions().stream()
+                        .map(p -> p.getCode())
+                        .collect(Collectors.toSet()))
                 .permissionCount(role.getPermissions().size())
                 .build();
     }
