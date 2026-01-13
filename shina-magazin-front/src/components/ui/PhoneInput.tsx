@@ -203,15 +203,6 @@ export function PhoneInput({
           <span className="label-text-alt text-error">{error}</span>
         </label>
       )}
-
-      {/* Helper text */}
-      {!error && isFocused && !isComplete && (
-        <label className="label py-1">
-          <span className="label-text-alt text-base-content/50">
-            Format: +998 XX XXX XX XX
-          </span>
-        </label>
-      )}
     </div>
   );
 }
