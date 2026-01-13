@@ -697,28 +697,45 @@ export function EmployeesPage() {
                   </div>
 
                   {/* Tizim foydalanuvchisi */}
-                  <div className="surface-soft rounded-xl p-4">
-                    <h4 className="text-sm font-semibold uppercase tracking-[0.15em] text-base-content/60 mb-4 flex items-center gap-2">
-                      <Shield className="h-4 w-4" />
+                  <div className="rounded-xl border border-primary/20 bg-primary/5 p-4">
+                    <h4 className="text-sm font-semibold uppercase tracking-[0.15em] text-primary mb-4 flex items-center gap-2">
+                      <div className="p-1.5 rounded-lg bg-primary/10">
+                        <Shield className="h-4 w-4" />
+                      </div>
                       Tizim kirish huquqi
                     </h4>
 
                     {/* Show existing user if already linked */}
                     {editingEmployee?.hasUserAccount ? (
-                      <div className="alert alert-success">
-                        <Shield className="h-5 w-5" />
-                        <div>
-                          <p className="font-medium">Foydalanuvchi akkaunti mavjud</p>
-                          <p className="text-sm">
-                            Username: <code className="bg-base-200 px-2 py-0.5 rounded">{editingEmployee.username}</code>
-                            {' '} | Rol: {ROLES[editingEmployee.userRole as keyof typeof ROLES]?.label || editingEmployee.userRole}
-                          </p>
+                      <div className="flex items-start gap-3 p-3 rounded-xl bg-success/10 border border-success/20">
+                        <div className="p-2 rounded-lg bg-success/20 text-success">
+                          <UserCheck className="h-5 w-5" />
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <p className="font-semibold text-success">Akkount faol</p>
+                          <div className="mt-2 flex flex-wrap gap-2">
+                            <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-base-100 border border-base-300 text-sm font-medium">
+                              <span className="text-base-content/50">Login:</span>
+                              <code className="text-base-content">{editingEmployee.username}</code>
+                            </span>
+                            <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-base-100 border border-base-300 text-sm font-medium">
+                              <span className="text-base-content/50">Rol:</span>
+                              <span className="text-base-content">{ROLES[editingEmployee.userRole as keyof typeof ROLES]?.label || editingEmployee.userRole}</span>
+                            </span>
+                          </div>
                         </div>
                       </div>
                     ) : (
                       <div className="space-y-4">
                         {/* Create new user account checkbox */}
-                        <label className="flex items-start gap-3 cursor-pointer p-3 rounded-lg hover:bg-base-200/50 transition-colors">
+                        <label
+                          className={clsx(
+                            'flex items-start gap-3 cursor-pointer p-4 rounded-xl border-2 transition-all duration-200',
+                            formData.createUserAccount
+                              ? 'border-primary bg-primary/10'
+                              : 'border-base-300 bg-base-100 hover:border-primary/50 hover:bg-primary/5'
+                          )}
+                        >
                           <input
                             type="checkbox"
                             className="checkbox checkbox-primary mt-0.5"
@@ -730,9 +747,9 @@ export function EmployeesPage() {
                               }
                             }}
                           />
-                          <div>
-                            <p className="font-medium">Yangi foydalanuvchi hisobi yaratish</p>
-                            <p className="text-sm text-base-content/60">
+                          <div className="flex-1">
+                            <p className="font-semibold text-base-content">Yangi foydalanuvchi hisobi yaratish</p>
+                            <p className="text-sm text-base-content/60 mt-0.5">
                               Tizim avtomatik username va vaqtinchalik parol generatsiya qiladi
                             </p>
                           </div>
@@ -740,44 +757,48 @@ export function EmployeesPage() {
 
                         {/* Role selection when creating new user */}
                         {formData.createUserAccount && (
-                          <label className="form-control">
-                            <span className="label-text mb-1 text-xs font-semibold uppercase tracking-[0.18em] text-base-content/50">
-                              Rol
-                            </span>
-                            <select
-                              className="select select-bordered w-full"
-                              value={formData.roleCode || 'SELLER'}
-                              onChange={(e) => handleFormChange('roleCode', e.target.value)}
-                            >
-                              {Object.entries(ROLES).map(([key, { label }]) => (
-                                <option key={key} value={key}>{label}</option>
-                              ))}
-                            </select>
-                          </label>
+                          <div className="pl-4 border-l-2 border-primary/30">
+                            <label className="form-control">
+                              <span className="label-text mb-1.5 text-xs font-semibold uppercase tracking-[0.18em] text-base-content/60">
+                                Rol tanlang
+                              </span>
+                              <select
+                                className="select select-bordered w-full bg-base-100"
+                                value={formData.roleCode || 'SELLER'}
+                                onChange={(e) => handleFormChange('roleCode', e.target.value)}
+                              >
+                                {Object.entries(ROLES).map(([key, { label }]) => (
+                                  <option key={key} value={key}>{label}</option>
+                                ))}
+                              </select>
+                            </label>
+                          </div>
                         )}
 
                         {/* Existing user linking (when not creating new) */}
                         {!formData.createUserAccount && (
-                          <label className="form-control">
-                            <span className="label-text mb-1 text-xs font-semibold uppercase tracking-[0.18em] text-base-content/50">
-                              Mavjud akkaunti bog'lash
-                            </span>
-                            <select
-                              className="select select-bordered w-full"
-                              value={formData.userId || ''}
-                              onChange={(e) => handleFormChange('userId', e.target.value ? Number(e.target.value) : undefined)}
-                            >
-                              <option value="">Bog'lanmagan</option>
-                              {availableUsers.map(user => (
-                                <option key={user.id} value={user.id}>
-                                  {user.username} ({ROLES[user.role]?.label})
-                                </option>
-                              ))}
-                            </select>
-                            <span className="label-text-alt mt-1 text-base-content/50">
-                              Mavjud foydalanuvchi akkaunti bilan bog'lash
-                            </span>
-                          </label>
+                          <div className="p-4 rounded-xl bg-base-100 border border-base-300">
+                            <label className="form-control">
+                              <span className="label-text mb-1.5 text-xs font-semibold uppercase tracking-[0.18em] text-base-content/60">
+                                Yoki mavjud akkountni bog'lang
+                              </span>
+                              <select
+                                className="select select-bordered w-full"
+                                value={formData.userId || ''}
+                                onChange={(e) => handleFormChange('userId', e.target.value ? Number(e.target.value) : undefined)}
+                              >
+                                <option value="">— Tanlanmagan —</option>
+                                {availableUsers.map(user => (
+                                  <option key={user.id} value={user.id}>
+                                    {user.username} ({ROLES[user.role]?.label})
+                                  </option>
+                                ))}
+                              </select>
+                              <span className="label-text-alt mt-1.5 text-base-content/50">
+                                Mavjud foydalanuvchi akkaunti bilan bog'lash
+                              </span>
+                            </label>
+                          </div>
                         )}
                       </div>
                     )}
