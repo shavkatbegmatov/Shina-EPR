@@ -89,11 +89,11 @@ export function Sidebar() {
           </button>
         </div>
 
-        <nav className="flex-1 p-4" aria-label="Asosiy navigatsiya">
+        <nav className="flex-1 overflow-y-auto p-4 scrollbar-thin" aria-label="Asosiy navigatsiya">
           <p className="px-3 pb-3 text-xs font-semibold uppercase tracking-[0.2em] text-base-content/40">
             Navigatsiya
           </p>
-          <ul className="stagger-children flex flex-col gap-1">
+          <ul className="stagger-children flex flex-col gap-1 pb-4">
             {filteredItems.map((item, index) => (
               <li
                 key={item.path}

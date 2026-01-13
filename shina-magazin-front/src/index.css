@@ -173,6 +173,23 @@
   @apply bg-base-content/30;
 }
 
+/* Thin scrollbar for sidebars */
+.scrollbar-thin::-webkit-scrollbar {
+  width: 4px;
+}
+
+.scrollbar-thin::-webkit-scrollbar-track {
+  @apply bg-transparent;
+}
+
+.scrollbar-thin::-webkit-scrollbar-thumb {
+  @apply bg-base-300/50 rounded-full;
+}
+
+.scrollbar-thin::-webkit-scrollbar-thumb:hover {
+  @apply bg-base-300;
+}
+
 /* Custom styles */
 .line-clamp-2 {
   display: -webkit-box;
