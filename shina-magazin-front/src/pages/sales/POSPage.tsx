@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { Search, Plus, Minus, Trash2, ShoppingCart, User, X, Phone } from 'lucide-react';
+import { Plus, Minus, Trash2, ShoppingCart, User, X, Phone } from 'lucide-react';
 import toast from 'react-hot-toast';
 import clsx from 'clsx';
 import { productsApi } from '../../api/products.api';
@@ -12,6 +12,7 @@ import { CurrencyInput } from '../../components/ui/CurrencyInput';
 import { PercentInput } from '../../components/ui/PercentInput';
 import { Select } from '../../components/ui/Select';
 import { ModalPortal } from '../../components/common/Modal';
+import { SearchInput } from '../../components/ui/SearchInput';
 import type { Product, PaymentMethod, Customer } from '../../types';
 
 export function POSPage() {
@@ -152,20 +153,14 @@ export function POSPage() {
                 {products.length} ta mahsulot topildi
               </p>
             </div>
-            <div className="form-control w-full md:max-w-sm">
-              <div className="input-group">
-                <span className="bg-base-200">
-                  <Search className="h-5 w-5" />
-                </span>
-                <input
-                  type="text"
-                  placeholder="Mahsulot qidirish..."
-                  className="input input-bordered w-full"
-                  value={search}
-                  onChange={(e) => setSearch(e.target.value)}
-                />
-              </div>
-            </div>
+            <SearchInput
+              value={search}
+              onValueChange={setSearch}
+              label="Mahsulot qidirish"
+              placeholder="Mahsulot qidirish..."
+              hideLabel
+              className="w-full md:max-w-sm"
+            />
           </div>
         </div>
 
@@ -492,18 +487,13 @@ export function POSPage() {
             </p>
 
             <div className="mt-4">
-              <div className="input-group">
-                <span className="bg-base-200">
-                  <Search className="h-5 w-5" />
-                </span>
-                <input
-                  type="text"
-                  placeholder="Ism yoki telefon bo'yicha qidirish..."
-                  className="input input-bordered w-full"
-                  value={customerSearch}
-                  onChange={(e) => setCustomerSearch(e.target.value)}
-                />
-              </div>
+              <SearchInput
+                value={customerSearch}
+                onValueChange={setCustomerSearch}
+                label="Ism yoki telefon"
+                placeholder="Ism yoki telefon bo'yicha qidirish..."
+                hideLabel
+              />
             </div>
 
             <div className="mt-4 max-h-80 overflow-y-auto">

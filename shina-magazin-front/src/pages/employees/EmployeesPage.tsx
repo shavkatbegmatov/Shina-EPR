@@ -1,7 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import {
   Plus,
-  Search,
   UserCog,
   Phone,
   Mail,
@@ -31,6 +30,7 @@ import { ModalPortal } from '../../components/common/Modal';
 import { CurrencyInput } from '../../components/ui/CurrencyInput';
 import { PhoneInput } from '../../components/ui/PhoneInput';
 import { Select } from '../../components/ui/Select';
+import { SearchInput } from '../../components/ui/SearchInput';
 import { CredentialsModal } from './components/CredentialsModal';
 import { useHighlight } from '../../hooks/useHighlight';
 import type { CredentialsInfo, Employee, EmployeeRequest, EmployeeStatus, Role, User } from '../../types';
@@ -521,21 +521,16 @@ export function EmployeesPage() {
             </p>
           </div>
         </div>
-        <label className="form-control mt-4 max-w-md">
-          <span className="label-text mb-1 text-xs font-semibold uppercase tracking-[0.18em] text-base-content/50">
-            Ism, telefon yoki lavozim
-          </span>
-          <div className="input-group">
-            <span className="bg-base-200"><Search className="h-5 w-5" /></span>
-            <input
-              type="text"
-              placeholder="Qidirish..."
-              className="input input-bordered w-full"
-              value={search}
-              onChange={(e) => { setSearch(e.target.value); setPage(0); }}
-            />
-          </div>
-        </label>
+        <SearchInput
+          value={search}
+          onValueChange={(value) => {
+            setSearch(value);
+            setPage(0);
+          }}
+          label="Ism, telefon yoki lavozim"
+          placeholder="Qidirish..."
+          className="mt-4 max-w-md"
+        />
       </div>
 
       {/* Employees Table */}

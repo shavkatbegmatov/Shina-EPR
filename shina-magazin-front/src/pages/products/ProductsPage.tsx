@@ -1,11 +1,12 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { Plus, Search, Package, BadgeCheck, AlertTriangle, X } from 'lucide-react';
+import { Plus, Package, BadgeCheck, AlertTriangle, X } from 'lucide-react';
 import clsx from 'clsx';
 import { productsApi, brandsApi, categoriesApi } from '../../api/products.api';
 import { formatCurrency, SEASONS } from '../../config/constants';
 import { NumberInput } from '../../components/ui/NumberInput';
 import { CurrencyInput } from '../../components/ui/CurrencyInput';
 import { Select } from '../../components/ui/Select';
+import { SearchInput } from '../../components/ui/SearchInput';
 import { DataTable, Column } from '../../components/ui/DataTable';
 import { ModalPortal } from '../../components/common/Modal';
 import { useNotificationsStore } from '../../store/notificationsStore';
@@ -279,23 +280,15 @@ export function ProductsPage() {
           </div>
         </div>
         <div className="mt-4 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
-          <label className="form-control">
-            <span className="label-text mb-1 text-xs font-semibold uppercase tracking-[0.18em] text-base-content/50">
-              Qidirish
-            </span>
-            <div className="input-group">
-              <span className="bg-base-200">
-                <Search className="h-5 w-5" />
-              </span>
-              <input
-                type="text"
-                placeholder="SKU, nom yoki o'lcham..."
-                className="input input-bordered w-full"
-                value={search}
-                onChange={(e) => { setSearch(e.target.value); setPage(0); }}
-              />
-            </div>
-          </label>
+          <SearchInput
+            value={search}
+            onValueChange={(value) => {
+              setSearch(value);
+              setPage(0);
+            }}
+            label="Qidirish"
+            placeholder="SKU, nom yoki o'lcham..."
+          />
 
           <Select
             label="Brend"

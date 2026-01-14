@@ -13,6 +13,8 @@ interface SearchInputProps {
   disabled?: boolean;
   id?: string;
   onClear?: () => void;
+  hideLabel?: boolean;
+  ariaLabel?: string;
 }
 
 export function SearchInput({
@@ -26,11 +28,14 @@ export function SearchInput({
   disabled = false,
   id,
   onClear,
+  hideLabel = false,
+  ariaLabel,
 }: SearchInputProps) {
   const inputId = id ?? useId();
   const inputRef = useRef<HTMLInputElement>(null);
   const [isFocused, setIsFocused] = useState(false);
   const hasValue = value.trim().length > 0;
+  const accessibleLabel = ariaLabel ?? label;
 
   const handleClear = () => {
     if (onClear) {
@@ -50,7 +55,7 @@ export function SearchInput({
 
   return (
     <div className={clsx('form-control', className)}>
-      {label && (
+      {label && !hideLabel && (
         <label
           htmlFor={inputId}
           className="label-text mb-1 text-xs font-semibold uppercase tracking-[0.18em] text-base-content/50"
@@ -87,7 +92,7 @@ export function SearchInput({
           onBlur={() => setIsFocused(false)}
           onKeyDown={handleKeyDown}
           disabled={disabled}
-          aria-label={label}
+          aria-label={accessibleLabel}
           autoComplete="off"
         />
         {hasValue && !disabled && (

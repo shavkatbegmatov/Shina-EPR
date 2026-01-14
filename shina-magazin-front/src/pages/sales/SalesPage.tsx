@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { Search, ShoppingCart, Receipt, Eye, XCircle, Calendar, User, X, CreditCard, Banknote, ArrowRightLeft, Layers } from 'lucide-react';
+import { ShoppingCart, Receipt, Eye, XCircle, Calendar, User, X, CreditCard, Banknote, ArrowRightLeft, Layers } from 'lucide-react';
 import clsx from 'clsx';
 import toast from 'react-hot-toast';
 import { salesApi } from '../../api/sales.api';
@@ -8,6 +8,7 @@ import { formatCurrency, formatDateTime, PAYMENT_METHODS, PAYMENT_STATUSES, SALE
 import { DataTable, Column } from '../../components/ui/DataTable';
 import { Select } from '../../components/ui/Select';
 import { ModalPortal } from '../../components/common/Modal';
+import { SearchInput } from '../../components/ui/SearchInput';
 import { useHighlight } from '../../hooks/useHighlight';
 import type { Sale, PaymentStatus, SaleStatus, PaymentMethod } from '../../types';
 import { useNotificationsStore } from '../../store/notificationsStore';
@@ -265,13 +266,12 @@ export function SalesPage() {
           )}
         </div>
         <div className="mt-4 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-          <label className="form-control">
-            <span className="label-text mb-1 text-xs font-semibold uppercase tracking-[0.18em] text-base-content/50">Faktura raqami</span>
-            <div className="input-group">
-              <span className="bg-base-200"><Search className="h-5 w-5" /></span>
-              <input type="text" placeholder="INV... bo'yicha qidirish" className="input input-bordered w-full" value={search} onChange={(e) => setSearch(e.target.value)} />
-            </div>
-          </label>
+          <SearchInput
+            value={search}
+            onValueChange={setSearch}
+            label="Faktura raqami"
+            placeholder="INV... bo'yicha qidirish"
+          />
           <Select
             label="To'lov holati"
             value={paymentStatusFilter || undefined}
