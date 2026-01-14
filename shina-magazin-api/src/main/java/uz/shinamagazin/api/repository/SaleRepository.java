@@ -29,6 +29,8 @@ public interface SaleRepository extends JpaRepository<Sale, Long> {
             @Param("end") LocalDateTime end
     );
 
+    Page<Sale> findBySaleDateBetween(LocalDateTime start, LocalDateTime end, Pageable pageable);
+
     @Query("SELECT s FROM Sale s WHERE s.saleDate >= :start AND s.saleDate < :end AND s.status = 'COMPLETED'")
     List<Sale> findTodaySales(@Param("start") LocalDateTime start, @Param("end") LocalDateTime end);
 

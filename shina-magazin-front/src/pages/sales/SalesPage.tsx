@@ -4,10 +4,21 @@ import { ShoppingCart, Receipt, Eye, XCircle, Calendar, User, X, CreditCard, Ban
 import clsx from 'clsx';
 import toast from 'react-hot-toast';
 import { salesApi } from '../../api/sales.api';
-import { formatCurrency, formatDateTime, PAYMENT_METHODS, PAYMENT_STATUSES, SALE_STATUSES } from '../../config/constants';
+import {
+  formatCurrency,
+  formatDateTime,
+  PAYMENT_METHODS,
+  PAYMENT_STATUSES,
+  SALE_STATUSES,
+  getDateDaysAgo,
+  getDateMonthsAgo,
+  getDateYearsAgo,
+  getTashkentToday,
+} from '../../config/constants';
 import { DataTable, Column } from '../../components/ui/DataTable';
 import { Select } from '../../components/ui/Select';
 import { ModalPortal } from '../../components/common/Modal';
+import { DateRangePicker, type DateRangePreset, type DateRange } from '../../components/common/DateRangePicker';
 import { SearchInput } from '../../components/ui/SearchInput';
 import { useHighlight } from '../../hooks/useHighlight';
 import type { Sale, PaymentStatus, SaleStatus, PaymentMethod } from '../../types';
@@ -29,6 +40,8 @@ export function SalesPage() {
   const [totalPages, setTotalPages] = useState(0);
   const [totalElements, setTotalElements] = useState(0);
   const [search, setSearch] = useState('');
+  const [dateRangePreset, setDateRangePreset] = useState<DateRangePreset>('all');
+  const [customRange, setCustomRange] = useState<DateRange>({ start: '', end: '' });
   const [paymentStatusFilter, setPaymentStatusFilter] = useState<PaymentStatus | ''>('');
   const [statusFilter, setStatusFilter] = useState<SaleStatus | ''>('');
   const [selectedSale, setSelectedSale] = useState<Sale | null>(null);
@@ -40,12 +53,56 @@ export function SalesPage() {
   const { highlightId, clearHighlight } = useHighlight();
 
   const hasFilters = useMemo(
-    () => search.trim().length > 0 || paymentStatusFilter !== '' || statusFilter !== '',
-    [search, paymentStatusFilter, statusFilter]
+    () => (
+      search.trim().length > 0
+      || paymentStatusFilter !== ''
+      || statusFilter !== ''
+      || dateRangePreset !== 'all'
+    ),
+    [search, paymentStatusFilter, statusFilter, dateRangePreset]
   );
 
   const handlePageSizeChange = (newSize: number) => {
     setPageSize(newSize);
+    setPage(0);
+  };
+
+  const getDateRangeValues = useCallback((preset: DateRangePreset): { start: string; end: string } | null => {
+    if (preset === 'all') {
+      return null;
+    }
+
+    const end = getTashkentToday();
+
+    switch (preset) {
+      case 'today':
+        return { start: end, end };
+      case 'week':
+        return { start: getDateDaysAgo(7), end };
+      case 'month':
+        return { start: getDateMonthsAgo(1), end };
+      case 'quarter':
+        return { start: getDateMonthsAgo(3), end };
+      case 'year':
+        return { start: getDateYearsAgo(1), end };
+      case 'custom':
+        if (customRange.start && customRange.end) {
+          return { start: customRange.start, end: customRange.end };
+        }
+        return null;
+      default:
+        return null;
+    }
+  }, [customRange.start, customRange.end]);
+
+  const handleDateRangeChange = (preset: DateRangePreset, range?: DateRange) => {
+    setDateRangePreset(preset);
+    if (preset === 'custom' && range) {
+      setCustomRange(range);
+    }
+    if (preset !== 'custom') {
+      setCustomRange({ start: '', end: '' });
+    }
     setPage(0);
   };
 
@@ -179,7 +236,14 @@ export function SalesPage() {
       setRefreshing(true);
     }
     try {
-      const data = await salesApi.getAll({ page, size: pageSize, sort: 'saleDate,desc' });
+      const dateRange = getDateRangeValues(dateRangePreset);
+      const data = await salesApi.getAll({
+        page,
+        size: pageSize,
+        sort: 'saleDate,desc',
+        startDate: dateRange?.start,
+        endDate: dateRange?.end,
+      });
       setSales(data.content);
       setTotalPages(data.totalPages);
       setTotalElements(data.totalElements);
@@ -190,18 +254,18 @@ export function SalesPage() {
       setInitialLoading(false);
       setRefreshing(false);
     }
-  }, [page, pageSize]);
+  }, [page, pageSize, dateRangePreset, getDateRangeValues]);
 
   useEffect(() => {
     loadSales(true);
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  // Reload when page/pageSize changes
+  // Reload when page/pageSize or date range changes
   useEffect(() => {
     loadSales();
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [page, pageSize]);
+  }, [page, pageSize, dateRangePreset, customRange.start, customRange.end]);
 
   // WebSocket orqali yangi notification kelganda sotuvlarni yangilash
   useEffect(() => {
@@ -215,6 +279,9 @@ export function SalesPage() {
     setSearch('');
     setPaymentStatusFilter('');
     setStatusFilter('');
+    setDateRangePreset('all');
+    setCustomRange({ start: '', end: '' });
+    setPage(0);
   };
 
   const handleCancelSale = async () => {
@@ -265,7 +332,17 @@ export function SalesPage() {
             </button>
           )}
         </div>
-        <div className="mt-4 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+        <div className="mt-4 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+          <div>
+            <span className="block mb-1 text-xs font-semibold uppercase tracking-[0.18em] text-base-content/50">
+              Davr
+            </span>
+            <DateRangePicker
+              value={dateRangePreset}
+              customRange={customRange}
+              onChange={handleDateRangeChange}
+            />
+          </div>
           <SearchInput
             value={search}
             onValueChange={setSearch}

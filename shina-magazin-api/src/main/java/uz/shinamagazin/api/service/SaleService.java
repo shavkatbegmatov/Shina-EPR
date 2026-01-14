@@ -39,7 +39,25 @@ public class SaleService {
     private final StaffNotificationService staffNotificationService;
     private final NotificationService customerNotificationService;
 
-    public Page<SaleResponse> getAllSales(Pageable pageable) {
+    public Page<SaleResponse> getAllSales(LocalDate startDate, LocalDate endDate, Pageable pageable) {
+        LocalDate effectiveStart = startDate;
+        LocalDate effectiveEnd = endDate;
+
+        if (effectiveStart == null && effectiveEnd != null) {
+            effectiveStart = effectiveEnd;
+        }
+
+        if (effectiveEnd == null && effectiveStart != null) {
+            effectiveEnd = effectiveStart;
+        }
+
+        if (effectiveStart != null && effectiveEnd != null) {
+            LocalDateTime start = effectiveStart.atStartOfDay();
+            LocalDateTime end = effectiveEnd.atTime(LocalTime.MAX);
+            return saleRepository.findBySaleDateBetween(start, end, pageable)
+                    .map(SaleResponse::from);
+        }
+
         return saleRepository.findAll(pageable)
                 .map(SaleResponse::from);
     }

@@ -7,6 +7,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.web.PageableDefault;
+import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -16,6 +17,7 @@ import uz.shinamagazin.api.dto.response.PagedResponse;
 import uz.shinamagazin.api.dto.response.SaleResponse;
 import uz.shinamagazin.api.service.SaleService;
 
+import java.time.LocalDate;
 import java.util.List;
 
 @RestController
@@ -29,8 +31,10 @@ public class SaleController {
     @GetMapping
     @Operation(summary = "Get all sales", description = "Barcha sotuvlarni olish")
     public ResponseEntity<ApiResponse<PagedResponse<SaleResponse>>> getAllSales(
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate startDate,
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate endDate,
             @PageableDefault(size = 20, sort = "saleDate") Pageable pageable) {
-        Page<SaleResponse> sales = saleService.getAllSales(pageable);
+        Page<SaleResponse> sales = saleService.getAllSales(startDate, endDate, pageable);
         return ResponseEntity.ok(ApiResponse.success(PagedResponse.from(sales)));
     }
 

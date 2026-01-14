@@ -5,6 +5,8 @@ export interface SaleFilters {
   page?: number;
   size?: number;
   sort?: string;
+  startDate?: string;
+  endDate?: string;
 }
 
 export const salesApi = {
@@ -13,6 +15,8 @@ export const salesApi = {
     if (filters.page !== undefined) params.append('page', filters.page.toString());
     if (filters.size !== undefined) params.append('size', filters.size.toString());
     if (filters.sort) params.append('sort', filters.sort);
+    if (filters.startDate) params.append('startDate', filters.startDate);
+    if (filters.endDate) params.append('endDate', filters.endDate);
 
     const response = await api.get<ApiResponse<PagedResponse<Sale>>>(`/v1/sales?${params}`);
     return response.data.data;
