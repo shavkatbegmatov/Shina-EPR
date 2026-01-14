@@ -1,7 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import {
   Plus,
-  Search,
   Truck,
   Phone,
   Mail,
@@ -24,6 +23,7 @@ import { purchasesApi } from '../../api/purchases.api';
 import { productsApi } from '../../api/products.api';
 import { formatCurrency, formatDate, getTashkentToday } from '../../config/constants';
 import { DataTable, Column } from '../../components/ui/DataTable';
+import { SearchInput } from '../../components/ui/SearchInput';
 import { ModalPortal } from '../../components/common/Modal';
 import { PhoneInput } from '../../components/ui/PhoneInput';
 import { Select } from '../../components/ui/Select';
@@ -130,6 +130,11 @@ export function SuppliersPage() {
     setPageSize(newSize);
     setPage(0);
   };
+
+  const handleSearchChange = useCallback((value: string) => {
+    setSearch(value);
+    setPage(0);
+  }, []);
 
   const handlePurchasesPageSizeChange = (newSize: number) => {
     setPurchasesPageSize(newSize);
@@ -696,21 +701,13 @@ export function SuppliersPage() {
                 </p>
               </div>
             </div>
-            <label className="form-control mt-4 max-w-md">
-              <span className="label-text mb-1 text-xs font-semibold uppercase tracking-[0.18em] text-base-content/50">
-                Nom, telefon yoki email
-              </span>
-              <div className="input-group">
-                <span className="bg-base-200"><Search className="h-5 w-5" /></span>
-                <input
-                  type="text"
-                  placeholder="Qidirish..."
-                  className="input input-bordered w-full"
-                  value={search}
-                  onChange={(e) => { setSearch(e.target.value); setPage(0); }}
-                />
-              </div>
-            </label>
+            <SearchInput
+              value={search}
+              onValueChange={handleSearchChange}
+              label="Nom, telefon yoki email"
+              placeholder="Qidirish..."
+              className="mt-4 max-w-md"
+            />
           </div>
 
           {/* Suppliers Table */}
@@ -1116,16 +1113,16 @@ export function SuppliersPage() {
 
                 {/* Product search */}
                 <div className="relative mb-4">
-                  <div className="input-group">
-                    <span className="bg-base-200"><Search className="h-5 w-5" /></span>
-                    <input
-                      type="text"
-                      placeholder="Mahsulot qidirish..."
-                      className="input input-bordered w-full"
-                      value={productSearch}
-                      onChange={(e) => setProductSearch(e.target.value)}
-                    />
-                  </div>
+                  <SearchInput
+                    value={productSearch}
+                    onValueChange={setProductSearch}
+                    label="Mahsulot qidirish"
+                    placeholder="Mahsulot qidirish..."
+                    onClear={() => {
+                      setProductSearch('');
+                      setProductResults([]);
+                    }}
+                  />
                   {/* Search results dropdown */}
                   {productResults.length > 0 && (
                     <div className="absolute z-50 top-full left-0 right-0 mt-1 bg-base-100 border border-base-300 rounded-lg shadow-lg max-h-60 overflow-y-auto">
