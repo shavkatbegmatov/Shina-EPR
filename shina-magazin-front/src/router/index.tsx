@@ -1,5 +1,7 @@
 import { createBrowserRouter, Navigate } from 'react-router-dom';
 import { MainLayout } from '../components/layout/MainLayout';
+import { ProtectedRoute } from '../components/common/ProtectedRoute';
+import { PermissionCode } from '../hooks/usePermission';
 import { LoginPage } from '../pages/auth/LoginPage';
 import { RegisterPage } from '../pages/auth/RegisterPage';
 import { ChangePasswordPage } from '../pages/auth/ChangePasswordPage';
@@ -52,81 +54,148 @@ export const router = createBrowserRouter([
     children: [
       {
         index: true,
-        element: <DashboardPage />,
+        element: (
+          <ProtectedRoute permission={PermissionCode.DASHBOARD_VIEW}>
+            <DashboardPage />
+          </ProtectedRoute>
+        ),
         handle: { title: 'Dashboard' },
       },
       {
         path: 'products',
-        element: <ProductsPage />,
+        element: (
+          <ProtectedRoute permission={PermissionCode.PRODUCTS_VIEW}>
+            <ProductsPage />
+          </ProtectedRoute>
+        ),
         handle: { title: 'Mahsulotlar' },
       },
       {
         path: 'pos',
-        element: <POSPage />,
+        element: (
+          <ProtectedRoute permission={PermissionCode.SALES_CREATE}>
+            <POSPage />
+          </ProtectedRoute>
+        ),
         handle: { title: 'Kassa (POS)' },
       },
       {
         path: 'sales',
-        element: <SalesPage />,
+        element: (
+          <ProtectedRoute permission={PermissionCode.SALES_VIEW}>
+            <SalesPage />
+          </ProtectedRoute>
+        ),
         handle: { title: 'Sotuvlar' },
       },
       {
         path: 'customers',
-        element: <CustomersPage />,
+        element: (
+          <ProtectedRoute permission={PermissionCode.CUSTOMERS_VIEW}>
+            <CustomersPage />
+          </ProtectedRoute>
+        ),
         handle: { title: 'Mijozlar' },
       },
       {
         path: 'debts',
-        element: <DebtsPage />,
+        element: (
+          <ProtectedRoute permission={PermissionCode.DEBTS_VIEW}>
+            <DebtsPage />
+          </ProtectedRoute>
+        ),
         handle: { title: 'Qarzlar' },
       },
       {
         path: 'warehouse',
-        element: <WarehousePage />,
+        element: (
+          <ProtectedRoute permission={PermissionCode.WAREHOUSE_VIEW}>
+            <WarehousePage />
+          </ProtectedRoute>
+        ),
         handle: { title: 'Ombor' },
       },
       {
         path: 'suppliers',
-        element: <SuppliersPage />,
+        element: (
+          <ProtectedRoute permission={PermissionCode.SUPPLIERS_VIEW}>
+            <SuppliersPage />
+          </ProtectedRoute>
+        ),
         handle: { title: "Ta'minotchilar" },
       },
       {
         path: 'purchases',
-        element: <PurchasesPage />,
+        element: (
+          <ProtectedRoute permission={PermissionCode.PURCHASES_VIEW}>
+            <PurchasesPage />
+          </ProtectedRoute>
+        ),
         handle: { title: 'Xaridlar' },
       },
       {
         path: 'purchases/:id',
-        element: <PurchaseDetailPage />,
+        element: (
+          <ProtectedRoute permission={PermissionCode.PURCHASES_VIEW}>
+            <PurchaseDetailPage />
+          </ProtectedRoute>
+        ),
         handle: { title: 'Xarid tafsiloti' },
       },
       {
         path: 'reports',
-        element: <ReportsPage />,
+        element: (
+          <ProtectedRoute
+            permission={[
+              PermissionCode.REPORTS_VIEW_SALES,
+              PermissionCode.REPORTS_VIEW_WAREHOUSE,
+              PermissionCode.REPORTS_VIEW_DEBTS,
+            ]}
+          >
+            <ReportsPage />
+          </ProtectedRoute>
+        ),
         handle: { title: 'Hisobotlar' },
       },
       {
         path: 'settings',
-        element: <SettingsPage />,
+        element: (
+          <ProtectedRoute permission={PermissionCode.SETTINGS_VIEW}>
+            <SettingsPage />
+          </ProtectedRoute>
+        ),
         handle: { title: 'Sozlamalar' },
       },
       {
         path: 'employees',
-        element: <EmployeesPage />,
+        element: (
+          <ProtectedRoute permission={PermissionCode.EMPLOYEES_VIEW}>
+            <EmployeesPage />
+          </ProtectedRoute>
+        ),
         handle: { title: 'Xodimlar' },
       },
       {
         path: 'roles',
-        element: <RolesPage />,
+        element: (
+          <ProtectedRoute permission={PermissionCode.ROLES_VIEW}>
+            <RolesPage />
+          </ProtectedRoute>
+        ),
         handle: { title: 'Rollar' },
       },
       {
         path: 'notifications',
-        element: <NotificationsPage />,
+        element: (
+          <ProtectedRoute permission={PermissionCode.NOTIFICATIONS_VIEW}>
+            <NotificationsPage />
+          </ProtectedRoute>
+        ),
         handle: { title: 'Bildirishnomalar' },
       },
       {
         path: 'profile',
+        // Profile page - no permission required, all authenticated users can access
         element: <ProfilePage />,
         handle: { title: 'Profil' },
       },
