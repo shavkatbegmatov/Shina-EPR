@@ -64,13 +64,14 @@ public class UserService {
         User createdBy = getCurrentUser();
 
         // Create user
+        Role legacyRole = resolveLegacyRole(roleCode);
         User user = User.builder()
                 .username(username)
                 .password(passwordEncoder.encode(temporaryPassword))
                 .fullName(employee.getFullName())
                 .email(employee.getEmail())
                 .phone(employee.getPhone())
-                .role(Role.valueOf(roleCode)) // Legacy field
+                .role(legacyRole) // Legacy field
                 .active(true)
                 .mustChangePassword(true)
                 .createdBy(createdBy)
@@ -100,6 +101,18 @@ public class UserService {
                 .message("Ushbu parol faqat bir marta ko'rsatiladi. Xodimga yetkazing!")
                 .mustChangePassword(true)
                 .build();
+    }
+
+    private Role resolveLegacyRole(String roleCode) {
+        if (roleCode == null) {
+            return Role.SELLER;
+        }
+        try {
+            return Role.valueOf(roleCode);
+        } catch (IllegalArgumentException ex) {
+            log.debug("Role code '{}' is not in legacy enum, using SELLER for legacy field", roleCode);
+            return Role.SELLER;
+        }
     }
 
     /**
