@@ -178,7 +178,7 @@ export function SalesPage() {
       setRefreshing(true);
     }
     try {
-      const data = await salesApi.getAll({ page, size: pageSize });
+      const data = await salesApi.getAll({ page, size: pageSize, sort: 'saleDate,desc' });
       setSales(data.content);
       setTotalPages(data.totalPages);
       setTotalElements(data.totalElements);
