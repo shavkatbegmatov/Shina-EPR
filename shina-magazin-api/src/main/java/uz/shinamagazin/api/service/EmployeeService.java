@@ -93,6 +93,7 @@ public class EmployeeService {
         Employee employee = employeeRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Xodim", "id", id));
 
+        // Validates phone number is unique before update
         if (!employee.getPhone().equals(request.getPhone()) &&
                 employeeRepository.existsByPhone(request.getPhone())) {
             throw new BadRequestException("Bu telefon raqam allaqachon ro'yxatdan o'tgan: " + request.getPhone());
