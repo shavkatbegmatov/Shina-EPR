@@ -8,7 +8,6 @@ import {
   Minus,
   Settings,
   X,
-  Search,
   ArrowDownCircle,
   ArrowUpCircle,
   RefreshCw,
@@ -23,6 +22,7 @@ import { NumberInput } from '../../components/ui/NumberInput';
 import { Select } from '../../components/ui/Select';
 import { DataTable, Column } from '../../components/ui/DataTable';
 import { ModalPortal } from '../../components/common/Modal';
+import { SearchInput } from '../../components/ui/SearchInput';
 import { useNotificationsStore } from '../../store/notificationsStore';
 import {
   formatNumber,
@@ -582,11 +582,11 @@ export function WarehousePage() {
 
             <div className="mt-6 space-y-4">
               {/* Product Search */}
-              <label className="form-control">
-                <span className="label-text mb-1 text-xs font-semibold uppercase tracking-[0.18em] text-base-content/50">
-                  Mahsulot *
-                </span>
-                {selectedProduct ? (
+              {selectedProduct ? (
+                <div className="form-control">
+                  <span className="label-text mb-1 text-xs font-semibold uppercase tracking-[0.18em] text-base-content/50">
+                    Mahsulot *
+                  </span>
                   <div className="flex items-center justify-between p-3 bg-base-200 rounded-lg">
                     <div>
                       <p className="font-medium">{selectedProduct.name}</p>
@@ -601,44 +601,39 @@ export function WarehousePage() {
                       <X className="h-4 w-4" />
                     </button>
                   </div>
-                ) : (
-                  <div className="relative">
-                    <div className="input-group">
-                      <span className="bg-base-200">
-                        <Search className="h-5 w-5" />
-                      </span>
-                      <input
-                        type="text"
-                        className="input input-bordered w-full"
-                        placeholder="Mahsulot qidirish..."
-                        value={productSearch}
-                        onChange={(e) => handleSearchProducts(e.target.value)}
-                      />
+                </div>
+              ) : (
+                <div className="relative">
+                  <SearchInput
+                    value={productSearch}
+                    onValueChange={handleSearchProducts}
+                    label="Mahsulot *"
+                    placeholder="Mahsulot qidirish..."
+                    onClear={() => handleSearchProducts('')}
+                  />
+                  {searchResults.length > 0 && (
+                    <div className="absolute z-10 w-full mt-1 bg-base-100 border border-base-300 rounded-lg shadow-lg max-h-48 overflow-y-auto">
+                      {searchResults.map((product) => (
+                        <button
+                          key={product.id}
+                          className="w-full text-left px-4 py-2 hover:bg-base-200 transition"
+                          onClick={() => handleSelectProduct(product)}
+                        >
+                          <p className="font-medium">{product.name}</p>
+                          <p className="text-sm text-base-content/60">
+                            {product.sku} | Zaxira: {product.quantity}
+                          </p>
+                        </button>
+                      ))}
                     </div>
-                    {searchResults.length > 0 && (
-                      <div className="absolute z-10 w-full mt-1 bg-base-100 border border-base-300 rounded-lg shadow-lg max-h-48 overflow-y-auto">
-                        {searchResults.map((product) => (
-                          <button
-                            key={product.id}
-                            className="w-full text-left px-4 py-2 hover:bg-base-200 transition"
-                            onClick={() => handleSelectProduct(product)}
-                          >
-                            <p className="font-medium">{product.name}</p>
-                            <p className="text-sm text-base-content/60">
-                              {product.sku} | Zaxira: {product.quantity}
-                            </p>
-                          </button>
-                        ))}
-                      </div>
-                    )}
-                    {searchLoading && (
-                      <div className="absolute z-10 w-full mt-1 bg-base-100 border border-base-300 rounded-lg p-4 text-center">
-                        <span className="loading loading-spinner loading-sm" />
-                      </div>
-                    )}
-                  </div>
-                )}
-              </label>
+                  )}
+                  {searchLoading && (
+                    <div className="absolute z-10 w-full mt-1 bg-base-100 border border-base-300 rounded-lg p-4 text-center">
+                      <span className="loading loading-spinner loading-sm" />
+                    </div>
+                  )}
+                </div>
+              )}
 
               <div className="form-control">
                 <NumberInput

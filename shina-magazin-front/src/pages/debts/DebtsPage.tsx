@@ -20,6 +20,7 @@ import clsx from 'clsx';
 import { debtsApi } from '../../api/debts.api';
 import { formatCurrency, formatDate, formatDateTime, DEBT_STATUSES, PAYMENT_METHODS } from '../../config/constants';
 import { CurrencyInput } from '../../components/ui/CurrencyInput';
+import { SearchInput } from '../../components/ui/SearchInput';
 import { Select } from '../../components/ui/Select';
 import { DataTable, Column } from '../../components/ui/DataTable';
 import { ModalPortal } from '../../components/common/Modal';
@@ -572,16 +573,15 @@ export function DebtsPage() {
               {/* Filters */}
               <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
                 <div className="flex flex-wrap items-center gap-3">
-                  <div className="relative">
-                    <input
-                      type="text"
-                      placeholder="Qidirish..."
-                      value={searchQuery}
-                      onChange={(e) => setSearchQuery(e.target.value)}
-                      className="input input-bordered input-sm w-48 pl-9"
-                    />
-                    <Phone className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-base-content/40" />
-                  </div>
+                  <SearchInput
+                    value={searchQuery}
+                    onValueChange={setSearchQuery}
+                    placeholder="Qidirish..."
+                    hideLabel
+                    ariaLabel="Qidirish"
+                    leadingIcon={<Phone className="h-5 w-5" />}
+                    className="w-48"
+                  />
                   <Select
                     value={statusFilter || undefined}
                     onChange={(val) => {

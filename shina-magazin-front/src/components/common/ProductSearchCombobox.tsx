@@ -1,9 +1,10 @@
 import { useState, useRef, useEffect, useCallback, KeyboardEvent } from 'react';
 import { createPortal } from 'react-dom';
-import { Search, Package, Loader2, X } from 'lucide-react';
+import { Package, Loader2 } from 'lucide-react';
 import clsx from 'clsx';
 import { Product } from '../../types';
 import { formatCurrency } from '../../config/constants';
+import { SearchInput } from '../ui/SearchInput';
 
 interface ProductSearchComboboxProps {
   value: string;
@@ -31,20 +32,19 @@ export function ProductSearchCombobox({
   const [dropdownPosition, setDropdownPosition] = useState({ top: 0, left: 0, width: 0 });
 
   const inputRef = useRef<HTMLInputElement>(null);
+  const containerRef = useRef<HTMLDivElement>(null);
   const dropdownRef = useRef<HTMLDivElement>(null);
   const listId = useRef(`product-listbox-${Math.random().toString(36).substr(2, 9)}`).current;
 
   // Calculate dropdown position based on input location
   const updatePosition = useCallback(() => {
-    if (inputRef.current) {
-      const rect = inputRef.current.getBoundingClientRect();
-      const inputGroup = inputRef.current.closest('.input-group');
-      const groupRect = inputGroup ? inputGroup.getBoundingClientRect() : rect;
-
+    const rect = containerRef.current?.getBoundingClientRect()
+      ?? inputRef.current?.getBoundingClientRect();
+    if (rect) {
       setDropdownPosition({
-        top: groupRect.bottom + window.scrollY + 4,
-        left: groupRect.left + window.scrollX,
-        width: groupRect.width,
+        top: rect.bottom + window.scrollY + 4,
+        left: rect.left + window.scrollX,
+        width: rect.width,
       });
     }
   }, []);
@@ -81,8 +81,8 @@ export function ProductSearchCombobox({
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
       if (
-        inputRef.current &&
-        !inputRef.current.contains(event.target as Node) &&
+        containerRef.current &&
+        !containerRef.current.contains(event.target as Node) &&
         dropdownRef.current &&
         !dropdownRef.current.contains(event.target as Node)
       ) {
@@ -268,48 +268,32 @@ export function ProductSearchCombobox({
   );
 
   return (
-    <div className={clsx('relative', className)}>
-      <div className="input-group">
-        <span className="bg-base-200">
-          {isLoading ? (
-            <Loader2 className="h-5 w-5 animate-spin text-primary" />
-          ) : (
-            <Search className="h-5 w-5" />
-          )}
-        </span>
-        <input
-          ref={inputRef}
-          type="text"
-          role="combobox"
-          aria-expanded={isOpen}
-          aria-controls={listId}
-          aria-autocomplete="list"
-          aria-activedescendant={activeIndex >= 0 ? `product-option-${activeIndex}` : undefined}
-          placeholder={placeholder}
-          className="input input-bordered w-full pr-10"
-          value={value}
-          onChange={(e) => onChange(e.target.value)}
-          onKeyDown={handleKeyDown}
-          onFocus={() => {
+    <div ref={containerRef} className={clsx('relative', className)}>
+      <SearchInput
+        value={value}
+        onValueChange={onChange}
+        placeholder={placeholder}
+        hideLabel
+        ariaLabel={placeholder}
+        disabled={disabled}
+        inputRef={inputRef}
+        leadingIcon={isLoading ? <Loader2 className="h-5 w-5 animate-spin text-primary" /> : undefined}
+        onClear={handleClear}
+        inputProps={{
+          role: 'combobox',
+          'aria-expanded': isOpen,
+          'aria-controls': listId,
+          'aria-autocomplete': 'list',
+          'aria-activedescendant': activeIndex >= 0 ? `product-option-${activeIndex}` : undefined,
+          onKeyDown: handleKeyDown,
+          onFocus: () => {
             if (value.length >= 2 && (products.length > 0 || isLoading)) {
               setIsOpen(true);
               updatePosition();
             }
-          }}
-          disabled={disabled}
-          autoComplete="off"
-        />
-        {value && (
-          <button
-            type="button"
-            className="absolute right-3 top-1/2 -translate-y-1/2 p-1 rounded-full hover:bg-base-200 transition-colors"
-            onClick={handleClear}
-            aria-label="Tozalash"
-          >
-            <X className="h-4 w-4 text-base-content/50" />
-          </button>
-        )}
-      </div>
+          },
+        }}
+      />
 
       {/* Dropdown rendered via portal */}
       {isOpen && createPortal(dropdownContent, document.body)}

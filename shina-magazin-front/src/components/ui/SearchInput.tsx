@@ -1,6 +1,7 @@
-import { useId, useRef, useState } from 'react';
+import { useCallback, useId, useRef, useState } from 'react';
 import clsx from 'clsx';
 import { Search, X } from 'lucide-react';
+import * as React from "react";
 
 interface SearchInputProps {
   value: string;
@@ -15,6 +16,12 @@ interface SearchInputProps {
   onClear?: () => void;
   hideLabel?: boolean;
   ariaLabel?: string;
+  leadingIcon?: React.ReactNode;
+  inputRef?: React.Ref<HTMLInputElement>;
+  inputProps?: Omit<
+    React.InputHTMLAttributes<HTMLInputElement>,
+    'value' | 'onChange' | 'placeholder' | 'disabled' | 'type'
+  >;
 }
 
 export function SearchInput({
@@ -30,12 +37,29 @@ export function SearchInput({
   onClear,
   hideLabel = false,
   ariaLabel,
+  leadingIcon,
+  inputRef,
+  inputProps,
 }: SearchInputProps) {
-  const inputId = id ?? useId();
-  const inputRef = useRef<HTMLInputElement>(null);
+  const generatedId = useId();
+  const inputId = id ?? generatedId;
+  const internalInputRef = useRef<HTMLInputElement | null>(null);
   const [isFocused, setIsFocused] = useState(false);
   const hasValue = value.trim().length > 0;
   const accessibleLabel = ariaLabel ?? label;
+
+  const setRefs = useCallback(
+    (node: HTMLInputElement | null) => {
+      internalInputRef.current = node;
+      if (!inputRef) return;
+      if (typeof inputRef === 'function') {
+        inputRef(node);
+      } else {
+        (inputRef as React.MutableRefObject<HTMLInputElement | null>).current = node;
+      }
+    },
+    [inputRef]
+  );
 
   const handleClear = () => {
     if (onClear) {
@@ -43,13 +67,39 @@ export function SearchInput({
     } else {
       onValueChange('');
     }
-    inputRef.current?.focus();
+    internalInputRef.current?.focus();
   };
 
+  const {
+    onKeyDown: inputOnKeyDown,
+    onFocus: inputOnFocus,
+    onBlur: inputOnBlur,
+    autoComplete: inputAutoComplete,
+    ...restInputProps
+  } = inputProps ?? {};
+
   const handleKeyDown = (event: React.KeyboardEvent<HTMLInputElement>) => {
+    if (inputOnKeyDown) {
+      inputOnKeyDown(event);
+    }
+    if (event.defaultPrevented) return;
     if (event.key === 'Escape' && hasValue) {
       event.preventDefault();
       handleClear();
+    }
+  };
+
+  const handleFocus = (event: React.FocusEvent<HTMLInputElement>) => {
+    setIsFocused(true);
+    if (inputOnFocus) {
+      inputOnFocus(event);
+    }
+  };
+
+  const handleBlur = (event: React.FocusEvent<HTMLInputElement>) => {
+    setIsFocused(false);
+    if (inputOnBlur) {
+      inputOnBlur(event);
     }
   };
 
@@ -71,13 +121,13 @@ export function SearchInput({
             : 'border-base-300 hover:border-base-content/30',
           disabled && 'opacity-50 pointer-events-none bg-base-200'
         )}
-        onClick={() => inputRef.current?.focus()}
+        onClick={() => internalInputRef.current?.focus()}
       >
         <div className="absolute left-3 text-base-content/40">
-          <Search className={clsx('h-5 w-5', iconClassName)} />
+          {leadingIcon ?? <Search className={clsx('h-5 w-5', iconClassName)} />}
         </div>
         <input
-          ref={inputRef}
+          ref={setRefs}
           id={inputId}
           type="text"
           className={clsx(
@@ -88,12 +138,13 @@ export function SearchInput({
           placeholder={placeholder}
           value={value}
           onChange={(event) => onValueChange(event.target.value)}
-          onFocus={() => setIsFocused(true)}
-          onBlur={() => setIsFocused(false)}
+          onFocus={handleFocus}
+          onBlur={handleBlur}
           onKeyDown={handleKeyDown}
           disabled={disabled}
           aria-label={accessibleLabel}
-          autoComplete="off"
+          autoComplete={inputAutoComplete ?? 'off'}
+          {...restInputProps}
         />
         {hasValue && !disabled && (
           <button
