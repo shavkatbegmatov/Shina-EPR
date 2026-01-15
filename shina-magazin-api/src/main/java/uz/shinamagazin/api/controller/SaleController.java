@@ -15,6 +15,8 @@ import uz.shinamagazin.api.dto.request.SaleRequest;
 import uz.shinamagazin.api.dto.response.ApiResponse;
 import uz.shinamagazin.api.dto.response.PagedResponse;
 import uz.shinamagazin.api.dto.response.SaleResponse;
+import uz.shinamagazin.api.enums.PermissionCode;
+import uz.shinamagazin.api.security.RequiresPermission;
 import uz.shinamagazin.api.service.SaleService;
 
 import java.time.LocalDate;
@@ -29,6 +31,7 @@ public class SaleController {
     private final SaleService saleService;
 
     @GetMapping
+    @RequiresPermission(PermissionCode.SALES_VIEW)
     @Operation(summary = "Get all sales", description = "Barcha sotuvlarni olish")
     public ResponseEntity<ApiResponse<PagedResponse<SaleResponse>>> getAllSales(
             @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate startDate,
@@ -39,18 +42,21 @@ public class SaleController {
     }
 
     @GetMapping("/{id}")
+    @RequiresPermission(PermissionCode.SALES_VIEW)
     @Operation(summary = "Get sale by ID", description = "ID bo'yicha sotuvni olish")
     public ResponseEntity<ApiResponse<SaleResponse>> getSaleById(@PathVariable Long id) {
         return ResponseEntity.ok(ApiResponse.success(saleService.getSaleById(id)));
     }
 
     @GetMapping("/today")
+    @RequiresPermission(PermissionCode.SALES_VIEW)
     @Operation(summary = "Get today's sales", description = "Bugungi sotuvlar")
     public ResponseEntity<ApiResponse<List<SaleResponse>>> getTodaySales() {
         return ResponseEntity.ok(ApiResponse.success(saleService.getTodaySales()));
     }
 
     @PostMapping
+    @RequiresPermission(PermissionCode.SALES_CREATE)
     @Operation(summary = "Create sale", description = "Yangi sotuv yaratish")
     public ResponseEntity<ApiResponse<SaleResponse>> createSale(
             @Valid @RequestBody SaleRequest request) {
@@ -60,6 +66,7 @@ public class SaleController {
     }
 
     @PutMapping("/{id}/cancel")
+    @RequiresPermission(PermissionCode.SALES_UPDATE)
     @Operation(summary = "Cancel sale", description = "Sotuvni bekor qilish")
     public ResponseEntity<ApiResponse<SaleResponse>> cancelSale(@PathVariable Long id) {
         SaleResponse sale = saleService.cancelSale(id);
