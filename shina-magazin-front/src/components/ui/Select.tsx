@@ -37,14 +37,21 @@ export function Select({
   const maxDropdownHeight = 240;
   const dropdownOffset = 4;
   const viewportMargin = 8;
+  const estimatedItemHeight = 41; // Each option height ~41px (py-2.5 + text)
   const [isOpen, setIsOpen] = useState(false);
   const [isFocused, setIsFocused] = useState(false);
-  const [dropdownPosition, setDropdownPosition] = useState({
+  const [dropdownPosition, setDropdownPosition] = useState<{
+    top: number;
+    left: number;
+    width: number;
+    maxHeight: number;
+    overflowY: 'auto' | 'visible';
+  }>({
     top: 0,
     left: 0,
     width: 0,
     maxHeight: maxDropdownHeight,
-    overflowY: 'auto' as const,
+    overflowY: 'auto',
   });
   const containerRef = useRef<HTMLDivElement>(null);
   const triggerRef = useRef<HTMLDivElement>(null);
@@ -61,14 +68,23 @@ export function Select({
     const viewportWidth = window.innerWidth;
     const spaceBelow = Math.max(viewportHeight - rect.bottom - viewportMargin, 0);
     const spaceAbove = Math.max(rect.top - viewportMargin, 0);
-    const measuredHeight = listRef.current?.scrollHeight ?? 0;
-    const estimatedHeight = measuredHeight > 0 ? measuredHeight : maxDropdownHeight;
-    const preferredHeight = Math.min(estimatedHeight, maxDropdownHeight);
+
+    // Calculate actual content height
+    let contentHeight: number;
+    if (listRef.current && listRef.current.scrollHeight > 0) {
+      // Portal has rendered, use actual measurement
+      contentHeight = listRef.current.scrollHeight;
+    } else {
+      // Initial estimate based on option count
+      contentHeight = options.length * estimatedItemHeight;
+    }
+
+    const preferredHeight = Math.min(contentHeight, maxDropdownHeight);
     const openUp = spaceBelow < preferredHeight && spaceAbove > spaceBelow;
     const availableSpace = openUp ? spaceAbove : spaceBelow;
     const maxHeight = availableSpace > 0 ? Math.min(preferredHeight, availableSpace) : preferredHeight;
-    const shouldScroll = estimatedHeight > maxHeight;
-    const effectiveHeight = shouldScroll ? maxHeight : Math.min(estimatedHeight, preferredHeight);
+    const shouldScroll = contentHeight > maxHeight;
+    const effectiveHeight = shouldScroll ? maxHeight : contentHeight;
     const minWidth = Math.max(rect.width, 200);
 
     const left = Math.min(
@@ -86,7 +102,7 @@ export function Select({
       maxHeight: shouldScroll ? maxHeight : effectiveHeight,
       overflowY: shouldScroll ? 'auto' : 'visible',
     });
-  }, [dropdownOffset, maxDropdownHeight, viewportMargin]);
+  }, [dropdownOffset, maxDropdownHeight, viewportMargin, options.length, estimatedItemHeight]);
 
   // Close dropdown when clicking outside
   useEffect(() => {

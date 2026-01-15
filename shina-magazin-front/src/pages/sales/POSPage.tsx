@@ -1,10 +1,9 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { Plus, Minus, Trash2, ShoppingCart, User, X, Phone } from 'lucide-react';
+import { Plus, Minus, Trash2, ShoppingCart, User, X } from 'lucide-react';
 import toast from 'react-hot-toast';
 import clsx from 'clsx';
 import { productsApi } from '../../api/products.api';
 import { salesApi } from '../../api/sales.api';
-import { customersApi } from '../../api/customers.api';
 import { useCartStore } from '../../store/cartStore';
 import { useNotificationsStore } from '../../store/notificationsStore';
 import { formatCurrency, PAYMENT_METHODS } from '../../config/constants';
@@ -13,6 +12,7 @@ import { PercentInput } from '../../components/ui/PercentInput';
 import { Select } from '../../components/ui/Select';
 import { ModalPortal } from '../../components/common/Modal';
 import { SearchInput } from '../../components/ui/SearchInput';
+import { CustomerSearchCombobox } from '../../components/common/NamePhoneSearchCombobox';
 import type { Product, PaymentMethod, Customer } from '../../types';
 
 export function POSPage() {
@@ -23,11 +23,8 @@ export function POSPage() {
   const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>('CASH');
   const [paidAmount, setPaidAmount] = useState(0);
 
-  // Customer selection state
-  const [showCustomerModal, setShowCustomerModal] = useState(false);
-  const [customers, setCustomers] = useState<Customer[]>([]);
+  // Customer search state
   const [customerSearch, setCustomerSearch] = useState('');
-  const [loadingCustomers, setLoadingCustomers] = useState(false);
 
   const cart = useCartStore();
   const { notifications } = useNotificationsStore();
@@ -55,30 +52,8 @@ export function POSPage() {
     }
   }, [notifications.length, loadProducts]);
 
-  const loadCustomers = useCallback(async () => {
-    setLoadingCustomers(true);
-    try {
-      const data = await customersApi.getAll({
-        search: customerSearch || undefined,
-        size: 20,
-      });
-      setCustomers(data.content);
-    } catch (error) {
-      console.error('Failed to load customers:', error);
-    } finally {
-      setLoadingCustomers(false);
-    }
-  }, [customerSearch]);
-
-  useEffect(() => {
-    if (showCustomerModal) {
-      loadCustomers();
-    }
-  }, [showCustomerModal, loadCustomers]);
-
   const handleSelectCustomer = (customer: Customer) => {
     cart.setCustomer(customer);
-    setShowCustomerModal(false);
     setCustomerSearch('');
   };
 
@@ -250,13 +225,18 @@ export function POSPage() {
               </button>
             </div>
           ) : (
-            <button
-              className="btn btn-outline btn-sm w-full gap-2"
-              onClick={() => setShowCustomerModal(true)}
-            >
-              <User className="h-4 w-4" />
-              Mijoz tanlash
-            </button>
+            <CustomerSearchCombobox
+              value={customerSearch}
+              onChange={setCustomerSearch}
+              onSelect={handleSelectCustomer}
+              placeholder="Mijozni qidirish..."
+              getSubtitle={(customer) => {
+                const parts = [];
+                if (customer.companyName) parts.push(customer.companyName);
+                if (customer.hasDebt) parts.push('Qarz bor');
+                return parts.join(' • ') || undefined;
+              }}
+            />
           )}
         </div>
 
@@ -467,88 +447,6 @@ export function POSPage() {
         </div>
       </ModalPortal>
 
-      {/* Customer Selection Modal */}
-      <ModalPortal isOpen={showCustomerModal} onClose={() => { setShowCustomerModal(false); setCustomerSearch(''); }}>
-        <div className="w-full max-w-lg bg-base-100 rounded-2xl shadow-2xl max-h-[90vh] overflow-y-auto">
-          <div className="p-4 sm:p-6">
-            <button
-              className="btn btn-circle btn-ghost btn-sm absolute right-4 top-4"
-              onClick={() => {
-                setShowCustomerModal(false);
-                setCustomerSearch('');
-              }}
-            >
-              <X className="h-5 w-5" />
-            </button>
-
-            <h3 className="text-lg font-semibold">Mijoz tanlash</h3>
-            <p className="text-sm text-base-content/60">
-              Sotuvga mijoz biriktirish
-            </p>
-
-            <div className="mt-4">
-              <SearchInput
-                value={customerSearch}
-                onValueChange={setCustomerSearch}
-                label="Ism yoki telefon"
-                placeholder="Ism yoki telefon bo'yicha qidirish..."
-                hideLabel
-              />
-            </div>
-
-            <div className="mt-4 max-h-80 overflow-y-auto">
-              {loadingCustomers ? (
-                <div className="flex items-center justify-center py-8">
-                  <span className="loading loading-spinner" />
-                </div>
-              ) : customers.length === 0 ? (
-                <div className="flex flex-col items-center justify-center py-8 text-base-content/50">
-                  <User className="mb-2 h-10 w-10" />
-                  <p className="text-sm">Mijozlar topilmadi</p>
-                </div>
-              ) : (
-                <div className="space-y-2">
-                  {customers.map((customer) => (
-                    <button
-                      key={customer.id}
-                      className="flex w-full items-center gap-3 rounded-lg p-3 text-left transition hover:bg-base-200"
-                      onClick={() => handleSelectCustomer(customer)}
-                    >
-                      <div className="flex h-10 w-10 items-center justify-center rounded-full bg-primary/15 text-primary">
-                        <span className="text-sm font-semibold">
-                          {customer.fullName.charAt(0).toUpperCase()}
-                        </span>
-                      </div>
-                      <div className="flex-1">
-                        <p className="font-medium">{customer.fullName}</p>
-                        <div className="flex items-center gap-1 text-xs text-base-content/60">
-                          <Phone className="h-3 w-3" />
-                          {customer.phone}
-                        </div>
-                      </div>
-                      {customer.hasDebt && (
-                        <span className="badge badge-error badge-sm">Qarz</span>
-                      )}
-                    </button>
-                  ))}
-                </div>
-              )}
-            </div>
-
-            <div className="mt-6 flex justify-end">
-              <button
-                className="btn btn-ghost"
-                onClick={() => {
-                  setShowCustomerModal(false);
-                  setCustomerSearch('');
-                }}
-              >
-                Bekor qilish
-              </button>
-            </div>
-          </div>
-        </div>
-      </ModalPortal>
     </div>
   );
 }
