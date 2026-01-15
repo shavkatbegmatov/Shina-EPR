@@ -22,8 +22,10 @@ import clsx from 'clsx';
 import { useAuthStore } from '../../store/authStore';
 import { useUIStore } from '../../store/uiStore';
 import { useNotificationsStore, type Notification } from '../../store/notificationsStore';
+import { rolesApi } from '../../api/roles.api';
 import { ROLES } from '../../config/constants';
 import { SearchCommand } from '../common/SearchCommand';
+import type { Role } from '../../types';
 
 const getNotificationIcon = (type: Notification['type']) => {
   switch (type) {
@@ -93,6 +95,7 @@ export function Header() {
   const matches = useMatches();
   const [userDropdownOpen, setUserDropdownOpen] = useState(false);
   const [notifDropdownOpen, setNotifDropdownOpen] = useState(false);
+  const [roles, setRoles] = useState<Role[]>([]);
   const userDropdownRef = useRef<HTMLDivElement>(null);
   const notifDropdownRef = useRef<HTMLDivElement>(null);
 
@@ -100,14 +103,26 @@ export function Header() {
 
   // WebSocket ulanishini boshlash va dastlabki ma'lumotlarni yuklash
   useEffect(() => {
-    // Dastlabki bildirishnomalarni yuklash
-    fetchNotifications();
+    const fetchData = async () => {
+      // Fetch roles
+      try {
+        const rolesData = await rolesApi.getAll();
+        setRoles(rolesData);
+      } catch (error) {
+        console.error('Failed to fetch roles:', error);
+      }
 
-    // WebSocket ulanishini boshlash (localStorage'dan token olish)
-    const token = localStorage.getItem('accessToken');
-    if (token) {
-      connectWebSocket(token);
-    }
+      // Dastlabki bildirishnomalarni yuklash
+      fetchNotifications();
+
+      // WebSocket ulanishini boshlash (localStorage'dan token olish)
+      const token = localStorage.getItem('accessToken');
+      if (token) {
+        connectWebSocket(token);
+      }
+    };
+
+    fetchData();
 
     return () => {
       disconnectWebSocket();
@@ -165,6 +180,17 @@ export function Header() {
       default:
         return 'bg-base-200 text-base-content/70 border-base-300';
     }
+  };
+
+  const getRoleLabel = (roleCode: string): string => {
+    // First check if it's a legacy role
+    const legacyRole = ROLES[roleCode as keyof typeof ROLES];
+    if (legacyRole) {
+      return legacyRole.label;
+    }
+    // Otherwise, find it in fetched roles
+    const role = roles.find((r) => r.code === roleCode);
+    return role?.name || roleCode;
   };
 
   return (
@@ -342,7 +368,7 @@ export function Header() {
               <div className="hidden lg:block text-left max-w-[120px]">
                 <div className="text-sm font-medium truncate">{user?.fullName}</div>
                 <div className="text-[10px] text-base-content/50 uppercase tracking-wider">
-                  {user?.role && ROLES[user.role]?.label}
+                  {user?.role && getRoleLabel(user.role)}
                 </div>
               </div>
               <ChevronDown className={clsx(
@@ -383,7 +409,7 @@ export function Header() {
                       )}
                     >
                       <Shield className="h-2.5 w-2.5" />
-                      {user?.role && ROLES[user.role]?.label}
+                      {user?.role && getRoleLabel(user.role)}
                     </div>
                   </div>
                 </div>

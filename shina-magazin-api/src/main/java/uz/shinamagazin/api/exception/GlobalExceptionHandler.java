@@ -3,7 +3,9 @@ package uz.shinamagazin.api.exception;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.authentication.BadCredentialsException;
+import org.springframework.security.authorization.AuthorizationDeniedException;
 import org.springframework.validation.FieldError;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
@@ -47,6 +49,32 @@ public class GlobalExceptionHandler {
         return ResponseEntity
                 .status(HttpStatus.UNAUTHORIZED)
                 .body(ApiResponse.error("Noto'g'ri foydalanuvchi nomi yoki parol"));
+    }
+
+    /**
+     * Handle AccessDeniedException (Spring Security)
+     * User is authenticated but lacks required permissions
+     * @return 403 Forbidden
+     */
+    @ExceptionHandler(AccessDeniedException.class)
+    public ResponseEntity<ApiResponse<Void>> handleAccessDenied(AccessDeniedException ex) {
+        log.error("Access denied: {}", ex.getMessage());
+        return ResponseEntity
+                .status(HttpStatus.FORBIDDEN)
+                .body(ApiResponse.error("Sizda bu amalni bajarish uchun ruxsat yo'q"));
+    }
+
+    /**
+     * Handle AuthorizationDeniedException (Spring Security 6.x)
+     * User is authenticated but lacks required permissions
+     * @return 403 Forbidden
+     */
+    @ExceptionHandler(AuthorizationDeniedException.class)
+    public ResponseEntity<ApiResponse<Void>> handleAuthorizationDenied(AuthorizationDeniedException ex) {
+        log.error("Authorization denied: {}", ex.getMessage());
+        return ResponseEntity
+                .status(HttpStatus.FORBIDDEN)
+                .body(ApiResponse.error("Sizda bu amalni bajarish uchun ruxsat yo'q"));
     }
 
     @ExceptionHandler(MethodArgumentNotValidException.class)

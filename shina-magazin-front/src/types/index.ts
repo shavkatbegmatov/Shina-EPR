@@ -5,7 +5,7 @@ export interface User {
   fullName: string;
   email?: string;
   phone?: string;
-  role: 'ADMIN' | 'MANAGER' | 'SELLER';
+  role: string; // Changed to string to support custom RBAC roles
   active: boolean;
 }
 

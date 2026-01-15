@@ -132,6 +132,17 @@ export function EmployeesPage() {
     setShowModal(true);
   };
 
+  const getRoleLabel = (roleCode: string): string => {
+    // First check if it's a legacy role
+    const legacyRole = ROLES[roleCode as keyof typeof ROLES];
+    if (legacyRole) {
+      return legacyRole.label;
+    }
+    // Otherwise, find it in fetched roles
+    const role = roles.find((r) => r.code === roleCode);
+    return role?.name || roleCode;
+  };
+
   // Table columns
   const columns: Column<Employee>[] = useMemo(() => [
     {
@@ -1001,7 +1012,7 @@ export function EmployeesPage() {
                                   options={availableUsers.map(user => ({
                                     value: user.id,
                                     label: user.fullName || user.username,
-                                    description: `@${user.username} · ${ROLES[user.role]?.label || user.role}`,
+                                    description: `@${user.username} · ${getRoleLabel(user.role)}`,
                                   }))}
                                 />
                               </div>

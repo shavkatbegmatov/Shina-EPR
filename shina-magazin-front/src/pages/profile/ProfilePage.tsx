@@ -18,9 +18,10 @@ import {
 import toast from 'react-hot-toast';
 import clsx from 'clsx';
 import { authApi } from '../../api/auth.api';
+import { rolesApi } from '../../api/roles.api';
 import { useAuthStore } from '../../store/authStore';
 import { ROLES } from '../../config/constants';
-import type { ChangePasswordRequest, User as UserType } from '../../types';
+import type { ChangePasswordRequest, User as UserType, Role } from '../../types';
 
 type Tab = 'profile' | 'security';
 
@@ -33,6 +34,7 @@ interface PasswordFormData {
 export function ProfilePage() {
   const [activeTab, setActiveTab] = useState<Tab>('profile');
   const [userData, setUserData] = useState<UserType | null>(null);
+  const [roles, setRoles] = useState<Role[]>([]);
   const [loading, setLoading] = useState(true);
   const [showCurrentPassword, setShowCurrentPassword] = useState(false);
   const [showNewPassword, setShowNewPassword] = useState(false);
@@ -73,20 +75,36 @@ export function ProfilePage() {
     return 'Kuchli';
   };
 
-  // Fetch user data
+  // Fetch user data and roles
   useEffect(() => {
-    const fetchUser = async () => {
+    const fetchData = async () => {
       try {
-        const data = await authApi.getCurrentUser();
-        setUserData(data);
+        const [userData, rolesData] = await Promise.all([
+          authApi.getCurrentUser(),
+          rolesApi.getAll(),
+        ]);
+        setUserData(userData);
+        setRoles(rolesData);
       } catch (error) {
         toast.error("Ma'lumotlarni yuklashda xatolik");
       } finally {
         setLoading(false);
       }
     };
-    fetchUser();
+    fetchData();
   }, []);
+
+  // Helper function to get role label
+  const getRoleLabel = (roleCode: string): string => {
+    // First check if it's a legacy role
+    const legacyRole = ROLES[roleCode as keyof typeof ROLES];
+    if (legacyRole) {
+      return legacyRole.label;
+    }
+    // Otherwise, find it in fetched roles
+    const role = roles.find((r) => r.code === roleCode);
+    return role?.name || roleCode;
+  };
 
   const onSubmitPassword = async (data: PasswordFormData) => {
     if (data.newPassword !== data.confirmPassword) {
@@ -201,7 +219,7 @@ export function ProfilePage() {
                   )}
                 >
                   <Shield className="h-3.5 w-3.5" />
-                  {userData?.role && ROLES[userData.role]?.label}
+                  {userData?.role && getRoleLabel(userData.role)}
                 </div>
               </div>
               <div className="flex items-center gap-2">
@@ -264,7 +282,7 @@ export function ProfilePage() {
                 </div>
                 <div>
                   <p className="text-xs text-base-content/50 uppercase tracking-wider">Rol</p>
-                  <p className="font-semibold">{userData?.role && ROLES[userData.role]?.label}</p>
+                  <p className="font-semibold">{userData?.role && getRoleLabel(userData.role)}</p>
                 </div>
               </div>
             </div>
