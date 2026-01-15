@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import clsx from 'clsx';
 import { ChevronDown, Check } from 'lucide-react';
@@ -34,9 +34,17 @@ export function Select({
   required,
   icon,
 }: SelectProps) {
+  const maxDropdownHeight = 240;
+  const dropdownOffset = 4;
+  const viewportMargin = 8;
   const [isOpen, setIsOpen] = useState(false);
   const [isFocused, setIsFocused] = useState(false);
-  const [dropdownPosition, setDropdownPosition] = useState({ top: 0, left: 0, width: 0 });
+  const [dropdownPosition, setDropdownPosition] = useState({
+    top: 0,
+    left: 0,
+    width: 0,
+    maxHeight: maxDropdownHeight,
+  });
   const containerRef = useRef<HTMLDivElement>(null);
   const triggerRef = useRef<HTMLDivElement>(null);
   const listRef = useRef<HTMLDivElement>(null);
@@ -44,16 +52,36 @@ export function Select({
   const selectedOption = options.find((opt) => opt.value === value);
 
   // Calculate dropdown position
-  const updateDropdownPosition = () => {
-    if (triggerRef.current) {
-      const rect = triggerRef.current.getBoundingClientRect();
-      setDropdownPosition({
-        top: rect.bottom + window.scrollY + 4,
-        left: rect.left + window.scrollX,
-        width: rect.width,
-      });
-    }
-  };
+  const updateDropdownPosition = useCallback(() => {
+    if (!triggerRef.current) return;
+
+    const rect = triggerRef.current.getBoundingClientRect();
+    const viewportHeight = window.innerHeight;
+    const viewportWidth = window.innerWidth;
+    const spaceBelow = Math.max(viewportHeight - rect.bottom - viewportMargin, 0);
+    const spaceAbove = Math.max(rect.top - viewportMargin, 0);
+    const measuredHeight = listRef.current?.scrollHeight ?? maxDropdownHeight;
+    const preferredHeight = Math.min(measuredHeight, maxDropdownHeight);
+    const openUp = spaceBelow < preferredHeight && spaceAbove > spaceBelow;
+    const availableSpace = openUp ? spaceAbove : spaceBelow;
+    const maxHeight = availableSpace > 0 ? Math.min(preferredHeight, availableSpace) : preferredHeight;
+    const minWidth = Math.max(rect.width, 200);
+
+    const left = Math.min(
+      Math.max(rect.left, viewportMargin),
+      Math.max(viewportMargin, viewportWidth - minWidth - viewportMargin)
+    );
+    const top = openUp
+      ? Math.max(viewportMargin, rect.top - maxHeight - dropdownOffset)
+      : rect.bottom + dropdownOffset;
+
+    setDropdownPosition({
+      top,
+      left,
+      width: rect.width,
+      maxHeight,
+    });
+  }, [dropdownOffset, maxDropdownHeight, viewportMargin]);
 
   // Close dropdown when clicking outside
   useEffect(() => {
@@ -77,17 +105,19 @@ export function Select({
   useEffect(() => {
     if (isOpen) {
       updateDropdownPosition();
+      const rafId = window.requestAnimationFrame(updateDropdownPosition);
 
       const handleUpdate = () => updateDropdownPosition();
       window.addEventListener('scroll', handleUpdate, true);
       window.addEventListener('resize', handleUpdate);
 
       return () => {
+        window.cancelAnimationFrame(rafId);
         window.removeEventListener('scroll', handleUpdate, true);
         window.removeEventListener('resize', handleUpdate);
       };
     }
-  }, [isOpen]);
+  }, [isOpen, options.length, updateDropdownPosition]);
 
   // Scroll selected option into view when dropdown opens
   useEffect(() => {
@@ -209,6 +239,7 @@ export function Select({
             left: dropdownPosition.left,
             minWidth: Math.max(dropdownPosition.width, 200),
             width: 'auto',
+            maxHeight: dropdownPosition.maxHeight,
           }}
           role="listbox"
         >
