@@ -345,30 +345,42 @@ export function POSPage() {
               </button>
             </div>
           ) : (
-            <CustomerSearchCombobox
-              value={customerSearch}
-              onChange={setCustomerSearch}
-              onSelect={handleSelectCustomer}
-              placeholder="Mijozni qidirish..."
-              getSubtitle={(customer) => {
-                const parts = [];
-                if (customer.companyName) parts.push(customer.companyName);
-                if (customer.hasDebt) parts.push('Qarz bor');
-                return parts.join(' • ') || undefined;
-              }}
-              dropdownFooter={
-                <button
-                  className="w-full px-4 py-3 text-left transition-colors hover:bg-base-200 flex items-center justify-between gap-2 text-sm font-medium text-primary"
-                  onClick={handleOpenModal}
-                >
-                  <div className="flex items-center gap-2">
-                    <Users className="h-4 w-4" />
-                    <span>Barchasini ko'rish</span>
-                  </div>
-                  <ArrowRight className="h-4 w-4" />
-                </button>
-              }
-            />
+            <div className="flex items-center gap-2">
+              <div className="flex-1">
+                <CustomerSearchCombobox
+                  value={customerSearch}
+                  onChange={setCustomerSearch}
+                  onSelect={handleSelectCustomer}
+                  placeholder="Mijozni qidirish..."
+                  getSubtitle={(customer) => {
+                    const parts = [];
+                    if (customer.companyName) parts.push(customer.companyName);
+                    if (customer.hasDebt) parts.push('Qarz bor');
+                    return parts.join(' • ') || undefined;
+                  }}
+                  dropdownFooter={
+                    <button
+                      className="w-full px-4 py-3 text-left transition-colors hover:bg-base-200 flex items-center justify-between gap-2 text-sm font-medium text-primary"
+                      onClick={handleOpenModal}
+                    >
+                      <div className="flex items-center gap-2">
+                        <Users className="h-4 w-4" />
+                        <span>Barchasini ko'rish</span>
+                      </div>
+                      <ArrowRight className="h-4 w-4" />
+                    </button>
+                  }
+                />
+              </div>
+              <button
+                className="btn btn-primary btn-sm h-12"
+                onClick={handleOpenModal}
+                title="Barcha mijozlarni ko'rish"
+              >
+                <Users className="h-5 w-5" />
+                <span className="hidden sm:inline ml-1">Ko'rish</span>
+              </button>
+            </div>
           )}
         </div>
 
