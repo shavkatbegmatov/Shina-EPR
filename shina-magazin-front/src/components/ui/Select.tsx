@@ -44,6 +44,7 @@ export function Select({
     left: 0,
     width: 0,
     maxHeight: maxDropdownHeight,
+    overflowY: 'auto' as const,
   });
   const containerRef = useRef<HTMLDivElement>(null);
   const triggerRef = useRef<HTMLDivElement>(null);
@@ -60,11 +61,14 @@ export function Select({
     const viewportWidth = window.innerWidth;
     const spaceBelow = Math.max(viewportHeight - rect.bottom - viewportMargin, 0);
     const spaceAbove = Math.max(rect.top - viewportMargin, 0);
-    const measuredHeight = listRef.current?.scrollHeight ?? maxDropdownHeight;
-    const preferredHeight = Math.min(measuredHeight, maxDropdownHeight);
+    const measuredHeight = listRef.current?.scrollHeight ?? 0;
+    const estimatedHeight = measuredHeight > 0 ? measuredHeight : maxDropdownHeight;
+    const preferredHeight = Math.min(estimatedHeight, maxDropdownHeight);
     const openUp = spaceBelow < preferredHeight && spaceAbove > spaceBelow;
     const availableSpace = openUp ? spaceAbove : spaceBelow;
     const maxHeight = availableSpace > 0 ? Math.min(preferredHeight, availableSpace) : preferredHeight;
+    const shouldScroll = estimatedHeight > maxHeight;
+    const effectiveHeight = shouldScroll ? maxHeight : Math.min(estimatedHeight, preferredHeight);
     const minWidth = Math.max(rect.width, 200);
 
     const left = Math.min(
@@ -72,14 +76,15 @@ export function Select({
       Math.max(viewportMargin, viewportWidth - minWidth - viewportMargin)
     );
     const top = openUp
-      ? Math.max(viewportMargin, rect.top - maxHeight - dropdownOffset)
+      ? Math.max(viewportMargin, rect.top - effectiveHeight - dropdownOffset)
       : rect.bottom + dropdownOffset;
 
     setDropdownPosition({
       top,
       left,
       width: rect.width,
-      maxHeight,
+      maxHeight: shouldScroll ? maxHeight : effectiveHeight,
+      overflowY: shouldScroll ? 'auto' : 'visible',
     });
   }, [dropdownOffset, maxDropdownHeight, viewportMargin]);
 
@@ -233,13 +238,14 @@ export function Select({
       {isOpen && createPortal(
         <div
           ref={listRef}
-          className="fixed z-[9999] max-h-60 overflow-auto rounded-xl border border-base-300 bg-base-100 shadow-[0_4px_20px_rgba(0,0,0,0.15)]"
+          className="fixed z-[9999] overflow-x-hidden rounded-xl border border-base-300 bg-base-100 shadow-[0_4px_20px_rgba(0,0,0,0.15)]"
           style={{
             top: dropdownPosition.top,
             left: dropdownPosition.left,
             minWidth: Math.max(dropdownPosition.width, 200),
             width: 'auto',
             maxHeight: dropdownPosition.maxHeight,
+            overflowY: dropdownPosition.overflowY,
           }}
           role="listbox"
         >
