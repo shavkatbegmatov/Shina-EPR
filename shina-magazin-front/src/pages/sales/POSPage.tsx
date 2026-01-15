@@ -1,15 +1,17 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { Plus, Minus, Trash2, ShoppingCart, User, X } from 'lucide-react';
+import { Plus, Minus, Trash2, ShoppingCart, User, X, Users, ArrowRight, Phone } from 'lucide-react';
 import toast from 'react-hot-toast';
 import clsx from 'clsx';
 import { productsApi } from '../../api/products.api';
 import { salesApi } from '../../api/sales.api';
+import { customersApi } from '../../api/customers.api';
 import { useCartStore } from '../../store/cartStore';
 import { useNotificationsStore } from '../../store/notificationsStore';
-import { formatCurrency, PAYMENT_METHODS } from '../../config/constants';
+import { formatCurrency, PAYMENT_METHODS, CUSTOMER_TYPES } from '../../config/constants';
 import { CurrencyInput } from '../../components/ui/CurrencyInput';
 import { PercentInput } from '../../components/ui/PercentInput';
 import { Select } from '../../components/ui/Select';
+import { DataTable, Column } from '../../components/ui/DataTable';
 import { ModalPortal } from '../../components/common/Modal';
 import { SearchInput } from '../../components/ui/SearchInput';
 import { CustomerSearchCombobox } from '../../components/common/NamePhoneSearchCombobox';
@@ -25,6 +27,15 @@ export function POSPage() {
 
   // Customer search state
   const [customerSearch, setCustomerSearch] = useState('');
+
+  // Modal state
+  const [showCustomerModal, setShowCustomerModal] = useState(false);
+  const [modalCustomers, setModalCustomers] = useState<Customer[]>([]);
+  const [modalPage, setModalPage] = useState(0);
+  const [modalPageSize, setModalPageSize] = useState(20);
+  const [modalTotalPages, setModalTotalPages] = useState(0);
+  const [modalTotalElements, setModalTotalElements] = useState(0);
+  const [modalLoading, setModalLoading] = useState(false);
 
   const cart = useCartStore();
   const { notifications } = useNotificationsStore();
@@ -60,6 +71,115 @@ export function POSPage() {
   const handleClearCustomer = () => {
     cart.setCustomer(null);
   };
+
+  const loadModalCustomers = useCallback(async () => {
+    setModalLoading(true);
+    try {
+      const data = await customersApi.getAll({
+        page: modalPage,
+        size: modalPageSize,
+        search: customerSearch || undefined,
+      });
+      setModalCustomers(data.content);
+      setModalTotalPages(data.totalPages);
+      setModalTotalElements(data.totalElements);
+    } catch (error) {
+      console.error('Failed to load customers:', error);
+      toast.error('Mijozlarni yuklashda xatolik');
+    } finally {
+      setModalLoading(false);
+    }
+  }, [modalPage, modalPageSize, customerSearch]);
+
+  useEffect(() => {
+    if (showCustomerModal) {
+      loadModalCustomers();
+    }
+  }, [showCustomerModal, loadModalCustomers]);
+
+  const handleOpenModal = () => {
+    setModalPage(0);
+    setShowCustomerModal(true);
+  };
+
+  const handleModalSelectCustomer = (customer: Customer) => {
+    cart.setCustomer(customer);
+    setCustomerSearch('');
+    setShowCustomerModal(false);
+  };
+
+  const handleModalPageSizeChange = (size: number) => {
+    setModalPageSize(size);
+    setModalPage(0);
+  };
+
+  const columns: Column<Customer>[] = useMemo(() => [
+    {
+      key: 'fullName',
+      header: 'Mijoz',
+      render: (customer) => (
+        <div className="flex items-center gap-3">
+          <div className="avatar placeholder">
+            <div className="w-10 rounded-full bg-primary/15 text-primary">
+              <span>{customer.fullName.charAt(0).toUpperCase()}</span>
+            </div>
+          </div>
+          <div>
+            <div className="font-medium">{customer.fullName}</div>
+            {customer.companyName && (
+              <div className="text-sm text-base-content/70">
+                {customer.companyName}
+              </div>
+            )}
+          </div>
+        </div>
+      ),
+    },
+    {
+      key: 'phone',
+      header: 'Telefon',
+      render: (customer) => (
+        <div>
+          <div className="flex items-center gap-2">
+            <Phone className="h-4 w-4 text-base-content/50" />
+            {customer.phone}
+          </div>
+          {customer.phone2 && (
+            <div className="text-sm text-base-content/70">{customer.phone2}</div>
+          )}
+        </div>
+      ),
+    },
+    {
+      key: 'customerType',
+      header: 'Turi',
+      render: (customer) => (
+        <span className="badge badge-outline badge-sm">
+          {CUSTOMER_TYPES[customer.customerType]?.label}
+        </span>
+      ),
+    },
+    {
+      key: 'balance',
+      header: 'Balans',
+      render: (customer) => (
+        <div>
+          <span
+            className={clsx(
+              'font-medium',
+              customer.balance < 0 && 'text-error',
+              customer.balance > 0 && 'text-success'
+            )}
+          >
+            {formatCurrency(customer.balance)}
+          </span>
+          {customer.hasDebt && (
+            <span className="badge badge-error badge-sm ml-2">Qarz</span>
+          )}
+        </div>
+      ),
+    },
+  ], []);
 
   const handleCompleteSale = async () => {
     if (cart.items.length === 0) {
@@ -236,6 +356,18 @@ export function POSPage() {
                 if (customer.hasDebt) parts.push('Qarz bor');
                 return parts.join(' • ') || undefined;
               }}
+              dropdownFooter={
+                <button
+                  className="w-full px-4 py-3 text-left transition-colors hover:bg-base-200 flex items-center justify-between gap-2 text-sm font-medium text-primary"
+                  onClick={handleOpenModal}
+                >
+                  <div className="flex items-center gap-2">
+                    <Users className="h-4 w-4" />
+                    <span>Barchasini ko'rish</span>
+                  </div>
+                  <ArrowRight className="h-4 w-4" />
+                </button>
+              }
             />
           )}
         </div>
@@ -443,6 +575,109 @@ export function POSPage() {
                 )}
               </button>
             </div>
+          </div>
+        </div>
+      </ModalPortal>
+
+      {/* Customer Selection Modal */}
+      <ModalPortal
+        isOpen={showCustomerModal}
+        onClose={() => setShowCustomerModal(false)}
+      >
+        <div className="w-full max-w-5xl bg-base-100 rounded-2xl shadow-2xl max-h-[90vh] overflow-hidden flex flex-col">
+          {/* Header */}
+          <div className="p-4 sm:p-6 border-b border-base-200">
+            <div className="flex items-start justify-between gap-4">
+              <div>
+                <h3 className="text-xl font-semibold">Mijozlarni tanlash</h3>
+                <p className="text-sm text-base-content/60 mt-1">
+                  Jami {modalTotalElements} ta mijoz
+                </p>
+              </div>
+              <button
+                className="btn btn-ghost btn-sm"
+                onClick={() => setShowCustomerModal(false)}
+              >
+                <X className="h-4 w-4" />
+              </button>
+            </div>
+
+            {/* Search */}
+            <div className="mt-4">
+              <SearchInput
+                value={customerSearch}
+                onValueChange={(value) => {
+                  setCustomerSearch(value);
+                  setModalPage(0);
+                }}
+                placeholder="Ism, telefon yoki kompaniya nomi bo'yicha qidirish..."
+                hideLabel
+              />
+            </div>
+          </div>
+
+          {/* DataTable */}
+          <div className="flex-1 overflow-auto">
+            <DataTable
+              data={modalCustomers}
+              columns={columns}
+              keyExtractor={(customer) => customer.id}
+              loading={modalLoading}
+              onRowClick={handleModalSelectCustomer}
+              rowClassName={(customer) =>
+                clsx(
+                  'cursor-pointer',
+                  customer.hasDebt && 'bg-error/5'
+                )
+              }
+              currentPage={modalPage}
+              totalPages={modalTotalPages}
+              totalElements={modalTotalElements}
+              pageSize={modalPageSize}
+              onPageChange={setModalPage}
+              onPageSizeChange={handleModalPageSizeChange}
+              emptyIcon={<Users className="h-12 w-12" />}
+              emptyTitle="Mijozlar topilmadi"
+              emptyDescription="Qidiruv so'zini o'zgartiring yoki yangi mijoz qo'shing"
+              renderMobileCard={(customer) => (
+                <div
+                  className="p-4 border border-base-200 rounded-lg bg-base-100 cursor-pointer hover:bg-base-200 transition"
+                  onClick={() => handleModalSelectCustomer(customer)}
+                >
+                  <div className="flex items-center gap-3 mb-2">
+                    <div className="avatar placeholder">
+                      <div className="w-10 rounded-full bg-primary/15 text-primary">
+                        <span>{customer.fullName.charAt(0).toUpperCase()}</span>
+                      </div>
+                    </div>
+                    <div className="flex-1">
+                      <div className="font-medium">{customer.fullName}</div>
+                      {customer.companyName && (
+                        <div className="text-sm text-base-content/70">
+                          {customer.companyName}
+                        </div>
+                      )}
+                    </div>
+                    {customer.hasDebt && (
+                      <span className="badge badge-error badge-sm">Qarz</span>
+                    )}
+                  </div>
+                  <div className="flex items-center gap-4 text-sm">
+                    <div className="flex items-center gap-1 text-base-content/70">
+                      <Phone className="h-4 w-4" />
+                      {customer.phone}
+                    </div>
+                    <div className={clsx(
+                      'font-medium',
+                      customer.balance < 0 && 'text-error',
+                      customer.balance > 0 && 'text-success'
+                    )}>
+                      {formatCurrency(customer.balance)}
+                    </div>
+                  </div>
+                </div>
+              )}
+            />
           </div>
         </div>
       </ModalPortal>

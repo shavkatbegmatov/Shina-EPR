@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect, useCallback, KeyboardEvent } from 'react';
+import { useState, useRef, useEffect, useCallback, KeyboardEvent, ReactNode } from 'react';
 import { createPortal } from 'react-dom';
 import { Phone, Loader2, User as UserIcon } from 'lucide-react';
 import clsx from 'clsx';
@@ -30,6 +30,7 @@ interface NamePhoneSearchComboboxProps<T extends NamePhoneEntity> {
   className?: string;
   minSearchLength?: number;
   debounceMs?: number;
+  dropdownFooter?: ReactNode;
 }
 
 // Custom hook for entity search with debouncing and abort
@@ -102,6 +103,7 @@ export function NamePhoneSearchCombobox<T extends NamePhoneEntity>({
   className,
   minSearchLength = 2,
   debounceMs = 300,
+  dropdownFooter,
 }: NamePhoneSearchComboboxProps<T>) {
   const [isOpen, setIsOpen] = useState(false);
   const [activeIndex, setActiveIndex] = useState(-1);
@@ -380,6 +382,13 @@ export function NamePhoneSearchCombobox<T extends NamePhoneEntity>({
           </span>
         </div>
       )}
+
+      {/* Custom footer */}
+      {dropdownFooter && (
+        <div className="border-t border-base-200">
+          {dropdownFooter}
+        </div>
+      )}
     </div>
   );
 
@@ -425,12 +434,14 @@ export function NamePhoneSearchCombobox<T extends NamePhoneEntity>({
 // Wrapper component for Customer search
 export function CustomerSearchCombobox({
   getSubtitle,
+  dropdownFooter,
   ...props
 }: Omit<
   NamePhoneSearchComboboxProps<Customer>,
   'fetchFunction' | 'getDisplayName' | 'getSubtitle'
 > & {
   getSubtitle?: (customer: Customer) => string | undefined;
+  dropdownFooter?: ReactNode;
 }) {
   const fetchCustomers = async (search: string) => {
     const response = await customersApi.getAll({ search, size: 20 });
@@ -448,6 +459,7 @@ export function CustomerSearchCombobox({
       getDisplayName={getDisplayName}
       getSubtitle={getSubtitle ?? defaultGetSubtitle}
       placeholder={props.placeholder ?? 'Mijozni qidirish...'}
+      dropdownFooter={dropdownFooter}
     />
   );
 }
@@ -455,12 +467,14 @@ export function CustomerSearchCombobox({
 // Wrapper component for Employee search
 export function EmployeeSearchCombobox({
   getSubtitle,
+  dropdownFooter,
   ...props
 }: Omit<
   NamePhoneSearchComboboxProps<Employee>,
   'fetchFunction' | 'getDisplayName' | 'getSubtitle'
 > & {
   getSubtitle?: (employee: Employee) => string | undefined;
+  dropdownFooter?: ReactNode;
 }) {
   const fetchEmployees = async (search: string) => {
     const response = await employeesApi.getAll({ search, size: 20 });
@@ -479,6 +493,7 @@ export function EmployeeSearchCombobox({
       getDisplayName={getDisplayName}
       getSubtitle={getSubtitle ?? defaultGetSubtitle}
       placeholder={props.placeholder ?? 'Xodimni qidirish...'}
+      dropdownFooter={dropdownFooter}
     />
   );
 }
@@ -486,12 +501,14 @@ export function EmployeeSearchCombobox({
 // Wrapper component for Supplier search
 export function SupplierSearchCombobox({
   getSubtitle,
+  dropdownFooter,
   ...props
 }: Omit<
   NamePhoneSearchComboboxProps<Supplier>,
   'fetchFunction' | 'getDisplayName' | 'getSubtitle'
 > & {
   getSubtitle?: (supplier: Supplier) => string | undefined;
+  dropdownFooter?: ReactNode;
 }) {
   const fetchSuppliers = async (search: string) => {
     const response = await suppliersApi.getAll({ search, size: 20 });
@@ -509,6 +526,7 @@ export function SupplierSearchCombobox({
       getDisplayName={getDisplayName}
       getSubtitle={getSubtitle ?? defaultGetSubtitle}
       placeholder={props.placeholder ?? "Ta'minotchini qidirish..."}
+      dropdownFooter={dropdownFooter}
     />
   );
 }
