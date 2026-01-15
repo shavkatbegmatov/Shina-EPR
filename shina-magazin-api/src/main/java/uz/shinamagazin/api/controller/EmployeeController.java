@@ -9,7 +9,6 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.web.PageableDefault;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 import uz.shinamagazin.api.dto.request.ChangeRoleRequest;
 import uz.shinamagazin.api.dto.request.EmployeeRequest;
@@ -29,12 +28,12 @@ import java.util.stream.Collectors;
 @RequestMapping("/v1/employees")
 @RequiredArgsConstructor
 @Tag(name = "Employees", description = "Xodimlar API")
-@PreAuthorize("hasRole('ADMIN')")
 public class EmployeeController {
 
     private final EmployeeService employeeService;
 
     @GetMapping
+    @RequiresPermission(PermissionCode.EMPLOYEES_VIEW)
     @Operation(summary = "Get all employees", description = "Barcha xodimlarni olish")
     public ResponseEntity<ApiResponse<PagedResponse<EmployeeResponse>>> getAllEmployees(
             @RequestParam(required = false) String search,
@@ -51,12 +50,14 @@ public class EmployeeController {
     }
 
     @GetMapping("/{id}")
+    @RequiresPermission(PermissionCode.EMPLOYEES_VIEW)
     @Operation(summary = "Get employee by ID", description = "ID bo'yicha xodimni olish")
     public ResponseEntity<ApiResponse<EmployeeResponse>> getEmployeeById(@PathVariable Long id) {
         return ResponseEntity.ok(ApiResponse.success(employeeService.getEmployeeById(id)));
     }
 
     @GetMapping("/status/{status}")
+    @RequiresPermission(PermissionCode.EMPLOYEES_VIEW)
     @Operation(summary = "Get employees by status", description = "Status bo'yicha xodimlar")
     public ResponseEntity<ApiResponse<List<EmployeeResponse>>> getEmployeesByStatus(
             @PathVariable EmployeeStatus status) {
@@ -64,6 +65,7 @@ public class EmployeeController {
     }
 
     @GetMapping("/department/{department}")
+    @RequiresPermission(PermissionCode.EMPLOYEES_VIEW)
     @Operation(summary = "Get employees by department", description = "Bo'lim bo'yicha xodimlar")
     public ResponseEntity<ApiResponse<List<EmployeeResponse>>> getEmployeesByDepartment(
             @PathVariable String department) {
@@ -71,12 +73,14 @@ public class EmployeeController {
     }
 
     @GetMapping("/departments")
+    @RequiresPermission(PermissionCode.EMPLOYEES_VIEW)
     @Operation(summary = "Get all departments", description = "Barcha bo'limlar ro'yxati")
     public ResponseEntity<ApiResponse<List<String>>> getAllDepartments() {
         return ResponseEntity.ok(ApiResponse.success(employeeService.getAllDepartments()));
     }
 
     @GetMapping("/available-users")
+    @RequiresPermission(PermissionCode.EMPLOYEES_VIEW)
     @Operation(summary = "Get available users", description = "Xodimga bog'lanmagan foydalanuvchilar")
     public ResponseEntity<ApiResponse<List<UserResponse>>> getAvailableUsers() {
         List<UserResponse> users = employeeService.getAvailableUsers().stream()
@@ -86,6 +90,7 @@ public class EmployeeController {
     }
 
     @PostMapping
+    @RequiresPermission(PermissionCode.EMPLOYEES_CREATE)
     @Operation(summary = "Create employee", description = "Yangi xodim yaratish")
     public ResponseEntity<ApiResponse<EmployeeResponse>> createEmployee(
             @Valid @RequestBody EmployeeRequest request) {
@@ -95,6 +100,7 @@ public class EmployeeController {
     }
 
     @PutMapping("/{id}")
+    @RequiresPermission(PermissionCode.EMPLOYEES_UPDATE)
     @Operation(summary = "Update employee", description = "Xodimni yangilash")
     public ResponseEntity<ApiResponse<EmployeeResponse>> updateEmployee(
             @PathVariable Long id,
@@ -104,6 +110,7 @@ public class EmployeeController {
     }
 
     @DeleteMapping("/{id}")
+    @RequiresPermission(PermissionCode.EMPLOYEES_DELETE)
     @Operation(summary = "Delete employee", description = "Xodimni o'chirish")
     public ResponseEntity<ApiResponse<Void>> deleteEmployee(@PathVariable Long id) {
         employeeService.deleteEmployee(id);
