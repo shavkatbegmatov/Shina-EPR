@@ -8,6 +8,8 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import uz.shinamagazin.api.dto.response.ApiResponse;
 import uz.shinamagazin.api.dto.response.BrandResponse;
+import uz.shinamagazin.api.enums.PermissionCode;
+import uz.shinamagazin.api.security.RequiresPermission;
 import uz.shinamagazin.api.service.BrandService;
 
 import java.util.List;
@@ -22,18 +24,21 @@ public class BrandController {
 
     @GetMapping
     @Operation(summary = "Get all brands", description = "Barcha brendlarni olish")
+    @RequiresPermission(PermissionCode.PRODUCTS_VIEW)
     public ResponseEntity<ApiResponse<List<BrandResponse>>> getAllBrands() {
         return ResponseEntity.ok(ApiResponse.success(brandService.getAllBrands()));
     }
 
     @GetMapping("/{id}")
     @Operation(summary = "Get brand by ID", description = "ID bo'yicha brendni olish")
+    @RequiresPermission(PermissionCode.PRODUCTS_VIEW)
     public ResponseEntity<ApiResponse<BrandResponse>> getBrandById(@PathVariable Long id) {
         return ResponseEntity.ok(ApiResponse.success(brandService.getBrandById(id)));
     }
 
     @PostMapping
     @Operation(summary = "Create brand", description = "Yangi brend yaratish")
+    @RequiresPermission(PermissionCode.PRODUCTS_CREATE)
     public ResponseEntity<ApiResponse<BrandResponse>> createBrand(
             @RequestParam String name,
             @RequestParam(required = false) String country,
@@ -45,6 +50,7 @@ public class BrandController {
 
     @PutMapping("/{id}")
     @Operation(summary = "Update brand", description = "Brendni yangilash")
+    @RequiresPermission(PermissionCode.PRODUCTS_UPDATE)
     public ResponseEntity<ApiResponse<BrandResponse>> updateBrand(
             @PathVariable Long id,
             @RequestParam String name,
@@ -56,6 +62,7 @@ public class BrandController {
 
     @DeleteMapping("/{id}")
     @Operation(summary = "Delete brand", description = "Brendni o'chirish")
+    @RequiresPermission(PermissionCode.PRODUCTS_DELETE)
     public ResponseEntity<ApiResponse<Void>> deleteBrand(@PathVariable Long id) {
         brandService.deleteBrand(id);
         return ResponseEntity.ok(ApiResponse.success("Brend o'chirildi"));

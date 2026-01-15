@@ -16,6 +16,8 @@ import uz.shinamagazin.api.dto.response.PagedResponse;
 import uz.shinamagazin.api.dto.response.ProductResponse;
 import uz.shinamagazin.api.dto.response.StockMovementResponse;
 import uz.shinamagazin.api.enums.MovementType;
+import uz.shinamagazin.api.enums.PermissionCode;
+import uz.shinamagazin.api.security.RequiresPermission;
 import uz.shinamagazin.api.service.ProductService;
 import uz.shinamagazin.api.service.StockMovementService;
 
@@ -33,12 +35,14 @@ public class WarehouseController {
 
     @GetMapping("/stats")
     @Operation(summary = "Get warehouse stats", description = "Ombor statistikasini olish")
+    @RequiresPermission(PermissionCode.WAREHOUSE_VIEW)
     public ResponseEntity<ApiResponse<Map<String, Object>>> getWarehouseStats() {
         return ResponseEntity.ok(ApiResponse.success(stockMovementService.getWarehouseStats()));
     }
 
     @GetMapping("/movements")
     @Operation(summary = "Get all stock movements", description = "Barcha zaxira harakatlarini olish")
+    @RequiresPermission(PermissionCode.WAREHOUSE_VIEW)
     public ResponseEntity<ApiResponse<PagedResponse<StockMovementResponse>>> getAllMovements(
             @RequestParam(required = false) Long productId,
             @RequestParam(required = false) MovementType movementType,
@@ -57,12 +61,14 @@ public class WarehouseController {
 
     @GetMapping("/movements/{id}")
     @Operation(summary = "Get movement by ID", description = "ID bo'yicha harakatni olish")
+    @RequiresPermission(PermissionCode.WAREHOUSE_VIEW)
     public ResponseEntity<ApiResponse<StockMovementResponse>> getMovementById(@PathVariable Long id) {
         return ResponseEntity.ok(ApiResponse.success(stockMovementService.getMovementById(id)));
     }
 
     @GetMapping("/movements/product/{productId}")
     @Operation(summary = "Get product movements", description = "Mahsulot harakatlarini olish")
+    @RequiresPermission(PermissionCode.WAREHOUSE_VIEW)
     public ResponseEntity<ApiResponse<PagedResponse<StockMovementResponse>>> getProductMovements(
             @PathVariable Long productId,
             @PageableDefault(size = 20) Pageable pageable) {
@@ -73,6 +79,7 @@ public class WarehouseController {
 
     @PostMapping("/adjustment")
     @Operation(summary = "Create stock adjustment", description = "Zaxirani sozlash (kirim/chiqim/tuzatish)")
+    @RequiresPermission(PermissionCode.WAREHOUSE_ADJUST)
     public ResponseEntity<ApiResponse<StockMovementResponse>> createStockAdjustment(
             @Valid @RequestBody StockAdjustmentRequest request) {
 
@@ -83,6 +90,7 @@ public class WarehouseController {
 
     @GetMapping("/low-stock")
     @Operation(summary = "Get low stock products", description = "Kam zaxiradagi mahsulotlar")
+    @RequiresPermission(PermissionCode.WAREHOUSE_VIEW)
     public ResponseEntity<ApiResponse<List<ProductResponse>>> getLowStockProducts() {
         return ResponseEntity.ok(ApiResponse.success(productService.getLowStockProducts()));
     }

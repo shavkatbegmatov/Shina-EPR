@@ -14,7 +14,9 @@ import uz.shinamagazin.api.dto.request.ProductRequest;
 import uz.shinamagazin.api.dto.response.ApiResponse;
 import uz.shinamagazin.api.dto.response.PagedResponse;
 import uz.shinamagazin.api.dto.response.ProductResponse;
+import uz.shinamagazin.api.enums.PermissionCode;
 import uz.shinamagazin.api.enums.Season;
+import uz.shinamagazin.api.security.RequiresPermission;
 import uz.shinamagazin.api.service.ProductService;
 
 import java.util.List;
@@ -29,6 +31,7 @@ public class ProductController {
 
     @GetMapping
     @Operation(summary = "Get all products", description = "Barcha mahsulotlarni olish")
+    @RequiresPermission(PermissionCode.PRODUCTS_VIEW)
     public ResponseEntity<ApiResponse<PagedResponse<ProductResponse>>> getAllProducts(
             @RequestParam(required = false) Long brandId,
             @RequestParam(required = false) Long categoryId,
@@ -45,24 +48,28 @@ public class ProductController {
 
     @GetMapping("/{id}")
     @Operation(summary = "Get product by ID", description = "ID bo'yicha mahsulotni olish")
+    @RequiresPermission(PermissionCode.PRODUCTS_VIEW)
     public ResponseEntity<ApiResponse<ProductResponse>> getProductById(@PathVariable Long id) {
         return ResponseEntity.ok(ApiResponse.success(productService.getProductById(id)));
     }
 
     @GetMapping("/sku/{sku}")
     @Operation(summary = "Get product by SKU", description = "SKU bo'yicha mahsulotni olish")
+    @RequiresPermission(PermissionCode.PRODUCTS_VIEW)
     public ResponseEntity<ApiResponse<ProductResponse>> getProductBySku(@PathVariable String sku) {
         return ResponseEntity.ok(ApiResponse.success(productService.getProductBySku(sku)));
     }
 
     @GetMapping("/low-stock")
     @Operation(summary = "Get low stock products", description = "Kam zaxiradagi mahsulotlar")
+    @RequiresPermission(PermissionCode.PRODUCTS_VIEW)
     public ResponseEntity<ApiResponse<List<ProductResponse>>> getLowStockProducts() {
         return ResponseEntity.ok(ApiResponse.success(productService.getLowStockProducts()));
     }
 
     @PostMapping
     @Operation(summary = "Create product", description = "Yangi mahsulot yaratish")
+    @RequiresPermission(PermissionCode.PRODUCTS_CREATE)
     public ResponseEntity<ApiResponse<ProductResponse>> createProduct(
             @Valid @RequestBody ProductRequest request) {
         ProductResponse product = productService.createProduct(request);
@@ -72,6 +79,7 @@ public class ProductController {
 
     @PutMapping("/{id}")
     @Operation(summary = "Update product", description = "Mahsulotni yangilash")
+    @RequiresPermission(PermissionCode.PRODUCTS_UPDATE)
     public ResponseEntity<ApiResponse<ProductResponse>> updateProduct(
             @PathVariable Long id,
             @Valid @RequestBody ProductRequest request) {
@@ -81,6 +89,7 @@ public class ProductController {
 
     @DeleteMapping("/{id}")
     @Operation(summary = "Delete product", description = "Mahsulotni o'chirish")
+    @RequiresPermission(PermissionCode.PRODUCTS_DELETE)
     public ResponseEntity<ApiResponse<Void>> deleteProduct(@PathVariable Long id) {
         productService.deleteProduct(id);
         return ResponseEntity.ok(ApiResponse.success("Mahsulot o'chirildi"));
@@ -88,6 +97,7 @@ public class ProductController {
 
     @PatchMapping("/{id}/stock")
     @Operation(summary = "Adjust stock", description = "Zaxirani sozlash")
+    @RequiresPermission(PermissionCode.PRODUCTS_UPDATE)
     public ResponseEntity<ApiResponse<ProductResponse>> adjustStock(
             @PathVariable Long id,
             @RequestParam int adjustment) {

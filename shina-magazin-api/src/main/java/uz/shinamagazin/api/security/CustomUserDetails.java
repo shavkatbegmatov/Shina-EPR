@@ -1,6 +1,7 @@
 package uz.shinamagazin.api.security;
 
 import lombok.Getter;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
@@ -13,6 +14,7 @@ import java.util.Set;
 import java.util.stream.Collectors;
 
 @Getter
+@Slf4j
 public class CustomUserDetails implements UserDetails {
 
     private final User user;
@@ -25,17 +27,28 @@ public class CustomUserDetails implements UserDetails {
         this.roleCodes = new HashSet<>();
 
         // Extract permissions and role codes from user's roles
+        log.debug("Creating CustomUserDetails for user: {}, roles count: {}",
+                user.getUsername(), user.getRoles().size());
+
         for (RoleEntity role : user.getRoles()) {
+            log.debug("Processing role: {} (active: {})", role.getCode(), role.getIsActive());
             if (role.getIsActive()) {
                 roleCodes.add(role.getCode());
                 role.getPermissions().forEach(p -> permissions.add(p.getCode()));
+                log.debug("Added role: {}, permissions count: {}",
+                        role.getCode(), role.getPermissions().size());
             }
         }
 
         // Fallback to legacy role if no new roles assigned
         if (roleCodes.isEmpty() && user.getRole() != null) {
+            log.warn("No RBAC roles found for user: {}, falling back to legacy role: {}",
+                    user.getUsername(), user.getRole().name());
             roleCodes.add(user.getRole().name());
         }
+
+        log.info("CustomUserDetails created for user: {}, roleCodes: {}, permissions count: {}",
+                user.getUsername(), roleCodes, permissions.size());
     }
 
     @Override
@@ -45,6 +58,7 @@ public class CustomUserDetails implements UserDetails {
         // Add role authorities (prefixed with ROLE_)
         for (String roleCode : roleCodes) {
             authorities.add(new SimpleGrantedAuthority("ROLE_" + roleCode));
+            log.debug("Added authority: ROLE_{}", roleCode);
         }
 
         // Add permission authorities (prefixed with PERM_)
@@ -52,6 +66,7 @@ public class CustomUserDetails implements UserDetails {
             authorities.add(new SimpleGrantedAuthority("PERM_" + permission));
         }
 
+        log.debug("Total authorities for user {}: {}", user.getUsername(), authorities.size());
         return authorities;
     }
 

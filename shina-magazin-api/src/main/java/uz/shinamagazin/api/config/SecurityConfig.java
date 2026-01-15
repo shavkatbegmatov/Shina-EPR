@@ -51,26 +51,11 @@ public class SecurityConfig {
                         // WebSocket endpoint (JWT token interceptor'da tekshiriladi)
                         .requestMatchers("/v1/ws/**").permitAll()
 
-                        // Customer Portal - faqat CUSTOMER roli uchun
+                        // Customer Portal - faqat CUSTOMER roli uchun (saqlanadi)
                         .requestMatchers("/v1/portal/**").hasRole("CUSTOMER")
 
-                        // Admin only
-                        .requestMatchers("/v1/users/**").hasRole("ADMIN")
-                        .requestMatchers(HttpMethod.DELETE, "/v1/**").hasRole("ADMIN")
-
-                        // Manager and Admin
-                        .requestMatchers("/v1/reports/**").hasAnyRole("ADMIN", "MANAGER")
-                        .requestMatchers("/v1/suppliers/**").hasAnyRole("ADMIN", "MANAGER")
-                        .requestMatchers("/v1/purchase-orders/**").hasAnyRole("ADMIN", "MANAGER")
-                        .requestMatchers("/v1/stock/**").hasAnyRole("ADMIN", "MANAGER")
-                        .requestMatchers(HttpMethod.POST, "/v1/products/**").hasAnyRole("ADMIN", "MANAGER")
-                        .requestMatchers(HttpMethod.PUT, "/v1/products/**").hasAnyRole("ADMIN", "MANAGER")
-                        .requestMatchers(HttpMethod.POST, "/v1/brands/**").hasAnyRole("ADMIN", "MANAGER")
-                        .requestMatchers(HttpMethod.PUT, "/v1/brands/**").hasAnyRole("ADMIN", "MANAGER")
-                        .requestMatchers(HttpMethod.POST, "/v1/categories/**").hasAnyRole("ADMIN", "MANAGER")
-                        .requestMatchers(HttpMethod.PUT, "/v1/categories/**").hasAnyRole("ADMIN", "MANAGER")
-
-                        // All authenticated users
+                        // All other requests require authentication
+                        // Permissions checked at method level via @RequiresPermission
                         .anyRequest().authenticated()
                 )
                 .authenticationProvider(authenticationProvider())

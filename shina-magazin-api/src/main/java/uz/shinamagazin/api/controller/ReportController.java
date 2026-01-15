@@ -10,6 +10,8 @@ import uz.shinamagazin.api.dto.response.ApiResponse;
 import uz.shinamagazin.api.dto.response.DebtsReportResponse;
 import uz.shinamagazin.api.dto.response.SalesReportResponse;
 import uz.shinamagazin.api.dto.response.WarehouseReportResponse;
+import uz.shinamagazin.api.enums.PermissionCode;
+import uz.shinamagazin.api.security.RequiresPermission;
 import uz.shinamagazin.api.service.ReportService;
 
 import java.time.LocalDate;
@@ -24,6 +26,7 @@ public class ReportController {
 
     @GetMapping("/sales")
     @Operation(summary = "Get sales report", description = "Sotuvlar hisoboti")
+    @RequiresPermission(PermissionCode.REPORTS_VIEW_SALES)
     public ResponseEntity<ApiResponse<SalesReportResponse>> getSalesReport(
             @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate startDate,
             @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate endDate) {
@@ -32,6 +35,7 @@ public class ReportController {
 
     @GetMapping("/warehouse")
     @Operation(summary = "Get warehouse report", description = "Ombor hisoboti")
+    @RequiresPermission(PermissionCode.REPORTS_VIEW_WAREHOUSE)
     public ResponseEntity<ApiResponse<WarehouseReportResponse>> getWarehouseReport(
             @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate startDate,
             @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate endDate) {
@@ -40,6 +44,7 @@ public class ReportController {
 
     @GetMapping("/debts")
     @Operation(summary = "Get debts report", description = "Qarzlar hisoboti")
+    @RequiresPermission(PermissionCode.REPORTS_VIEW_DEBTS)
     public ResponseEntity<ApiResponse<DebtsReportResponse>> getDebtsReport(
             @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate startDate,
             @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate endDate) {

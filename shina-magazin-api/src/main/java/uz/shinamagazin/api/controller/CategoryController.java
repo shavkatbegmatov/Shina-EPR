@@ -8,6 +8,8 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import uz.shinamagazin.api.dto.response.ApiResponse;
 import uz.shinamagazin.api.dto.response.CategoryResponse;
+import uz.shinamagazin.api.enums.PermissionCode;
+import uz.shinamagazin.api.security.RequiresPermission;
 import uz.shinamagazin.api.service.CategoryService;
 
 import java.util.List;
@@ -22,24 +24,28 @@ public class CategoryController {
 
     @GetMapping
     @Operation(summary = "Get all categories", description = "Barcha kategoriyalarni olish")
+    @RequiresPermission(PermissionCode.PRODUCTS_VIEW)
     public ResponseEntity<ApiResponse<List<CategoryResponse>>> getAllCategories() {
         return ResponseEntity.ok(ApiResponse.success(categoryService.getAllCategories()));
     }
 
     @GetMapping("/tree")
     @Operation(summary = "Get category tree", description = "Kategoriyalar daraxtini olish")
+    @RequiresPermission(PermissionCode.PRODUCTS_VIEW)
     public ResponseEntity<ApiResponse<List<CategoryResponse>>> getCategoryTree() {
         return ResponseEntity.ok(ApiResponse.success(categoryService.getCategoryTree()));
     }
 
     @GetMapping("/{id}")
     @Operation(summary = "Get category by ID", description = "ID bo'yicha kategoriyani olish")
+    @RequiresPermission(PermissionCode.PRODUCTS_VIEW)
     public ResponseEntity<ApiResponse<CategoryResponse>> getCategoryById(@PathVariable Long id) {
         return ResponseEntity.ok(ApiResponse.success(categoryService.getCategoryById(id)));
     }
 
     @PostMapping
     @Operation(summary = "Create category", description = "Yangi kategoriya yaratish")
+    @RequiresPermission(PermissionCode.PRODUCTS_CREATE)
     public ResponseEntity<ApiResponse<CategoryResponse>> createCategory(
             @RequestParam String name,
             @RequestParam(required = false) String description,
@@ -51,6 +57,7 @@ public class CategoryController {
 
     @PutMapping("/{id}")
     @Operation(summary = "Update category", description = "Kategoriyani yangilash")
+    @RequiresPermission(PermissionCode.PRODUCTS_UPDATE)
     public ResponseEntity<ApiResponse<CategoryResponse>> updateCategory(
             @PathVariable Long id,
             @RequestParam String name,
@@ -62,6 +69,7 @@ public class CategoryController {
 
     @DeleteMapping("/{id}")
     @Operation(summary = "Delete category", description = "Kategoriyani o'chirish")
+    @RequiresPermission(PermissionCode.PRODUCTS_DELETE)
     public ResponseEntity<ApiResponse<Void>> deleteCategory(@PathVariable Long id) {
         categoryService.deleteCategory(id);
         return ResponseEntity.ok(ApiResponse.success("Kategoriya o'chirildi"));

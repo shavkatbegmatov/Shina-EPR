@@ -50,4 +50,6 @@ logging:
   level:
     root: INFO
     uz.shinamagazin: DEBUG
-    org.springframework.security: INFO
+    org.springframework.security: DEBUG
+    org.springframework.security.web.access: DEBUG
+    org.springframework.security.access: DEBUG

@@ -15,8 +15,10 @@ import uz.shinamagazin.api.dto.request.PaymentRequest;
 import uz.shinamagazin.api.dto.request.PurchaseRequest;
 import uz.shinamagazin.api.dto.request.ReturnRequest;
 import uz.shinamagazin.api.dto.response.*;
+import uz.shinamagazin.api.enums.PermissionCode;
 import uz.shinamagazin.api.enums.PurchaseOrderStatus;
 import uz.shinamagazin.api.enums.PurchaseReturnStatus;
+import uz.shinamagazin.api.security.RequiresPermission;
 import uz.shinamagazin.api.service.PurchaseService;
 
 import java.time.LocalDate;
@@ -34,6 +36,7 @@ public class PurchaseController {
 
     @GetMapping
     @Operation(summary = "Get all purchases", description = "Barcha xaridlarni olish (filtr bilan)")
+    @RequiresPermission(PermissionCode.PURCHASES_VIEW)
     public ResponseEntity<ApiResponse<PagedResponse<PurchaseOrderResponse>>> getAllPurchases(
             @RequestParam(required = false) Long supplierId,
             @RequestParam(required = false) PurchaseOrderStatus status,
@@ -49,12 +52,14 @@ public class PurchaseController {
 
     @GetMapping("/{id}")
     @Operation(summary = "Get purchase by ID", description = "ID bo'yicha xaridni olish")
+    @RequiresPermission(PermissionCode.PURCHASES_VIEW)
     public ResponseEntity<ApiResponse<PurchaseOrderResponse>> getPurchaseById(@PathVariable Long id) {
         return ResponseEntity.ok(ApiResponse.success(purchaseService.getPurchaseById(id)));
     }
 
     @GetMapping("/by-supplier/{supplierId}")
     @Operation(summary = "Get purchases by supplier", description = "Ta'minotchi bo'yicha xaridlar")
+    @RequiresPermission(PermissionCode.PURCHASES_VIEW)
     public ResponseEntity<ApiResponse<List<PurchaseOrderResponse>>> getPurchasesBySupplier(
             @PathVariable Long supplierId) {
         return ResponseEntity.ok(ApiResponse.success(purchaseService.getPurchasesBySupplier(supplierId)));
@@ -62,12 +67,14 @@ public class PurchaseController {
 
     @GetMapping("/stats")
     @Operation(summary = "Get purchase stats", description = "Xaridlar statistikasi")
+    @RequiresPermission(PermissionCode.PURCHASES_VIEW)
     public ResponseEntity<ApiResponse<PurchaseStatsResponse>> getStats() {
         return ResponseEntity.ok(ApiResponse.success(purchaseService.getStats()));
     }
 
     @PostMapping
     @Operation(summary = "Create purchase", description = "Yangi xarid yaratish va omborga kirim")
+    @RequiresPermission(PermissionCode.PURCHASES_CREATE)
     public ResponseEntity<ApiResponse<PurchaseOrderResponse>> createPurchase(
             @Valid @RequestBody PurchaseRequest request) {
         PurchaseOrderResponse purchase = purchaseService.createPurchase(request);
@@ -77,6 +84,7 @@ public class PurchaseController {
 
     @PutMapping("/{id}")
     @Operation(summary = "Update purchase", description = "Xaridni yangilash (faqat DRAFT)")
+    @RequiresPermission(PermissionCode.PURCHASES_UPDATE)
     public ResponseEntity<ApiResponse<PurchaseOrderResponse>> updatePurchase(
             @PathVariable Long id,
             @Valid @RequestBody PurchaseRequest request) {
@@ -86,6 +94,7 @@ public class PurchaseController {
 
     @DeleteMapping("/{id}")
     @Operation(summary = "Delete purchase", description = "Xaridni o'chirish (faqat DRAFT)")
+    @RequiresPermission(PermissionCode.PURCHASES_DELETE)
     public ResponseEntity<ApiResponse<Void>> deletePurchase(@PathVariable Long id) {
         purchaseService.deletePurchase(id);
         return ResponseEntity.ok(ApiResponse.success("Xarid o'chirildi"));
@@ -95,12 +104,14 @@ public class PurchaseController {
 
     @GetMapping("/{id}/payments")
     @Operation(summary = "Get payments", description = "Xarid uchun to'lovlar ro'yxati")
+    @RequiresPermission(PermissionCode.PURCHASES_VIEW)
     public ResponseEntity<ApiResponse<List<PurchasePaymentResponse>>> getPayments(@PathVariable Long id) {
         return ResponseEntity.ok(ApiResponse.success(purchaseService.getPayments(id)));
     }
 
     @PostMapping("/{id}/payments")
     @Operation(summary = "Add payment", description = "Xarid uchun to'lov qo'shish")
+    @RequiresPermission(PermissionCode.PURCHASES_UPDATE)
     public ResponseEntity<ApiResponse<PurchasePaymentResponse>> addPayment(
             @PathVariable Long id,
             @Valid @RequestBody PaymentRequest request) {
@@ -113,12 +124,14 @@ public class PurchaseController {
 
     @GetMapping("/{id}/returns")
     @Operation(summary = "Get returns", description = "Xarid uchun qaytarishlar ro'yxati")
+    @RequiresPermission(PermissionCode.PURCHASES_VIEW)
     public ResponseEntity<ApiResponse<List<PurchaseReturnResponse>>> getReturns(@PathVariable Long id) {
         return ResponseEntity.ok(ApiResponse.success(purchaseService.getReturns(id)));
     }
 
     @PostMapping("/{id}/returns")
     @Operation(summary = "Create return", description = "Xarid uchun qaytarish yaratish")
+    @RequiresPermission(PermissionCode.PURCHASES_RETURN)
     public ResponseEntity<ApiResponse<PurchaseReturnResponse>> createReturn(
             @PathVariable Long id,
             @Valid @RequestBody ReturnRequest request) {

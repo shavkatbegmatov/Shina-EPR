@@ -11,7 +11,9 @@ import org.springframework.web.bind.annotation.*;
 import uz.shinamagazin.api.dto.response.ApiResponse;
 import uz.shinamagazin.api.dto.response.PagedResponse;
 import uz.shinamagazin.api.dto.response.PurchaseReturnResponse;
+import uz.shinamagazin.api.enums.PermissionCode;
 import uz.shinamagazin.api.enums.PurchaseReturnStatus;
+import uz.shinamagazin.api.security.RequiresPermission;
 import uz.shinamagazin.api.service.PurchaseService;
 
 @RestController
@@ -24,6 +26,7 @@ public class PurchaseReturnController {
 
     @GetMapping
     @Operation(summary = "Get all returns", description = "Barcha qaytarishlarni olish")
+    @RequiresPermission(PermissionCode.PURCHASES_VIEW)
     public ResponseEntity<ApiResponse<PagedResponse<PurchaseReturnResponse>>> getAllReturns(
             @RequestParam(required = false) PurchaseReturnStatus status,
             @PageableDefault(size = 20) Pageable pageable) {
@@ -33,12 +36,14 @@ public class PurchaseReturnController {
 
     @GetMapping("/{id}")
     @Operation(summary = "Get return by ID", description = "ID bo'yicha qaytarishni olish")
+    @RequiresPermission(PermissionCode.PURCHASES_VIEW)
     public ResponseEntity<ApiResponse<PurchaseReturnResponse>> getReturnById(@PathVariable Long id) {
         return ResponseEntity.ok(ApiResponse.success(purchaseService.getReturnById(id)));
     }
 
     @PutMapping("/{id}/approve")
     @Operation(summary = "Approve return", description = "Qaytarishni tasdiqlash")
+    @RequiresPermission(PermissionCode.PURCHASES_RETURN)
     public ResponseEntity<ApiResponse<PurchaseReturnResponse>> approveReturn(@PathVariable Long id) {
         PurchaseReturnResponse returnResponse = purchaseService.approveReturn(id);
         return ResponseEntity.ok(ApiResponse.success("Qaytarish tasdiqlandi", returnResponse));
@@ -46,6 +51,7 @@ public class PurchaseReturnController {
 
     @PutMapping("/{id}/complete")
     @Operation(summary = "Complete return", description = "Qaytarishni yakunlash (ombor va balans yangilanadi)")
+    @RequiresPermission(PermissionCode.PURCHASES_RETURN)
     public ResponseEntity<ApiResponse<PurchaseReturnResponse>> completeReturn(@PathVariable Long id) {
         PurchaseReturnResponse returnResponse = purchaseService.completeReturn(id);
         return ResponseEntity.ok(ApiResponse.success("Qaytarish yakunlandi", returnResponse));
@@ -53,6 +59,7 @@ public class PurchaseReturnController {
 
     @DeleteMapping("/{id}")
     @Operation(summary = "Delete return", description = "Qaytarishni o'chirish (faqat PENDING)")
+    @RequiresPermission(PermissionCode.PURCHASES_DELETE)
     public ResponseEntity<ApiResponse<Void>> deleteReturn(@PathVariable Long id) {
         purchaseService.deleteReturn(id);
         return ResponseEntity.ok(ApiResponse.success("Qaytarish o'chirildi"));
