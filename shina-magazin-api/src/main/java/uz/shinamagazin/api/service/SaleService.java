@@ -38,6 +38,7 @@ public class SaleService {
     private final StockMovementRepository stockMovementRepository;
     private final StaffNotificationService staffNotificationService;
     private final NotificationService customerNotificationService;
+    private final SettingsService settingsService;
 
     public Page<SaleResponse> getAllSales(LocalDate startDate, LocalDate endDate, Pageable pageable) {
         LocalDate effectiveStart = startDate;
@@ -217,12 +218,13 @@ public class SaleService {
                 throw new BadRequestException("Qarzga sotish uchun mijoz tanlash shart");
             }
 
+            int dueDays = settingsService.getDebtDueDays();
             Debt debt = Debt.builder()
                     .customer(customer)
                     .sale(savedSale)
                     .originalAmount(debtAmount)
                     .remainingAmount(debtAmount)
-                    .dueDate(LocalDate.now().plusDays(30))
+                    .dueDate(LocalDate.now().plusDays(dueDays))
                     .status(DebtStatus.ACTIVE)
                     .build();
             debtRepository.save(debt);

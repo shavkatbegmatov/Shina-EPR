@@ -37,6 +37,15 @@ export interface CredentialsInfo {
   mustChangePassword: boolean;
 }
 
+// Settings Types
+export interface AppSettings {
+  debtDueDays: number;
+}
+
+export interface SettingsUpdateRequest {
+  debtDueDays: number;
+}
+
 // Permission Types
 export interface Permission {
   id: number;

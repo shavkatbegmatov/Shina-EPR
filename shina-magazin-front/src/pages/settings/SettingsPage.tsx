@@ -11,15 +11,19 @@ import {
   Sun,
   Moon,
   Monitor,
+  Clock,
 } from 'lucide-react';
 import clsx from 'clsx';
+import toast from 'react-hot-toast';
 import { brandsApi, categoriesApi } from '../../api/products.api';
+import { settingsApi } from '../../api/settings.api';
+import { NumberInput } from '../../components/ui/NumberInput';
 import { Select } from '../../components/ui/Select';
 import { ModalPortal } from '../../components/common/Modal';
 import { useUIStore } from '../../store/uiStore';
 import type { Brand, Category } from '../../types';
 
-type Tab = 'appearance' | 'brands' | 'categories';
+type Tab = 'appearance' | 'brands' | 'categories' | 'debts';
 
 interface BrandFormData {
   name: string;
@@ -34,6 +38,7 @@ interface CategoryFormData {
 
 const emptyBrandForm: BrandFormData = { name: '', country: '' };
 const emptyCategoryForm: CategoryFormData = { name: '', description: '', parentId: '' };
+const DEFAULT_DEBT_DUE_DAYS = 30;
 
 export function SettingsPage() {
   const [activeTab, setActiveTab] = useState<Tab>('appearance');
@@ -58,6 +63,23 @@ export function SettingsPage() {
   const [categorySaving, setCategorySaving] = useState(false);
   const [deletingCategory, setDeletingCategory] = useState<Category | null>(null);
   const [categoryDeleting, setCategoryDeleting] = useState(false);
+
+  // Debt settings
+  const [debtDueDays, setDebtDueDays] = useState(DEFAULT_DEBT_DUE_DAYS);
+  const [settingsLoading, setSettingsLoading] = useState(true);
+  const [settingsSaving, setSettingsSaving] = useState(false);
+
+  const loadSettings = useCallback(async () => {
+    setSettingsLoading(true);
+    try {
+      const data = await settingsApi.get();
+      setDebtDueDays(data.debtDueDays);
+    } catch (error) {
+      console.error('Failed to load settings:', error);
+    } finally {
+      setSettingsLoading(false);
+    }
+  }, []);
 
   // Load brands
   const loadBrands = useCallback(async () => {
@@ -88,7 +110,8 @@ export function SettingsPage() {
   useEffect(() => {
     loadBrands();
     loadCategories();
-  }, [loadBrands, loadCategories]);
+    loadSettings();
+  }, [loadBrands, loadCategories, loadSettings]);
 
   // Brand handlers
   const handleOpenBrandModal = (brand?: Brand) => {
@@ -203,6 +226,34 @@ export function SettingsPage() {
     }
   };
 
+  const handleSaveSettings = async () => {
+    setSettingsSaving(true);
+    try {
+      const data = await settingsApi.update({ debtDueDays });
+      setDebtDueDays(data.debtDueDays);
+      toast.success('Sozlamalar yangilandi');
+    } catch (error) {
+      console.error('Failed to save settings:', error);
+      toast.error('Sozlamalarni saqlashda xatolik');
+    } finally {
+      setSettingsSaving(false);
+    }
+  };
+
+  const handleDebtDueDaysChange = (value: number | string) => {
+    if (typeof value === 'string') {
+      if (value === '' || value === '-' || value === '.' || value === '-.') {
+        return;
+      }
+      const parsed = Number(value);
+      if (!Number.isNaN(parsed)) {
+        setDebtDueDays(parsed);
+      }
+      return;
+    }
+    setDebtDueDays(value);
+  };
+
   return (
     <div className="space-y-6">
       {/* Header */}
@@ -233,6 +284,13 @@ export function SettingsPage() {
         >
           <FolderTree className="h-4 w-4" />
           Kategoriyalar
+        </button>
+        <button
+          className={clsx('tab gap-2', activeTab === 'debts' && 'tab-active')}
+          onClick={() => setActiveTab('debts')}
+        >
+          <Clock className="h-4 w-4" />
+          Qarzlar
         </button>
       </div>
 
@@ -530,6 +588,50 @@ export function SettingsPage() {
                   ))}
                 </div>
               </>
+            )}
+          </div>
+        </div>
+      )}
+
+      {/* Debts Tab */}
+      {activeTab === 'debts' && (
+        <div className="space-y-4">
+          <div className="surface-card p-6">
+            <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+              <div>
+                <h2 className="text-lg font-semibold">Qarz sozlamalari</h2>
+                <p className="text-sm text-base-content/60">
+                  Yangi qarzlar uchun standart muddatni belgilang
+                </p>
+              </div>
+              <button
+                className="btn btn-primary"
+                onClick={handleSaveSettings}
+                disabled={settingsSaving || settingsLoading}
+              >
+                {settingsSaving && <span className="loading loading-spinner loading-sm" />}
+                Saqlash
+              </button>
+            </div>
+
+            {settingsLoading ? (
+              <div className="mt-6 flex items-center justify-center py-8">
+                <span className="loading loading-spinner loading-lg" />
+              </div>
+            ) : (
+              <div className="mt-6 max-w-sm">
+                <NumberInput
+                  label="Qarz muddati (kun)"
+                  value={debtDueDays}
+                  onChange={handleDebtDueDaysChange}
+                  min={1}
+                  max={365}
+                  allowEmpty={false}
+                />
+                <p className="mt-2 text-xs text-base-content/60">
+                  Masalan: 30 kun. Bu qiymat faqat yangi qarzlar uchun ishlaydi.
+                </p>
+              </div>
             )}
           </div>
         </div>
