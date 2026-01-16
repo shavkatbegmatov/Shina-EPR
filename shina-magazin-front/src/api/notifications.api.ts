@@ -1,7 +1,7 @@
 import api from './axios';
 import type { ApiResponse, PagedResponse } from '../types';
 
-export type StaffNotificationType = 'ORDER' | 'PAYMENT' | 'WARNING' | 'CUSTOMER' | 'INFO' | 'SUCCESS';
+export type StaffNotificationType = 'ORDER' | 'PAYMENT' | 'WARNING' | 'CUSTOMER' | 'INFO' | 'SUCCESS' | 'PERMISSION_UPDATE';
 
 export interface StaffNotification {
   id: number;
