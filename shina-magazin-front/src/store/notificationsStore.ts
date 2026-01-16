@@ -1,6 +1,8 @@
 import { create } from 'zustand';
+import toast from 'react-hot-toast';
 import { notificationsApi, type StaffNotification, type StaffNotificationType } from '../api/notifications.api';
-import { webSocketService, type WebSocketNotification } from '../services/websocket';
+import { webSocketService, type WebSocketNotification, type PermissionUpdateMessage } from '../services/websocket';
+import { useAuthStore } from './authStore';
 
 // Frontend uchun notification type mapping
 type FrontendNotificationType = 'warning' | 'success' | 'info' | 'order' | 'payment' | 'customer';
@@ -25,6 +27,7 @@ const mapNotificationType = (backendType: StaffNotificationType): FrontendNotifi
     CUSTOMER: 'customer',
     INFO: 'info',
     SUCCESS: 'success',
+    PERMISSION_UPDATE: 'info',
   };
   return mapping[backendType] || 'info';
 };
@@ -184,6 +187,36 @@ export const useNotificationsStore = create<NotificationsState>((set, get) => ({
       (wsNotification) => {
         const notification = mapWebSocketNotification(wsNotification);
         get().addNotification(notification);
+      },
+      // Permission update callback
+      (permissionUpdate: PermissionUpdateMessage) => {
+        console.log('[NotificationsStore] Permission update received:', permissionUpdate);
+
+        // Update authStore with new permissions
+        const authState = useAuthStore.getState();
+        if (authState.user && authState.accessToken && authState.refreshToken) {
+          console.log('[NotificationsStore] Calling setAuth with', permissionUpdate.permissions.length, 'permissions');
+
+          // Call setAuth to properly update state and trigger persist
+          authState.setAuth(
+            authState.user,
+            authState.accessToken,
+            authState.refreshToken,
+            permissionUpdate.permissions,
+            permissionUpdate.roles
+          );
+
+          console.log('[NotificationsStore] setAuth completed');
+
+          // Show toast notification
+          toast.info(
+            permissionUpdate.reason || 'Sizning kirish huquqlaringiz yangilandi',
+            {
+              duration: 5000,
+              icon: '🔐',
+            }
+          );
+        }
       },
       // Connection status callback
       (connected) => {

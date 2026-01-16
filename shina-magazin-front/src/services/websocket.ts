@@ -13,19 +13,35 @@ export interface WebSocketNotification {
   referenceId?: number | null;
 }
 
+// Permission update message turi
+export interface PermissionUpdateMessage {
+  permissions: string[];
+  roles: string[];
+  reason?: string;
+  timestamp: number;
+}
+
 type NotificationCallback = (notification: WebSocketNotification) => void;
+type PermissionUpdateCallback = (data: PermissionUpdateMessage) => void;
 type ConnectionStatusCallback = (connected: boolean) => void;
 
 class WebSocketService {
   private client: Client | null = null;
   private notificationCallback: NotificationCallback | null = null;
+  private permissionUpdateCallback: PermissionUpdateCallback | null = null;
   private connectionStatusCallback: ConnectionStatusCallback | null = null;
 
   /**
    * WebSocket ulanishini boshlash
    */
-  connect(token: string, onNotification: NotificationCallback, onConnectionStatus?: ConnectionStatusCallback) {
+  connect(
+    token: string,
+    onNotification: NotificationCallback,
+    onPermissionUpdate?: PermissionUpdateCallback,
+    onConnectionStatus?: ConnectionStatusCallback
+  ) {
     this.notificationCallback = onNotification;
+    this.permissionUpdateCallback = onPermissionUpdate || null;
     this.connectionStatusCallback = onConnectionStatus || null;
 
     // Agar allaqachon ulanish mavjud bo'lsa, avval uzib tashlaymiz
@@ -63,6 +79,11 @@ class WebSocketService {
         this.client?.subscribe('/user/queue/notifications', (message: IMessage) => {
           this.handleNotification(message);
         });
+
+        // Foydalanuvchi huquqlari yangilanishi
+        this.client?.subscribe('/user/queue/permissions', (message: IMessage) => {
+          this.handlePermissionUpdate(message);
+        });
       },
 
       // Ulanish uzildi
@@ -98,6 +119,23 @@ class WebSocketService {
   }
 
   /**
+   * Permission yangilanishini qabul qilish
+   */
+  private handlePermissionUpdate(message: IMessage) {
+    try {
+      const data = JSON.parse(message.body) as PermissionUpdateMessage;
+      console.log('[WebSocket] Permission update received:', data);
+
+      // Callback chaqirish (authStore ni yangilash uchun)
+      this.permissionUpdateCallback?.(data);
+
+      console.log('[WebSocket] Permissions updated successfully');
+    } catch (error) {
+      console.error('[WebSocket] Error handling permission update:', error);
+    }
+  }
+
+  /**
    * WebSocket ulanishini uzish
    */
   disconnect() {
@@ -106,6 +144,7 @@ class WebSocketService {
       this.client = null;
     }
     this.notificationCallback = null;
+    this.permissionUpdateCallback = null;
     this.connectionStatusCallback = null;
   }
 

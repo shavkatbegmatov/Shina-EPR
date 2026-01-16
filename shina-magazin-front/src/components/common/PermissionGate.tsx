@@ -57,18 +57,20 @@ export function PermissionGate({
   children,
   fallback = null,
 }: PermissionGateProps) {
-  const { hasPermission, hasAnyPermission, hasAllPermissions } = useAuthStore();
+  // Subscribe to permissions state to trigger re-render when permissions change
+  const userPermissions = useAuthStore((state) => state.permissions);
 
   const permissions = Array.isArray(permission) ? permission : [permission];
 
   let hasAccess: boolean;
 
   if (permissions.length === 1) {
-    hasAccess = hasPermission(permissions[0]);
+    hasAccess = userPermissions.has(permissions[0]);
+    console.log(`[PermissionGate] Checking ${permissions[0]}: ${hasAccess} (total permissions: ${userPermissions.size})`);
   } else if (requireAll) {
-    hasAccess = hasAllPermissions(...permissions);
+    hasAccess = permissions.every(p => userPermissions.has(p));
   } else {
-    hasAccess = hasAnyPermission(...permissions);
+    hasAccess = permissions.some(p => userPermissions.has(p));
   }
 
   return hasAccess ? <>{children}</> : <>{fallback}</>;

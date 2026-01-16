@@ -18,8 +18,10 @@ import uz.shinamagazin.api.repository.UserRepository;
 import java.security.SecureRandom;
 import java.text.Normalizer;
 import java.time.LocalDateTime;
+import java.util.Collections;
 import java.util.HashSet;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 /**
  * Service for user management including credential generation for employees.
@@ -359,6 +361,20 @@ public class UserService {
     public User getUserByUsername(String username) {
         return userRepository.findByUsername(username)
                 .orElseThrow(() -> new ResourceNotFoundException("Foydalanuvchi topilmadi"));
+    }
+
+    /**
+     * Get all role codes for a user
+     *
+     * @param userId User ID
+     * @return Set of role codes
+     */
+    public Set<String> getUserRoles(Long userId) {
+        return userRepository.findById(userId)
+                .map(user -> user.getRoles().stream()
+                        .map(RoleEntity::getCode)
+                        .collect(Collectors.toSet()))
+                .orElse(Collections.emptySet());
     }
 
     private User getCurrentUser() {

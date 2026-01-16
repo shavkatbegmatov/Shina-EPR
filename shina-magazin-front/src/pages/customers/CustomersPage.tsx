@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { Plus, Users, Phone, X } from 'lucide-react';
 import clsx from 'clsx';
+import toast from 'react-hot-toast';
 import { customersApi } from '../../api/customers.api';
 import { formatCurrency, CUSTOMER_TYPES } from '../../config/constants';
 import { DataTable, Column } from '../../components/ui/DataTable';
@@ -10,6 +11,8 @@ import { PhoneInput } from '../../components/ui/PhoneInput';
 import { Select } from '../../components/ui/Select';
 import { useNotificationsStore } from '../../store/notificationsStore';
 import { useHighlight } from '../../hooks/useHighlight';
+import { PermissionGate } from '../../components/common/PermissionGate';
+import { usePermission, PermissionCode } from '../../hooks/usePermission';
 import type { Customer, CustomerRequest, CustomerType } from '../../types';
 
 const emptyFormData: CustomerRequest = {
@@ -40,6 +43,7 @@ export function CustomersPage() {
 
   const { notifications } = useNotificationsStore();
   const { highlightId, clearHighlight } = useHighlight();
+  const { hasPermission } = usePermission();
   const hasSearch = useMemo(() => search.trim().length > 0, [search]);
 
   const handlePageSizeChange = (newSize: number) => {
@@ -134,9 +138,11 @@ export function CustomersPage() {
       header: '',
       sortable: false,
       render: (customer) => (
-        <button className="btn btn-ghost btn-sm" onClick={(e) => { e.stopPropagation(); handleOpenEditModal(customer); }}>
-          Tahrirlash
-        </button>
+        <PermissionGate permission={PermissionCode.CUSTOMERS_UPDATE}>
+          <button className="btn btn-ghost btn-sm" onClick={(e) => { e.stopPropagation(); handleOpenEditModal(customer); }}>
+            Tahrirlash
+          </button>
+        </PermissionGate>
       ),
     },
   ], []);
@@ -200,16 +206,36 @@ export function CustomersPage() {
 
   const handleSaveCustomer = async () => {
     if (!formData.fullName.trim() || !formData.phone.trim()) return;
+
+    // Check permission before API call
+    const requiredPermission = editingCustomer
+      ? PermissionCode.CUSTOMERS_UPDATE
+      : PermissionCode.CUSTOMERS_CREATE;
+
+    if (!hasPermission(requiredPermission)) {
+      toast.error("Sizda bu amalni bajarish huquqi yo'q", {
+        icon: '🔒',
+      });
+      return;
+    }
+
     setSaving(true);
     try {
       if (editingCustomer) {
         await customersApi.update(editingCustomer.id, formData);
+        toast.success('Mijoz muvaffaqiyatli yangilandi');
       } else {
         await customersApi.create(formData);
+        toast.success('Yangi mijoz muvaffaqiyatli qo\'shildi');
       }
       handleCloseModal();
       loadCustomers();
-    } catch (error) {
+    } catch (error: unknown) {
+      const err = error as { response?: { status?: number; data?: { message?: string } } };
+      // Skip toast for 403 errors (axios interceptor handles them)
+      if (err.response?.status !== 403) {
+        toast.error(err.response?.data?.message || 'Mijozni saqlashda xatolik yuz berdi');
+      }
       console.error('Failed to save customer:', error);
     } finally {
       setSaving(false);
@@ -225,10 +251,12 @@ export function CustomersPage() {
         </div>
         <div className="flex items-center gap-2">
           <span className="pill">{totalElements} ta mijoz</span>
-          <button className="btn btn-primary" onClick={handleOpenNewModal}>
-            <Plus className="h-5 w-5" />
-            Yangi mijoz
-          </button>
+          <PermissionGate permission={PermissionCode.CUSTOMERS_CREATE}>
+            <button className="btn btn-primary" onClick={handleOpenNewModal}>
+              <Plus className="h-5 w-5" />
+              Yangi mijoz
+            </button>
+          </PermissionGate>
         </div>
       </div>
 

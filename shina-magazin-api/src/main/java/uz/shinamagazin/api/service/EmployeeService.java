@@ -20,6 +20,7 @@ import uz.shinamagazin.api.repository.RoleRepository;
 import uz.shinamagazin.api.repository.UserRepository;
 
 import java.util.List;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 @Service
@@ -34,6 +35,7 @@ public class EmployeeService {
     private final RoleRepository roleRepository;
     private final UserService userService;
     private final PermissionService permissionService;
+    private final NotificationDispatcher notificationDispatcher;
 
     public Page<EmployeeResponse> getAllEmployees(Pageable pageable) {
         return employeeRepository.findByStatusNot(EmployeeStatus.TERMINATED, pageable)
@@ -218,6 +220,17 @@ public class EmployeeService {
 
         // 6. Clear permission cache for this user
         permissionService.clearUserPermissionsCache(user.getId());
+
+        // 7. Notify user of role change
+        Set<String> permissions = permissionService.getUserPermissionCodes(user.getId());
+        Set<String> roles = userService.getUserRoles(user.getId());
+
+        notificationDispatcher.notifyPermissionsUpdated(
+                user.getId(),
+                permissions,
+                roles,
+                String.format("Rol '%s' ga HR tomonidan o'zgartirildi", newRole.getName())
+        );
 
         log.info("Changed role for employee {} (user: {}) to {}",
                 employee.getFullName(), user.getUsername(), roleCode);

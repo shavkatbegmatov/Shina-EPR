@@ -1,4 +1,5 @@
 import axios from 'axios';
+import toast from 'react-hot-toast';
 import { API_BASE_URL } from '../config/constants';
 
 const api = axios.create({
@@ -56,6 +57,20 @@ api.interceptors.response.use(
       } else {
         window.location.href = '/login';
       }
+    }
+
+    // Handle 403 Forbidden
+    if (error.response?.status === 403) {
+      const message = error.response?.data?.message || "Sizda bu amalni bajarish uchun ruxsat yo'q";
+
+      // Show toast notification (user-friendly)
+      toast.error(message, {
+        duration: 4000,
+        icon: '🔒',
+      });
+
+      // Log to console for debugging (but user already got toast)
+      console.warn('Permission denied:', error.config?.url, message);
     }
 
     return Promise.reject(error);

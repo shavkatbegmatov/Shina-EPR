@@ -33,6 +33,8 @@ import { Select } from '../../components/ui/Select';
 import { SearchInput } from '../../components/ui/SearchInput';
 import { CredentialsModal } from './components/CredentialsModal';
 import { useHighlight } from '../../hooks/useHighlight';
+import { PermissionGate } from '../../components/common/PermissionGate';
+import { usePermission, PermissionCode } from '../../hooks/usePermission';
 import type { CredentialsInfo, Employee, EmployeeRequest, EmployeeStatus, Role, User } from '../../types';
 
 const emptyFormData: EmployeeRequest = {
@@ -101,6 +103,7 @@ export function EmployeesPage() {
   const [accessType, setAccessType] = useState<'none' | 'create' | 'link'>('none');
 
   const { highlightId, clearHighlight } = useHighlight();
+  const { hasPermission } = usePermission();
   const hasSearch = useMemo(() => search.trim().length > 0, [search]);
 
   const handlePageSizeChange = (newSize: number) => {
@@ -238,12 +241,14 @@ export function EmployeesPage() {
       header: '',
       sortable: false,
       render: (employee) => (
-        <button
-          className="btn btn-ghost btn-sm"
-          onClick={(e) => { e.stopPropagation(); handleOpenEditModal(employee); }}
-        >
-          Tahrirlash
-        </button>
+        <PermissionGate permission={PermissionCode.EMPLOYEES_UPDATE}>
+          <button
+            className="btn btn-ghost btn-sm"
+            onClick={(e) => { e.stopPropagation(); handleOpenEditModal(employee); }}
+          >
+            Tahrirlash
+          </button>
+        </PermissionGate>
       ),
     },
   ], []);
@@ -340,6 +345,19 @@ export function EmployeesPage() {
 
   const handleSaveEmployee = async () => {
     if (!formData.fullName.trim() || !formData.phone.trim() || !formData.position.trim()) return;
+
+    // Check permission before API call
+    const requiredPermission = editingEmployee
+      ? PermissionCode.EMPLOYEES_UPDATE
+      : PermissionCode.EMPLOYEES_CREATE;
+
+    if (!hasPermission(requiredPermission)) {
+      toast.error("Sizda bu amalni bajarish huquqi yo'q", {
+        icon: '🔒',
+      });
+      return;
+    }
+
     setSaving(true);
     try {
       const dataToSend = {
@@ -374,17 +392,20 @@ export function EmployeesPage() {
       loadEmployees();
       loadStats();
     } catch (error: unknown) {
-      const err = error as { response?: { data?: { message?: string; data?: Record<string, string> } } };
+      const err = error as { response?: { status?: number; data?: { message?: string; data?: Record<string, string> } } };
 
-      // Check if it's a validation error with field-specific messages
-      if (err.response?.data?.data && typeof err.response.data.data === 'object') {
+      // Skip toast for 403 errors (axios interceptor handles them)
+      if (err.response?.status === 403) {
+        console.error('Failed to save employee:', error);
+      } else if (err.response?.data?.data && typeof err.response.data.data === 'object') {
+        // Check if it's a validation error with field-specific messages
         const validationErrors = err.response.data.data;
         const errorMessages = Object.values(validationErrors).join('\n');
         toast.error(errorMessages || 'Validatsiya xatosi', { duration: 5000 });
       } else {
         toast.error(err.response?.data?.message || 'Xodimni saqlashda xatolik yuz berdi');
+        console.error('Failed to save employee:', error);
       }
-      console.error('Failed to save employee:', error);
     } finally {
       setSaving(false);
     }
@@ -392,6 +413,15 @@ export function EmployeesPage() {
 
   const handleDeleteEmployee = async () => {
     if (!editingEmployee) return;
+
+    // Check permission before API call
+    if (!hasPermission(PermissionCode.EMPLOYEES_DELETE)) {
+      toast.error("Sizda bu amalni bajarish huquqi yo'q", {
+        icon: '🔒',
+      });
+      return;
+    }
+
     if (!window.confirm(`"${editingEmployee.fullName}" xodimini o'chirmoqchimisiz?`)) return;
 
     setSaving(true);
@@ -402,8 +432,11 @@ export function EmployeesPage() {
       loadEmployees();
       loadStats();
     } catch (error: unknown) {
-      const err = error as { response?: { data?: { message?: string } } };
-      toast.error(err.response?.data?.message || 'Xodimni o\'chirishda xatolik yuz berdi');
+      const err = error as { response?: { status?: number; data?: { message?: string } } };
+      // Skip toast for 403 errors (axios interceptor handles them)
+      if (err.response?.status !== 403) {
+        toast.error(err.response?.data?.message || 'Xodimni o\'chirishda xatolik yuz berdi');
+      }
       console.error('Failed to delete employee:', error);
     } finally {
       setSaving(false);
@@ -413,6 +446,14 @@ export function EmployeesPage() {
   // Handle role change for existing user - uses dedicated employee role endpoint
   const handleChangeRole = async () => {
     if (!editingEmployee?.id || !selectedNewRoleCode) return;
+
+    // Check permission before API call
+    if (!hasPermission(PermissionCode.EMPLOYEES_CHANGE_ROLE)) {
+      toast.error("Sizda bu amalni bajarish huquqi yo'q", {
+        icon: '🔒',
+      });
+      return;
+    }
 
     // Find the new role by code for display
     const newRole = roles.find(r => r.code === selectedNewRoleCode);
@@ -430,8 +471,11 @@ export function EmployeesPage() {
       // Update local state immediately for better UX
       setEditingEmployee(prev => prev ? { ...prev, userRole: selectedNewRoleCode } : null);
     } catch (error: unknown) {
-      const err = error as { response?: { data?: { message?: string } } };
-      toast.error(err.response?.data?.message || 'Rolni o\'zgartirishda xatolik yuz berdi');
+      const err = error as { response?: { status?: number; data?: { message?: string } } };
+      // Skip toast for 403 errors (axios interceptor handles them)
+      if (err.response?.status !== 403) {
+        toast.error(err.response?.data?.message || 'Rolni o\'zgartirishda xatolik yuz berdi');
+      }
       console.error('Failed to change role:', error);
     } finally {
       setChangingRole(false);
@@ -460,10 +504,12 @@ export function EmployeesPage() {
         </div>
         <div className="flex items-center gap-2">
           <span className="pill">{totalElements} ta xodim</span>
-          <button className="btn btn-primary" onClick={handleOpenNewModal}>
-            <Plus className="h-5 w-5" />
-            Yangi xodim
-          </button>
+          <PermissionGate permission={PermissionCode.EMPLOYEES_CREATE}>
+            <button className="btn btn-primary" onClick={handleOpenNewModal}>
+              <Plus className="h-5 w-5" />
+              Yangi xodim
+            </button>
+          </PermissionGate>
         </div>
       </div>
 
@@ -808,14 +854,16 @@ export function EmployeesPage() {
                               <span className="text-sm font-semibold text-base-content/70">Foydalanuvchi roli</span>
                             </div>
                             {!isEditingRole && (
-                              <button
-                                type="button"
-                                className="btn btn-ghost btn-xs gap-1"
-                                onClick={handleStartRoleEdit}
-                              >
-                                <Edit3 className="h-3.5 w-3.5" />
-                                O'zgartirish
-                              </button>
+                              <PermissionGate permission={PermissionCode.EMPLOYEES_CHANGE_ROLE}>
+                                <button
+                                  type="button"
+                                  className="btn btn-ghost btn-xs gap-1"
+                                  onClick={handleStartRoleEdit}
+                                >
+                                  <Edit3 className="h-3.5 w-3.5" />
+                                  O'zgartirish
+                                </button>
+                              </PermissionGate>
                             )}
                           </div>
 
@@ -852,19 +900,21 @@ export function EmployeesPage() {
                                 >
                                   Bekor qilish
                                 </button>
-                                <button
-                                  type="button"
-                                  className="btn btn-primary btn-sm"
-                                  onClick={handleChangeRole}
-                                  disabled={changingRole || !selectedNewRoleCode || selectedNewRoleCode === editingEmployee.userRole}
-                                >
-                                  {changingRole ? (
-                                    <span className="loading loading-spinner loading-xs" />
-                                  ) : (
-                                    <Check className="h-4 w-4" />
-                                  )}
+                                <PermissionGate permission={PermissionCode.EMPLOYEES_CHANGE_ROLE}>
+                                  <button
+                                    type="button"
+                                    className="btn btn-primary btn-sm"
+                                    onClick={handleChangeRole}
+                                    disabled={changingRole || !selectedNewRoleCode || selectedNewRoleCode === editingEmployee.userRole}
+                                  >
+                                    {changingRole ? (
+                                      <span className="loading loading-spinner loading-xs" />
+                                    ) : (
+                                      <Check className="h-4 w-4" />
+                                    )}
                                   Saqlash
                                 </button>
+                                </PermissionGate>
                               </div>
                             </div>
                           ) : (
@@ -1027,14 +1077,16 @@ export function EmployeesPage() {
               <div className="mt-6 flex justify-between gap-2">
                 <div>
                   {editingEmployee && (
-                    <button
-                      className="btn btn-error btn-outline"
-                      onClick={handleDeleteEmployee}
-                      disabled={saving}
-                    >
-                      <UserX className="h-4 w-4" />
-                      O'chirish
-                    </button>
+                    <PermissionGate permission={PermissionCode.EMPLOYEES_DELETE}>
+                      <button
+                        className="btn btn-error btn-outline"
+                        onClick={handleDeleteEmployee}
+                        disabled={saving}
+                      >
+                        <UserX className="h-4 w-4" />
+                        O'chirish
+                      </button>
+                    </PermissionGate>
                   )}
                 </div>
                 <div className="flex gap-2">

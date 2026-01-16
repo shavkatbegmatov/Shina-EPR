@@ -14,11 +14,12 @@ import {
 import toast from 'react-hot-toast';
 import { rolesApi, permissionsApi } from '../../api/roles.api';
 import { ModalPortal } from '../../components/common/Modal';
-import { PermissionCode } from '../../hooks/usePermission';
+import { usePermission, PermissionCode } from '../../hooks/usePermission';
 import { PermissionGate } from '../../components/common/PermissionGate';
 import type { Role, RoleRequest } from '../../types';
 
 export function RolesPage() {
+  const { hasPermission } = usePermission();
   const [search, setSearch] = useState('');
   const [showModal, setShowModal] = useState(false);
   const [selectedRole, setSelectedRole] = useState<Role | null>(null);
@@ -52,8 +53,11 @@ export function RolesPage() {
       toast.success('Rol yaratildi');
       closeModal();
     },
-    onError: (error: { response?: { data?: { message?: string } } }) => {
-      toast.error(error.response?.data?.message || 'Xato yuz berdi');
+    onError: (error: { response?: { status?: number; data?: { message?: string } } }) => {
+      // Skip toast for 403 errors (axios interceptor handles them)
+      if (error.response?.status !== 403) {
+        toast.error(error.response?.data?.message || 'Xato yuz berdi');
+      }
     },
   });
 
@@ -66,8 +70,11 @@ export function RolesPage() {
       toast.success('Rol yangilandi');
       closeModal();
     },
-    onError: (error: { response?: { data?: { message?: string } } }) => {
-      toast.error(error.response?.data?.message || 'Xato yuz berdi');
+    onError: (error: { response?: { status?: number; data?: { message?: string } } }) => {
+      // Skip toast for 403 errors (axios interceptor handles them)
+      if (error.response?.status !== 403) {
+        toast.error(error.response?.data?.message || 'Xato yuz berdi');
+      }
     },
   });
 
@@ -78,8 +85,11 @@ export function RolesPage() {
       queryClient.invalidateQueries({ queryKey: ['roles'] });
       toast.success("Rol o'chirildi");
     },
-    onError: (error: { response?: { data?: { message?: string } } }) => {
-      toast.error(error.response?.data?.message || 'Xato yuz berdi');
+    onError: (error: { response?: { status?: number; data?: { message?: string } } }) => {
+      // Skip toast for 403 errors (axios interceptor handles them)
+      if (error.response?.status !== 403) {
+        toast.error(error.response?.data?.message || 'Xato yuz berdi');
+      }
     },
   });
 
@@ -114,6 +124,18 @@ export function RolesPage() {
   };
 
   const handleSubmit = () => {
+    // Check permission before API call
+    const requiredPermission = selectedRole
+      ? PermissionCode.ROLES_UPDATE
+      : PermissionCode.ROLES_CREATE;
+
+    if (!hasPermission(requiredPermission)) {
+      toast.error("Sizda bu amalni bajarish huquqi yo'q", {
+        icon: '🔒',
+      });
+      return;
+    }
+
     const data: RoleRequest = {
       ...formData,
       permissions: Array.from(selectedPermissions),
@@ -131,6 +153,15 @@ export function RolesPage() {
       toast.error("Tizim rollarini o'chirish mumkin emas");
       return;
     }
+
+    // Check permission before API call
+    if (!hasPermission(PermissionCode.ROLES_DELETE)) {
+      toast.error("Sizda bu amalni bajarish huquqi yo'q", {
+        icon: '🔒',
+      });
+      return;
+    }
+
     if (confirm(`"${role.name}" rolini o'chirishni tasdiqlaysizmi?`)) {
       deleteMutation.mutate(role.id);
     }

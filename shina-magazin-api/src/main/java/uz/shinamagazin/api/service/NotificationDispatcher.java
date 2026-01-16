@@ -6,8 +6,11 @@ import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.stereotype.Service;
 import uz.shinamagazin.api.dto.response.NotificationResponse;
 import uz.shinamagazin.api.dto.response.StaffNotificationResponse;
+import uz.shinamagazin.api.dto.websocket.PermissionUpdateMessage;
 import uz.shinamagazin.api.entity.CustomerNotification;
 import uz.shinamagazin.api.entity.StaffNotification;
+
+import java.util.Set;
 
 @Service
 @RequiredArgsConstructor
@@ -15,6 +18,8 @@ import uz.shinamagazin.api.entity.StaffNotification;
 public class NotificationDispatcher {
 
     private final SimpMessagingTemplate messagingTemplate;
+    private final PermissionService permissionService;
+    private final UserService userService;
 
     /**
      * Barcha staff'ga global bildirishnoma yuborish
@@ -68,5 +73,56 @@ public class NotificationDispatcher {
         } catch (Exception e) {
             log.error("Failed to send WebSocket notification to customer {}", customerId, e);
         }
+    }
+
+    /**
+     * Notify a specific user that their permissions have been updated
+     *
+     * @param userId The user whose permissions changed
+     * @param permissions Updated permission codes
+     * @param roles Updated role codes
+     * @param reason Optional reason for the change (e.g., "Role updated by admin")
+     */
+    public void notifyPermissionsUpdated(Long userId, Set<String> permissions, Set<String> roles, String reason) {
+        try {
+            log.info("Notifying user {} of permission update. Reason: {}", userId, reason);
+
+            PermissionUpdateMessage message = PermissionUpdateMessage.builder()
+                    .permissions(permissions)
+                    .roles(roles)
+                    .reason(reason)
+                    .timestamp(System.currentTimeMillis())
+                    .build();
+
+            // Send to user's personal queue
+            // Destination: /user/{userId}/queue/permissions
+            messagingTemplate.convertAndSendToUser(
+                    userId.toString(),
+                    "/queue/permissions",
+                    message
+            );
+
+            log.debug("Permission update notification sent to user {}", userId);
+        } catch (Exception e) {
+            log.error("Failed to send permission update notification to user {}", userId, e);
+        }
+    }
+
+    /**
+     * Notify multiple users of permission updates (for role-wide changes)
+     *
+     * @param userIds List of affected user IDs
+     * @param reason Reason for the change
+     */
+    public void notifyMultipleUsersPermissionsUpdated(Set<Long> userIds, String reason) {
+        log.info("Notifying {} users of permission updates. Reason: {}", userIds.size(), reason);
+
+        userIds.forEach(userId -> {
+            // Get fresh permissions for each user
+            Set<String> permissions = permissionService.getUserPermissionCodes(userId);
+            Set<String> roles = userService.getUserRoles(userId);
+
+            notifyPermissionsUpdated(userId, permissions, roles, reason);
+        });
     }
 }

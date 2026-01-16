@@ -21,6 +21,8 @@ import { ModalPortal } from '../../components/common/Modal';
 import { DateRangePicker, type DateRangePreset, type DateRange } from '../../components/common/DateRangePicker';
 import { SearchInput } from '../../components/ui/SearchInput';
 import { useHighlight } from '../../hooks/useHighlight';
+import { PermissionGate } from '../../components/common/PermissionGate';
+import { usePermission, PermissionCode } from '../../hooks/usePermission';
 import type { Sale, PaymentStatus, SaleStatus, PaymentMethod } from '../../types';
 import { useNotificationsStore } from '../../store/notificationsStore';
 
@@ -51,6 +53,7 @@ export function SalesPage() {
   const [loadingDetails, setLoadingDetails] = useState(false);
   const { notifications } = useNotificationsStore();
   const { highlightId, clearHighlight } = useHighlight();
+  const { hasPermission } = usePermission();
 
   const hasFilters = useMemo(
     () => (
@@ -218,13 +221,17 @@ export function SalesPage() {
       sortable: false,
       render: (sale) => (
         <div className="flex items-center gap-1">
-          <button className="btn btn-ghost btn-sm" onClick={(e) => { e.stopPropagation(); handleViewSale(sale); }} title="Ko'rish">
-            <Eye className="h-4 w-4" />
-          </button>
-          {sale.status === 'COMPLETED' && (
-            <button className="btn btn-ghost btn-sm text-error" onClick={(e) => { e.stopPropagation(); handleOpenCancelModal(sale); }} title="Bekor qilish">
-              <XCircle className="h-4 w-4" />
+          <PermissionGate permission={PermissionCode.SALES_VIEW}>
+            <button className="btn btn-ghost btn-sm" onClick={(e) => { e.stopPropagation(); handleViewSale(sale); }} title="Ko'rish">
+              <Eye className="h-4 w-4" />
             </button>
+          </PermissionGate>
+          {sale.status === 'COMPLETED' && (
+            <PermissionGate permission={PermissionCode.SALES_UPDATE}>
+              <button className="btn btn-ghost btn-sm text-error" onClick={(e) => { e.stopPropagation(); handleOpenCancelModal(sale); }} title="Bekor qilish">
+                <XCircle className="h-4 w-4" />
+              </button>
+            </PermissionGate>
           )}
         </div>
       ),
@@ -286,6 +293,15 @@ export function SalesPage() {
 
   const handleCancelSale = async () => {
     if (!selectedSale) return;
+
+    // Check permission before API call
+    if (!hasPermission(PermissionCode.SALES_UPDATE)) {
+      toast.error("Sizda bu amalni bajarish huquqi yo'q", {
+        icon: '🔒',
+      });
+      return;
+    }
+
     setCancelling(true);
     try {
       await salesApi.cancel(selectedSale.id);
@@ -293,9 +309,13 @@ export function SalesPage() {
       setShowCancelModal(false);
       setSelectedSale(null);
       loadSales();
-    } catch (error) {
+    } catch (error: unknown) {
+      const err = error as { response?: { status?: number; data?: { message?: string } } };
+      // Skip toast for 403 errors (axios interceptor handles them)
+      if (err.response?.status !== 403) {
+        toast.error(err.response?.data?.message || 'Sotuvni bekor qilishda xatolik');
+      }
       console.error('Failed to cancel sale:', error);
-      toast.error('Sotuvni bekor qilishda xatolik');
     } finally {
       setCancelling(false);
     }
@@ -311,10 +331,12 @@ export function SalesPage() {
         </div>
         <div className="flex flex-wrap items-center gap-2">
           <span className="pill">{totalElements} ta sotuv</span>
-          <Link to="/pos" className="btn btn-primary">
-            <ShoppingCart className="h-5 w-5" />
-            Kassa (POS)
-          </Link>
+          <PermissionGate permission={PermissionCode.SALES_CREATE}>
+            <Link to="/pos" className="btn btn-primary">
+              <ShoppingCart className="h-5 w-5" />
+              Kassa (POS)
+            </Link>
+          </PermissionGate>
         </div>
       </div>
 

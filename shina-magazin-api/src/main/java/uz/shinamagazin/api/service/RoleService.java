@@ -17,6 +17,7 @@ import uz.shinamagazin.api.repository.PermissionRepository;
 import uz.shinamagazin.api.repository.RoleRepository;
 import uz.shinamagazin.api.repository.UserRepository;
 
+import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
@@ -32,6 +33,8 @@ public class RoleService {
     private final UserRepository userRepository;
     private final PermissionService permissionService;
     private final AuditLogService auditLogService;
+    private final NotificationDispatcher notificationDispatcher;
+    private final UserService userService;
 
     /**
      * Get all active roles
@@ -160,6 +163,21 @@ public class RoleService {
         // Clear permissions cache for all users with this role
         permissionService.clearUserPermissionsCache();
 
+        // Notify all users who have this role
+        RoleEntity finalRole = role;
+        Set<Long> affectedUserIds = roleRepository.findById(id)
+                .map(r -> r.getUsers().stream()
+                        .map(User::getId)
+                        .collect(Collectors.toSet()))
+                .orElse(Collections.emptySet());
+
+        if (!affectedUserIds.isEmpty()) {
+            notificationDispatcher.notifyMultipleUsersPermissionsUpdated(
+                    affectedUserIds,
+                    String.format("Rol '%s' huquqlari admin tomonidan yangilandi", finalRole.getName())
+            );
+        }
+
         // Log audit
         auditLogService.log("ROLE", role.getId(), "UPDATE", oldRole, role, currentUserId);
 
@@ -216,6 +234,17 @@ public class RoleService {
         // Clear user's permissions cache
         permissionService.clearUserPermissionsCache(userId);
 
+        // Notify user of new permissions
+        Set<String> permissions = permissionService.getUserPermissionCodes(userId);
+        Set<String> roles = userService.getUserRoles(userId);
+
+        notificationDispatcher.notifyPermissionsUpdated(
+                userId,
+                permissions,
+                roles,
+                String.format("'%s' roli admin tomonidan biriktirildi", role.getName())
+        );
+
         // Log audit
         auditLogService.log("USER_ROLE", userId, "ASSIGN",
                 null, "Role assigned: " + role.getCode(), currentUserId);
@@ -239,6 +268,17 @@ public class RoleService {
 
         // Clear user's permissions cache
         permissionService.clearUserPermissionsCache(userId);
+
+        // Notify user of permission change
+        Set<String> permissions = permissionService.getUserPermissionCodes(userId);
+        Set<String> roles = userService.getUserRoles(userId);
+
+        notificationDispatcher.notifyPermissionsUpdated(
+                userId,
+                permissions,
+                roles,
+                String.format("'%s' roli admin tomonidan olib tashlandi", role.getName())
+        );
 
         // Log audit
         auditLogService.log("USER_ROLE", userId, "REMOVE",
