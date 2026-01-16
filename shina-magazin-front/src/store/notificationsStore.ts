@@ -209,7 +209,7 @@ export const useNotificationsStore = create<NotificationsState>((set, get) => ({
           console.log('[NotificationsStore] setAuth completed');
 
           // Show toast notification
-          toast.info(
+          toast(
             permissionUpdate.reason || 'Sizning kirish huquqlaringiz yangilandi',
             {
               duration: 5000,
