@@ -66,7 +66,6 @@ export function PermissionGate({
 
   if (permissions.length === 1) {
     hasAccess = userPermissions.has(permissions[0]);
-    console.log(`[PermissionGate] Checking ${permissions[0]}: ${hasAccess} (total permissions: ${userPermissions.size})`);
   } else if (requireAll) {
     hasAccess = permissions.every(p => userPermissions.has(p));
   } else {

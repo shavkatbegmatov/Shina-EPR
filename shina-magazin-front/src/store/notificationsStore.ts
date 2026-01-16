@@ -190,13 +190,9 @@ export const useNotificationsStore = create<NotificationsState>((set, get) => ({
       },
       // Permission update callback
       (permissionUpdate: PermissionUpdateMessage) => {
-        console.log('[NotificationsStore] Permission update received:', permissionUpdate);
-
         // Update authStore with new permissions
         const authState = useAuthStore.getState();
         if (authState.user && authState.accessToken && authState.refreshToken) {
-          console.log('[NotificationsStore] Calling setAuth with', permissionUpdate.permissions.length, 'permissions');
-
           // Call setAuth to properly update state and trigger persist
           authState.setAuth(
             authState.user,
@@ -205,8 +201,6 @@ export const useNotificationsStore = create<NotificationsState>((set, get) => ({
             permissionUpdate.permissions,
             permissionUpdate.roles
           );
-
-          console.log('[NotificationsStore] setAuth completed');
 
           // Show toast notification
           toast(

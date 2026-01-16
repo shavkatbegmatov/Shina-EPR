@@ -30,10 +30,6 @@ export const useAuthStore = create<AuthState>()(
       setAuth: (user, accessToken, refreshToken, permissions = [], roles = []) => {
         localStorage.setItem('accessToken', accessToken);
         localStorage.setItem('refreshToken', refreshToken);
-
-        console.log('[AuthStore] setAuth called with', permissions.length, 'permissions');
-        console.log('[AuthStore] Has EMPLOYEES_UPDATE?', permissions.includes('EMPLOYEES_UPDATE'));
-
         set({
           user,
           accessToken,
@@ -42,8 +38,6 @@ export const useAuthStore = create<AuthState>()(
           roles: new Set(roles),
           isAuthenticated: true,
         });
-
-        console.log('[AuthStore] State updated, permissions Set size:', get().permissions.size);
       },
 
       logout: () => {
