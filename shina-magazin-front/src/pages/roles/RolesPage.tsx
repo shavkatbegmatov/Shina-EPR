@@ -271,7 +271,7 @@ export function RolesPage() {
           <span className="loading loading-spinner loading-lg" />
         </div>
       ) : (
-        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5">
+        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
           {roles?.content?.map((role) => (
             <div
               key={role.id}
@@ -352,7 +352,7 @@ export function RolesPage() {
 
       {/* Create/Edit Modal */}
       <ModalPortal isOpen={showModal} onClose={closeModal}>
-        <div className="w-full max-w-6xl bg-base-100 rounded-2xl shadow-2xl max-h-[90vh] overflow-y-auto">
+        <div className="w-full max-w-7xl bg-base-100 rounded-2xl shadow-2xl max-h-[90vh] overflow-y-auto">
           <div className="p-4 sm:p-6">
             <div className="flex items-start justify-between gap-4">
               <div>
@@ -457,7 +457,7 @@ export function RolesPage() {
                         ({permissions.length})
                       </span>
                     </label>
-                    <div className="mt-1 ml-6 grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-1">
+                    <div className="mt-1 ml-6 grid grid-cols-2 sm:grid-cols-3 gap-1">
                       {permissions.map((permission) => (
                         <label
                           key={permission.code}
@@ -504,7 +504,7 @@ export function RolesPage() {
 
       {/* View Modal - Read-only role details */}
       <ModalPortal isOpen={showViewModal} onClose={closeViewModal}>
-        <div className="w-full max-w-6xl bg-base-100 rounded-2xl shadow-2xl max-h-[90vh] overflow-y-auto">
+        <div className="w-full max-w-7xl bg-base-100 rounded-2xl shadow-2xl max-h-[90vh] overflow-y-auto">
           <div className="p-4 sm:p-6">
             {/* Header */}
             <div className="flex items-start justify-between gap-4 mb-6">
@@ -757,7 +757,7 @@ export function RolesPage() {
                                 }
                               </span>
                             </h5>
-                            <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+                            <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
                               {permissions.map((permission) => {
                                 const isAssigned = rolePermCodes.has(permission.code);
                                 return (
