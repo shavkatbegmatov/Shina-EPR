@@ -7,6 +7,7 @@ import org.springframework.stereotype.Service;
 import uz.shinamagazin.api.dto.response.NotificationResponse;
 import uz.shinamagazin.api.dto.response.StaffNotificationResponse;
 import uz.shinamagazin.api.dto.websocket.PermissionUpdateMessage;
+import uz.shinamagazin.api.dto.websocket.SessionUpdateMessage;
 import uz.shinamagazin.api.entity.CustomerNotification;
 import uz.shinamagazin.api.entity.StaffNotification;
 
@@ -124,5 +125,29 @@ public class NotificationDispatcher {
 
             notifyPermissionsUpdated(userId, permissions, roles, reason);
         });
+    }
+
+    /**
+     * Notify user of session update (revocation or creation)
+     *
+     * @param userId User ID whose session was updated
+     * @param message Session update message
+     */
+    public void notifySessionUpdate(Long userId, SessionUpdateMessage message) {
+        try {
+            log.info("Notifying user {} of session update: {}", userId, message.getType());
+
+            // Send to user's personal queue
+            // Destination: /user/{userId}/queue/sessions
+            messagingTemplate.convertAndSendToUser(
+                    userId.toString(),
+                    "/queue/sessions",
+                    message
+            );
+
+            log.debug("Session update notification sent to user {}: {}", userId, message.getType());
+        } catch (Exception e) {
+            log.error("Failed to send session update notification to user {}", userId, e);
+        }
     }
 }

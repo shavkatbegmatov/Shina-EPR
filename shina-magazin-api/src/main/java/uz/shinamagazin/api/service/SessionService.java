@@ -5,6 +5,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import uz.shinamagazin.api.dto.websocket.SessionUpdateMessage;
 import uz.shinamagazin.api.entity.Session;
 import uz.shinamagazin.api.entity.User;
 import uz.shinamagazin.api.exception.ResourceNotFoundException;
@@ -25,6 +26,7 @@ public class SessionService {
 
     private final SessionRepository sessionRepository;
     private final UserAgentParser userAgentParser;
+    private final NotificationDispatcher notificationDispatcher;
 
     /**
      * Create a new session when user logs in
@@ -76,6 +78,10 @@ public class SessionService {
         }
 
         log.info("Session {} revoked by user {}: {}", sessionId, userId, reason);
+
+        // Notify user via WebSocket for real-time update
+        SessionUpdateMessage message = SessionUpdateMessage.sessionRevoked(sessionId, userId, reason);
+        notificationDispatcher.notifySessionUpdate(userId, message);
     }
 
     /**
@@ -92,6 +98,17 @@ public class SessionService {
         );
 
         log.info("Revoked {} sessions for user {}", count, userId);
+
+        // Notify user via WebSocket for real-time update (multiple sessions revoked)
+        if (count > 0) {
+            SessionUpdateMessage message = SessionUpdateMessage.sessionRevoked(
+                    null, // Multiple sessions, no single ID
+                    userId,
+                    "Logged out from all other devices (" + count + " sessions)"
+            );
+            notificationDispatcher.notifySessionUpdate(userId, message);
+        }
+
         return count;
     }
 

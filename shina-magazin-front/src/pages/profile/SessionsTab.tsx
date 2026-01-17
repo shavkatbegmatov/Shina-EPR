@@ -17,6 +17,7 @@ import { sessionsApi, type Session } from '../../api/sessions.api';
 import { useAuthStore } from '../../store/authStore';
 import { formatDistanceToNow } from 'date-fns';
 import { uz } from 'date-fns/locale';
+import type { SessionUpdateMessage } from '../../services/websocket';
 
 export function SessionsTab() {
   const [sessions, setSessions] = useState<Session[]>([]);
@@ -28,6 +29,32 @@ export function SessionsTab() {
 
   useEffect(() => {
     fetchSessions();
+
+    // Listen for session updates via custom event (dispatched from notificationsStore)
+    const handleSessionUpdate = (event: Event) => {
+      const customEvent = event as CustomEvent<SessionUpdateMessage>;
+      const data = customEvent.detail;
+
+      console.log('[SessionsTab] Session update received:', data.type);
+
+      if (data.type === 'SESSION_REVOKED') {
+        // Session revoked - refresh list immediately
+        toast.info('Sessiya yangilandi', { icon: '🔄' });
+        fetchSessions();
+      } else if (data.type === 'SESSION_CREATED') {
+        // New session created - refresh list
+        toast.info('Yangi sessiya yaratildi', { icon: '✨' });
+        fetchSessions();
+      }
+    };
+
+    // Register window event listener
+    window.addEventListener('session-update', handleSessionUpdate);
+
+    // Cleanup
+    return () => {
+      window.removeEventListener('session-update', handleSessionUpdate);
+    };
   }, []);
 
   const fetchSessions = async () => {

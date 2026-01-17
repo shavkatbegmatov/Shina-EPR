@@ -1,7 +1,7 @@
 import { create } from 'zustand';
 import toast from 'react-hot-toast';
 import { notificationsApi, type StaffNotification, type StaffNotificationType } from '../api/notifications.api';
-import { webSocketService, type WebSocketNotification, type PermissionUpdateMessage } from '../services/websocket';
+import { webSocketService, type WebSocketNotification, type PermissionUpdateMessage, type SessionUpdateMessage } from '../services/websocket';
 import { useAuthStore } from './authStore';
 
 // Frontend uchun notification type mapping
@@ -224,6 +224,15 @@ export const useNotificationsStore = create<NotificationsState>((set, get) => ({
         } catch (error) {
           console.error('[Permissions] Error updating permissions:', error);
         }
+      },
+      // Session update callback
+      (sessionUpdate: SessionUpdateMessage) => {
+        console.log('[Session] Update received:', sessionUpdate.type);
+
+        // Dispatch custom event for SessionsTab to listen
+        window.dispatchEvent(
+          new CustomEvent('session-update', { detail: sessionUpdate })
+        );
       },
       // Connection status callback
       (connected) => {

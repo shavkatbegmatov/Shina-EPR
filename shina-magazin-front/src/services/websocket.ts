@@ -21,14 +21,25 @@ export interface PermissionUpdateMessage {
   timestamp: number;
 }
 
+// Session update message turi
+export interface SessionUpdateMessage {
+  type: 'SESSION_REVOKED' | 'SESSION_CREATED';
+  sessionId: number | null;
+  userId: number;
+  reason: string;
+  timestamp: number;
+}
+
 type NotificationCallback = (notification: WebSocketNotification) => void;
 type PermissionUpdateCallback = (data: PermissionUpdateMessage) => void;
+type SessionUpdateCallback = (data: SessionUpdateMessage) => void;
 type ConnectionStatusCallback = (connected: boolean) => void;
 
 class WebSocketService {
   private client: Client | null = null;
   private notificationCallback: NotificationCallback | null = null;
   private permissionUpdateCallback: PermissionUpdateCallback | null = null;
+  private sessionUpdateCallback: SessionUpdateCallback | null = null;
   private connectionStatusCallback: ConnectionStatusCallback | null = null;
 
   /**
@@ -38,10 +49,12 @@ class WebSocketService {
     token: string,
     onNotification: NotificationCallback,
     onPermissionUpdate?: PermissionUpdateCallback,
+    onSessionUpdate?: SessionUpdateCallback,
     onConnectionStatus?: ConnectionStatusCallback
   ) {
     this.notificationCallback = onNotification;
     this.permissionUpdateCallback = onPermissionUpdate || null;
+    this.sessionUpdateCallback = onSessionUpdate || null;
     this.connectionStatusCallback = onConnectionStatus || null;
 
     // Agar allaqachon ulanish mavjud bo'lsa, avval uzib tashlaymiz
@@ -85,6 +98,11 @@ class WebSocketService {
         // Foydalanuvchi huquqlari yangilanishi
         this.client?.subscribe('/user/queue/permissions', (message: IMessage) => {
           this.handlePermissionUpdate(message);
+        });
+
+        // Foydalanuvchi sessiyalari yangilanishi
+        this.client?.subscribe('/user/queue/sessions', (message: IMessage) => {
+          this.handleSessionUpdate(message);
         });
       },
 
@@ -139,6 +157,25 @@ class WebSocketService {
   }
 
   /**
+   * Session yangilanishini qabul qilish
+   */
+  private handleSessionUpdate(message: IMessage) {
+    try {
+      const data = JSON.parse(message.body) as SessionUpdateMessage;
+      console.log('[WebSocket] Session update received:', data.type);
+
+      // Callback chaqirish (SessionsTab ni yangilash uchun)
+      if (this.sessionUpdateCallback) {
+        this.sessionUpdateCallback(data);
+      } else {
+        console.warn('[WebSocket] Session update callback not registered');
+      }
+    } catch (error) {
+      console.error('[WebSocket] Error handling session update:', error);
+    }
+  }
+
+  /**
    * WebSocket ulanishini uzish
    */
   disconnect() {
@@ -148,6 +185,7 @@ class WebSocketService {
     }
     this.notificationCallback = null;
     this.permissionUpdateCallback = null;
+    this.sessionUpdateCallback = null;
     this.connectionStatusCallback = null;
   }
 
