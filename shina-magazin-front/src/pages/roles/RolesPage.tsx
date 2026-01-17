@@ -36,6 +36,7 @@ export function RolesPage() {
   const [showViewModal, setShowViewModal] = useState(false);
   const [viewingRole, setViewingRole] = useState<Role | null>(null);
   const [showAllPermissions, setShowAllPermissions] = useState(false);
+  const [showUsersPopover, setShowUsersPopover] = useState(false);
 
   const queryClient = useQueryClient();
 
@@ -594,16 +595,101 @@ export function RolesPage() {
                   </div>
                 </div>
 
-                <div className="flex items-center gap-3 p-4 bg-base-200 rounded-lg">
-                  <div className="grid h-10 w-10 place-items-center rounded-lg bg-secondary/15 text-secondary">
-                    <Users className="h-5 w-5" />
-                  </div>
-                  <div>
-                    <p className="text-sm text-base-content/60">Foydalanuvchilar</p>
-                    <p className="text-2xl font-semibold">
-                      {fullRoleDetails?.userCount || viewingRole?.userCount || 0}
-                    </p>
-                  </div>
+                <div className="relative">
+                  <button
+                    className={`flex items-center gap-3 p-4 rounded-lg w-full text-left transition-all ${
+                      (fullRoleDetails?.userCount || 0) > 0
+                        ? 'bg-base-200 hover:bg-base-300 cursor-pointer'
+                        : 'bg-base-200 cursor-default'
+                    }`}
+                    onClick={() => {
+                      if ((fullRoleDetails?.userCount || 0) > 0) {
+                        setShowUsersPopover(!showUsersPopover);
+                      }
+                    }}
+                    disabled={(fullRoleDetails?.userCount || 0) === 0}
+                  >
+                    <div className="grid h-10 w-10 place-items-center rounded-lg bg-secondary/15 text-secondary">
+                      <Users className="h-5 w-5" />
+                    </div>
+                    <div className="flex-1">
+                      <p className="text-sm text-base-content/60">Foydalanuvchilar</p>
+                      <p className="text-2xl font-semibold">
+                        {fullRoleDetails?.userCount || viewingRole?.userCount || 0}
+                      </p>
+                    </div>
+                    {(fullRoleDetails?.userCount || 0) > 0 && (
+                      <svg
+                        className={`h-5 w-5 text-base-content/40 transition-transform ${
+                          showUsersPopover ? 'rotate-180' : ''
+                        }`}
+                        fill="none"
+                        viewBox="0 0 24 24"
+                        stroke="currentColor"
+                      >
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                      </svg>
+                    )}
+                  </button>
+
+                  {/* Users Popover */}
+                  {showUsersPopover && fullRoleDetails?.users && fullRoleDetails.users.length > 0 && (
+                    <div className="absolute top-full left-0 right-0 mt-2 z-10 bg-base-100 rounded-lg shadow-xl border border-base-300 max-h-80 overflow-y-auto">
+                      <div className="p-3">
+                        <div className="flex items-center justify-between mb-3 pb-2 border-b border-base-300">
+                          <h5 className="font-semibold text-sm">Biriktirilgan foydalanuvchilar</h5>
+                          <button
+                            className="btn btn-ghost btn-xs"
+                            onClick={() => setShowUsersPopover(false)}
+                          >
+                            <X className="h-3 w-3" />
+                          </button>
+                        </div>
+                        <div className="space-y-2">
+                          {fullRoleDetails.users.map((user) => (
+                            <div
+                              key={user.id}
+                              className={`flex items-start gap-2 p-2 rounded-lg transition-all ${
+                                user.active
+                                  ? 'bg-base-200 hover:bg-base-300'
+                                  : 'bg-base-200/50 opacity-60'
+                              }`}
+                            >
+                              <div className={`grid h-8 w-8 flex-shrink-0 place-items-center rounded-full ${
+                                user.active
+                                  ? 'bg-primary/15 text-primary'
+                                  : 'bg-base-300 text-base-content/40'
+                              }`}>
+                                <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                                </svg>
+                              </div>
+                              <div className="min-w-0 flex-1">
+                                <div className="flex items-center gap-2">
+                                  <p className="text-sm font-medium truncate">
+                                    {user.fullName}
+                                  </p>
+                                  {!user.active && (
+                                    <span className="badge badge-xs badge-ghost">
+                                      Faol emas
+                                    </span>
+                                  )}
+                                </div>
+                                <p className="text-xs text-base-content/60 truncate">
+                                  @{user.username}
+                                </p>
+                                {(user.email || user.phone) && (
+                                  <p className="text-xs text-base-content/50 truncate">
+                                    {user.email || user.phone}
+                                  </p>
+                                )}
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    </div>
+                  )}
                 </div>
               </div>
 
@@ -724,70 +810,6 @@ export function RolesPage() {
                         <p>Hech qanday huquq biriktirilmagan</p>
                       </div>
                     )}
-                  </div>
-                )}
-              </div>
-
-              <div className="divider"></div>
-
-              {/* Users List */}
-              <div className="space-y-4">
-                <h4 className="font-semibold text-base-content/80 flex items-center gap-2">
-                  <Users className="h-4 w-4" />
-                  Biriktirilgan foydalanuvchilar
-                </h4>
-
-                {isLoadingRoleDetails ? (
-                  <div className="flex justify-center py-8">
-                    <span className="loading loading-spinner loading-md" />
-                  </div>
-                ) : fullRoleDetails?.users && fullRoleDetails.users.length > 0 ? (
-                  <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-                    {fullRoleDetails.users.map((user) => (
-                      <div
-                        key={user.id}
-                        className={`flex items-start gap-3 p-3 rounded-lg border transition-all ${
-                          user.active
-                            ? 'bg-base-200 border-base-300'
-                            : 'bg-base-200/50 border-base-300/50 opacity-60'
-                        }`}
-                      >
-                        <div className={`grid h-10 w-10 flex-shrink-0 place-items-center rounded-full ${
-                          user.active
-                            ? 'bg-primary/15 text-primary'
-                            : 'bg-base-300 text-base-content/40'
-                        }`}>
-                          <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
-                          </svg>
-                        </div>
-                        <div className="min-w-0 flex-1">
-                          <div className="flex items-center gap-2">
-                            <p className="text-sm font-medium truncate">
-                              {user.fullName}
-                            </p>
-                            {!user.active && (
-                              <span className="badge badge-xs badge-ghost">
-                                Faol emas
-                              </span>
-                            )}
-                          </div>
-                          <p className="text-xs text-base-content/60 truncate">
-                            @{user.username}
-                          </p>
-                          {(user.email || user.phone) && (
-                            <p className="text-xs text-base-content/50 truncate mt-1">
-                              {user.email || user.phone}
-                            </p>
-                          )}
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                ) : (
-                  <div className="text-center py-8 text-base-content/60">
-                    <Users className="h-12 w-12 mx-auto mb-2 opacity-50" />
-                    <p>Hech qanday foydalanuvchi biriktirilmagan</p>
                   </div>
                 )}
               </div>
