@@ -13,8 +13,10 @@ import uz.shinamagazin.api.dto.request.LoginRequest;
 import uz.shinamagazin.api.dto.response.ApiResponse;
 import uz.shinamagazin.api.dto.response.JwtResponse;
 import uz.shinamagazin.api.dto.response.UserResponse;
+import uz.shinamagazin.api.entity.Session;
 import uz.shinamagazin.api.security.CustomUserDetails;
 import uz.shinamagazin.api.service.AuthService;
+import uz.shinamagazin.api.service.SessionService;
 import uz.shinamagazin.api.service.UserService;
 
 @RestController
@@ -25,6 +27,7 @@ public class AuthController {
 
     private final AuthService authService;
     private final UserService userService;
+    private final SessionService sessionService;
 
     @PostMapping("/login")
     @Operation(summary = "Login", description = "Foydalanuvchi tizimga kirish")
@@ -51,6 +54,28 @@ public class AuthController {
     public ResponseEntity<ApiResponse<UserResponse>> getCurrentUser() {
         UserResponse response = authService.getCurrentUser();
         return ResponseEntity.ok(ApiResponse.success(response));
+    }
+
+    @PostMapping("/logout")
+    @Operation(summary = "Logout", description = "Tizimdan chiqish va joriy sessionni bekor qilish")
+    public ResponseEntity<ApiResponse<Void>> logout(
+            @AuthenticationPrincipal CustomUserDetails userDetails,
+            @RequestHeader("Authorization") String authHeader
+    ) {
+        String currentToken = authHeader.substring(7); // Remove "Bearer "
+
+        // Find and revoke current session
+        Session currentSession = sessionService.getSessionByToken(currentToken).orElse(null);
+
+        if (currentSession != null) {
+            sessionService.revokeSession(
+                currentSession.getId(),
+                userDetails.getUser().getId(),
+                "User logged out"
+            );
+        }
+
+        return ResponseEntity.ok(ApiResponse.success("Muvaffaqiyatli chiqish"));
     }
 
     @PostMapping("/change-password")

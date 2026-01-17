@@ -23,9 +23,11 @@ import { useAuthStore } from '../../store/authStore';
 import { useUIStore } from '../../store/uiStore';
 import { useNotificationsStore, type Notification } from '../../store/notificationsStore';
 import { rolesApi } from '../../api/roles.api';
+import { authApi } from '../../api/auth.api';
 import { ROLES } from '../../config/constants';
 import { SearchCommand } from '../common/SearchCommand';
 import type { Role } from '../../types';
+import toast from 'react-hot-toast';
 
 const getNotificationIcon = (type: Notification['type']) => {
   switch (type) {
@@ -156,9 +158,18 @@ export function Header() {
     user?.username?.charAt(0)?.toUpperCase() ||
     '?';
 
-  const handleLogout = () => {
-    logout();
-    navigate('/login');
+  const handleLogout = async () => {
+    try {
+      // Revoke session in backend database
+      await authApi.logout();
+    } catch (error) {
+      console.error('Logout API error:', error);
+      // Continue with logout even if API call fails (network issues, etc.)
+    } finally {
+      // Clear frontend state and redirect
+      logout();
+      navigate('/login');
+    }
   };
 
   const toggleTheme = () => {
