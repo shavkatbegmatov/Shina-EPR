@@ -181,9 +181,6 @@ export const useNotificationsStore = create<NotificationsState>((set, get) => ({
 
   // WebSocket ulanishini boshlash
   connectWebSocket: (token) => {
-    console.log('🔌 notificationsStore.connectWebSocket called - NEW CODE VERSION 2');
-    console.log('  Token:', token?.substring(0, 20) + '...');
-
     webSocketService.connect(
       token,
       // Notification callback
@@ -194,10 +191,6 @@ export const useNotificationsStore = create<NotificationsState>((set, get) => ({
       // Permission update callback
       (permissionUpdate: PermissionUpdateMessage) => {
         try {
-          console.log('📩 Permission update callback triggered - START');
-          console.log('  PermissionUpdate type:', typeof permissionUpdate);
-          console.log('  Update:', permissionUpdate);
-
           // Update authStore with new permissions
           const authState = useAuthStore.getState();
 
@@ -205,14 +198,7 @@ export const useNotificationsStore = create<NotificationsState>((set, get) => ({
           const accessToken = localStorage.getItem('accessToken');
           const refreshToken = localStorage.getItem('refreshToken');
 
-          console.log('  Current authState:', {
-            hasUser: !!authState.user,
-            hasTokensInLocalStorage: !!(accessToken && refreshToken),
-          });
-
           if (authState.user && accessToken && refreshToken) {
-            console.log('  ✅ Calling authState.setAuth...');
-
             // Call setAuth to properly update state and trigger persist
             authState.setAuth(
               authState.user,
@@ -222,8 +208,6 @@ export const useNotificationsStore = create<NotificationsState>((set, get) => ({
               permissionUpdate.roles
             );
 
-            console.log('  ✅ authState.setAuth completed');
-
             // Show toast notification
             toast(
               permissionUpdate.reason || 'Sizning kirish huquqlaringiz yangilandi',
@@ -232,11 +216,13 @@ export const useNotificationsStore = create<NotificationsState>((set, get) => ({
                 icon: '🔐',
               }
             );
+
+            console.log('[Permissions] Updated permissions in real-time');
           } else {
-            console.log('  ❌ Cannot update - user or tokens missing');
+            console.warn('[Permissions] Cannot update - user or tokens missing');
           }
         } catch (error) {
-          console.error('❌❌❌ ERROR in permission update callback:', error);
+          console.error('[Permissions] Error updating permissions:', error);
         }
       },
       // Connection status callback

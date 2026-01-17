@@ -103,8 +103,6 @@ export function Header() {
 
   // WebSocket ulanishini boshlash va dastlabki ma'lumotlarni yuklash
   useEffect(() => {
-    console.log('🎯 Header useEffect running - fetching data and connecting WebSocket');
-
     const fetchData = async () => {
       // Fetch roles
       try {
@@ -120,7 +118,6 @@ export function Header() {
       // WebSocket ulanishini boshlash (localStorage'dan token olish)
       const token = localStorage.getItem('accessToken');
       if (token) {
-        console.log('🎯 Header: calling connectWebSocket');
         connectWebSocket(token);
       }
     };
@@ -128,7 +125,6 @@ export function Header() {
     fetchData();
 
     return () => {
-      console.log('🎯 Header useEffect cleanup - disconnecting WebSocket');
       disconnectWebSocket();
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
