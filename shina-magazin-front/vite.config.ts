@@ -8,7 +8,8 @@ export default defineConfig({
     global: 'globalThis',
   },
   server: {
-    port: 5173,
+    // Port removed - Vite will use any available port (default 5173)
+    // This allows flexibility when multiple dev servers are running
     proxy: {
       '/api': {
         target: 'http://localhost:8080',
