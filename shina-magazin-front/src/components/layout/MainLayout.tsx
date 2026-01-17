@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { Outlet, Navigate, useLocation } from 'react-router-dom';
 import { useAuthStore } from '../../store/authStore';
 import { useSessionMonitor } from '../../hooks/useSessionMonitor';
+import { useCrossTabSync } from '../../hooks/useCrossTabSync';
 import { Sidebar } from './Sidebar';
 import { Header } from './Header';
 import { Footer } from './Footer';
@@ -21,6 +22,11 @@ export function MainLayout() {
     pollingInterval: 60000, // 60 seconds
     checkOnFocus: true,
   });
+
+  // Cross-tab session synchronization:
+  // - Detects logout in other tabs and syncs immediately
+  // - Prevents user from being logged in on one tab and logged out on another
+  useCrossTabSync();
 
   // Show password change modal if user must change password
   useEffect(() => {
