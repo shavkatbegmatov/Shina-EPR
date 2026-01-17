@@ -10,6 +10,7 @@ import {
   AlertTriangle,
   Loader2,
   CheckCircle,
+  RefreshCw,
 } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { sessionsApi, type Session } from '../../api/sessions.api';
@@ -43,7 +44,7 @@ export function SessionsTab() {
           navigate('/login');
         }, 1500);
       } else {
-        toast.error('Sessionlarni yuklashda xatolik');
+        toast.error('Sessiyalarni yuklashda xatolik');
       }
     } finally {
       setLoading(false);
@@ -91,7 +92,7 @@ export function SessionsTab() {
           navigate('/login');
         }, 1500);
       } else {
-        toast.error('Sessionlarni tugatishda xatolik');
+        toast.error('Sessiyalarni tugatishda xatolik');
       }
     } finally {
       setRevokingAll(false);
@@ -132,30 +133,41 @@ export function SessionsTab() {
       {/* Header */}
       <div className="flex items-start justify-between">
         <div>
-          <h3 className="text-lg font-semibold">Faol sessionlar</h3>
+          <h3 className="text-lg font-semibold">Faol sessiyalar</h3>
           <p className="text-sm text-base-content/60 mt-1">
-            Barcha kirish sessionlarini boshqaring va xavfsizligingizni ta'minlang
+            Barcha kirish sessiyalarini boshqaring va xavfsizligingizni ta'minlang
           </p>
         </div>
-        {otherSessions.length > 0 && (
+        <div className="flex items-center gap-2">
           <button
-            className="btn btn-error btn-sm"
-            onClick={handleRevokeAllOthers}
-            disabled={revokingAll}
+            className="btn btn-ghost btn-sm"
+            onClick={fetchSessions}
+            disabled={loading}
+            title="Yangilash"
           >
-            {revokingAll ? (
-              <>
-                <Loader2 className="h-4 w-4 animate-spin" />
-                Tugatilmoqda...
-              </>
-            ) : (
-              <>
-                <LogOut className="h-4 w-4" />
-                Barchasidan chiqish
-              </>
-            )}
+            <RefreshCw className={`h-4 w-4 ${loading ? 'animate-spin' : ''}`} />
+            Yangilash
           </button>
-        )}
+          {otherSessions.length > 0 && (
+            <button
+              className="btn btn-error btn-sm"
+              onClick={handleRevokeAllOthers}
+              disabled={revokingAll}
+            >
+              {revokingAll ? (
+                <>
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                  Tugatilmoqda...
+                </>
+              ) : (
+                <>
+                  <LogOut className="h-4 w-4" />
+                  Barchasidan chiqish
+                </>
+              )}
+            </button>
+          )}
+        </div>
       </div>
 
       {/* Current Session */}
@@ -256,7 +268,7 @@ export function SessionsTab() {
       ) : (
         <div className="surface-card p-12 text-center">
           <AlertTriangle className="h-12 w-12 mx-auto text-base-content/30" />
-          <h4 className="text-lg font-semibold mt-4">Boshqa sessionlar yo'q</h4>
+          <h4 className="text-lg font-semibold mt-4">Boshqa sessiyalar yo'q</h4>
           <p className="text-sm text-base-content/60 mt-2">
             Faqat hozirgi qurilmadan kirilgan
           </p>

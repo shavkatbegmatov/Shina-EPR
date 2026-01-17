@@ -200,7 +200,7 @@ export function ProfilePage() {
           onClick={() => setActiveTab('sessions')}
         >
           <Monitor className="h-4 w-4" />
-          Sessionlar
+          Sessiyalar
         </button>
       </div>
 
