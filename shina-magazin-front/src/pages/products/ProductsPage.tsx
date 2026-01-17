@@ -10,6 +10,8 @@ import { SearchInput } from '../../components/ui/SearchInput';
 import { DataTable, Column } from '../../components/ui/DataTable';
 import { ModalPortal } from '../../components/common/Modal';
 import { useNotificationsStore } from '../../store/notificationsStore';
+import { usePermission, PermissionCode } from '../../hooks/usePermission';
+import { PermissionGate } from '../../components/common/PermissionGate';
 import { useHighlight } from '../../hooks/useHighlight';
 import type { Product, Brand, Category, Season, ProductRequest } from '../../types';
 
@@ -40,7 +42,13 @@ export function ProductsPage() {
   const [saving, setSaving] = useState(false);
 
   const { notifications } = useNotificationsStore();
+  const { hasPermission } = usePermission();
   const { highlightId, clearHighlight } = useHighlight();
+
+  // Early return if no VIEW permission - prevents API calls
+  if (!hasPermission(PermissionCode.PRODUCTS_VIEW)) {
+    return null;
+  }
 
   const activeFilters = useMemo(() => {
     let count = 0;
@@ -109,7 +117,9 @@ export function ProductsPage() {
           <button className="btn btn-ghost btn-sm" onClick={(e) => { e.stopPropagation(); setSelectedProduct(product); }}>
             Tafsilotlar
           </button>
-          <button className="btn btn-ghost btn-sm" onClick={(e) => { e.stopPropagation(); handleEditProduct(product); }}>Tahrirlash</button>
+          <PermissionGate permission={PermissionCode.PRODUCTS_UPDATE}>
+            <button className="btn btn-ghost btn-sm" onClick={(e) => { e.stopPropagation(); handleEditProduct(product); }}>Tahrirlash</button>
+          </PermissionGate>
         </div>
       ),
     },
@@ -257,10 +267,12 @@ export function ProductsPage() {
               Filtrlarni tozalash
             </button>
           )}
-          <button className="btn btn-primary" onClick={handleOpenNewProductModal}>
-            <Plus className="h-5 w-5" />
-            Yangi mahsulot
-          </button>
+          <PermissionGate permission={PermissionCode.PRODUCTS_CREATE}>
+            <button className="btn btn-primary" onClick={handleOpenNewProductModal}>
+              <Plus className="h-5 w-5" />
+              Yangi mahsulot
+            </button>
+          </PermissionGate>
         </div>
       </div>
 
@@ -366,7 +378,9 @@ export function ProductsPage() {
                 <button className="btn btn-ghost btn-sm min-h-[44px]" onClick={() => setSelectedProduct(product)}>
                   Tafsilotlar
                 </button>
-                <button className="btn btn-ghost btn-sm min-h-[44px]" onClick={() => handleEditProduct(product)}>Tahrirlash</button>
+                <PermissionGate permission={PermissionCode.PRODUCTS_UPDATE}>
+                  <button className="btn btn-ghost btn-sm min-h-[44px]" onClick={() => handleEditProduct(product)}>Tahrirlash</button>
+                </PermissionGate>
               </div>
             </div>
           </div>

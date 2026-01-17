@@ -27,6 +27,8 @@ import { ModalPortal } from '../../components/common/Modal';
 import type { Debt, DebtStatus, Payment, PaymentMethod } from '../../types';
 import { useNotificationsStore } from '../../store/notificationsStore';
 import { useHighlight } from '../../hooks/useHighlight';
+import { usePermission, PermissionCode } from '../../hooks/usePermission';
+import { PermissionGate } from '../../components/common/PermissionGate';
 
 type TabType = 'all' | 'by-customer' | 'overdue' | 'stats';
 
@@ -73,6 +75,12 @@ export function DebtsPage() {
   const [, setTotalActiveDebt] = useState(0);
 
   const { highlightId, clearHighlight } = useHighlight();
+  const { hasPermission } = usePermission();
+
+  // Early return if no VIEW permission - prevents API calls
+  if (!hasPermission(PermissionCode.DEBTS_VIEW)) {
+    return null;
+  }
 
   // Tabs configuration
   const tabs = [
@@ -448,20 +456,24 @@ export function DebtsPage() {
 
           {selectedDebt.status !== 'PAID' && (
             <div className="flex gap-2">
-              <button
-                className="btn btn-primary flex-1"
-                onClick={() => handleOpenPaymentModal(false)}
-              >
-                <Wallet className="h-4 w-4" />
-                Qisman to'lash
-              </button>
-              <button
-                className="btn btn-success flex-1"
-                onClick={() => handleOpenPaymentModal(true)}
-              >
-                <CheckCircle className="h-4 w-4" />
-                To'liq to'lash
-              </button>
+              <PermissionGate permission={PermissionCode.DEBTS_PAY}>
+                <button
+                  className="btn btn-primary flex-1"
+                  onClick={() => handleOpenPaymentModal(false)}
+                >
+                  <Wallet className="h-4 w-4" />
+                  Qisman to'lash
+                </button>
+              </PermissionGate>
+              <PermissionGate permission={PermissionCode.DEBTS_PAY}>
+                <button
+                  className="btn btn-success flex-1"
+                  onClick={() => handleOpenPaymentModal(true)}
+                >
+                  <CheckCircle className="h-4 w-4" />
+                  To'liq to'lash
+                </button>
+              </PermissionGate>
             </div>
           )}
 

@@ -21,6 +21,8 @@ import { NumberInput } from '../../components/ui/NumberInput';
 import { Select } from '../../components/ui/Select';
 import { ModalPortal } from '../../components/common/Modal';
 import { useUIStore } from '../../store/uiStore';
+import { usePermission, PermissionCode } from '../../hooks/usePermission';
+import { PermissionGate } from '../../components/common/PermissionGate';
 import type { Brand, Category } from '../../types';
 
 type Tab = 'appearance' | 'brands' | 'categories' | 'debts';
@@ -43,6 +45,12 @@ const DEFAULT_DEBT_DUE_DAYS = 30;
 export function SettingsPage() {
   const [activeTab, setActiveTab] = useState<Tab>('appearance');
   const { themeMode, setThemeMode } = useUIStore();
+  const { hasPermission } = usePermission();
+
+  // Early return if no VIEW permission - prevents API calls
+  if (!hasPermission(PermissionCode.SETTINGS_VIEW)) {
+    return null;
+  }
 
   // Brands state
   const [brands, setBrands] = useState<Brand[]>([]);
@@ -604,14 +612,16 @@ export function SettingsPage() {
                   Yangi qarzlar uchun standart muddatni belgilang
                 </p>
               </div>
-              <button
-                className="btn btn-primary"
-                onClick={handleSaveSettings}
-                disabled={settingsSaving || settingsLoading}
-              >
-                {settingsSaving && <span className="loading loading-spinner loading-sm" />}
-                Saqlash
-              </button>
+              <PermissionGate permission={PermissionCode.SETTINGS_UPDATE}>
+                <button
+                  className="btn btn-primary"
+                  onClick={handleSaveSettings}
+                  disabled={settingsSaving || settingsLoading}
+                >
+                  {settingsSaving && <span className="loading loading-spinner loading-sm" />}
+                  Saqlash
+                </button>
+              </PermissionGate>
             </div>
 
             {settingsLoading ? (

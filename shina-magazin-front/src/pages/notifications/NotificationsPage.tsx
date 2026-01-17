@@ -14,6 +14,8 @@ import {
 } from 'lucide-react';
 import clsx from 'clsx';
 import { useNotificationsStore, type Notification } from '../../store/notificationsStore';
+import { usePermission, PermissionCode } from '../../hooks/usePermission';
+import { PermissionGate } from '../../components/common/PermissionGate';
 
 type NotificationType = Notification['type'];
 
@@ -86,6 +88,12 @@ export function NotificationsPage() {
     deleteNotification,
   } = useNotificationsStore();
   const [filter, setFilter] = useState<FilterType>('all');
+  const { hasPermission } = usePermission();
+
+  // Early return if no VIEW permission - prevents API calls
+  if (!hasPermission(PermissionCode.NOTIFICATIONS_VIEW)) {
+    return null;
+  }
 
   useEffect(() => {
     fetchNotifications();
@@ -218,22 +226,26 @@ export function NotificationsPage() {
                       </p>
                     </div>
                     <div className="flex items-center gap-1 flex-shrink-0">
-                      {!notification.isRead && (
+                      <PermissionGate permission={PermissionCode.NOTIFICATIONS_MANAGE}>
+                        {!notification.isRead && (
+                          <button
+                            className="btn btn-ghost btn-xs"
+                            onClick={() => markAsRead(notification.id)}
+                            title="O'qilgan qilish"
+                          >
+                            <CheckCircle className="h-4 w-4" />
+                          </button>
+                        )}
+                      </PermissionGate>
+                      <PermissionGate permission={PermissionCode.NOTIFICATIONS_MANAGE}>
                         <button
-                          className="btn btn-ghost btn-xs"
-                          onClick={() => markAsRead(notification.id)}
-                          title="O'qilgan qilish"
+                          className="btn btn-ghost btn-xs text-error"
+                          onClick={() => deleteNotification(notification.id)}
+                          title="O'chirish"
                         >
-                          <CheckCircle className="h-4 w-4" />
+                          <Trash2 className="h-4 w-4" />
                         </button>
-                      )}
-                      <button
-                        className="btn btn-ghost btn-xs text-error"
-                        onClick={() => deleteNotification(notification.id)}
-                        title="O'chirish"
-                      >
-                        <Trash2 className="h-4 w-4" />
-                      </button>
+                      </PermissionGate>
                     </div>
                   </div>
                 </div>

@@ -28,6 +28,8 @@ import { ModalPortal } from '../../components/common/Modal';
 import { PhoneInput } from '../../components/ui/PhoneInput';
 import { Select } from '../../components/ui/Select';
 import { useNotificationsStore } from '../../store/notificationsStore';
+import { usePermission, PermissionCode } from '../../hooks/usePermission';
+import { PermissionGate } from '../../components/common/PermissionGate';
 import { useHighlight } from '../../hooks/useHighlight';
 import type {
   Supplier,
@@ -112,7 +114,14 @@ export function SuppliersPage() {
   const [allSuppliers, setAllSuppliers] = useState<Supplier[]>([]);
 
   const { notifications } = useNotificationsStore();
+  const { hasPermission } = usePermission();
   const { highlightId, clearHighlight } = useHighlight();
+
+  // Early return if no VIEW permission - prevents API calls
+  if (!hasPermission(PermissionCode.SUPPLIERS_VIEW)) {
+    return null;
+  }
+
   const hasSearch = useMemo(() => search.trim().length > 0, [search]);
 
   // Calculate totals
@@ -240,12 +249,14 @@ export function SuppliersPage() {
       header: '',
       sortable: false,
       render: (supplier) => (
-        <button
-          className="btn btn-ghost btn-sm"
-          onClick={(e) => { e.stopPropagation(); handleOpenEditModal(supplier); }}
-        >
-          Tahrirlash
-        </button>
+        <PermissionGate permission={PermissionCode.SUPPLIERS_UPDATE}>
+          <button
+            className="btn btn-ghost btn-sm"
+            onClick={(e) => { e.stopPropagation(); handleOpenEditModal(supplier); }}
+          >
+            Tahrirlash
+          </button>
+        </PermissionGate>
       ),
     },
   ], []);
@@ -600,18 +611,22 @@ export function SuppliersPage() {
           {activeTab === 'suppliers' ? (
             <>
               <span className="pill">{totalElements} ta ta'minotchi</span>
-              <button className="btn btn-primary" onClick={handleOpenNewModal}>
-                <Plus className="h-5 w-5" />
-                Yangi ta'minotchi
-              </button>
+              <PermissionGate permission={PermissionCode.SUPPLIERS_CREATE}>
+                <button className="btn btn-primary" onClick={handleOpenNewModal}>
+                  <Plus className="h-5 w-5" />
+                  Yangi ta'minotchi
+                </button>
+              </PermissionGate>
             </>
           ) : (
             <>
               <span className="pill">{purchasesTotalElements} ta xarid</span>
-              <button className="btn btn-primary" onClick={handleOpenPurchaseModal}>
-                <Plus className="h-5 w-5" />
-                Yangi xarid
-              </button>
+              <PermissionGate permission={PermissionCode.PURCHASES_CREATE}>
+                <button className="btn btn-primary" onClick={handleOpenPurchaseModal}>
+                  <Plus className="h-5 w-5" />
+                  Yangi xarid
+                </button>
+              </PermissionGate>
             </>
           )}
         </div>
@@ -785,12 +800,14 @@ export function SuppliersPage() {
                     {supplier.balance > 0 && '+'}
                     {formatCurrency(supplier.balance)}
                   </span>
-                  <button
-                    className="btn btn-ghost btn-sm min-h-[44px]"
-                    onClick={() => handleOpenEditModal(supplier)}
-                  >
-                    Tahrirlash
-                  </button>
+                  <PermissionGate permission={PermissionCode.SUPPLIERS_UPDATE}>
+                    <button
+                      className="btn btn-ghost btn-sm min-h-[44px]"
+                      onClick={() => handleOpenEditModal(supplier)}
+                    >
+                      Tahrirlash
+                    </button>
+                  </PermissionGate>
                 </div>
               </div>
             )}

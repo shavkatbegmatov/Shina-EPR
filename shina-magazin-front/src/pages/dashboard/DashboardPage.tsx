@@ -36,6 +36,7 @@ import { dashboardApi } from '../../api/dashboard.api';
 import { formatCurrency, formatNumber } from '../../config/constants';
 import type { DashboardStats, ChartData } from '../../types';
 import { useNotificationsStore } from '../../store/notificationsStore';
+import { usePermission, PermissionCode } from '../../hooks/usePermission';
 
 // Professional rang palitrasi
 const COLORS = {
@@ -193,6 +194,12 @@ export function DashboardPage() {
   const [refreshing, setRefreshing] = useState(false);
   const [period, setPeriod] = useState<7 | 30>(30);
   const { notifications } = useNotificationsStore();
+  const { hasPermission } = usePermission();
+
+  // Early return if no VIEW permission - prevents API calls
+  if (!hasPermission(PermissionCode.DASHBOARD_VIEW)) {
+    return null;
+  }
 
   const loadData = useCallback(async (isInitial = false) => {
     try {

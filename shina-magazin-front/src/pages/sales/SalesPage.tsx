@@ -459,9 +459,11 @@ export function SalesPage() {
                   Ko'rish
                 </button>
                 {sale.status === 'COMPLETED' && (
-                  <button className="btn btn-ghost btn-sm text-error" onClick={() => handleOpenCancelModal(sale)}>
-                    <XCircle className="h-4 w-4" />
-                  </button>
+                  <PermissionGate permission={PermissionCode.SALES_REFUND}>
+                    <button className="btn btn-ghost btn-sm text-error" onClick={() => handleOpenCancelModal(sale)}>
+                      <XCircle className="h-4 w-4" />
+                    </button>
+                  </PermissionGate>
                 )}
               </div>
             </div>

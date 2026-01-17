@@ -35,6 +35,8 @@ import { CurrencyInput } from '../../components/ui/CurrencyInput';
 import { Select } from '../../components/ui/Select';
 import { useNotificationsStore } from '../../store/notificationsStore';
 import { useHighlight } from '../../hooks/useHighlight';
+import { usePermission, PermissionCode } from '../../hooks/usePermission';
+import { PermissionGate } from '../../components/common/PermissionGate';
 import type {
   Supplier,
   PurchaseOrder,
@@ -55,6 +57,12 @@ interface CartItem {
 export function PurchasesPage() {
   const navigate = useNavigate();
   const { notifications } = useNotificationsStore();
+  const { hasPermission } = usePermission();
+
+  // Early return if no VIEW permission - prevents API calls
+  if (!hasPermission(PermissionCode.PURCHASES_VIEW)) {
+    return null;
+  }
 
   // Purchases state
   const [purchases, setPurchases] = useState<PurchaseOrder[]>([]);
@@ -463,10 +471,12 @@ export function PurchasesPage() {
         </div>
         <div className="flex items-center gap-2">
           <span className="pill">{totalElements} ta xarid</span>
-          <button className="btn btn-primary" onClick={handleOpenPurchaseModal}>
-            <Plus className="h-5 w-5" />
-            Yangi xarid
-          </button>
+          <PermissionGate permission={PermissionCode.PURCHASES_CREATE}>
+            <button className="btn btn-primary" onClick={handleOpenPurchaseModal}>
+              <Plus className="h-5 w-5" />
+              Yangi xarid
+            </button>
+          </PermissionGate>
         </div>
       </div>
 

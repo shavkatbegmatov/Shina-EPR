@@ -24,6 +24,8 @@ import { DataTable, Column } from '../../components/ui/DataTable';
 import { ModalPortal } from '../../components/common/Modal';
 import { SearchInput } from '../../components/ui/SearchInput';
 import { useNotificationsStore } from '../../store/notificationsStore';
+import { usePermission, PermissionCode } from '../../hooks/usePermission';
+import { PermissionGate } from '../../components/common/PermissionGate';
 import {
   formatNumber,
   formatCurrency,
@@ -75,6 +77,12 @@ export function WarehousePage() {
   const [unitPrice, setUnitPrice] = useState<number>(0);
 
   const { notifications } = useNotificationsStore();
+  const { hasPermission } = usePermission();
+
+  // Early return if no VIEW permission - prevents API calls
+  if (!hasPermission(PermissionCode.WAREHOUSE_VIEW)) {
+    return null;
+  }
 
   const getMovementIcon = (type: MovementType) => {
     switch (type) {
@@ -330,27 +338,33 @@ export function WarehousePage() {
           <p className="section-subtitle">Zaxira nazorati va kirim-chiqim</p>
         </div>
         <div className="flex flex-wrap items-center gap-2">
-          <button
-            className="btn btn-success"
-            onClick={() => handleOpenAdjustmentModal('IN')}
-          >
-            <Plus className="h-5 w-5" />
-            Kirim
-          </button>
-          <button
-            className="btn btn-error"
-            onClick={() => handleOpenAdjustmentModal('OUT')}
-          >
-            <Minus className="h-5 w-5" />
-            Chiqim
-          </button>
-          <button
-            className="btn btn-info btn-outline"
-            onClick={() => handleOpenAdjustmentModal('ADJUSTMENT')}
-          >
-            <Settings className="h-5 w-5" />
-            Tuzatish
-          </button>
+          <PermissionGate permission={PermissionCode.WAREHOUSE_ADJUST}>
+            <button
+              className="btn btn-success"
+              onClick={() => handleOpenAdjustmentModal('IN')}
+            >
+              <Plus className="h-5 w-5" />
+              Kirim
+            </button>
+          </PermissionGate>
+          <PermissionGate permission={PermissionCode.WAREHOUSE_ADJUST}>
+            <button
+              className="btn btn-error"
+              onClick={() => handleOpenAdjustmentModal('OUT')}
+            >
+              <Minus className="h-5 w-5" />
+              Chiqim
+            </button>
+          </PermissionGate>
+          <PermissionGate permission={PermissionCode.WAREHOUSE_ADJUST}>
+            <button
+              className="btn btn-info btn-outline"
+              onClick={() => handleOpenAdjustmentModal('ADJUSTMENT')}
+            >
+              <Settings className="h-5 w-5" />
+              Tuzatish
+            </button>
+          </PermissionGate>
         </div>
       </div>
 

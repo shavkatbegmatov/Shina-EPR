@@ -43,6 +43,8 @@ import {
 import { DateRangePicker, type DateRangePreset, type DateRange } from '../../components/common/DateRangePicker';
 import type { SalesReport, WarehouseReport, DebtsReport } from '../../types';
 import { useNotificationsStore } from '../../store/notificationsStore';
+import { usePermission, PermissionCode } from '../../hooks/usePermission';
+import { PermissionGate } from '../../components/common/PermissionGate';
 
 type ReportTab = 'sales' | 'warehouse' | 'debts';
 
@@ -58,6 +60,12 @@ export function ReportsPage() {
   const [dateRangePreset, setDateRangePreset] = useState<DateRangePreset>('month');
   const [customRange, setCustomRange] = useState<DateRange>({ start: '', end: '' });
   const { notifications } = useNotificationsStore();
+  const { hasPermission } = usePermission();
+
+  // Early return if no VIEW permission - prevents API calls
+  if (!hasPermission(PermissionCode.REPORTS_VIEW)) {
+    return null;
+  }
 
   // Toshkent timezone da sana oralig'ini hisoblash
   const getDateRangeValues = useCallback((preset: DateRangePreset): { start: string; end: string } => {
@@ -232,14 +240,18 @@ export function ReportsPage() {
           </button>
 
           <div className="flex items-center gap-2">
-            <button className="btn btn-success btn-sm" onClick={handleExportExcel}>
-              <FileSpreadsheet className="h-4 w-4" />
-              Excel
-            </button>
-            <button className="btn btn-error btn-sm" onClick={handleExportPDF}>
-              <FileDown className="h-4 w-4" />
-              PDF
-            </button>
+            <PermissionGate permission={PermissionCode.REPORTS_EXPORT}>
+              <button className="btn btn-success btn-sm" onClick={handleExportExcel}>
+                <FileSpreadsheet className="h-4 w-4" />
+                Excel
+              </button>
+            </PermissionGate>
+            <PermissionGate permission={PermissionCode.REPORTS_EXPORT}>
+              <button className="btn btn-error btn-sm" onClick={handleExportPDF}>
+                <FileDown className="h-4 w-4" />
+                PDF
+              </button>
+            </PermissionGate>
           </div>
         </div>
       </div>
