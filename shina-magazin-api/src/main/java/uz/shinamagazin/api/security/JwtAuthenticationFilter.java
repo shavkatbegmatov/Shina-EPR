@@ -14,6 +14,7 @@ import org.springframework.security.web.authentication.WebAuthenticationDetailsS
 import org.springframework.stereotype.Component;
 import org.springframework.util.StringUtils;
 import org.springframework.web.filter.OncePerRequestFilter;
+import uz.shinamagazin.api.service.SessionService;
 
 import java.io.IOException;
 
@@ -25,6 +26,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
     private final JwtTokenProvider tokenProvider;
     private final CustomUserDetailsService staffUserDetailsService;
     private final CustomerUserDetailsService customerUserDetailsService;
+    private final SessionService sessionService;
 
     @Override
     protected boolean shouldNotFilter(HttpServletRequest request) {
@@ -43,8 +45,15 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
             String jwt = getJwtFromRequest(request);
 
             if (StringUtils.hasText(jwt) && tokenProvider.validateToken(jwt)) {
-                String username = tokenProvider.getUsernameFromToken(jwt);
+                // Check if session is still active in database (only for staff tokens)
                 boolean isCustomerToken = tokenProvider.isCustomerToken(jwt);
+                if (!isCustomerToken && !sessionService.isSessionValid(jwt)) {
+                    log.warn("JWT is valid but session has been revoked");
+                    filterChain.doFilter(request, response);
+                    return;
+                }
+
+                String username = tokenProvider.getUsernameFromToken(jwt);
 
                 UserDetails userDetails;
                 if (isCustomerToken) {
@@ -67,6 +76,15 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
                 );
 
                 SecurityContextHolder.getContext().setAuthentication(authentication);
+
+                // Update last activity for staff sessions
+                if (!isCustomerToken) {
+                    try {
+                        sessionService.updateLastActivity(jwt);
+                    } catch (Exception e) {
+                        log.warn("Failed to update session activity", e);
+                    }
+                }
             }
         } catch (Exception ex) {
             log.error("Could not set user authentication in security context", ex);

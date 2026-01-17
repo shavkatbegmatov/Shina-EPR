@@ -1,6 +1,7 @@
 package uz.shinamagazin.api.service;
 
 import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
@@ -15,6 +16,8 @@ import uz.shinamagazin.api.repository.UserRepository;
 import uz.shinamagazin.api.security.CustomUserDetails;
 import uz.shinamagazin.api.security.JwtTokenProvider;
 
+import java.time.LocalDateTime;
+
 @Service
 @RequiredArgsConstructor
 public class AuthService {
@@ -22,8 +25,12 @@ public class AuthService {
     private final AuthenticationManager authenticationManager;
     private final JwtTokenProvider tokenProvider;
     private final UserRepository userRepository;
+    private final SessionService sessionService;
 
-    public JwtResponse login(LoginRequest request) {
+    @Value("${jwt.expiration}")
+    private long jwtExpiration;
+
+    public JwtResponse login(LoginRequest request, String ipAddress, String userAgent) {
         Authentication authentication = authenticationManager.authenticate(
                 new UsernamePasswordAuthenticationToken(
                         request.getUsername(),
@@ -44,6 +51,16 @@ public class AuthService {
                 userDetails.getPermissions()
         );
         String refreshToken = tokenProvider.generateStaffRefreshToken(userDetails.getUsername(), userId);
+
+        // Create session in database
+        LocalDateTime expiresAt = LocalDateTime.now().plusSeconds(jwtExpiration / 1000);
+        sessionService.createSession(
+            userDetails.getUser(),
+            accessToken,
+            ipAddress,
+            userAgent,
+            expiresAt
+        );
 
         // Check if user must change password
         Boolean mustChangePassword = Boolean.TRUE.equals(userDetails.getUser().getMustChangePassword());

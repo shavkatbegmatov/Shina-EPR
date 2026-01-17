@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { Outlet, Navigate, useLocation } from 'react-router-dom';
 import { useAuthStore } from '../../store/authStore';
+import { useSessionMonitor } from '../../hooks/useSessionMonitor';
 import { Sidebar } from './Sidebar';
 import { Header } from './Header';
 import { Footer } from './Footer';
@@ -10,6 +11,16 @@ export function MainLayout() {
   const { isAuthenticated, user } = useAuthStore();
   const location = useLocation();
   const [showPasswordModal, setShowPasswordModal] = useState(false);
+
+  // Professional session monitoring:
+  // - Checks session every 60 seconds
+  // - Validates session when tab becomes visible
+  // - Auto-logout if session revoked from another device
+  useSessionMonitor({
+    enabled: true,
+    pollingInterval: 60000, // 60 seconds
+    checkOnFocus: true,
+  });
 
   // Show password change modal if user must change password
   useEffect(() => {

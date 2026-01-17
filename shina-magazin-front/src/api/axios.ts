@@ -34,7 +34,7 @@ api.interceptors.response.use(
       originalRequest._retry = true;
 
       const refreshToken = localStorage.getItem('refreshToken');
-      if (refreshToken) {
+      if (refreshToken && !originalRequest.url?.includes('/auth/refresh-token')) {
         try {
           const response = await axios.post(
             `${API_BASE_URL}/v1/auth/refresh-token`,
@@ -48,14 +48,31 @@ api.interceptors.response.use(
 
           originalRequest.headers.Authorization = `Bearer ${accessToken}`;
           return api(originalRequest);
-        } catch {
-          // Refresh failed, logout
+        } catch (refreshError) {
+          // Refresh failed, session was likely revoked - clear storage and redirect
           localStorage.removeItem('accessToken');
           localStorage.removeItem('refreshToken');
-          window.location.href = '/login';
+          localStorage.removeItem('user');
+
+          // Only redirect if not already on login page
+          if (!window.location.pathname.includes('/login')) {
+            toast.error('Sessioningiz tugadi. Qayta kiring.');
+            setTimeout(() => {
+              window.location.href = '/login';
+            }, 1000);
+          }
+          return Promise.reject(refreshError);
         }
       } else {
-        window.location.href = '/login';
+        // No refresh token or already trying to refresh - clear and redirect
+        localStorage.removeItem('accessToken');
+        localStorage.removeItem('refreshToken');
+        localStorage.removeItem('user');
+
+        if (!window.location.pathname.includes('/login')) {
+          window.location.href = '/login';
+        }
+        return Promise.reject(error);
       }
     }
 

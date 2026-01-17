@@ -15,6 +15,7 @@ import {
   UserCircle,
   Lock,
   AlertTriangle,
+  Monitor,
 } from 'lucide-react';
 import toast from 'react-hot-toast';
 import clsx from 'clsx';
@@ -23,8 +24,9 @@ import { rolesApi } from '../../api/roles.api';
 import { useAuthStore } from '../../store/authStore';
 import { ROLES } from '../../config/constants';
 import type { ChangePasswordRequest, User as UserType, Role } from '../../types';
+import { SessionsTab } from './SessionsTab';
 
-type Tab = 'profile' | 'security';
+type Tab = 'profile' | 'security' | 'sessions';
 
 interface PasswordFormData {
   currentPassword: string;
@@ -192,6 +194,13 @@ export function ProfilePage() {
         >
           <Lock className="h-4 w-4" />
           Xavfsizlik
+        </button>
+        <button
+          className={clsx('tab gap-2', activeTab === 'sessions' && 'tab-active')}
+          onClick={() => setActiveTab('sessions')}
+        >
+          <Monitor className="h-4 w-4" />
+          Sessionlar
         </button>
       </div>
 
@@ -469,6 +478,9 @@ export function ProfilePage() {
           </div>
         </div>
       )}
+
+      {/* Sessions Tab */}
+      {activeTab === 'sessions' && <SessionsTab />}
     </div>
   );
 }
