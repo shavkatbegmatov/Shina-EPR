@@ -352,7 +352,7 @@ export function RolesPage() {
 
       {/* Create/Edit Modal */}
       <ModalPortal isOpen={showModal} onClose={closeModal}>
-        <div className="w-full max-w-7xl bg-base-100 rounded-2xl shadow-2xl max-h-[90vh] overflow-y-auto">
+        <div className="w-full max-w-[95vw] bg-base-100 rounded-2xl shadow-2xl max-h-[90vh] overflow-y-auto">
           <div className="p-4 sm:p-6">
             <div className="flex items-start justify-between gap-4">
               <div>
@@ -457,7 +457,7 @@ export function RolesPage() {
                         ({permissions.length})
                       </span>
                     </label>
-                    <div className="mt-1 ml-6 grid grid-cols-2 sm:grid-cols-3 gap-1">
+                    <div className="mt-1 ml-6 grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6 gap-1">
                       {permissions.map((permission) => (
                         <label
                           key={permission.code}
