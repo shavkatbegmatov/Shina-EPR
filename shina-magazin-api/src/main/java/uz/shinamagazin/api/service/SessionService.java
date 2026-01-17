@@ -2,6 +2,7 @@ package uz.shinamagazin.api.service;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.context.annotation.Lazy;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -20,13 +21,23 @@ import java.util.List;
 import java.util.Optional;
 
 @Service
-@RequiredArgsConstructor
 @Slf4j
 public class SessionService {
 
     private final SessionRepository sessionRepository;
     private final UserAgentParser userAgentParser;
     private final NotificationDispatcher notificationDispatcher;
+
+    // Constructor with @Lazy to break circular dependency
+    public SessionService(
+            SessionRepository sessionRepository,
+            UserAgentParser userAgentParser,
+            @Lazy NotificationDispatcher notificationDispatcher
+    ) {
+        this.sessionRepository = sessionRepository;
+        this.userAgentParser = userAgentParser;
+        this.notificationDispatcher = notificationDispatcher;
+    }
 
     /**
      * Create a new session when user logs in
