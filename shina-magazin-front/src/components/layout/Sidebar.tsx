@@ -44,6 +44,9 @@ export function Sidebar() {
   const permissions = useAuthStore((state) => state.permissions);
   const { sidebarOpen, setSidebarOpen } = useUIStore();
 
+  // DEBUG: Log when Sidebar re-renders
+  console.log('🔄 Sidebar rendered, permissions:', Array.from(permissions));
+
   const filteredItems = menuItems.filter(
     (item) => permissions.has(item.permission)
   );

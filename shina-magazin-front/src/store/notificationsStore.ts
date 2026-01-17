@@ -190,9 +190,19 @@ export const useNotificationsStore = create<NotificationsState>((set, get) => ({
       },
       // Permission update callback
       (permissionUpdate: PermissionUpdateMessage) => {
+        console.log('📩 Permission update callback triggered');
+        console.log('  Update:', permissionUpdate);
+
         // Update authStore with new permissions
         const authState = useAuthStore.getState();
+        console.log('  Current authState:', {
+          hasUser: !!authState.user,
+          hasTokens: !!(authState.accessToken && authState.refreshToken),
+        });
+
         if (authState.user && authState.accessToken && authState.refreshToken) {
+          console.log('  ✅ Calling authState.setAuth...');
+
           // Call setAuth to properly update state and trigger persist
           authState.setAuth(
             authState.user,
@@ -202,6 +212,8 @@ export const useNotificationsStore = create<NotificationsState>((set, get) => ({
             permissionUpdate.roles
           );
 
+          console.log('  ✅ authState.setAuth completed');
+
           // Show toast notification
           toast(
             permissionUpdate.reason || 'Sizning kirish huquqlaringiz yangilandi',
@@ -210,6 +222,8 @@ export const useNotificationsStore = create<NotificationsState>((set, get) => ({
               icon: '🔐',
             }
           );
+        } else {
+          console.log('  ❌ Cannot update - user or tokens missing');
         }
       },
       // Connection status callback

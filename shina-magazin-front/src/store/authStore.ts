@@ -28,16 +28,29 @@ export const useAuthStore = create<AuthState>()(
       isAuthenticated: false,
 
       setAuth: (user, accessToken, refreshToken, permissions = [], roles = []) => {
+        console.log('🔐 AuthStore.setAuth called');
+        console.log('  New permissions:', permissions);
+        console.log('  New roles:', roles);
+
         localStorage.setItem('accessToken', accessToken);
         localStorage.setItem('refreshToken', refreshToken);
+
+        const newPermissionsSet = new Set(permissions);
+        const newRolesSet = new Set(roles);
+
+        console.log('  Permissions Set:', newPermissionsSet);
+        console.log('  Has WAREHOUSE_VIEW?', newPermissionsSet.has('WAREHOUSE_VIEW'));
+
         set({
           user,
           accessToken,
           refreshToken,
-          permissions: new Set(permissions),
-          roles: new Set(roles),
+          permissions: newPermissionsSet,
+          roles: newRolesSet,
           isAuthenticated: true,
         });
+
+        console.log('  ✅ AuthStore state updated');
       },
 
       logout: () => {
