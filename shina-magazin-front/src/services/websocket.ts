@@ -40,9 +40,19 @@ class WebSocketService {
     onPermissionUpdate?: PermissionUpdateCallback,
     onConnectionStatus?: ConnectionStatusCallback
   ) {
+    console.log('🔌 webSocketService.connect called');
+    console.log('  onNotification callback:', typeof onNotification);
+    console.log('  onPermissionUpdate callback:', typeof onPermissionUpdate);
+    console.log('  onConnectionStatus callback:', typeof onConnectionStatus);
+
     this.notificationCallback = onNotification;
     this.permissionUpdateCallback = onPermissionUpdate || null;
     this.connectionStatusCallback = onConnectionStatus || null;
+
+    console.log('  ✅ Callbacks registered:');
+    console.log('    - notificationCallback:', this.notificationCallback !== null);
+    console.log('    - permissionUpdateCallback:', this.permissionUpdateCallback !== null);
+    console.log('    - connectionStatusCallback:', this.connectionStatusCallback !== null);
 
     // Agar allaqachon ulanish mavjud bo'lsa, avval uzib tashlaymiz
     if (this.client) {
@@ -125,9 +135,18 @@ class WebSocketService {
     try {
       const data = JSON.parse(message.body) as PermissionUpdateMessage;
       console.log('[WebSocket] Permission update received:', data);
+      console.log('[WebSocket] About to call permissionUpdateCallback...');
+      console.log('[WebSocket] Callback exists?', this.permissionUpdateCallback !== null);
+      console.log('[WebSocket] Callback type:', typeof this.permissionUpdateCallback);
 
       // Callback chaqirish (authStore ni yangilash uchun)
-      this.permissionUpdateCallback?.(data);
+      if (this.permissionUpdateCallback) {
+        console.log('[WebSocket] Calling permissionUpdateCallback NOW...');
+        this.permissionUpdateCallback(data);
+        console.log('[WebSocket] permissionUpdateCallback completed');
+      } else {
+        console.warn('[WebSocket] ⚠️ permissionUpdateCallback is NULL - not calling!');
+      }
 
       console.log('[WebSocket] Permissions updated successfully');
     } catch (error) {
