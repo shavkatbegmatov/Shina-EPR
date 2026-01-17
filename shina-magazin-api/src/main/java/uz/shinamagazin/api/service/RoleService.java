@@ -169,7 +169,7 @@ public class RoleService {
 
         // Notify all users who have this role
         RoleEntity finalRole = role;
-        Set<Long> affectedUserIds = roleRepository.findById(id)
+        Set<Long> affectedUserIds = roleRepository.findByIdWithPermissionsAndUsers(id)
                 .map(r -> r.getUsers().stream()
                         .map(User::getId)
                         .collect(Collectors.toSet()))
