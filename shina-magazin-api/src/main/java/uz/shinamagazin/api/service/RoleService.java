@@ -52,7 +52,10 @@ public class RoleService {
         Page<RoleEntity> roles = (search != null && !search.isEmpty())
                 ? roleRepository.searchRoles(search, pageable)
                 : roleRepository.findAllActive(pageable);
-        return roles.map(RoleResponse::simpleFrom);
+        return roles.map(role -> {
+            Long userCount = roleRepository.countUsersByRoleId(role.getId());
+            return RoleResponse.simpleFromWithUserCount(role, userCount);
+        });
     }
 
     /**
@@ -61,7 +64,8 @@ public class RoleService {
     public RoleResponse getRoleById(Long id) {
         RoleEntity role = roleRepository.findByIdWithPermissions(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Rol", "id", id));
-        return RoleResponse.fromWithoutUsers(role);
+        Long userCount = roleRepository.countUsersByRoleId(id);
+        return RoleResponse.fromWithUserCount(role, userCount);
     }
 
     /**

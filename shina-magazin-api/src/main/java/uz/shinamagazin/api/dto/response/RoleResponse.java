@@ -63,6 +63,24 @@ public class RoleResponse {
                 .build();
     }
 
+    public static RoleResponse fromWithUserCount(RoleEntity role, Long userCount) {
+        return RoleResponse.builder()
+                .id(role.getId())
+                .name(role.getName())
+                .code(role.getCode())
+                .description(role.getDescription())
+                .isSystem(role.getIsSystem())
+                .isActive(role.getIsActive())
+                .permissions(role.getPermissions().stream()
+                        .map(p -> p.getCode())
+                        .collect(Collectors.toSet()))
+                .permissionCount(role.getPermissions().size())
+                .userCount(userCount != null ? userCount.intValue() : 0)
+                .createdAt(role.getCreatedAt())
+                .updatedAt(role.getUpdatedAt())
+                .build();
+    }
+
     public static RoleResponse simpleFrom(RoleEntity role) {
         return RoleResponse.builder()
                 .id(role.getId())
@@ -75,6 +93,22 @@ public class RoleResponse {
                         .map(p -> p.getCode())
                         .collect(Collectors.toSet()))
                 .permissionCount(role.getPermissions().size())
+                .build();
+    }
+
+    public static RoleResponse simpleFromWithUserCount(RoleEntity role, Long userCount) {
+        return RoleResponse.builder()
+                .id(role.getId())
+                .name(role.getName())
+                .code(role.getCode())
+                .description(role.getDescription())
+                .isSystem(role.getIsSystem())
+                .isActive(role.getIsActive())
+                .permissions(role.getPermissions().stream()
+                        .map(p -> p.getCode())
+                        .collect(Collectors.toSet()))
+                .permissionCount(role.getPermissions().size())
+                .userCount(userCount != null ? userCount.intValue() : 0)
                 .build();
     }
 }

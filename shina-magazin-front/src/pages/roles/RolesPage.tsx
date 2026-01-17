@@ -10,6 +10,7 @@ import {
   Key,
   Lock,
   X,
+  Eye,
 } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { rolesApi, permissionsApi } from '../../api/roles.api';
@@ -30,6 +31,11 @@ export function RolesPage() {
     permissions: [],
   });
   const [selectedPermissions, setSelectedPermissions] = useState<Set<string>>(new Set());
+
+  // View modal state
+  const [showViewModal, setShowViewModal] = useState(false);
+  const [viewingRole, setViewingRole] = useState<Role | null>(null);
+  const [showAllPermissions, setShowAllPermissions] = useState(false);
 
   const queryClient = useQueryClient();
 
@@ -121,6 +127,23 @@ export function RolesPage() {
     setSelectedRole(null);
     setFormData({ name: '', code: '', description: '', permissions: [] });
     setSelectedPermissions(new Set());
+  };
+
+  // Fetch full role details for view modal
+  const { data: fullRoleDetails, isLoading: isLoadingRoleDetails } = useQuery({
+    queryKey: ['role', viewingRole?.id],
+    queryFn: () => rolesApi.getById(viewingRole!.id),
+    enabled: !!viewingRole && showViewModal,
+  });
+
+  const openViewModal = (role: Role) => {
+    setViewingRole(role);
+    setShowViewModal(true);
+  };
+
+  const closeViewModal = () => {
+    setShowViewModal(false);
+    setViewingRole(null);
   };
 
   const handleSubmit = () => {
@@ -289,6 +312,15 @@ export function RolesPage() {
                 </div>
 
                 <div className="card-actions mt-3 justify-end">
+                  <PermissionGate permission={PermissionCode.ROLES_VIEW}>
+                    <button
+                      className="btn btn-ghost btn-sm"
+                      onClick={() => openViewModal(role)}
+                      title="Ko'rish"
+                    >
+                      <Eye className="h-4 w-4" />
+                    </button>
+                  </PermissionGate>
                   <PermissionGate permission={PermissionCode.ROLES_UPDATE}>
                     <button
                       className="btn btn-ghost btn-sm"
@@ -464,6 +496,261 @@ export function RolesPage() {
                 )}
                 {selectedRole ? 'Saqlash' : 'Yaratish'}
               </button>
+            </div>
+          </div>
+        </div>
+      </ModalPortal>
+
+      {/* View Modal - Read-only role details */}
+      <ModalPortal isOpen={showViewModal} onClose={closeViewModal}>
+        <div className="w-full max-w-4xl bg-base-100 rounded-2xl shadow-2xl max-h-[90vh] overflow-y-auto">
+          <div className="p-4 sm:p-6">
+            {/* Header */}
+            <div className="flex items-start justify-between gap-4 mb-6">
+              <div className="flex items-center gap-3">
+                <div className={`grid h-12 w-12 place-items-center rounded-lg ${
+                  viewingRole?.isSystem
+                    ? 'bg-primary/15 text-primary'
+                    : 'bg-secondary/15 text-secondary'
+                }`}>
+                  <Shield className="h-6 w-6" />
+                </div>
+                <div>
+                  <h3 className="text-xl font-semibold">{viewingRole?.name}</h3>
+                  <p className="text-sm text-base-content/60">Rol tafsilotlari</p>
+                </div>
+              </div>
+              <button
+                className="btn btn-ghost btn-sm"
+                onClick={closeViewModal}
+                aria-label="Yopish"
+              >
+                <X className="h-4 w-4" />
+              </button>
+            </div>
+
+            {/* System role badge */}
+            {viewingRole?.isSystem && (
+              <div className="alert alert-info mb-6">
+                <Lock className="h-4 w-4" />
+                <span>Bu tizim roli va o'zgartirib bo'lmaydi</span>
+              </div>
+            )}
+
+            {/* Role Details */}
+            <div className="space-y-6">
+              {/* Basic Information */}
+              <div className="space-y-4">
+                <h4 className="font-semibold text-base-content/80 flex items-center gap-2">
+                  <Shield className="h-4 w-4" />
+                  Asosiy ma'lumotlar
+                </h4>
+
+                <div className="grid gap-4 sm:grid-cols-2">
+                  <div>
+                    <label className="text-sm font-medium text-base-content/60 mb-1 block">
+                      Rol nomi
+                    </label>
+                    <div className="px-4 py-2 bg-base-200 rounded-lg">
+                      {fullRoleDetails?.name || viewingRole?.name}
+                    </div>
+                  </div>
+
+                  <div>
+                    <label className="text-sm font-medium text-base-content/60 mb-1 block">
+                      Rol kodi
+                    </label>
+                    <div className="px-4 py-2 bg-base-200 rounded-lg font-mono text-sm">
+                      {fullRoleDetails?.code || viewingRole?.code}
+                    </div>
+                  </div>
+                </div>
+
+                {(fullRoleDetails?.description || viewingRole?.description) && (
+                  <div>
+                    <label className="text-sm font-medium text-base-content/60 mb-1 block">
+                      Tavsif
+                    </label>
+                    <div className="px-4 py-2 bg-base-200 rounded-lg">
+                      {fullRoleDetails?.description || viewingRole?.description}
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              <div className="divider"></div>
+
+              {/* Statistics */}
+              <div className="grid gap-4 sm:grid-cols-2">
+                <div className="flex items-center gap-3 p-4 bg-base-200 rounded-lg">
+                  <div className="grid h-10 w-10 place-items-center rounded-lg bg-primary/15 text-primary">
+                    <Key className="h-5 w-5" />
+                  </div>
+                  <div>
+                    <p className="text-sm text-base-content/60">Huquqlar soni</p>
+                    <p className="text-2xl font-semibold">
+                      {fullRoleDetails?.permissions?.length || viewingRole?.permissionCount || 0}
+                    </p>
+                  </div>
+                </div>
+
+                <div className="flex items-center gap-3 p-4 bg-base-200 rounded-lg">
+                  <div className="grid h-10 w-10 place-items-center rounded-lg bg-secondary/15 text-secondary">
+                    <Users className="h-5 w-5" />
+                  </div>
+                  <div>
+                    <p className="text-sm text-base-content/60">Foydalanuvchilar</p>
+                    <p className="text-2xl font-semibold">
+                      {fullRoleDetails?.userCount || viewingRole?.userCount || 0}
+                    </p>
+                  </div>
+                </div>
+              </div>
+
+              <div className="divider"></div>
+
+              {/* Permissions List */}
+              <div className="space-y-4">
+                <div className="flex items-center justify-between">
+                  <h4 className="font-semibold text-base-content/80 flex items-center gap-2">
+                    <Key className="h-4 w-4" />
+                    Huquqlar
+                  </h4>
+
+                  {/* Toggle between assigned only and all permissions */}
+                  <div className="flex items-center gap-2">
+                    <button
+                      onClick={() => setShowAllPermissions(false)}
+                      className={`btn btn-xs ${!showAllPermissions ? 'btn-primary' : 'btn-ghost'}`}
+                    >
+                      Faqat biriktirilganlar
+                    </button>
+                    <button
+                      onClick={() => setShowAllPermissions(true)}
+                      className={`btn btn-xs ${showAllPermissions ? 'btn-primary' : 'btn-ghost'}`}
+                    >
+                      Barchasi
+                    </button>
+                  </div>
+                </div>
+
+                {isLoadingRoleDetails || !permissionsGrouped ? (
+                  <div className="flex justify-center py-8">
+                    <span className="loading loading-spinner loading-md" />
+                  </div>
+                ) : (
+                  <div className="space-y-4">
+                    {(() => {
+                      // Get role permission codes
+                      const rolePermCodes = new Set(fullRoleDetails?.permissions || []);
+
+                      // Filter and group permissions by module
+                      return Object.entries(permissionsGrouped)
+                        .map(([module, allPerms]) => {
+                          const modulePerms = showAllPermissions
+                            ? allPerms
+                            : allPerms.filter(p => rolePermCodes.has(p.code));
+
+                          return {
+                            module,
+                            permissions: modulePerms,
+                            assignedCount: allPerms.filter(p => rolePermCodes.has(p.code)).length,
+                            totalCount: allPerms.length
+                          };
+                        })
+                        .filter(({ permissions }) => permissions.length > 0)
+                        .map(({ module, permissions, assignedCount, totalCount }) => (
+                          <div key={module} className="space-y-2">
+                            <h5 className="font-medium text-sm text-base-content/70 flex items-center gap-2">
+                              <div className="h-1 w-1 rounded-full bg-primary"></div>
+                              {module}
+                              <span className="text-xs text-base-content/50">
+                                {showAllPermissions
+                                  ? `(${assignedCount}/${totalCount})`
+                                  : `(${assignedCount})`
+                                }
+                              </span>
+                            </h5>
+                            <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
+                              {permissions.map((permission) => {
+                                const isAssigned = rolePermCodes.has(permission.code);
+                                return (
+                                  <div
+                                    key={permission.code}
+                                    className={`flex items-center gap-2 p-2.5 rounded-lg transition-all ${
+                                      isAssigned
+                                        ? 'bg-success/10 border border-success/20'
+                                        : 'bg-error/5 border border-error/10 opacity-60'
+                                    }`}
+                                  >
+                                    <div className={`grid h-5 w-5 flex-shrink-0 place-items-center rounded ${
+                                      isAssigned
+                                        ? 'bg-success/20 text-success'
+                                        : 'bg-error/20 text-error'
+                                    }`}>
+                                      {isAssigned ? (
+                                        <svg className="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
+                                        </svg>
+                                      ) : (
+                                        <svg className="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                                        </svg>
+                                      )}
+                                    </div>
+                                    <div className="min-w-0 flex-1">
+                                      <p className={`text-sm font-medium truncate ${
+                                        isAssigned ? 'text-base-content' : 'text-base-content/60'
+                                      }`}>
+                                        {permission.action}
+                                      </p>
+                                      <p className={`text-xs truncate font-mono ${
+                                        isAssigned ? 'text-base-content/50' : 'text-base-content/40'
+                                      }`}>
+                                        {permission.code}
+                                      </p>
+                                    </div>
+                                  </div>
+                                );
+                              })}
+                            </div>
+                          </div>
+                        ));
+                    })()}
+
+                    {fullRoleDetails && (!fullRoleDetails.permissions || fullRoleDetails.permissions.length === 0) && !showAllPermissions && (
+                      <div className="text-center py-8 text-base-content/60">
+                        <Key className="h-12 w-12 mx-auto mb-2 opacity-50" />
+                        <p>Hech qanday huquq biriktirilmagan</p>
+                      </div>
+                    )}
+                  </div>
+                )}
+              </div>
+            </div>
+
+            {/* Footer Actions */}
+            <div className="mt-6 flex justify-end gap-2">
+              <button className="btn btn-ghost" onClick={closeViewModal}>
+                Yopish
+              </button>
+
+              {/* Quick Edit button if user has permission */}
+              <PermissionGate permission={PermissionCode.ROLES_UPDATE}>
+                <button
+                  className="btn btn-primary"
+                  onClick={() => {
+                    closeViewModal();
+                    if (fullRoleDetails) {
+                      openModal(fullRoleDetails);
+                    }
+                  }}
+                  disabled={(viewingRole?.isSystem && !hasPermission(PermissionCode.ROLES_UPDATE)) || !fullRoleDetails}
+                >
+                  <Edit2 className="h-4 w-4" />
+                  Tahrirlash
+                </button>
+              </PermissionGate>
             </div>
           </div>
         </div>

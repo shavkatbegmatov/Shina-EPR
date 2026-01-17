@@ -47,4 +47,7 @@ public interface RoleRepository extends JpaRepository<RoleEntity, Long> {
 
     @Query("SELECT r FROM RoleEntity r LEFT JOIN FETCH r.permissions WHERE r.code = :code")
     Optional<RoleEntity> findByCodeWithPermissions(@Param("code") String code);
+
+    @Query("SELECT COUNT(u) FROM User u JOIN u.roles r WHERE r.id = :roleId")
+    Long countUsersByRoleId(@Param("roleId") Long roleId);
 }
