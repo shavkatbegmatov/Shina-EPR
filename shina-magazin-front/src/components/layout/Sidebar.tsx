@@ -40,11 +40,12 @@ const menuItems = [
 ];
 
 export function Sidebar() {
-  const { hasPermission } = useAuthStore();
+  // Use Zustand selector to subscribe to permissions specifically
+  const permissions = useAuthStore((state) => state.permissions);
   const { sidebarOpen, setSidebarOpen } = useUIStore();
 
   const filteredItems = menuItems.filter(
-    (item) => hasPermission(item.permission)
+    (item) => permissions.has(item.permission)
   );
 
   return (

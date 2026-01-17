@@ -65,7 +65,8 @@ export function ProtectedRoute({
   deniedTitle,
   deniedMessage,
 }: ProtectedRouteProps) {
-  const { hasPermission, hasAnyPermission, hasAllPermissions } = useAuthStore();
+  // Use Zustand selector to subscribe to permissions specifically
+  const userPermissions = useAuthStore((state) => state.permissions);
 
   // If no permission specified, allow access (e.g., profile page)
   if (!permission) {
@@ -77,11 +78,11 @@ export function ProtectedRoute({
   let hasAccess: boolean;
 
   if (permissions.length === 1) {
-    hasAccess = hasPermission(permissions[0]);
+    hasAccess = userPermissions.has(permissions[0]);
   } else if (requireAll) {
-    hasAccess = hasAllPermissions(...permissions);
+    hasAccess = permissions.every(p => userPermissions.has(p));
   } else {
-    hasAccess = hasAnyPermission(...permissions);
+    hasAccess = permissions.some(p => userPermissions.has(p));
   }
 
   if (!hasAccess) {
