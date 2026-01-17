@@ -200,19 +200,24 @@ export const useNotificationsStore = create<NotificationsState>((set, get) => ({
 
           // Update authStore with new permissions
           const authState = useAuthStore.getState();
+
+          // Tokens are stored in localStorage, not in Zustand state (not persisted)
+          const accessToken = localStorage.getItem('accessToken');
+          const refreshToken = localStorage.getItem('refreshToken');
+
           console.log('  Current authState:', {
             hasUser: !!authState.user,
-            hasTokens: !!(authState.accessToken && authState.refreshToken),
+            hasTokensInLocalStorage: !!(accessToken && refreshToken),
           });
 
-          if (authState.user && authState.accessToken && authState.refreshToken) {
+          if (authState.user && accessToken && refreshToken) {
             console.log('  ✅ Calling authState.setAuth...');
 
             // Call setAuth to properly update state and trigger persist
             authState.setAuth(
               authState.user,
-              authState.accessToken,
-              authState.refreshToken,
+              accessToken,
+              refreshToken,
               permissionUpdate.permissions,
               permissionUpdate.roles
             );
