@@ -59,13 +59,13 @@ public class RoleService {
     }
 
     /**
-     * Get role by ID with permissions
+     * Get role by ID with permissions and users
      */
     public RoleResponse getRoleById(Long id) {
-        RoleEntity role = roleRepository.findByIdWithPermissions(id)
+        RoleEntity role = roleRepository.findByIdWithPermissionsAndUsers(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Rol", "id", id));
         Long userCount = roleRepository.countUsersByRoleId(id);
-        return RoleResponse.fromWithUserCount(role, userCount);
+        return RoleResponse.fromWithUsers(role, userCount);
     }
 
     /**

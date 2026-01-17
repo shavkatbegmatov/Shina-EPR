@@ -727,6 +727,70 @@ export function RolesPage() {
                   </div>
                 )}
               </div>
+
+              <div className="divider"></div>
+
+              {/* Users List */}
+              <div className="space-y-4">
+                <h4 className="font-semibold text-base-content/80 flex items-center gap-2">
+                  <Users className="h-4 w-4" />
+                  Biriktirilgan foydalanuvchilar
+                </h4>
+
+                {isLoadingRoleDetails ? (
+                  <div className="flex justify-center py-8">
+                    <span className="loading loading-spinner loading-md" />
+                  </div>
+                ) : fullRoleDetails?.users && fullRoleDetails.users.length > 0 ? (
+                  <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+                    {fullRoleDetails.users.map((user) => (
+                      <div
+                        key={user.id}
+                        className={`flex items-start gap-3 p-3 rounded-lg border transition-all ${
+                          user.active
+                            ? 'bg-base-200 border-base-300'
+                            : 'bg-base-200/50 border-base-300/50 opacity-60'
+                        }`}
+                      >
+                        <div className={`grid h-10 w-10 flex-shrink-0 place-items-center rounded-full ${
+                          user.active
+                            ? 'bg-primary/15 text-primary'
+                            : 'bg-base-300 text-base-content/40'
+                        }`}>
+                          <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                          </svg>
+                        </div>
+                        <div className="min-w-0 flex-1">
+                          <div className="flex items-center gap-2">
+                            <p className="text-sm font-medium truncate">
+                              {user.fullName}
+                            </p>
+                            {!user.active && (
+                              <span className="badge badge-xs badge-ghost">
+                                Faol emas
+                              </span>
+                            )}
+                          </div>
+                          <p className="text-xs text-base-content/60 truncate">
+                            @{user.username}
+                          </p>
+                          {(user.email || user.phone) && (
+                            <p className="text-xs text-base-content/50 truncate mt-1">
+                              {user.email || user.phone}
+                            </p>
+                          )}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <div className="text-center py-8 text-base-content/60">
+                    <Users className="h-12 w-12 mx-auto mb-2 opacity-50" />
+                    <p>Hech qanday foydalanuvchi biriktirilmagan</p>
+                  </div>
+                )}
+              </div>
             </div>
 
             {/* Footer Actions */}

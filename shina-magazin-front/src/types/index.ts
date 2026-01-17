@@ -55,6 +55,16 @@ export interface Permission {
   description?: string;
 }
 
+// Simple User Type (for role users list)
+export interface SimpleUser {
+  id: number;
+  username: string;
+  fullName: string;
+  email?: string;
+  phone?: string;
+  active: boolean;
+}
+
 // Role Types
 export interface Role {
   id: number;
@@ -66,6 +76,7 @@ export interface Role {
   permissions?: string[];
   permissionCount?: number;
   userCount?: number;
+  users?: SimpleUser[];
   createdAt?: string;
   updatedAt?: string;
 }
