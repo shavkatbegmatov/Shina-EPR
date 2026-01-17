@@ -56,7 +56,11 @@ class WebSocketService {
 
     // Agar allaqachon ulanish mavjud bo'lsa, avval uzib tashlaymiz
     if (this.client) {
-      this.disconnect();
+      console.log('  ⚠️ Client already exists, disconnecting old client...');
+      // Only deactivate the client, don't clear callbacks yet
+      this.client.deactivate();
+      this.client = null;
+      console.log('  ✅ Old client disconnected');
     }
 
     this.client = new Client({
