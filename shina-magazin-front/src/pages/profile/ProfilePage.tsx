@@ -14,6 +14,7 @@ import {
   Loader2,
   UserCircle,
   Lock,
+  AlertTriangle,
 } from 'lucide-react';
 import toast from 'react-hot-toast';
 import clsx from 'clsx';
@@ -293,6 +294,22 @@ export function ProfilePage() {
       {/* Security Tab */}
       {activeTab === 'security' && (
         <div className="space-y-6">
+          {/* Warning if user must change password */}
+          {userData?.mustChangePassword && (
+            <div className="alert alert-warning">
+              <div className="flex items-start gap-3">
+                <AlertTriangle className="h-5 w-5 flex-shrink-0 mt-0.5" />
+                <div>
+                  <h4 className="font-semibold">Parolingizni o'zgartiring</h4>
+                  <p className="text-sm mt-1">
+                    Siz hozircha admin tomonidan berilgan paroldan foydalanayapsiz.
+                    Xavfsizlik uchun uni o'zgartiring.
+                  </p>
+                </div>
+              </div>
+            </div>
+          )}
+
           <div className="surface-card p-6">
             <div className="flex items-start gap-4 mb-6">
               <div className="p-3 rounded-xl bg-warning/10">

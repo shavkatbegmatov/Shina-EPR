@@ -1,12 +1,22 @@
+import { useState, useEffect } from 'react';
 import { Outlet, Navigate, useLocation } from 'react-router-dom';
 import { useAuthStore } from '../../store/authStore';
 import { Sidebar } from './Sidebar';
 import { Header } from './Header';
 import { Footer } from './Footer';
+import { PasswordChangeModal } from '../common/PasswordChangeModal';
 
 export function MainLayout() {
-  const { isAuthenticated } = useAuthStore();
+  const { isAuthenticated, user } = useAuthStore();
   const location = useLocation();
+  const [showPasswordModal, setShowPasswordModal] = useState(false);
+
+  // Show password change modal if user must change password
+  useEffect(() => {
+    if (user?.mustChangePassword) {
+      setShowPasswordModal(true);
+    }
+  }, [user?.mustChangePassword]);
 
   if (!isAuthenticated) {
     return <Navigate to="/login" replace state={{ from: location }} />;
@@ -22,6 +32,12 @@ export function MainLayout() {
         </main>
         <Footer />
       </div>
+
+      {/* Password Change Modal - shows if user mustChangePassword */}
+      <PasswordChangeModal
+        isOpen={showPasswordModal}
+        onClose={() => setShowPasswordModal(false)}
+      />
     </div>
   );
 }

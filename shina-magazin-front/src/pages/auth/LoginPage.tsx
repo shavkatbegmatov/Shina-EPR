@@ -40,22 +40,24 @@ export function LoginPage() {
     setLoading(true);
     try {
       const response = await authApi.login(data);
+
+      // Update user object with mustChangePassword flag from response
+      const userWithPasswordFlag = {
+        ...response.user,
+        mustChangePassword: response.requiresPasswordChange || false,
+      };
+
       setAuth(
-        response.user,
+        userWithPasswordFlag,
         response.accessToken,
         response.refreshToken,
         response.permissions,
         response.roles
       );
 
-      // Check if user must change password
-      if (response.requiresPasswordChange) {
-        toast('Parolingizni o\'zgartirish kerak', { icon: '🔐' });
-        navigate('/change-password', { replace: true });
-      } else {
-        toast.success('Muvaffaqiyatli kirish!');
-        navigate(redirectTo, { replace: true });
-      }
+      toast.success('Muvaffaqiyatli kirish!');
+      // Navigate to main app - modal will show automatically if mustChangePassword is true
+      navigate(redirectTo, { replace: true });
     } catch (error: unknown) {
       const err = error as { response?: { data?: { message?: string } } };
       toast.error(err.response?.data?.message || 'Kirish xatosi');

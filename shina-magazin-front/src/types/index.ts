@@ -7,6 +7,7 @@ export interface User {
   phone?: string;
   role: string; // Changed to string to support custom RBAC roles
   active: boolean;
+  mustChangePassword?: boolean;
 }
 
 export interface LoginRequest {
