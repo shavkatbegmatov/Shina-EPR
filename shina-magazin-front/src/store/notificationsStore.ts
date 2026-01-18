@@ -226,8 +226,40 @@ export const useNotificationsStore = create<NotificationsState>((set, get) => ({
         }
       },
       // Session update callback
-      (sessionUpdate: SessionUpdateMessage) => {
+      async (sessionUpdate: SessionUpdateMessage) => {
         console.log('[Session] Update received:', sessionUpdate.type);
+
+        // If a session was revoked, check if it's our current session
+        if (sessionUpdate.type === 'SESSION_REVOKED') {
+          try {
+            // Quick validation: check if our session is still valid
+            const { sessionsApi } = await import('../api/sessions.api');
+            const isValid = await sessionsApi.validateCurrentSession();
+
+            if (!isValid) {
+              // Our session was revoked from another device
+              console.log('[Session] Current session was revoked - logging out immediately');
+
+              // Import dependencies dynamically to avoid circular deps
+              const { useAuthStore } = await import('./authStore');
+              const toast = (await import('react-hot-toast')).default;
+
+              toast.error('Sessioningiz boshqa qurilmadan yopilgan. Qayta kiring.');
+
+              // Logout after a short delay to show the toast
+              setTimeout(() => {
+                useAuthStore.getState().logout();
+                window.location.href = '/login';
+              }, 1500);
+
+              return; // Don't dispatch event if we're logging out
+            }
+
+            console.log('[Session] Current session is still valid - another device logged out');
+          } catch (error: any) {
+            console.error('[Session] Error validating session:', error);
+          }
+        }
 
         // Dispatch custom event for SessionsTab to listen
         window.dispatchEvent(
