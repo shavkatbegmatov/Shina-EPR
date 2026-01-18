@@ -69,7 +69,7 @@ public class AuthController {
 
         if (currentSession != null) {
             // Revoke session WITH notification to update other devices' session lists
-            // The frontend will handle this appropriately based on whether it's the current session
+            // Frontend handles intentional logout flag to prevent showing error message to the user
             sessionService.revokeSession(
                 currentSession.getId(),
                 userDetails.getUser().getId(),

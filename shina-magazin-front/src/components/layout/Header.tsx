@@ -160,6 +160,10 @@ export function Header() {
 
   const handleLogout = async () => {
     try {
+      // Set flag to indicate we're logging out intentionally
+      // This prevents "session revoked from another device" message
+      sessionStorage.setItem('intentional-logout', 'true');
+
       // Revoke session in backend database
       await authApi.logout();
     } catch (error) {

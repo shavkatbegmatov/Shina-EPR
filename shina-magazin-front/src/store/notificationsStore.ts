@@ -231,6 +231,14 @@ export const useNotificationsStore = create<NotificationsState>((set, get) => ({
 
         // Handle SESSION_REVOKED
         if (sessionUpdate.type === 'SESSION_REVOKED') {
+          // Check if this is an intentional logout (user clicked logout button)
+          const intentionalLogout = sessionStorage.getItem('intentional-logout');
+          if (intentionalLogout) {
+            console.log('[Session] Ignoring SESSION_REVOKED - intentional logout in progress');
+            sessionStorage.removeItem('intentional-logout');
+            return; // Don't show notification or dispatch event
+          }
+
           try {
             // Quick validation: check if our session is still valid
             const { sessionsApi } = await import('../api/sessions.api');
