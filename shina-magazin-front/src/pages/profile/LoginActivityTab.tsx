@@ -88,7 +88,7 @@ export function LoginActivityTab() {
             <div key={attempt.id} className="surface-card p-4 sm:p-6">
               <div className="flex flex-col sm:flex-row items-start justify-between gap-3 sm:gap-4">
                 <div className="flex items-start gap-3 sm:gap-4 flex-1 w-full">
-                  <div className={`p-2 sm:p-3 rounded-xl flex-shrink-0 ${
+                  <div className={`p-3 rounded-xl flex-shrink-0 ${
                     attempt.status === 'SUCCESS' ? 'bg-success/10' : 'bg-error/10'
                   }`}>
                     {attempt.status === 'SUCCESS' ? (
@@ -98,8 +98,8 @@ export function LoginActivityTab() {
                     )}
                   </div>
                   <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-2 flex-wrap">
-                      <h4 className="font-semibold">
+                    <div className="flex flex-wrap items-center gap-2">
+                      <h4 className="font-semibold truncate max-w-[200px] sm:max-w-none">
                         {attempt.browser} - {attempt.os}
                       </h4>
                       {getStatusBadge(attempt)}
@@ -113,13 +113,13 @@ export function LoginActivityTab() {
                       </p>
                     )}
                     <div className="flex flex-col sm:flex-row sm:flex-wrap items-start sm:items-center gap-2 sm:gap-4 mt-2 sm:mt-3 text-xs text-base-content/50">
-                      <div className="flex items-center gap-1.5">
+                      <div className="flex items-center gap-1.5 sm:gap-2">
                         <MapPin className="h-3 w-3 flex-shrink-0" />
-                        <span className="break-all">{attempt.ipAddress}</span>
+                        <span className="break-all text-xs">{attempt.ipAddress}</span>
                       </div>
-                      <div className="flex items-center gap-1.5">
+                      <div className="flex items-center gap-1.5 sm:gap-2 whitespace-nowrap">
                         <Calendar className="h-3 w-3 flex-shrink-0" />
-                        {formatTimeAgo(attempt.createdAt)}
+                        <span className="text-xs">{formatTimeAgo(attempt.createdAt)}</span>
                       </div>
                     </div>
                   </div>

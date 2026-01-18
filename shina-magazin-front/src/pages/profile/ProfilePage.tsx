@@ -183,28 +183,28 @@ export function ProfilePage() {
       {/* Tabs */}
       <div className="tabs tabs-bordered overflow-x-auto scrollbar-hide">
         <button
-          className={clsx('tab gap-1 sm:gap-2 text-xs sm:text-sm', activeTab === 'profile' && 'tab-active')}
+          className={clsx('tab gap-2 text-xs sm:text-sm px-3 sm:px-4 min-h-[48px]', activeTab === 'profile' && 'tab-active')}
           onClick={() => setActiveTab('profile')}
         >
           <UserCircle className="h-4 w-4" />
           Ma'lumotlar
         </button>
         <button
-          className={clsx('tab gap-1 sm:gap-2 text-xs sm:text-sm', activeTab === 'security' && 'tab-active')}
+          className={clsx('tab gap-2 text-xs sm:text-sm px-3 sm:px-4 min-h-[48px]', activeTab === 'security' && 'tab-active')}
           onClick={() => setActiveTab('security')}
         >
           <Lock className="h-4 w-4" />
           Xavfsizlik
         </button>
         <button
-          className={clsx('tab gap-1 sm:gap-2 text-xs sm:text-sm', activeTab === 'sessions' && 'tab-active')}
+          className={clsx('tab gap-2 text-xs sm:text-sm px-3 sm:px-4 min-h-[48px]', activeTab === 'sessions' && 'tab-active')}
           onClick={() => setActiveTab('sessions')}
         >
           <Monitor className="h-4 w-4" />
           Sessiyalar
         </button>
         <button
-          className={clsx('tab gap-1 sm:gap-2 text-xs sm:text-sm', activeTab === 'login-activity' && 'tab-active')}
+          className={clsx('tab gap-2 text-xs sm:text-sm px-3 sm:px-4 min-h-[48px]', activeTab === 'login-activity' && 'tab-active')}
           onClick={() => setActiveTab('login-activity')}
         >
           <Shield className="h-4 w-4" />

@@ -224,19 +224,19 @@ export function SessionsTab() {
           </button>
           {otherSessions.length > 0 && (
             <button
-              className="btn btn-error btn-sm flex-1 sm:flex-initial"
+              className="btn btn-error btn-sm w-full sm:w-auto whitespace-nowrap"
               onClick={handleRevokeAllOthers}
               disabled={revokingAll}
             >
               {revokingAll ? (
                 <>
                   <Loader2 className="h-4 w-4 animate-spin" />
-                  Tugatilmoqda...
+                  Tugatilmoqda
                 </>
               ) : (
                 <>
                   <LogOut className="h-4 w-4" />
-                  Barchasidan chiqish
+                  Hammadan chiq
                 </>
               )}
             </button>
@@ -249,15 +249,15 @@ export function SessionsTab() {
         <div className="surface-card p-4 sm:p-6 border-2 border-success">
           <div className="flex flex-col sm:flex-row items-start justify-between gap-3 sm:gap-4">
             <div className="flex items-start gap-3 sm:gap-4 flex-1 w-full">
-              <div className="p-2 sm:p-3 rounded-xl bg-success/10 flex-shrink-0">
+              <div className="p-3 rounded-xl bg-success/10 flex-shrink-0">
                 {getDeviceIcon(currentSession.deviceType)}
               </div>
               <div className="flex-1">
-                <div className="flex items-center gap-2">
-                  <h4 className="font-semibold">
+                <div className="flex flex-wrap items-center gap-2">
+                  <h4 className="font-semibold truncate max-w-[200px] sm:max-w-none">
                     {currentSession.browser} - {currentSession.os}
                   </h4>
-                  <span className="badge badge-success badge-sm gap-1">
+                  <span className="badge badge-success badge-sm gap-1 flex-shrink-0">
                     <CheckCircle className="h-3 w-3" />
                     Hozirgi session
                   </span>
@@ -266,17 +266,17 @@ export function SessionsTab() {
                   {currentSession.deviceType}
                 </p>
                 <div className="flex flex-col sm:flex-row sm:flex-wrap items-start sm:items-center gap-2 sm:gap-4 mt-2 sm:mt-3 text-xs text-base-content/50">
-                  <div className="flex items-center gap-1.5">
+                  <div className="flex items-center gap-1.5 sm:gap-2">
                     <MapPin className="h-3 w-3 flex-shrink-0" />
-                    <span className="break-all">{currentSession.ipAddress}</span>
+                    <span className="break-all text-xs">{currentSession.ipAddress}</span>
                   </div>
-                  <div className="flex items-center gap-1.5">
+                  <div className="flex items-center gap-1.5 sm:gap-2 whitespace-nowrap">
                     <Clock className="h-3 w-3 flex-shrink-0" />
-                    Kirish: {formatTimeAgo(currentSession.createdAt)}
+                    <span className="text-xs">Kirish: {formatTimeAgo(currentSession.createdAt)}</span>
                   </div>
-                  <div className="flex items-center gap-1.5">
+                  <div className="flex items-center gap-1.5 sm:gap-2 whitespace-nowrap">
                     <Clock className="h-3 w-3 flex-shrink-0" />
-                    Faollik: {formatTimeAgo(currentSession.lastActivityAt)}
+                    <span className="text-xs">Faollik: {formatTimeAgo(currentSession.lastActivityAt)}</span>
                   </div>
                 </div>
               </div>
@@ -295,34 +295,34 @@ export function SessionsTab() {
             <div key={session.id} className="surface-card p-4 sm:p-6">
               <div className="flex flex-col sm:flex-row items-start justify-between gap-3 sm:gap-4">
                 <div className="flex items-start gap-3 sm:gap-4 flex-1 w-full">
-                  <div className="p-2 sm:p-3 rounded-xl bg-primary/10 flex-shrink-0">
+                  <div className="p-3 rounded-xl bg-primary/10 flex-shrink-0">
                     {getDeviceIcon(session.deviceType)}
                   </div>
                   <div className="flex-1">
-                    <h4 className="font-semibold">
+                    <h4 className="font-semibold truncate max-w-[200px] sm:max-w-none">
                       {session.browser} - {session.os}
                     </h4>
                     <p className="text-sm text-base-content/60 mt-1">
                       {session.deviceType}
                     </p>
                     <div className="flex flex-col sm:flex-row sm:flex-wrap items-start sm:items-center gap-2 sm:gap-4 mt-2 sm:mt-3 text-xs text-base-content/50">
-                      <div className="flex items-center gap-1.5">
+                      <div className="flex items-center gap-1.5 sm:gap-2">
                         <MapPin className="h-3 w-3 flex-shrink-0" />
-                        <span className="break-all">{session.ipAddress}</span>
+                        <span className="break-all text-xs">{session.ipAddress}</span>
                       </div>
-                      <div className="flex items-center gap-1.5">
+                      <div className="flex items-center gap-1.5 sm:gap-2 whitespace-nowrap">
                         <Clock className="h-3 w-3 flex-shrink-0" />
-                        Kirish: {formatTimeAgo(session.createdAt)}
+                        <span className="text-xs">Kirish: {formatTimeAgo(session.createdAt)}</span>
                       </div>
-                      <div className="flex items-center gap-1.5">
+                      <div className="flex items-center gap-1.5 sm:gap-2 whitespace-nowrap">
                         <Clock className="h-3 w-3 flex-shrink-0" />
-                        Faollik: {formatTimeAgo(session.lastActivityAt)}
+                        <span className="text-xs">Faollik: {formatTimeAgo(session.lastActivityAt)}</span>
                       </div>
                     </div>
                   </div>
                 </div>
                 <button
-                  className="btn btn-ghost btn-sm text-error w-full sm:w-auto mt-3 sm:mt-0"
+                  className="btn btn-ghost btn-sm text-error w-full sm:w-auto mt-3 sm:mt-0 whitespace-nowrap"
                   onClick={() => handleRevokeSession(session.id)}
                   disabled={revokingId === session.id}
                 >
