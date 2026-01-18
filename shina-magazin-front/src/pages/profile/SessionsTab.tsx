@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
   Monitor,
@@ -26,6 +26,29 @@ export function SessionsTab() {
   const [revokingAll, setRevokingAll] = useState(false);
   const { logout } = useAuthStore();
   const navigate = useNavigate();
+
+  // Define fetchSessions before useEffect
+  const fetchSessions = useCallback(async () => {
+    setLoading(true);
+    try {
+      const data = await sessionsApi.getActiveSessions();
+      setSessions(data);
+      console.log('[SessionsTab] Sessions refreshed:', data.length, 'sessions');
+    } catch (error: any) {
+      // If 401 Unauthorized, the session was revoked from another device
+      if (error?.response?.status === 401) {
+        toast.error('Sessioningiz boshqa qurilmadan yopilgan. Qayta kiring.');
+        setTimeout(() => {
+          logout();
+          navigate('/login');
+        }, 1500);
+      } else {
+        toast.error('Sessiyalarni yuklashda xatolik');
+      }
+    } finally {
+      setLoading(false);
+    }
+  }, [logout, navigate]);
 
   useEffect(() => {
     fetchSessions();
@@ -55,28 +78,7 @@ export function SessionsTab() {
     return () => {
       window.removeEventListener('session-update', handleSessionUpdate);
     };
-  }, []);
-
-  const fetchSessions = async () => {
-    setLoading(true);
-    try {
-      const data = await sessionsApi.getActiveSessions();
-      setSessions(data);
-    } catch (error: any) {
-      // If 401 Unauthorized, the session was revoked from another device
-      if (error?.response?.status === 401) {
-        toast.error('Sessioningiz boshqa qurilmadan yopilgan. Qayta kiring.');
-        setTimeout(() => {
-          logout();
-          navigate('/login');
-        }, 1500);
-      } else {
-        toast.error('Sessiyalarni yuklashda xatolik');
-      }
-    } finally {
-      setLoading(false);
-    }
-  };
+  }, [fetchSessions]);
 
   const handleRevokeSession = async (sessionId: number) => {
     if (!confirm('Ushbu qurilmadan chiqmoqchimisiz?')) return;
