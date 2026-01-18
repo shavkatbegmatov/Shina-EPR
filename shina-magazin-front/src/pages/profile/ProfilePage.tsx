@@ -16,6 +16,7 @@ import {
   Lock,
   AlertTriangle,
   Monitor,
+  Activity,
 } from 'lucide-react';
 import toast from 'react-hot-toast';
 import clsx from 'clsx';
@@ -26,8 +27,9 @@ import { ROLES } from '../../config/constants';
 import type { ChangePasswordRequest, User as UserType, Role } from '../../types';
 import { SessionsTab } from './SessionsTab';
 import { LoginActivityTab } from './LoginActivityTab';
+import { ActivityHistoryTab } from './ActivityHistoryTab';
 
-type Tab = 'profile' | 'security' | 'sessions' | 'login-activity';
+type Tab = 'profile' | 'security' | 'sessions' | 'login-activity' | 'activity';
 
 interface PasswordFormData {
   currentPassword: string;
@@ -209,6 +211,13 @@ export function ProfilePage() {
         >
           <Shield className="h-4 w-4" />
           Kirish tarixi
+        </button>
+        <button
+          className={clsx('tab gap-2 text-xs sm:text-sm px-3 sm:px-4 min-h-[48px]', activeTab === 'activity' && 'tab-active')}
+          onClick={() => setActiveTab('activity')}
+        >
+          <Activity className="h-4 w-4" />
+          Faoliyat tarixi
         </button>
       </div>
 
@@ -492,6 +501,9 @@ export function ProfilePage() {
 
       {/* Login Activity Tab */}
       {activeTab === 'login-activity' && <LoginActivityTab />}
+
+      {/* Activity History Tab */}
+      {activeTab === 'activity' && <ActivityHistoryTab />}
     </div>
   );
 }
