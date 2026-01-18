@@ -229,7 +229,7 @@ export const useNotificationsStore = create<NotificationsState>((set, get) => ({
       async (sessionUpdate: SessionUpdateMessage) => {
         console.log('[Session] Update received:', sessionUpdate.type);
 
-        // If a session was revoked, check if it's our current session
+        // Handle SESSION_REVOKED
         if (sessionUpdate.type === 'SESSION_REVOKED') {
           try {
             // Quick validation: check if our session is still valid
@@ -240,13 +240,10 @@ export const useNotificationsStore = create<NotificationsState>((set, get) => ({
               // Our session was revoked from another device
               console.log('[Session] Current session was revoked - logging out immediately');
 
-              // Import dependencies dynamically to avoid circular deps
-              const { useAuthStore } = await import('./authStore');
-              const toast = (await import('react-hot-toast')).default;
-
               toast.error('Sessioningiz boshqa qurilmadan yopilgan. Qayta kiring.');
 
               // Logout after a short delay to show the toast
+              const { useAuthStore } = await import('./authStore');
               setTimeout(() => {
                 useAuthStore.getState().logout();
                 window.location.href = '/login';
@@ -255,13 +252,21 @@ export const useNotificationsStore = create<NotificationsState>((set, get) => ({
               return; // Don't dispatch event if we're logging out
             }
 
+            // Another device logged out - show toast notification
             console.log('[Session] Current session is still valid - another device logged out');
+            toast('Sessiya ro\'yxati yangilandi', { icon: '🔄' });
           } catch (error: any) {
             console.error('[Session] Error validating session:', error);
           }
         }
 
-        // Dispatch custom event for SessionsTab to listen
+        // Handle SESSION_CREATED
+        if (sessionUpdate.type === 'SESSION_CREATED') {
+          console.log('[Session] New session created on another device');
+          toast('Yangi qurilmadan kirish', { icon: '✨' });
+        }
+
+        // Dispatch custom event for SessionsTab to listen (for list refresh)
         window.dispatchEvent(
           new CustomEvent('session-update', { detail: sessionUpdate })
         );

@@ -95,19 +95,19 @@ export function SessionsTab() {
           }, 1500);
         } else {
           // Another device logged out - just refresh the session list
+          // (Toast notification is shown globally by notificationsStore)
           console.log('[SessionsTab] 🔄 Another device logged out - refreshing list...');
-          toast('Sessiya ro\'yxati yangilandi', { icon: '🔄' });
           console.log('[SessionsTab] 🎬 About to call fetchSessions()');
           fetchSessions();
           console.log('[SessionsTab] ✓ fetchSessions() called');
         }
       } else if (data.type === 'SESSION_CREATED') {
         // New session created - refresh list
+        // (Toast notification is shown globally by notificationsStore)
         console.log('[SessionsTab] 🟢 SESSION_CREATED detected');
         console.log('[SessionsTab] 🆔 New sessionId:', data.sessionId);
         console.log('[SessionsTab] 💬 Reason:', data.reason);
         console.log('[SessionsTab] 🔄 Refreshing session list...');
-        toast('Yangi qurilmadan kirish', { icon: '✨' });
         console.log('[SessionsTab] 🎬 About to call fetchSessions()');
         fetchSessions();
         console.log('[SessionsTab] ✓ fetchSessions() called');
