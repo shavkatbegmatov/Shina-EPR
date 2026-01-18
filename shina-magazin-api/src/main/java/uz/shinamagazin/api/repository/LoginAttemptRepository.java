@@ -54,8 +54,8 @@ public interface LoginAttemptRepository extends JpaRepository<LoginAttempt, Long
            "(:username IS NULL OR la.username = :username) " +
            "AND (:status IS NULL OR la.status = :status) " +
            "AND (:ipAddress IS NULL OR la.ipAddress = :ipAddress) " +
-           "AND (:fromDate IS NULL OR la.createdAt >= :fromDate) " +
-           "AND (:toDate IS NULL OR la.createdAt <= :toDate) " +
+           "AND (CAST(:fromDate AS timestamp) IS NULL OR la.createdAt >= :fromDate) " +
+           "AND (CAST(:toDate AS timestamp) IS NULL OR la.createdAt <= :toDate) " +
            "ORDER BY la.createdAt DESC")
     Page<LoginAttempt> findWithFilters(
         @Param("username") String username,
