@@ -1,7 +1,11 @@
 package uz.shinamagazin.api.entity;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
 import lombok.*;
+import org.springframework.data.jpa.domain.support.AuditingEntityListener;
+import uz.shinamagazin.api.audit.Auditable;
+import uz.shinamagazin.api.audit.AuditEntityListener;
 import uz.shinamagazin.api.entity.base.BaseEntity;
 import uz.shinamagazin.api.enums.PaymentStatus;
 import uz.shinamagazin.api.enums.PurchaseOrderStatus;
@@ -9,16 +13,20 @@ import uz.shinamagazin.api.enums.PurchaseOrderStatus;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
+import java.util.Set;
 
 @Entity
 @Table(name = "purchase_orders")
+@EntityListeners({AuditingEntityListener.class, AuditEntityListener.class})
 @Getter
 @Setter
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-public class PurchaseOrder extends BaseEntity {
+public class PurchaseOrder extends BaseEntity implements Auditable {
 
     @Column(name = "order_number", nullable = false, unique = true, length = 30)
     private String orderNumber;
@@ -88,5 +96,55 @@ public class PurchaseOrder extends BaseEntity {
         } else {
             this.paymentStatus = PaymentStatus.PARTIAL;
         }
+    }
+
+    // ============================================
+    // Auditable Interface Implementation
+    // ============================================
+
+    @Override
+    public String getEntityName() {
+        return "PurchaseOrder";
+    }
+
+    @Override
+    @JsonIgnore
+    public Map<String, Object> toAuditMap() {
+        Map<String, Object> map = new HashMap<>();
+        map.put("id", this.id);
+        map.put("orderNumber", this.orderNumber);
+        map.put("orderDate", this.orderDate);
+        map.put("expectedDate", this.expectedDate);
+        map.put("receivedDate", this.receivedDate);
+        map.put("dueDate", this.dueDate);
+        map.put("totalAmount", this.totalAmount);
+        map.put("paidAmount", this.paidAmount);
+        map.put("status", this.status);
+        map.put("paymentStatus", this.paymentStatus);
+        map.put("notes", this.notes);
+
+        // Avoid lazy loading
+        if (this.supplier != null) {
+            map.put("supplierId", this.supplier.getId());
+        }
+        if (this.createdBy != null) {
+            map.put("createdById", this.createdBy.getId());
+        }
+        if (this.items != null) {
+            map.put("itemCount", this.items.size());
+        }
+        if (this.payments != null) {
+            map.put("paymentCount", this.payments.size());
+        }
+        if (this.returns != null) {
+            map.put("returnCount", this.returns.size());
+        }
+
+        return map;
+    }
+
+    @Override
+    public Set<String> getSensitiveFields() {
+        return Set.of(); // No sensitive fields
     }
 }
