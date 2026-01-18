@@ -4,7 +4,6 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
-import org.springframework.scheduling.annotation.Async;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -36,7 +35,6 @@ public class LoginAttemptService {
      * Log a successful login attempt
      */
     @Transactional
-    @Async
     public void logSuccessfulAttempt(String username, String ipAddress, String userAgent, Session session) {
         try {
             User user = userRepository.findByUsername(username).orElse(null);
@@ -65,7 +63,6 @@ public class LoginAttemptService {
      * Log a failed login attempt
      */
     @Transactional
-    @Async
     public void logFailedAttempt(
             String username,
             String ipAddress,
