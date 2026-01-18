@@ -62,6 +62,20 @@ public interface AuditLogRepository extends JpaRepository<AuditLog, Long> {
         Pageable pageable
     );
 
+    @Query("""
+        SELECT a FROM AuditLog a
+        WHERE (:entityType IS NULL OR a.entityType = :entityType)
+        AND (:action IS NULL OR a.action = :action)
+        AND (:userId IS NULL OR a.userId = :userId)
+        ORDER BY a.createdAt DESC
+        """)
+    Page<AuditLog> filterAuditLogs(
+        @Param("entityType") String entityType,
+        @Param("action") String action,
+        @Param("userId") Long userId,
+        Pageable pageable
+    );
+
     @Query("SELECT DISTINCT a.entityType FROM AuditLog a ORDER BY a.entityType")
     List<String> findAllEntityTypes();
 

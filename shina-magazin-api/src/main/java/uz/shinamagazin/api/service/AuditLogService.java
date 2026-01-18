@@ -170,7 +170,14 @@ public class AuditLogService {
             String search,
             Pageable pageable
     ) {
-        return auditLogRepository.searchAuditLogs(entityType, action, userId, search, pageable)
+        String trimmedSearch = (search == null || search.trim().isEmpty()) ? null : search.trim();
+
+        if (trimmedSearch == null) {
+            return auditLogRepository.filterAuditLogs(entityType, action, userId, pageable)
+                    .map(AuditLogResponse::from);
+        }
+
+        return auditLogRepository.searchAuditLogs(entityType, action, userId, trimmedSearch, pageable)
                 .map(AuditLogResponse::from);
     }
 
@@ -210,9 +217,7 @@ public class AuditLogService {
             );
         } else {
             // Use search method with filters
-            auditLogs = auditLogRepository.searchAuditLogs(
-                entityType, action, userId, null, pageable
-            );
+            auditLogs = auditLogRepository.filterAuditLogs(entityType, action, userId, pageable);
         }
 
         return auditLogs.map(UserActivityResponse::from);

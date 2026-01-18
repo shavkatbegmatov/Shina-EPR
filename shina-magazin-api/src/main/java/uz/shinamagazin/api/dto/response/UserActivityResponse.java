@@ -9,6 +9,7 @@ import uz.shinamagazin.api.entity.AuditLog;
 import java.time.LocalDateTime;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Objects;
 
 @Data
 @Builder
@@ -74,10 +75,8 @@ public class UserActivityResponse {
             // UPDATE operation - only include changed fields
             newValue.forEach((key, value) -> {
                 Object oldVal = oldValue.get(key);
-                if (oldVal == null && value != null) {
-                    changes.put(key, Map.of("old", null, "new", value));
-                } else if (oldVal != null && !oldVal.equals(value)) {
-                    changes.put(key, Map.of("old", oldVal, "new", value));
+                if (!Objects.equals(oldVal, value)) {
+                    changes.put(key, buildChangePair(oldVal, value));
                 }
             });
         }
@@ -88,6 +87,13 @@ public class UserActivityResponse {
         }
 
         return changes;
+    }
+
+    private static Map<String, Object> buildChangePair(Object oldValue, Object newValue) {
+        Map<String, Object> pair = new HashMap<>();
+        pair.put("old", oldValue);
+        pair.put("new", newValue);
+        return pair;
     }
 
     private static String generateDescription(
