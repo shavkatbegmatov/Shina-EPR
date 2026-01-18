@@ -27,7 +27,6 @@ import { authApi } from '../../api/auth.api';
 import { ROLES } from '../../config/constants';
 import { SearchCommand } from '../common/SearchCommand';
 import type { Role } from '../../types';
-import toast from 'react-hot-toast';
 
 const getNotificationIcon = (type: Notification['type']) => {
   switch (type) {

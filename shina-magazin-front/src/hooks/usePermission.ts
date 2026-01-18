@@ -78,6 +78,8 @@ export const PermissionCode = {
   EMPLOYEES_CREATE: 'EMPLOYEES_CREATE',
   EMPLOYEES_UPDATE: 'EMPLOYEES_UPDATE',
   EMPLOYEES_DELETE: 'EMPLOYEES_DELETE',
+  EMPLOYEES_CHANGE_ROLE: 'EMPLOYEES_CHANGE_ROLE',
+  EMPLOYEES_MANAGE_ACCESS: 'EMPLOYEES_MANAGE_ACCESS',
 
   // USERS
   USERS_VIEW: 'USERS_VIEW',
@@ -402,6 +404,16 @@ export function usePermission() {
     [permissions]
   );
 
+  const canChangeEmployeeRole = useMemo(
+    () => permissions.has(PermissionCode.EMPLOYEES_CHANGE_ROLE),
+    [permissions]
+  );
+
+  const canManageEmployeeAccess = useMemo(
+    () => permissions.has(PermissionCode.EMPLOYEES_MANAGE_ACCESS),
+    [permissions]
+  );
+
   // Users
   const canViewUsers = useMemo(
     () => permissions.has(PermissionCode.USERS_VIEW),
@@ -556,6 +568,8 @@ export function usePermission() {
     canCreateEmployees,
     canUpdateEmployees,
     canDeleteEmployees,
+    canChangeEmployeeRole,
+    canManageEmployeeAccess,
 
     // Users
     canViewUsers,

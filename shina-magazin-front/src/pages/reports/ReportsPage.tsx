@@ -60,10 +60,10 @@ export function ReportsPage() {
   const [dateRangePreset, setDateRangePreset] = useState<DateRangePreset>('month');
   const [customRange, setCustomRange] = useState<DateRange>({ start: '', end: '' });
   const { notifications } = useNotificationsStore();
-  const { hasPermission } = usePermission();
+  const { canViewReports } = usePermission();
 
   // Early return if no VIEW permission - prevents API calls
-  if (!hasPermission(PermissionCode.REPORTS_VIEW)) {
+  if (!canViewReports) {
     return null;
   }
 

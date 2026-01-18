@@ -33,7 +33,7 @@ export function PasswordChangeModal({ isOpen, onClose }: PasswordChangeModalProp
   const [showNewPassword, setShowNewPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [changingPassword, setChangingPassword] = useState(false);
-  const { logout, user } = useAuthStore();
+  const { logout } = useAuthStore();
   const navigate = useNavigate();
 
   const {

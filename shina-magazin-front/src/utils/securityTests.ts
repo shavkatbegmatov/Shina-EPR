@@ -82,8 +82,8 @@ export const testConcurrentRevocation = (sessionId: number) => {
   Promise.all(promises).then((results) => {
     console.log('Results:', results);
 
-    const successCount = results.filter((r) => r.ok).length;
-    const failCount = results.filter((r) => !r.ok).length;
+    const successCount = results.filter((r) => 'ok' in r && r.ok).length;
+    const failCount = results.filter((r) => !('ok' in r) || !r.ok).length;
 
     if (successCount === 1 && failCount === 2) {
       console.log('✅ PASS: Only 1 request succeeded, 2 failed (idempotent)');
