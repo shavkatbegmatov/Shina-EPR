@@ -97,6 +97,69 @@ public class AuditLogService {
     }
 
     /**
+     * Log CREATE operation with explicit IP address and user agent (from entity listener)
+     */
+    @Async
+    @Transactional
+    public void logCreateWithContext(String entityType, Long entityId, Object newValue, Long userId,
+                                      String ipAddress, String userAgent) {
+        logWithContext(entityType, entityId, "CREATE", null, newValue, userId, ipAddress, userAgent);
+    }
+
+    /**
+     * Log UPDATE operation with explicit IP address and user agent (from entity listener)
+     */
+    @Async
+    @Transactional
+    public void logUpdateWithContext(String entityType, Long entityId, Object oldValue, Object newValue,
+                                      Long userId, String ipAddress, String userAgent) {
+        logWithContext(entityType, entityId, "UPDATE", oldValue, newValue, userId, ipAddress, userAgent);
+    }
+
+    /**
+     * Log DELETE operation with explicit IP address and user agent (from entity listener)
+     */
+    @Async
+    @Transactional
+    public void logDeleteWithContext(String entityType, Long entityId, Object oldValue, Long userId,
+                                      String ipAddress, String userAgent) {
+        logWithContext(entityType, entityId, "DELETE", oldValue, null, userId, ipAddress, userAgent);
+    }
+
+    /**
+     * Log an audit event with explicit IP and user agent (bypasses RequestContextHolder)
+     */
+    private void logWithContext(String entityType, Long entityId, String action, Object oldValue,
+                                 Object newValue, Long userId, String ipAddress, String userAgent) {
+        try {
+            String username = null;
+            if (userId != null) {
+                username = userRepository.findById(userId)
+                        .map(User::getUsername)
+                        .orElse(null);
+            }
+
+            AuditLog auditLog = AuditLog.builder()
+                    .entityType(entityType)
+                    .entityId(entityId)
+                    .action(action)
+                    .oldValue(convertToMap(oldValue))
+                    .newValue(convertToMap(newValue))
+                    .userId(userId)
+                    .username(username)
+                    .ipAddress(ipAddress)
+                    .userAgent(userAgent)
+                    .build();
+
+            auditLogRepository.save(auditLog);
+            log.debug("Audit log created with context: {} {} {} by {} from {} ({})",
+                    action, entityType, entityId, username, ipAddress, userAgent);
+        } catch (Exception e) {
+            log.error("Failed to create audit log with context: {}", e.getMessage(), e);
+        }
+    }
+
+    /**
      * Log an audit event in a new transaction.
      * This method ensures that audit logs are persisted even if the main transaction rolls back.
      * Uses REQUIRES_NEW propagation to create a new transaction independent of the calling code.

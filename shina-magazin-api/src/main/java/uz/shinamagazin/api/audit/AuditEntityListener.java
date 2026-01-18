@@ -2,11 +2,14 @@ package uz.shinamagazin.api.audit;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import jakarta.persistence.*;
+import jakarta.servlet.http.HttpServletRequest;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Component;
+import org.springframework.web.context.request.RequestContextHolder;
+import org.springframework.web.context.request.ServletRequestAttributes;
 import uz.shinamagazin.api.security.CustomUserDetails;
 import uz.shinamagazin.api.service.AuditLogService;
 
@@ -91,16 +94,21 @@ public class AuditEntityListener {
 
         try {
             Long userId = getCurrentUserId();
+            String ipAddress = getClientIpAddress();
+            String userAgent = getUserAgent();
+
             Map<String, Object> newData = sensitiveDataMasker.mask(
                     auditable.toAuditMap(),
                     auditable.getSensitiveFields()
             );
 
-            auditLogService.logCreate(
+            auditLogService.logCreateWithContext(
                     auditable.getEntityName(),
                     auditable.getId(),
                     newData,
-                    userId
+                    userId,
+                    ipAddress,
+                    userAgent
             );
 
             log.debug("Logged CREATE for {} with id {}",
@@ -135,6 +143,8 @@ public class AuditEntityListener {
 
             if (oldEntity instanceof Auditable oldAuditable) {
                 Long userId = getCurrentUserId();
+                String ipAddress = getClientIpAddress();
+                String userAgent = getUserAgent();
 
                 // Get old data and mask sensitive fields
                 Map<String, Object> oldData = sensitiveDataMasker.mask(
@@ -148,12 +158,14 @@ public class AuditEntityListener {
                         auditable.getSensitiveFields()
                 );
 
-                auditLogService.logUpdate(
+                auditLogService.logUpdateWithContext(
                         auditable.getEntityName(),
                         auditable.getId(),
                         oldData,
                         newData,
-                        userId
+                        userId,
+                        ipAddress,
+                        userAgent
                 );
 
                 log.debug("Logged UPDATE for {} with id {}",
@@ -180,16 +192,21 @@ public class AuditEntityListener {
 
         try {
             Long userId = getCurrentUserId();
+            String ipAddress = getClientIpAddress();
+            String userAgent = getUserAgent();
+
             Map<String, Object> oldData = sensitiveDataMasker.mask(
                     auditable.toAuditMap(),
                     auditable.getSensitiveFields()
             );
 
-            auditLogService.logDelete(
+            auditLogService.logDeleteWithContext(
                     auditable.getEntityName(),
                     auditable.getId(),
                     oldData,
-                    userId
+                    userId,
+                    ipAddress,
+                    userAgent
             );
 
             log.debug("Logged DELETE for {} with id {}",
@@ -223,5 +240,47 @@ public class AuditEntityListener {
         }
 
         return null; // System operation or unauthenticated request
+    }
+
+    /**
+     * Get the client IP address from the HTTP request.
+     * Checks X-Forwarded-For header first (for proxied requests),
+     * then falls back to remote address.
+     *
+     * @return the client IP address, or null if not available
+     */
+    private String getClientIpAddress() {
+        try {
+            ServletRequestAttributes attributes = (ServletRequestAttributes) RequestContextHolder.getRequestAttributes();
+            if (attributes != null) {
+                HttpServletRequest request = attributes.getRequest();
+                String xForwardedFor = request.getHeader("X-Forwarded-For");
+                if (xForwardedFor != null && !xForwardedFor.isEmpty()) {
+                    return xForwardedFor.split(",")[0].trim();
+                }
+                return request.getRemoteAddr();
+            }
+        } catch (Exception e) {
+            log.debug("Could not get client IP address: {}", e.getMessage());
+        }
+        return null;
+    }
+
+    /**
+     * Get the User-Agent header from the HTTP request.
+     *
+     * @return the User-Agent string, or null if not available
+     */
+    private String getUserAgent() {
+        try {
+            ServletRequestAttributes attributes = (ServletRequestAttributes) RequestContextHolder.getRequestAttributes();
+            if (attributes != null) {
+                HttpServletRequest request = attributes.getRequest();
+                return request.getHeader("User-Agent");
+            }
+        } catch (Exception e) {
+            log.debug("Could not get user agent: {}", e.getMessage());
+        }
+        return null;
     }
 }
