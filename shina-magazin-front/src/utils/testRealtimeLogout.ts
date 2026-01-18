@@ -10,6 +10,7 @@
  */
 
 import { sessionsApi } from '../api/sessions.api';
+import { useNotificationsStore } from '../store/notificationsStore';
 
 export async function testRealtimeLogout() {
   console.log('%c🧪 Real-Time Logout Test', 'font-size: 20px; font-weight: bold; color: #3b82f6;');
@@ -20,12 +21,21 @@ export async function testRealtimeLogout() {
     // Step 1: Check WebSocket connection
     console.log('%c📝 Step 1: Check WebSocket connection', 'font-weight: bold; color: #eab308;');
 
-    const wsConnected = (window as any).wsConnected || false;
+    const wsConnected = useNotificationsStore.getState().wsConnected;
     console.log(`WebSocket status: ${wsConnected ? '✅ Connected' : '❌ Not connected'}`);
 
     if (!wsConnected) {
       console.log('%c⚠️  WARNING: WebSocket not connected!', 'color: #ef4444;');
-      console.log('Make sure you are logged in and WebSocket is initialized.');
+      console.log('');
+      console.log('Troubleshooting:');
+      console.log('1. Make sure you are logged in');
+      console.log('2. WebSocket connects automatically on login');
+      console.log('3. Check browser console for WebSocket errors');
+      console.log('4. Try refreshing the page');
+      console.log('');
+      console.log('To manually check WebSocket:');
+      console.log('  useNotificationsStore.getState().wsConnected');
+      console.log('');
       return;
     }
 

@@ -15,6 +15,11 @@ if (import.meta.env.DEV) {
     console.log('🧪 Real-time logout test loaded (Development Mode)');
     console.log('Run: testRealtimeLogout()');
   });
+
+  import('./utils/debugWebSocket').then(() => {
+    console.log('🔍 WebSocket debug helper loaded (Development Mode)');
+    console.log('Run: debugWebSocket()');
+  });
 }
 
 createRoot(document.getElementById('root')!).render(
