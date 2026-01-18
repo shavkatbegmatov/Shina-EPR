@@ -1,9 +1,10 @@
 import { useState, useEffect } from 'react';
-import { Shield, CheckCircle, XCircle, Calendar, MapPin, Loader2, RefreshCw } from 'lucide-react';
+import { Shield, CheckCircle, XCircle, Calendar, MapPin, Loader2, RefreshCw, FileSpreadsheet, FileDown } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { loginActivityApi, type LoginAttempt } from '../../api/login-activity.api';
 import { formatDistanceToNow } from 'date-fns';
 import { uz } from 'date-fns/locale';
+import api from '../../api/axios';
 
 export function LoginActivityTab() {
   const [attempts, setAttempts] = useState<LoginAttempt[]>([]);
@@ -52,6 +53,28 @@ export function LoginActivityTab() {
     });
   };
 
+  const handleExport = async (format: 'excel' | 'pdf') => {
+    try {
+      toast.loading(`${format === 'excel' ? 'Excel' : 'PDF'} fayli tayyorlanmoqda...`, { id: 'export' });
+
+      const response = await api.get('/v1/login-activity/export', {
+        params: { format },
+        responseType: 'blob',
+      });
+
+      const url = window.URL.createObjectURL(new Blob([response.data]));
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = `login_activity_${new Date().toISOString().split('T')[0]}.${format === 'excel' ? 'xlsx' : 'pdf'}`;
+      link.click();
+      window.URL.revokeObjectURL(url);
+
+      toast.success('Fayl yuklab olindi!', { id: 'export' });
+    } catch (error) {
+      toast.error('Eksport qilishda xatolik', { id: 'export' });
+    }
+  };
+
   if (loading && currentPage === 0) {
     return (
       <div className="flex items-center justify-center min-h-[400px]">
@@ -70,15 +93,33 @@ export function LoginActivityTab() {
             Barcha kirish urinishlaringiz tarixi (muvaffaqiyatli va xato)
           </p>
         </div>
-        <button
-          className="btn btn-ghost btn-sm w-full sm:w-auto"
-          onClick={fetchLoginHistory}
-          disabled={loading}
-          title="Yangilash"
-        >
-          <RefreshCw className={`h-4 w-4 ${loading ? 'animate-spin' : ''}`} />
-          Yangilash
-        </button>
+        <div className="flex flex-wrap items-center gap-2">
+          <button
+            className="btn btn-success btn-sm"
+            onClick={() => handleExport('excel')}
+            title="Excel formatida yuklab olish"
+          >
+            <FileSpreadsheet className="h-4 w-4" />
+            Excel
+          </button>
+          <button
+            className="btn btn-error btn-sm"
+            onClick={() => handleExport('pdf')}
+            title="PDF formatida yuklab olish"
+          >
+            <FileDown className="h-4 w-4" />
+            PDF
+          </button>
+          <button
+            className="btn btn-ghost btn-sm"
+            onClick={fetchLoginHistory}
+            disabled={loading}
+            title="Yangilash"
+          >
+            <RefreshCw className={`h-4 w-4 ${loading ? 'animate-spin' : ''}`} />
+            Yangilash
+          </button>
+        </div>
       </div>
 
       {/* Login attempts list */}
