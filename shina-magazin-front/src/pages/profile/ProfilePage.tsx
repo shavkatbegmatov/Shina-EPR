@@ -180,23 +180,23 @@ export function ProfilePage() {
       </div>
 
       {/* Tabs */}
-      <div className="tabs tabs-bordered">
+      <div className="tabs tabs-bordered overflow-x-auto scrollbar-hide">
         <button
-          className={clsx('tab gap-2', activeTab === 'profile' && 'tab-active')}
+          className={clsx('tab gap-1 sm:gap-2 text-xs sm:text-sm', activeTab === 'profile' && 'tab-active')}
           onClick={() => setActiveTab('profile')}
         >
           <UserCircle className="h-4 w-4" />
           Ma'lumotlar
         </button>
         <button
-          className={clsx('tab gap-2', activeTab === 'security' && 'tab-active')}
+          className={clsx('tab gap-1 sm:gap-2 text-xs sm:text-sm', activeTab === 'security' && 'tab-active')}
           onClick={() => setActiveTab('security')}
         >
           <Lock className="h-4 w-4" />
           Xavfsizlik
         </button>
         <button
-          className={clsx('tab gap-2', activeTab === 'sessions' && 'tab-active')}
+          className={clsx('tab gap-1 sm:gap-2 text-xs sm:text-sm', activeTab === 'sessions' && 'tab-active')}
           onClick={() => setActiveTab('sessions')}
         >
           <Monitor className="h-4 w-4" />
@@ -209,22 +209,22 @@ export function ProfilePage() {
         <div className="space-y-6">
           {/* User Card */}
           <div className="surface-card p-6">
-            <div className="flex flex-col sm:flex-row items-start sm:items-center gap-6">
+            <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4 sm:gap-6">
               <div
                 className={clsx(
-                  'w-24 h-24 rounded-2xl flex items-center justify-center flex-shrink-0',
+                  'w-20 h-20 sm:w-24 sm:h-24 rounded-2xl flex items-center justify-center flex-shrink-0',
                   'bg-gradient-to-br from-primary/20 to-secondary/20 text-primary',
                   'ring-4 ring-primary/10'
                 )}
               >
-                <span className="text-4xl font-bold">{userInitial}</span>
+                <span className="text-3xl sm:text-4xl font-bold">{userInitial}</span>
               </div>
-              <div className="flex-1">
-                <h2 className="text-2xl font-bold">{userData?.fullName}</h2>
-                <p className="text-base-content/60">@{userData?.username}</p>
+              <div className="flex-1 min-w-0">
+                <h2 className="text-xl sm:text-2xl font-bold break-words">{userData?.fullName}</h2>
+                <p className="text-sm sm:text-base text-base-content/60 truncate">@{userData?.username}</p>
                 <div
                   className={clsx(
-                    'inline-flex items-center gap-1.5 mt-3 px-3 py-1.5 rounded-full text-xs font-semibold border',
+                    'inline-flex items-center gap-1 sm:gap-1.5 mt-2 sm:mt-3 px-2.5 sm:px-3 py-1.5 rounded-full text-xs font-semibold border',
                     getRoleBadgeColor(userData?.role)
                   )}
                 >
@@ -249,12 +249,12 @@ export function ProfilePage() {
           </div>
 
           {/* Contact Info */}
-          <div className="surface-card p-6">
-            <h3 className="text-lg font-semibold mb-6">Kontakt ma'lumotlari</h3>
-            <div className="grid gap-6 sm:grid-cols-2">
+          <div className="surface-card p-4 sm:p-6">
+            <h3 className="text-base sm:text-lg font-semibold mb-4 sm:mb-6">Kontakt ma'lumotlari</h3>
+            <div className="grid gap-4 sm:gap-6 sm:grid-cols-2">
               {/* Email */}
-              <div className="flex items-center gap-4 p-4 rounded-xl bg-base-200/50">
-                <div className="p-3 rounded-xl bg-primary/10">
+              <div className="flex items-center gap-3 sm:gap-4 p-3 sm:p-4 rounded-xl bg-base-200/50">
+                <div className="p-2 sm:p-3 rounded-xl bg-primary/10">
                   <Mail className="h-5 w-5 text-primary" />
                 </div>
                 <div>
@@ -264,8 +264,8 @@ export function ProfilePage() {
               </div>
 
               {/* Phone */}
-              <div className="flex items-center gap-4 p-4 rounded-xl bg-base-200/50">
-                <div className="p-3 rounded-xl bg-primary/10">
+              <div className="flex items-center gap-3 sm:gap-4 p-3 sm:p-4 rounded-xl bg-base-200/50">
+                <div className="p-2 sm:p-3 rounded-xl bg-primary/10">
                   <Phone className="h-5 w-5 text-primary" />
                 </div>
                 <div>
@@ -275,8 +275,8 @@ export function ProfilePage() {
               </div>
 
               {/* Username */}
-              <div className="flex items-center gap-4 p-4 rounded-xl bg-base-200/50">
-                <div className="p-3 rounded-xl bg-info/10">
+              <div className="flex items-center gap-3 sm:gap-4 p-3 sm:p-4 rounded-xl bg-base-200/50">
+                <div className="p-2 sm:p-3 rounded-xl bg-info/10">
                   <User className="h-5 w-5 text-info" />
                 </div>
                 <div>
@@ -286,8 +286,8 @@ export function ProfilePage() {
               </div>
 
               {/* Role */}
-              <div className="flex items-center gap-4 p-4 rounded-xl bg-base-200/50">
-                <div className="p-3 rounded-xl bg-warning/10">
+              <div className="flex items-center gap-3 sm:gap-4 p-3 sm:p-4 rounded-xl bg-base-200/50">
+                <div className="p-2 sm:p-3 rounded-xl bg-warning/10">
                   <Shield className="h-5 w-5 text-warning" />
                 </div>
                 <div>
@@ -319,9 +319,9 @@ export function ProfilePage() {
             </div>
           )}
 
-          <div className="surface-card p-6">
-            <div className="flex items-start gap-4 mb-6">
-              <div className="p-3 rounded-xl bg-warning/10">
+          <div className="surface-card p-4 sm:p-6">
+            <div className="flex items-start gap-3 sm:gap-4 mb-4 sm:mb-6">
+              <div className="p-2 sm:p-3 rounded-xl bg-warning/10">
                 <Key className="h-6 w-6 text-warning" />
               </div>
               <div>
@@ -332,7 +332,7 @@ export function ProfilePage() {
               </div>
             </div>
 
-            <form onSubmit={handleSubmit(onSubmitPassword)} className="max-w-md space-y-4">
+            <form onSubmit={handleSubmit(onSubmitPassword)} className="w-full max-w-md space-y-3 sm:space-y-4">
               {/* Current Password */}
               <div className="form-control">
                 <span className="label-text mb-1 text-xs font-semibold uppercase tracking-[0.18em] text-base-content/50">
@@ -398,7 +398,7 @@ export function ProfilePage() {
 
               {/* Password Strength Indicator */}
               {newPassword && (
-                <div className="space-y-3 p-4 rounded-xl bg-base-200/50">
+                <div className="space-y-2 sm:space-y-3 p-3 sm:p-4 rounded-xl bg-base-200/50">
                   <div className="flex items-center gap-2">
                     <div className="flex-1 h-2 bg-base-300 rounded-full overflow-hidden">
                       <div
@@ -410,7 +410,7 @@ export function ProfilePage() {
                       {getStrengthLabel()}
                     </span>
                   </div>
-                  <div className="grid grid-cols-2 gap-2">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                     <PasswordRequirement met={hasMinLength} text="Kamida 6 belgi" />
                     <PasswordRequirement met={hasUppercase} text="Katta harf" />
                     <PasswordRequirement met={hasLowercase} text="Kichik harf" />
@@ -451,10 +451,10 @@ export function ProfilePage() {
                 )}
               </div>
 
-              <div className="pt-2">
+              <div className="pt-2 sm:pt-3">
                 <button
                   type="submit"
-                  className="btn btn-primary"
+                  className="btn btn-primary w-full sm:w-auto"
                   disabled={changingPassword || passwordStrength < 3}
                 >
                   {changingPassword ? (

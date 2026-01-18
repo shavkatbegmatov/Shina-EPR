@@ -205,16 +205,16 @@ export function SessionsTab() {
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div className="flex items-start justify-between">
-        <div>
-          <h3 className="text-lg font-semibold">Faol sessiyalar</h3>
-          <p className="text-sm text-base-content/60 mt-1">
+      <div className="flex flex-col sm:flex-row items-start sm:items-start justify-between gap-3 sm:gap-4">
+        <div className="flex-1">
+          <h3 className="text-base sm:text-lg font-semibold">Faol sessiyalar</h3>
+          <p className="text-xs sm:text-sm text-base-content/60 mt-1">
             Barcha kirish sessiyalarini boshqaring va xavfsizligingizni ta'minlang
           </p>
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex flex-wrap items-center gap-2 w-full sm:w-auto">
           <button
-            className="btn btn-ghost btn-sm"
+            className="btn btn-ghost btn-sm flex-1 sm:flex-initial"
             onClick={fetchSessions}
             disabled={loading}
             title="Yangilash"
@@ -224,7 +224,7 @@ export function SessionsTab() {
           </button>
           {otherSessions.length > 0 && (
             <button
-              className="btn btn-error btn-sm"
+              className="btn btn-error btn-sm flex-1 sm:flex-initial"
               onClick={handleRevokeAllOthers}
               disabled={revokingAll}
             >
@@ -246,10 +246,10 @@ export function SessionsTab() {
 
       {/* Current Session */}
       {currentSession && (
-        <div className="surface-card p-6 border-2 border-success">
-          <div className="flex items-start justify-between">
-            <div className="flex items-start gap-4 flex-1">
-              <div className="p-3 rounded-xl bg-success/10">
+        <div className="surface-card p-4 sm:p-6 border-2 border-success">
+          <div className="flex flex-col sm:flex-row items-start justify-between gap-3 sm:gap-4">
+            <div className="flex items-start gap-3 sm:gap-4 flex-1 w-full">
+              <div className="p-2 sm:p-3 rounded-xl bg-success/10 flex-shrink-0">
                 {getDeviceIcon(currentSession.deviceType)}
               </div>
               <div className="flex-1">
@@ -265,17 +265,17 @@ export function SessionsTab() {
                 <p className="text-sm text-base-content/60 mt-1">
                   {currentSession.deviceType}
                 </p>
-                <div className="flex flex-wrap items-center gap-4 mt-3 text-xs text-base-content/50">
-                  <div className="flex items-center gap-1">
-                    <MapPin className="h-3 w-3" />
-                    {currentSession.ipAddress}
+                <div className="flex flex-col sm:flex-row sm:flex-wrap items-start sm:items-center gap-2 sm:gap-4 mt-2 sm:mt-3 text-xs text-base-content/50">
+                  <div className="flex items-center gap-1.5">
+                    <MapPin className="h-3 w-3 flex-shrink-0" />
+                    <span className="break-all">{currentSession.ipAddress}</span>
                   </div>
-                  <div className="flex items-center gap-1">
-                    <Clock className="h-3 w-3" />
+                  <div className="flex items-center gap-1.5">
+                    <Clock className="h-3 w-3 flex-shrink-0" />
                     Kirish: {formatTimeAgo(currentSession.createdAt)}
                   </div>
-                  <div className="flex items-center gap-1">
-                    <Clock className="h-3 w-3" />
+                  <div className="flex items-center gap-1.5">
+                    <Clock className="h-3 w-3 flex-shrink-0" />
                     Faollik: {formatTimeAgo(currentSession.lastActivityAt)}
                   </div>
                 </div>
@@ -292,10 +292,10 @@ export function SessionsTab() {
             Boshqa qurilmalar ({otherSessions.length})
           </h4>
           {otherSessions.map((session) => (
-            <div key={session.id} className="surface-card p-6">
-              <div className="flex items-start justify-between">
-                <div className="flex items-start gap-4 flex-1">
-                  <div className="p-3 rounded-xl bg-primary/10">
+            <div key={session.id} className="surface-card p-4 sm:p-6">
+              <div className="flex flex-col sm:flex-row items-start justify-between gap-3 sm:gap-4">
+                <div className="flex items-start gap-3 sm:gap-4 flex-1 w-full">
+                  <div className="p-2 sm:p-3 rounded-xl bg-primary/10 flex-shrink-0">
                     {getDeviceIcon(session.deviceType)}
                   </div>
                   <div className="flex-1">
@@ -305,24 +305,24 @@ export function SessionsTab() {
                     <p className="text-sm text-base-content/60 mt-1">
                       {session.deviceType}
                     </p>
-                    <div className="flex flex-wrap items-center gap-4 mt-3 text-xs text-base-content/50">
-                      <div className="flex items-center gap-1">
-                        <MapPin className="h-3 w-3" />
-                        {session.ipAddress}
+                    <div className="flex flex-col sm:flex-row sm:flex-wrap items-start sm:items-center gap-2 sm:gap-4 mt-2 sm:mt-3 text-xs text-base-content/50">
+                      <div className="flex items-center gap-1.5">
+                        <MapPin className="h-3 w-3 flex-shrink-0" />
+                        <span className="break-all">{session.ipAddress}</span>
                       </div>
-                      <div className="flex items-center gap-1">
-                        <Clock className="h-3 w-3" />
+                      <div className="flex items-center gap-1.5">
+                        <Clock className="h-3 w-3 flex-shrink-0" />
                         Kirish: {formatTimeAgo(session.createdAt)}
                       </div>
-                      <div className="flex items-center gap-1">
-                        <Clock className="h-3 w-3" />
+                      <div className="flex items-center gap-1.5">
+                        <Clock className="h-3 w-3 flex-shrink-0" />
                         Faollik: {formatTimeAgo(session.lastActivityAt)}
                       </div>
                     </div>
                   </div>
                 </div>
                 <button
-                  className="btn btn-ghost btn-sm text-error"
+                  className="btn btn-ghost btn-sm text-error w-full sm:w-auto mt-3 sm:mt-0"
                   onClick={() => handleRevokeSession(session.id)}
                   disabled={revokingId === session.id}
                 >
