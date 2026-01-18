@@ -10,6 +10,11 @@ if (import.meta.env.DEV) {
     console.log('🔒 Security test suite loaded (Development Mode)');
     console.log('Run: securityTests.runAllSecurityTests()');
   });
+
+  import('./utils/testRealtimeLogout').then(() => {
+    console.log('🧪 Real-time logout test loaded (Development Mode)');
+    console.log('Run: testRealtimeLogout()');
+  });
 }
 
 createRoot(document.getElementById('root')!).render(
