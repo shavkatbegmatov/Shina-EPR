@@ -39,11 +39,11 @@ export function SessionsTab() {
 
       if (data.type === 'SESSION_REVOKED') {
         // Session revoked - refresh list immediately
-        toast.info('Sessiya yangilandi', { icon: '🔄' });
+        toast('Sessiya yangilandi', { icon: '🔄' });
         fetchSessions();
       } else if (data.type === 'SESSION_CREATED') {
         // New session created - refresh list
-        toast.info('Yangi sessiya yaratildi', { icon: '✨' });
+        toast('Yangi sessiya yaratildi', { icon: '✨' });
         fetchSessions();
       }
     };
