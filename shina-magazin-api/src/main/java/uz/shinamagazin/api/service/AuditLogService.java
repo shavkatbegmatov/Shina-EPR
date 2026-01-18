@@ -9,6 +9,7 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.context.request.RequestContextHolder;
 import org.springframework.web.context.request.ServletRequestAttributes;
@@ -92,6 +93,60 @@ public class AuditLogService {
     @Transactional
     public void logDelete(String entityType, Long entityId, Object oldValue, Long userId) {
         log(entityType, entityId, "DELETE", oldValue, null, userId);
+    }
+
+    /**
+     * Log an audit event in a new transaction.
+     * This method ensures that audit logs are persisted even if the main transaction rolls back.
+     * Uses REQUIRES_NEW propagation to create a new transaction independent of the calling code.
+     *
+     * <p>This is particularly useful for:</p>
+     * <ul>
+     *   <li>Critical audit events that must be recorded regardless of transaction outcome</li>
+     *   <li>Operations that might be rolled back due to validation errors</li>
+     *   <li>Ensuring audit trail completeness for compliance purposes</li>
+     * </ul>
+     *
+     * @param entityType the type of entity (e.g., "User", "Product")
+     * @param entityId the ID of the entity
+     * @param action the action performed (CREATE, UPDATE, DELETE)
+     * @param oldValue the old state of the entity (null for CREATE)
+     * @param newValue the new state of the entity (null for DELETE)
+     * @param userId the ID of the user who performed the action
+     */
+    @Async
+    @Transactional(propagation = Propagation.REQUIRES_NEW)
+    public void logInNewTransaction(String entityType, Long entityId, String action,
+                                     Object oldValue, Object newValue, Long userId) {
+        try {
+            String username = null;
+            if (userId != null) {
+                username = userRepository.findById(userId)
+                        .map(User::getUsername)
+                        .orElse(null);
+            }
+
+            String ipAddress = getClientIpAddress();
+            String userAgent = getUserAgent();
+
+            AuditLog auditLog = AuditLog.builder()
+                    .entityType(entityType)
+                    .entityId(entityId)
+                    .action(action)
+                    .oldValue(convertToMap(oldValue))
+                    .newValue(convertToMap(newValue))
+                    .userId(userId)
+                    .username(username)
+                    .ipAddress(ipAddress)
+                    .userAgent(userAgent)
+                    .build();
+
+            auditLogRepository.save(auditLog);
+            log.debug("Audit log created in new transaction: {} {} {} by {}",
+                    action, entityType, entityId, username);
+        } catch (Exception e) {
+            log.error("Failed to create audit log in new transaction: {}", e.getMessage(), e);
+        }
     }
 
     /**

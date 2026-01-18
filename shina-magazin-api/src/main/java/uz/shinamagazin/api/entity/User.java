@@ -1,22 +1,29 @@
 package uz.shinamagazin.api.entity;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
 import lombok.*;
+import org.springframework.data.jpa.domain.support.AuditingEntityListener;
+import uz.shinamagazin.api.audit.Auditable;
+import uz.shinamagazin.api.audit.AuditEntityListener;
 import uz.shinamagazin.api.entity.base.BaseEntity;
 import uz.shinamagazin.api.enums.Role;
 
 import java.time.LocalDateTime;
+import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Map;
 import java.util.Set;
 
 @Entity
 @Table(name = "users")
+@EntityListeners({AuditingEntityListener.class, AuditEntityListener.class})
 @Getter
 @Setter
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-public class User extends BaseEntity {
+public class User extends BaseEntity implements Auditable {
 
     @Column(nullable = false, unique = true, length = 50)
     private String username;
@@ -83,5 +90,45 @@ public class User extends BaseEntity {
      */
     public boolean hasPermission(String permissionCode) {
         return getPermissionCodes().contains(permissionCode);
+    }
+
+    // ============================================
+    // Auditable Interface Implementation
+    // ============================================
+
+    @Override
+    public String getEntityName() {
+        return "User";
+    }
+
+    @Override
+    @JsonIgnore
+    public Map<String, Object> toAuditMap() {
+        Map<String, Object> map = new HashMap<>();
+        map.put("id", this.id);
+        map.put("username", this.username);
+        map.put("fullName", this.fullName);
+        map.put("email", this.email);
+        map.put("phone", this.phone);
+        map.put("active", this.active);
+        map.put("mustChangePassword", this.mustChangePassword);
+        map.put("password", this.password); // Will be masked by SensitiveDataMasker
+
+        // Include simple fields only - avoid lazy collections
+        if (this.createdBy != null) {
+            map.put("createdById", this.createdBy.getId());
+        }
+
+        // Include role count but not full role details (lazy loading)
+        if (this.roles != null) {
+            map.put("roleCount", this.roles.size());
+        }
+
+        return map;
+    }
+
+    @Override
+    public Set<String> getSensitiveFields() {
+        return Set.of("password");
     }
 }
