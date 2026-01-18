@@ -35,6 +35,19 @@ public interface AuditLogRepository extends JpaRepository<AuditLog, Long> {
 
     @Query("""
         SELECT a FROM AuditLog a
+        WHERE a.userId = :userId
+        AND a.createdAt BETWEEN :startDate AND :endDate
+        ORDER BY a.createdAt DESC
+        """)
+    Page<AuditLog> findByUserIdAndDateRange(
+        @Param("userId") Long userId,
+        @Param("startDate") LocalDateTime startDate,
+        @Param("endDate") LocalDateTime endDate,
+        Pageable pageable
+    );
+
+    @Query("""
+        SELECT a FROM AuditLog a
         WHERE (:entityType IS NULL OR a.entityType = :entityType)
         AND (:action IS NULL OR a.action = :action)
         AND (:userId IS NULL OR a.userId = :userId)

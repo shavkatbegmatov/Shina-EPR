@@ -14,6 +14,7 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.context.request.RequestContextHolder;
 import org.springframework.web.context.request.ServletRequestAttributes;
 import uz.shinamagazin.api.dto.response.AuditLogResponse;
+import uz.shinamagazin.api.dto.response.UserActivityResponse;
 import uz.shinamagazin.api.entity.AuditLog;
 import uz.shinamagazin.api.entity.User;
 import uz.shinamagazin.api.repository.AuditLogRepository;
@@ -179,6 +180,42 @@ public class AuditLogService {
     public Page<AuditLogResponse> getAuditLogsByUser(Long userId, Pageable pageable) {
         return auditLogRepository.findByUserId(userId, pageable)
                 .map(AuditLogResponse::from);
+    }
+
+    /**
+     * Get user activity with filters for activity history feature
+     *
+     * @param userId the ID of the user whose activity to retrieve
+     * @param entityType optional filter by entity type (e.g., "Product", "Sale")
+     * @param action optional filter by action (CREATE, UPDATE, DELETE)
+     * @param startDate optional filter by start date
+     * @param endDate optional filter by end date
+     * @param pageable pagination parameters
+     * @return Page of UserActivityResponse with human-readable descriptions
+     */
+    public Page<UserActivityResponse> getUserActivity(
+            Long userId,
+            String entityType,
+            String action,
+            LocalDateTime startDate,
+            LocalDateTime endDate,
+            Pageable pageable
+    ) {
+        Page<AuditLog> auditLogs;
+
+        if (startDate != null && endDate != null) {
+            // Filter by date range and user
+            auditLogs = auditLogRepository.findByUserIdAndDateRange(
+                userId, startDate, endDate, pageable
+            );
+        } else {
+            // Use search method with filters
+            auditLogs = auditLogRepository.searchAuditLogs(
+                entityType, action, userId, null, pageable
+            );
+        }
+
+        return auditLogs.map(UserActivityResponse::from);
     }
 
     /**
