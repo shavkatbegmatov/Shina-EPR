@@ -1,20 +1,28 @@
 package uz.shinamagazin.api.entity;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
 import lombok.*;
+import org.springframework.data.jpa.domain.support.AuditingEntityListener;
+import uz.shinamagazin.api.audit.Auditable;
+import uz.shinamagazin.api.audit.AuditEntityListener;
 import uz.shinamagazin.api.entity.base.BaseEntity;
 import uz.shinamagazin.api.enums.StaffNotificationType;
 
 import java.time.LocalDateTime;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.Set;
 
 @Entity
 @Table(name = "staff_notifications")
+@EntityListeners({AuditingEntityListener.class, AuditEntityListener.class})
 @Getter
 @Setter
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-public class StaffNotification extends BaseEntity {
+public class StaffNotification extends BaseEntity implements Auditable {
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "user_id")
@@ -42,4 +50,39 @@ public class StaffNotification extends BaseEntity {
 
     @Column(name = "reference_id")
     private Long referenceId;
+
+    // ============================================
+    // Auditable Interface Implementation
+    // ============================================
+
+    @Override
+    public String getEntityName() {
+        return "StaffNotification";
+    }
+
+    @Override
+    @JsonIgnore
+    public Map<String, Object> toAuditMap() {
+        Map<String, Object> map = new HashMap<>();
+        map.put("id", this.id);
+        map.put("title", this.title);
+        map.put("message", this.message);
+        map.put("notificationType", this.notificationType);
+        map.put("isRead", this.isRead);
+        map.put("readAt", this.readAt);
+        map.put("referenceType", this.referenceType);
+        map.put("referenceId", this.referenceId);
+
+        // Avoid lazy loading
+        if (this.user != null) {
+            map.put("userId", this.user.getId());
+        }
+
+        return map;
+    }
+
+    @Override
+    public Set<String> getSensitiveFields() {
+        return Set.of(); // No sensitive fields
+    }
 }

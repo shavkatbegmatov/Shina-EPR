@@ -1,10 +1,17 @@
 package uz.shinamagazin.api.entity;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
 import lombok.*;
+import org.springframework.data.jpa.domain.support.AuditingEntityListener;
+import uz.shinamagazin.api.audit.Auditable;
+import uz.shinamagazin.api.audit.AuditEntityListener;
 import uz.shinamagazin.api.entity.base.BaseEntity;
 
 import java.time.LocalDateTime;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.Set;
 
 @Entity
 @Table(name = "sessions", indexes = {
@@ -15,13 +22,14 @@ import java.time.LocalDateTime;
     @Index(name = "idx_sessions_last_activity", columnList = "last_activity_at"),
     @Index(name = "idx_sessions_user_active", columnList = "user_id, is_active")
 })
+@EntityListeners({AuditingEntityListener.class, AuditEntityListener.class})
 @Getter
 @Setter
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
 @EqualsAndHashCode(callSuper = false)
-public class Session extends BaseEntity {
+public class Session extends BaseEntity implements Auditable {
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "user_id", nullable = false)
@@ -66,4 +74,45 @@ public class Session extends BaseEntity {
 
     @Column(name = "revoke_reason", length = 255)
     private String revokeReason;
+
+    // ============================================
+    // Auditable Interface Implementation
+    // ============================================
+
+    @Override
+    public String getEntityName() {
+        return "Session";
+    }
+
+    @Override
+    @JsonIgnore
+    public Map<String, Object> toAuditMap() {
+        Map<String, Object> map = new HashMap<>();
+        map.put("id", this.id);
+        map.put("tokenHash", this.tokenHash); // Will be masked
+        map.put("ipAddress", this.ipAddress);
+        map.put("userAgent", this.userAgent);
+        map.put("deviceType", this.deviceType);
+        map.put("browser", this.browser);
+        map.put("os", this.os);
+        map.put("location", this.location);
+        map.put("expiresAt", this.expiresAt);
+        map.put("lastActivityAt", this.lastActivityAt);
+        map.put("isActive", this.isActive);
+        map.put("revokedAt", this.revokedAt);
+        map.put("revokedBy", this.revokedBy);
+        map.put("revokeReason", this.revokeReason);
+
+        // Avoid lazy loading
+        if (this.user != null) {
+            map.put("userId", this.user.getId());
+        }
+
+        return map;
+    }
+
+    @Override
+    public Set<String> getSensitiveFields() {
+        return Set.of("tokenHash"); // Mask token hash
+    }
 }

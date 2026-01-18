@@ -1,12 +1,19 @@
 package uz.shinamagazin.api.entity;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
+import org.springframework.data.jpa.domain.support.AuditingEntityListener;
+import uz.shinamagazin.api.audit.Auditable;
+import uz.shinamagazin.api.audit.AuditEntityListener;
 
 import java.time.LocalDateTime;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.Set;
 
 @Entity
 @Table(name = "login_attempts", indexes = {
@@ -18,11 +25,12 @@ import java.time.LocalDateTime;
     @Index(name = "idx_login_attempts_ip_status_time", columnList = "ip_address, status, created_at"),
     @Index(name = "idx_login_attempts_username_status_time", columnList = "username, status, created_at")
 })
+@EntityListeners({AuditingEntityListener.class, AuditEntityListener.class})
 @Data
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-public class LoginAttempt {
+public class LoginAttempt implements Auditable {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -74,6 +82,52 @@ public class LoginAttempt {
 
     @Column(name = "created_at", nullable = false)
     private LocalDateTime createdAt;
+
+    // ============================================
+    // Auditable Interface Implementation
+    // ============================================
+
+    @Override
+    public String getEntityName() {
+        return "LoginAttempt";
+    }
+
+    @Override
+    @JsonIgnore
+    public Map<String, Object> toAuditMap() {
+        Map<String, Object> map = new HashMap<>();
+        map.put("id", this.id);
+        map.put("username", this.username);
+        map.put("ipAddress", this.ipAddress);
+        map.put("userAgent", this.userAgent);
+        map.put("deviceType", this.deviceType);
+        map.put("browser", this.browser);
+        map.put("os", this.os);
+        map.put("location", this.location);
+        map.put("status", this.status);
+        map.put("failureReason", this.failureReason);
+        map.put("failureMessage", this.failureMessage);
+        map.put("createdAt", this.createdAt);
+
+        // Avoid lazy loading
+        if (this.user != null) {
+            map.put("userId", this.user.getId());
+        }
+        if (this.session != null) {
+            map.put("sessionId", this.session.getId());
+        }
+
+        return map;
+    }
+
+    @Override
+    public Set<String> getSensitiveFields() {
+        return Set.of(); // No sensitive fields
+    }
+
+    // ============================================
+    // Enums
+    // ============================================
 
     public enum LoginStatus {
         SUCCESS,
