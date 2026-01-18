@@ -99,7 +99,7 @@ public class Customer extends BaseEntity implements Auditable {
     @JsonIgnore
     public Map<String, Object> toAuditMap() {
         Map<String, Object> map = new HashMap<>();
-        map.put("id", this.id);
+        map.put("id", getId());
         map.put("fullName", this.fullName);
         map.put("phone", this.phone);
         map.put("phone2", this.phone2);

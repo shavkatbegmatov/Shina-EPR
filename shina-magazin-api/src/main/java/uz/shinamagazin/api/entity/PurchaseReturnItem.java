@@ -53,7 +53,7 @@ public class PurchaseReturnItem extends BaseEntity implements Auditable {
     @JsonIgnore
     public Map<String, Object> toAuditMap() {
         Map<String, Object> map = new HashMap<>();
-        map.put("id", this.id);
+        map.put("id", getId());
         map.put("returnedQuantity", this.returnedQuantity);
         map.put("unitPrice", this.unitPrice);
         map.put("totalPrice", this.totalPrice);

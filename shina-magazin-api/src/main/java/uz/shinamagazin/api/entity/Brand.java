@@ -48,7 +48,7 @@ public class Brand extends BaseEntity implements Auditable {
     @JsonIgnore
     public Map<String, Object> toAuditMap() {
         Map<String, Object> map = new HashMap<>();
-        map.put("id", this.id);
+        map.put("id", getId());
         map.put("name", this.name);
         map.put("country", this.country);
         map.put("logoUrl", this.logoUrl);

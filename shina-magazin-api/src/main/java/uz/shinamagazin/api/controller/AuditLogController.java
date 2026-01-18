@@ -6,6 +6,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.core.io.ByteArrayResource;
 import org.springframework.core.io.Resource;
 import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.data.web.PageableDefault;
@@ -116,7 +117,7 @@ public class AuditLogController {
     ) {
         try {
             // Fetch audit logs with filters (limit to maxRecords for safety)
-            Pageable pageable = Pageable.ofSize(maxRecords).withSort(Sort.by(Sort.Direction.DESC, "createdAt"));
+            Pageable pageable = PageRequest.of(0, maxRecords, Sort.by(Sort.Direction.DESC, "createdAt"));
             Page<AuditLogResponse> auditLogsPage = auditLogService.searchAuditLogs(
                     entityType, action, userId, search, pageable
             );

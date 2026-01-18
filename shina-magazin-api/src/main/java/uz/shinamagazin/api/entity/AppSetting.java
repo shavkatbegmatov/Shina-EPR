@@ -51,7 +51,7 @@ public class AppSetting extends BaseEntity implements Auditable {
     @JsonIgnore
     public Map<String, Object> toAuditMap() {
         Map<String, Object> map = new HashMap<>();
-        map.put("id", this.id);
+        map.put("id", getId());
         map.put("settingKey", this.settingKey);
         map.put("settingValue", this.settingValue);
         map.put("description", this.description);

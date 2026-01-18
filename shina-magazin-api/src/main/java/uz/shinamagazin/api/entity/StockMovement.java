@@ -66,7 +66,7 @@ public class StockMovement extends BaseEntity implements Auditable {
     @JsonIgnore
     public Map<String, Object> toAuditMap() {
         Map<String, Object> map = new HashMap<>();
-        map.put("id", this.id);
+        map.put("id", getId());
         map.put("movementType", this.movementType);
         map.put("quantity", this.quantity);
         map.put("previousStock", this.previousStock);

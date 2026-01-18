@@ -63,7 +63,7 @@ public class Debt extends BaseEntity implements Auditable {
     @JsonIgnore
     public Map<String, Object> toAuditMap() {
         Map<String, Object> map = new HashMap<>();
-        map.put("id", this.id);
+        map.put("id", getId());
         map.put("originalAmount", this.originalAmount);
         map.put("remainingAmount", this.remainingAmount);
         map.put("dueDate", this.dueDate);

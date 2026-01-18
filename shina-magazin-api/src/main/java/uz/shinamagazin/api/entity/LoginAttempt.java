@@ -96,7 +96,7 @@ public class LoginAttempt implements Auditable {
     @JsonIgnore
     public Map<String, Object> toAuditMap() {
         Map<String, Object> map = new HashMap<>();
-        map.put("id", this.id);
+        map.put("id", getId());
         map.put("username", this.username);
         map.put("ipAddress", this.ipAddress);
         map.put("userAgent", this.userAgent);

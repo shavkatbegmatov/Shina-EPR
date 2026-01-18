@@ -66,7 +66,7 @@ public class Supplier extends BaseEntity implements Auditable {
     @JsonIgnore
     public Map<String, Object> toAuditMap() {
         Map<String, Object> map = new HashMap<>();
-        map.put("id", this.id);
+        map.put("id", getId());
         map.put("name", this.name);
         map.put("contactPerson", this.contactPerson);
         map.put("phone", this.phone);

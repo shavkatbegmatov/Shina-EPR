@@ -73,7 +73,7 @@ public class CustomerNotification extends BaseEntity implements Auditable {
     @JsonIgnore
     public Map<String, Object> toAuditMap() {
         Map<String, Object> map = new HashMap<>();
-        map.put("id", this.id);
+        map.put("id", getId());
         map.put("titleUz", this.titleUz);
         map.put("titleRu", this.titleRu);
         map.put("messageUz", this.messageUz);

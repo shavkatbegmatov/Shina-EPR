@@ -57,7 +57,7 @@ public class PurchaseOrderItem extends BaseEntity implements Auditable {
     @JsonIgnore
     public Map<String, Object> toAuditMap() {
         Map<String, Object> map = new HashMap<>();
-        map.put("id", this.id);
+        map.put("id", getId());
         map.put("orderedQuantity", this.orderedQuantity);
         map.put("receivedQuantity", this.receivedQuantity);
         map.put("unitPrice", this.unitPrice);
