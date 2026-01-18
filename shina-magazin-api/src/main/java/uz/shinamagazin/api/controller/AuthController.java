@@ -68,12 +68,13 @@ public class AuthController {
         Session currentSession = sessionService.getSessionByToken(currentToken).orElse(null);
 
         if (currentSession != null) {
-            // Revoke session WITHOUT notification (user is logging out themselves)
+            // Revoke session WITH notification to update other devices' session lists
+            // The frontend will handle this appropriately based on whether it's the current session
             sessionService.revokeSession(
                 currentSession.getId(),
                 userDetails.getUser().getId(),
                 "User logged out",
-                false  // Don't send WebSocket notification to self
+                true  // Send notification so other devices can refresh their session lists
             );
         }
 

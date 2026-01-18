@@ -60,7 +60,19 @@ public class SessionService {
                 .isActive(true)
                 .build();
 
-        return sessionRepository.save(session);
+        Session savedSession = sessionRepository.save(session);
+
+        // Notify user's other devices about new session via WebSocket
+        SessionUpdateMessage message = SessionUpdateMessage.sessionCreated(
+            savedSession.getId(),
+            user.getId(),
+            "New login from " + deviceInfo.getDeviceType() + " - " + deviceInfo.getBrowser()
+        );
+        notificationDispatcher.notifySessionUpdate(user.getId(), message);
+
+        log.info("Session {} created for user {} from {}", savedSession.getId(), user.getId(), ipAddress);
+
+        return savedSession;
     }
 
     /**

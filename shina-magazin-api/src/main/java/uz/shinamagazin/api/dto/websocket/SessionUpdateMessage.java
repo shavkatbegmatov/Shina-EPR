@@ -49,12 +49,12 @@ public class SessionUpdateMessage {
                 .build();
     }
 
-    public static SessionUpdateMessage sessionCreated(Long sessionId, Long userId) {
+    public static SessionUpdateMessage sessionCreated(Long sessionId, Long userId, String reason) {
         return SessionUpdateMessage.builder()
                 .type("SESSION_CREATED")
                 .sessionId(sessionId)
                 .userId(userId)
-                .reason("New login")
+                .reason(reason)
                 .timestamp(System.currentTimeMillis())
                 .build();
     }
