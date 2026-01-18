@@ -217,6 +217,11 @@ export function ActivityHistoryTab() {
                         <Calendar className="h-3.5 w-3.5" />
                         {formatTimeAgo(activity.timestamp)}
                       </span>
+                      {activity.username && (
+                        <span className="flex items-center gap-1">
+                          👤 {activity.username}
+                        </span>
+                      )}
                       <span className="flex items-center gap-1">
                         {getDeviceIcon(activity.deviceType)} {activity.deviceType}
                       </span>

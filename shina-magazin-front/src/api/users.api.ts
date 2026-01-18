@@ -8,6 +8,7 @@ export interface UserActivity {
   entityId: number;
   description: string;
   changes: Record<string, {old: unknown; new: unknown}> | Record<string, unknown>;
+  username: string | null;
   ipAddress: string;
   deviceType: string;
   browser: string;

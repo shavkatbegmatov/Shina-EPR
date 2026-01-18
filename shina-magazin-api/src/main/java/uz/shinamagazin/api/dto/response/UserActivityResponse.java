@@ -22,6 +22,7 @@ public class UserActivityResponse {
     private Long entityId;
     private String description; // Human-readable description
     private Map<String, Object> changes; // Only changed fields
+    private String username; // User who performed the action
     private String ipAddress;
     private String deviceType;
     private String browser;
@@ -53,6 +54,7 @@ public class UserActivityResponse {
                 .entityId(auditLog.getEntityId())
                 .description(description)
                 .changes(changes)
+                .username(auditLog.getUsername())
                 .ipAddress(auditLog.getIpAddress())
                 .deviceType(deviceType)
                 .browser(browser)
