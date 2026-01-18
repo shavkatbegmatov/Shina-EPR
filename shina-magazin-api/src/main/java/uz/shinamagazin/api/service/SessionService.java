@@ -76,6 +76,14 @@ public class SessionService {
      */
     @Transactional
     public void revokeSession(Long sessionId, Long userId, String reason) {
+        revokeSession(sessionId, userId, reason, true);
+    }
+
+    /**
+     * Revoke a specific session with optional notification
+     */
+    @Transactional
+    public void revokeSession(Long sessionId, Long userId, String reason, boolean sendNotification) {
         int updated = sessionRepository.revokeSession(
                 sessionId,
                 userId,
@@ -90,9 +98,11 @@ public class SessionService {
 
         log.info("Session {} revoked by user {}: {}", sessionId, userId, reason);
 
-        // Notify user via WebSocket for real-time update
-        SessionUpdateMessage message = SessionUpdateMessage.sessionRevoked(sessionId, userId, reason);
-        notificationDispatcher.notifySessionUpdate(userId, message);
+        // Notify user via WebSocket for real-time update (only if not self-logout)
+        if (sendNotification) {
+            SessionUpdateMessage message = SessionUpdateMessage.sessionRevoked(sessionId, userId, reason);
+            notificationDispatcher.notifySessionUpdate(userId, message);
+        }
     }
 
     /**

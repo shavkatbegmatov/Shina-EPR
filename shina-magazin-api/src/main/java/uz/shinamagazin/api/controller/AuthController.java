@@ -68,10 +68,12 @@ public class AuthController {
         Session currentSession = sessionService.getSessionByToken(currentToken).orElse(null);
 
         if (currentSession != null) {
+            // Revoke session WITHOUT notification (user is logging out themselves)
             sessionService.revokeSession(
                 currentSession.getId(),
                 userDetails.getUser().getId(),
-                "User logged out"
+                "User logged out",
+                false  // Don't send WebSocket notification to self
             );
         }
 
