@@ -111,12 +111,12 @@ async function testRealtimeLogout() {
   try {
     // Step 1: Login from Session A
     log('yellow', '📝 Step 1: Login as Session A...');
-    const tokenA = await login('admin', 'admin');
+    const tokenA = await login('admin', 'admin123');
     log('green', `✅ Session A token: ${tokenA.substring(0, 30)}...`);
 
     // Step 2: Login from Session B
     log('yellow', '\n📝 Step 2: Login as Session B...');
-    const tokenB = await login('admin', 'admin');
+    const tokenB = await login('admin', 'admin123');
     log('green', `✅ Session B token: ${tokenB.substring(0, 30)}...`);
 
     // Step 3: Get sessions list

@@ -44,7 +44,7 @@ npm run dev
 ### Step 1: Browser A - Chrome
 
 1. **Ochish:** http://localhost:5173
-2. **Login:** `admin` / `admin`
+2. **Login:** `admin` / `admin123`
 3. **Console ochish:** F12 → Console
 4. **Kuzatish:**
    ```
@@ -59,7 +59,7 @@ npm run dev
 ### Step 2: Browser B - Firefox
 
 1. **Ochish:** http://localhost:5173
-2. **Login:** `admin` / `admin`
+2. **Login:** `admin` / `admin123`
 3. **Console ochish:** F12 → Console
 4. **Kuzatish:**
    ```
@@ -326,7 +326,7 @@ All of these must be true:
 **Fastest way to verify it works:**
 
 1. Open 2 browsers (Chrome + Firefox)
-2. Login both as `admin`
+2. Login both as admin (admin/admin123)
 3. In Firefox: Profile → Sessiyalar
 4. In Chrome: Logout
 5. **Watch Firefox:** Toast + list update within 3 seconds
