@@ -25,8 +25,9 @@ import { useAuthStore } from '../../store/authStore';
 import { ROLES } from '../../config/constants';
 import type { ChangePasswordRequest, User as UserType, Role } from '../../types';
 import { SessionsTab } from './SessionsTab';
+import { LoginActivityTab } from './LoginActivityTab';
 
-type Tab = 'profile' | 'security' | 'sessions';
+type Tab = 'profile' | 'security' | 'sessions' | 'login-activity';
 
 interface PasswordFormData {
   currentPassword: string;
@@ -201,6 +202,13 @@ export function ProfilePage() {
         >
           <Monitor className="h-4 w-4" />
           Sessiyalar
+        </button>
+        <button
+          className={clsx('tab gap-1 sm:gap-2 text-xs sm:text-sm', activeTab === 'login-activity' && 'tab-active')}
+          onClick={() => setActiveTab('login-activity')}
+        >
+          <Shield className="h-4 w-4" />
+          Kirish tarixi
         </button>
       </div>
 
@@ -481,6 +489,9 @@ export function ProfilePage() {
 
       {/* Sessions Tab */}
       {activeTab === 'sessions' && <SessionsTab />}
+
+      {/* Login Activity Tab */}
+      {activeTab === 'login-activity' && <LoginActivityTab />}
     </div>
   );
 }
