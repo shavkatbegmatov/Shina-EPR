@@ -4,6 +4,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.poi.ss.usermodel.*;
 import org.apache.poi.ss.util.CellRangeAddress;
+import org.apache.poi.xssf.streaming.SXSSFSheet;
 import org.apache.poi.xssf.streaming.SXSSFWorkbook;
 import org.springframework.stereotype.Service;
 import uz.shinamagazin.api.dto.response.AuditLogResponse;
@@ -31,7 +32,12 @@ public class ExcelExportService {
             String reportTitle
     ) throws IOException {
         try (SXSSFWorkbook workbook = new SXSSFWorkbook(100)) {
-            Sheet sheet = workbook.createSheet("Audit Logs");
+            SXSSFSheet sheet = workbook.createSheet("Audit Logs");
+
+            // Track columns for auto-sizing (required for SXSSFWorkbook)
+            for (int i = 0; i < 7; i++) {
+                sheet.trackColumnForAutoSizing(i);
+            }
 
             // Create styles
             CellStyle headerStyle = createHeaderStyle(workbook);
@@ -111,7 +117,12 @@ public class ExcelExportService {
             String reportTitle
     ) throws IOException {
         try (SXSSFWorkbook workbook = new SXSSFWorkbook(100)) {
-            Sheet sheet = workbook.createSheet("Login Activity");
+            SXSSFSheet sheet = workbook.createSheet("Login Activity");
+
+            // Track columns for auto-sizing (required for SXSSFWorkbook)
+            for (int i = 0; i < 7; i++) {
+                sheet.trackColumnForAutoSizing(i);
+            }
 
             // Create styles
             CellStyle headerStyle = createHeaderStyle(workbook);
