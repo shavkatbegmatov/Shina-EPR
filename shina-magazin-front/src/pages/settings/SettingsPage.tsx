@@ -20,6 +20,7 @@ import { settingsApi } from '../../api/settings.api';
 import { NumberInput } from '../../components/ui/NumberInput';
 import { Select } from '../../components/ui/Select';
 import { ModalPortal } from '../../components/common/Modal';
+import { ExportButtons } from '../../components/common/ExportButtons';
 import { useUIStore } from '../../store/uiStore';
 import { usePermission, PermissionCode } from '../../hooks/usePermission';
 import { PermissionGate } from '../../components/common/PermissionGate';
@@ -120,6 +121,19 @@ export function SettingsPage() {
     loadCategories();
     loadSettings();
   }, [loadBrands, loadCategories, loadSettings]);
+
+  // Export handlers
+  const handleExportBrands = async (format: 'excel' | 'pdf') => {
+    await brandsApi.export.exportData(format, {});
+  };
+
+  const handleExportCategories = async (format: 'excel' | 'pdf') => {
+    await categoriesApi.export.exportData(format, {});
+  };
+
+  const handleExportSettings = async (format: 'excel' | 'pdf') => {
+    await settingsApi.export.exportData(format, {});
+  };
 
   // Brand handlers
   const handleOpenBrandModal = (brand?: Brand) => {
@@ -392,10 +406,18 @@ export function SettingsPage() {
                 {brands.length} ta brend mavjud
               </p>
             </div>
-            <button className="btn btn-primary" onClick={() => handleOpenBrandModal()}>
-              <Plus className="h-5 w-5" />
-              Yangi brend
-            </button>
+            <div className="flex items-center gap-2">
+              <ExportButtons
+                onExportExcel={() => handleExportBrands('excel')}
+                onExportPdf={() => handleExportBrands('pdf')}
+                disabled={brands.length === 0}
+                loading={brandsLoading}
+              />
+              <button className="btn btn-primary" onClick={() => handleOpenBrandModal()}>
+                <Plus className="h-5 w-5" />
+                Yangi brend
+              </button>
+            </div>
           </div>
 
           <div className="surface-card overflow-hidden">
@@ -496,10 +518,18 @@ export function SettingsPage() {
                 {categories.length} ta kategoriya mavjud
               </p>
             </div>
-            <button className="btn btn-primary" onClick={() => handleOpenCategoryModal()}>
-              <Plus className="h-5 w-5" />
-              Yangi kategoriya
-            </button>
+            <div className="flex items-center gap-2">
+              <ExportButtons
+                onExportExcel={() => handleExportCategories('excel')}
+                onExportPdf={() => handleExportCategories('pdf')}
+                disabled={categories.length === 0}
+                loading={categoriesLoading}
+              />
+              <button className="btn btn-primary" onClick={() => handleOpenCategoryModal()}>
+                <Plus className="h-5 w-5" />
+                Yangi kategoriya
+              </button>
+            </div>
           </div>
 
           <div className="surface-card overflow-hidden">
@@ -612,16 +642,24 @@ export function SettingsPage() {
                   Yangi qarzlar uchun standart muddatni belgilang
                 </p>
               </div>
-              <PermissionGate permission={PermissionCode.SETTINGS_UPDATE}>
-                <button
-                  className="btn btn-primary"
-                  onClick={handleSaveSettings}
-                  disabled={settingsSaving || settingsLoading}
-                >
-                  {settingsSaving && <span className="loading loading-spinner loading-sm" />}
-                  Saqlash
-                </button>
-              </PermissionGate>
+              <div className="flex items-center gap-2">
+                <ExportButtons
+                  onExportExcel={() => handleExportSettings('excel')}
+                  onExportPdf={() => handleExportSettings('pdf')}
+                  disabled={settingsLoading}
+                  loading={settingsLoading}
+                />
+                <PermissionGate permission={PermissionCode.SETTINGS_UPDATE}>
+                  <button
+                    className="btn btn-primary"
+                    onClick={handleSaveSettings}
+                    disabled={settingsSaving || settingsLoading}
+                  >
+                    {settingsSaving && <span className="loading loading-spinner loading-sm" />}
+                    Saqlash
+                  </button>
+                </PermissionGate>
+              </div>
             </div>
 
             {settingsLoading ? (
