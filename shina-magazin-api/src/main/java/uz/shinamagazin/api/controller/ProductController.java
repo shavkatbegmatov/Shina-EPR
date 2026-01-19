@@ -4,10 +4,15 @@ import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.springframework.core.io.ByteArrayResource;
+import org.springframework.core.io.Resource;
 import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.web.PageableDefault;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import uz.shinamagazin.api.dto.request.ProductRequest;
@@ -18,7 +23,10 @@ import uz.shinamagazin.api.enums.PermissionCode;
 import uz.shinamagazin.api.enums.Season;
 import uz.shinamagazin.api.security.RequiresPermission;
 import uz.shinamagazin.api.service.ProductService;
+import uz.shinamagazin.api.service.export.GenericExportService;
 
+import java.io.ByteArrayOutputStream;
+import java.time.LocalDate;
 import java.util.List;
 
 @RestController
@@ -28,6 +36,7 @@ import java.util.List;
 public class ProductController {
 
     private final ProductService productService;
+    private final GenericExportService genericExportService;
 
     @GetMapping
     @Operation(summary = "Get all products", description = "Barcha mahsulotlarni olish")
@@ -103,5 +112,50 @@ public class ProductController {
             @RequestParam int adjustment) {
         ProductResponse product = productService.adjustStock(id, adjustment);
         return ResponseEntity.ok(ApiResponse.success("Zaxira yangilandi", product));
+    }
+
+    @GetMapping("/export")
+    @Operation(summary = "Export products", description = "Mahsulotlarni eksport qilish")
+    @RequiresPermission(PermissionCode.REPORTS_EXPORT)
+    public ResponseEntity<Resource> exportProducts(
+            @RequestParam(required = false) Long brandId,
+            @RequestParam(required = false) Long categoryId,
+            @RequestParam(required = false) Season season,
+            @RequestParam(required = false) String search,
+            @RequestParam(defaultValue = "excel") String format,
+            @RequestParam(defaultValue = "10000") int maxRecords
+    ) {
+        try {
+            // Reuse existing filter logic
+            Pageable pageable = PageRequest.of(0, maxRecords);
+            Page<ProductResponse> page = productService.getProductsWithFilters(
+                    brandId, categoryId, season, search, pageable);
+
+            // Generic export
+            ByteArrayOutputStream output = genericExportService.export(
+                    page.getContent(),
+                    ProductResponse.class,
+                    GenericExportService.ExportFormat.valueOf(format.toUpperCase()),
+                    "Mahsulotlar Hisoboti"
+            );
+
+            // Build response
+            String extension = format.equalsIgnoreCase("excel") ? "xlsx" : "pdf";
+            String contentType = format.equalsIgnoreCase("excel")
+                    ? "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+                    : "application/pdf";
+            String filename = "products_" + LocalDate.now() + "." + extension;
+
+            ByteArrayResource resource = new ByteArrayResource(output.toByteArray());
+
+            return ResponseEntity.ok()
+                    .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"" + filename + "\"")
+                    .contentType(MediaType.parseMediaType(contentType))
+                    .contentLength(resource.contentLength())
+                    .body(resource);
+
+        } catch (Exception e) {
+            throw new RuntimeException("Eksport qilishda xatolik: " + e.getMessage(), e);
+        }
     }
 }

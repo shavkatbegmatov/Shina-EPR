@@ -7,6 +7,7 @@ import org.apache.poi.ss.util.CellRangeAddress;
 import org.apache.poi.xssf.streaming.SXSSFSheet;
 import org.apache.poi.xssf.streaming.SXSSFWorkbook;
 import org.springframework.stereotype.Service;
+import uz.shinamagazin.api.annotation.ExportEntity;
 import uz.shinamagazin.api.dto.response.AuditLogResponse;
 import uz.shinamagazin.api.dto.response.LoginAttemptResponse;
 import uz.shinamagazin.api.dto.response.UserActivityResponse;
@@ -15,7 +16,10 @@ import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
+import java.util.stream.IntStream;
 
 @Service
 @RequiredArgsConstructor
@@ -340,5 +344,116 @@ public class ExcelExportService {
             case "DELETE" -> "O'chirildi";
             default -> action;
         };
+    }
+
+    /**
+     * Generic Excel export - works with any annotated entity
+     *
+     * @param rows List of data rows (each row is a map of column header -> value)
+     * @param columns List of column configurations
+     * @param entityConfig Entity-level export configuration
+     * @param title Report title
+     * @return ByteArrayOutputStream containing the Excel file
+     */
+    public ByteArrayOutputStream exportToExcel(
+            List<Map<String, Object>> rows,
+            List<ExportColumnConfig> columns,
+            ExportEntity entityConfig,
+            String title
+    ) throws IOException {
+        try (SXSSFWorkbook workbook = new SXSSFWorkbook(100)) {
+            SXSSFSheet sheet = workbook.createSheet(
+                entityConfig.sheetName().isEmpty() ? "Export" : entityConfig.sheetName()
+            );
+
+            // Track columns for auto-sizing
+            IntStream.range(0, columns.size()).forEach(sheet::trackColumnForAutoSizing);
+
+            // Create styles
+            Map<String, CellStyle> styles = createStandardStyles(workbook);
+
+            int rowNum = 0;
+
+            // Title
+            if (!title.isEmpty()) {
+                Row titleRow = sheet.createRow(rowNum++);
+                Cell titleCell = titleRow.createCell(0);
+                titleCell.setCellValue(title);
+                titleCell.setCellStyle(styles.get("title"));
+                sheet.addMergedRegion(new CellRangeAddress(rowNum - 1, rowNum - 1, 0, columns.size() - 1));
+                rowNum++; // Empty row
+            }
+
+            // Headers
+            Row headerRow = sheet.createRow(rowNum++);
+            for (int i = 0; i < columns.size(); i++) {
+                Cell cell = headerRow.createCell(i);
+                cell.setCellValue(columns.get(i).getHeader());
+                cell.setCellStyle(styles.get("header"));
+            }
+
+            // Data rows
+            for (Map<String, Object> rowData : rows) {
+                Row dataRow = sheet.createRow(rowNum++);
+                int colIndex = 0;
+                for (ExportColumnConfig col : columns) {
+                    Cell cell = dataRow.createCell(colIndex++);
+                    Object value = rowData.get(col.getHeader());
+                    cell.setCellValue(value != null ? value.toString() : "");
+                    cell.setCellStyle(styles.get("data"));
+                }
+            }
+
+            // Auto-size
+            for (int i = 0; i < columns.size(); i++) {
+                sheet.autoSizeColumn(i);
+            }
+
+            ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
+            workbook.write(outputStream);
+            return outputStream;
+        }
+    }
+
+    private Map<String, CellStyle> createStandardStyles(SXSSFWorkbook workbook) {
+        Map<String, CellStyle> styles = new HashMap<>();
+
+        // Header style
+        CellStyle headerStyle = workbook.createCellStyle();
+        headerStyle.setFillForegroundColor(IndexedColors.DARK_BLUE.getIndex());
+        headerStyle.setFillPattern(FillPatternType.SOLID_FOREGROUND);
+        Font headerFont = workbook.createFont();
+        headerFont.setColor(IndexedColors.WHITE.getIndex());
+        headerFont.setBold(true);
+        headerFont.setFontHeightInPoints((short) 12);
+        headerStyle.setFont(headerFont);
+        headerStyle.setAlignment(HorizontalAlignment.CENTER);
+        headerStyle.setVerticalAlignment(VerticalAlignment.CENTER);
+        headerStyle.setBorderBottom(BorderStyle.THIN);
+        headerStyle.setBorderTop(BorderStyle.THIN);
+        headerStyle.setBorderLeft(BorderStyle.THIN);
+        headerStyle.setBorderRight(BorderStyle.THIN);
+        styles.put("header", headerStyle);
+
+        // Title style
+        CellStyle titleStyle = workbook.createCellStyle();
+        Font titleFont = workbook.createFont();
+        titleFont.setBold(true);
+        titleFont.setFontHeightInPoints((short) 16);
+        titleStyle.setFont(titleFont);
+        titleStyle.setAlignment(HorizontalAlignment.CENTER);
+        titleStyle.setVerticalAlignment(VerticalAlignment.CENTER);
+        styles.put("title", titleStyle);
+
+        // Data style
+        CellStyle dataStyle = workbook.createCellStyle();
+        dataStyle.setBorderBottom(BorderStyle.THIN);
+        dataStyle.setBorderTop(BorderStyle.THIN);
+        dataStyle.setBorderLeft(BorderStyle.THIN);
+        dataStyle.setBorderRight(BorderStyle.THIN);
+        dataStyle.setVerticalAlignment(VerticalAlignment.CENTER);
+        styles.put("data", dataStyle);
+
+        return styles;
     }
 }
