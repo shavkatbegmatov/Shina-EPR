@@ -24,6 +24,7 @@ import { SearchInput } from '../../components/ui/SearchInput';
 import { Select } from '../../components/ui/Select';
 import { DataTable, Column } from '../../components/ui/DataTable';
 import { ModalPortal } from '../../components/common/Modal';
+import { ExportButtons } from '../../components/common/ExportButtons';
 import type { Debt, DebtStatus, Payment, PaymentMethod } from '../../types';
 import { useNotificationsStore } from '../../store/notificationsStore';
 import { useHighlight } from '../../hooks/useHighlight';
@@ -397,6 +398,12 @@ export function DebtsPage() {
     }
   };
 
+  const handleExport = async (format: 'excel' | 'pdf') => {
+    await debtsApi.export.exportData(format, {
+      status: statusFilter || undefined,
+    });
+  };
+
   // Helper function to get severity for overdue debts
   const getOverdueSeverity = (daysOverdue: number) => {
     if (daysOverdue >= 30) return { level: 'critical', label: '30+ kun', color: 'text-error', bg: 'bg-error/10' };
@@ -544,6 +551,12 @@ export function DebtsPage() {
           <span className="pill bg-error/10 text-error font-semibold">
             Jami: {formatCurrency(stats.totalActiveDebt)}
           </span>
+          <ExportButtons
+            onExportExcel={() => handleExport('excel')}
+            onExportPdf={() => handleExport('pdf')}
+            disabled={debts.length === 0}
+            loading={refreshing}
+          />
         </div>
       </div>
 

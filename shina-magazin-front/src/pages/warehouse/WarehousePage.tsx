@@ -23,6 +23,7 @@ import { Select } from '../../components/ui/Select';
 import { DataTable, Column } from '../../components/ui/DataTable';
 import { ModalPortal } from '../../components/common/Modal';
 import { SearchInput } from '../../components/ui/SearchInput';
+import { ExportButtons } from '../../components/common/ExportButtons';
 import { useNotificationsStore } from '../../store/notificationsStore';
 import { usePermission, PermissionCode } from '../../hooks/usePermission';
 import { PermissionGate } from '../../components/common/PermissionGate';
@@ -321,6 +322,14 @@ export function WarehousePage() {
     }
   };
 
+  const handleExport = async (format: 'excel' | 'pdf') => {
+    await warehouseApi.export.exportData(format, {
+      productId: undefined,
+      movementType: movementTypeFilter || undefined,
+      referenceType: referenceTypeFilter || undefined,
+    });
+  };
+
   if (loading) {
     return (
       <div className="flex items-center justify-center h-64">
@@ -338,6 +347,12 @@ export function WarehousePage() {
           <p className="section-subtitle">Zaxira nazorati va kirim-chiqim</p>
         </div>
         <div className="flex flex-wrap items-center gap-2">
+          <ExportButtons
+            onExportExcel={() => handleExport('excel')}
+            onExportPdf={() => handleExport('pdf')}
+            disabled={movements.length === 0}
+            loading={refreshingMovements}
+          />
           <PermissionGate permission={PermissionCode.WAREHOUSE_ADJUST}>
             <button
               className="btn btn-success"

@@ -29,6 +29,7 @@ import {
 } from '../../config/constants';
 import { DataTable, Column } from '../../components/ui/DataTable';
 import { ModalPortal } from '../../components/common/Modal';
+import { ExportButtons } from '../../components/common/ExportButtons';
 import { DateRangePicker, type DateRangePreset, type DateRange } from '../../components/common/DateRangePicker';
 import { ProductSearchCombobox } from '../../components/common/ProductSearchCombobox';
 import { CurrencyInput } from '../../components/ui/CurrencyInput';
@@ -268,6 +269,17 @@ export function PurchasesPage() {
     [selectedSupplierId, selectedStatus, selectedPaymentStatus, dateRangePreset]
   );
 
+  // Export handler
+  const handleExport = async (format: 'excel' | 'pdf') => {
+    const { start, end } = getActiveDateRange();
+    await purchasesApi.export.exportData(format, {
+      supplierId: selectedSupplierId,
+      status: selectedStatus || undefined,
+      startDate: start || undefined,
+      endDate: end || undefined,
+    });
+  };
+
   // Purchase modal handlers
   const handleOpenPurchaseModal = () => {
     setSelectedSupplier(null);
@@ -471,6 +483,12 @@ export function PurchasesPage() {
         </div>
         <div className="flex items-center gap-2">
           <span className="pill">{totalElements} ta xarid</span>
+          <ExportButtons
+            onExportExcel={() => handleExport('excel')}
+            onExportPdf={() => handleExport('pdf')}
+            disabled={purchases.length === 0}
+            loading={refreshing}
+          />
           <PermissionGate permission={PermissionCode.PURCHASES_CREATE}>
             <button className="btn btn-primary" onClick={handleOpenPurchaseModal}>
               <Plus className="h-5 w-5" />

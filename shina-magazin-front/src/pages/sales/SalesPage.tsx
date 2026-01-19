@@ -20,6 +20,7 @@ import { Select } from '../../components/ui/Select';
 import { ModalPortal } from '../../components/common/Modal';
 import { DateRangePicker, type DateRangePreset, type DateRange } from '../../components/common/DateRangePicker';
 import { SearchInput } from '../../components/ui/SearchInput';
+import { ExportButtons } from '../../components/common/ExportButtons';
 import { useHighlight } from '../../hooks/useHighlight';
 import { PermissionGate } from '../../components/common/PermissionGate';
 import { usePermission, PermissionCode } from '../../hooks/usePermission';
@@ -291,6 +292,14 @@ export function SalesPage() {
     setPage(0);
   };
 
+  const handleExport = async (format: 'excel' | 'pdf') => {
+    const dateRange = getDateRangeValues(dateRangePreset);
+    await salesApi.export.exportData(format, {
+      startDate: dateRange?.start,
+      endDate: dateRange?.end,
+    });
+  };
+
   const handleCancelSale = async () => {
     if (!selectedSale) return;
 
@@ -331,6 +340,12 @@ export function SalesPage() {
         </div>
         <div className="flex flex-wrap items-center gap-2">
           <span className="pill">{totalElements} ta sotuv</span>
+          <ExportButtons
+            onExportExcel={() => handleExport('excel')}
+            onExportPdf={() => handleExport('pdf')}
+            disabled={sales.length === 0}
+            loading={refreshing}
+          />
           <PermissionGate permission={PermissionCode.SALES_CREATE}>
             <Link to="/pos" className="btn btn-primary">
               <ShoppingCart className="h-5 w-5" />

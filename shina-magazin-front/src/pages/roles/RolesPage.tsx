@@ -15,6 +15,7 @@ import {
 import toast from 'react-hot-toast';
 import { rolesApi, permissionsApi } from '../../api/roles.api';
 import { ModalPortal } from '../../components/common/Modal';
+import { ExportButtons } from '../../components/common/ExportButtons';
 import { usePermission, PermissionCode } from '../../hooks/usePermission';
 import { PermissionGate } from '../../components/common/PermissionGate';
 import type { Role, RoleRequest } from '../../types';
@@ -235,6 +236,12 @@ export function RolesPage() {
     setSelectedPermissions(new Set());
   };
 
+  const handleExport = async (format: 'excel' | 'pdf') => {
+    await rolesApi.export.exportData(format, {
+      search: search || undefined,
+    });
+  };
+
   return (
     <div className="space-y-6">
       {/* Header */}
@@ -245,12 +252,20 @@ export function RolesPage() {
             Foydalanuvchi rollari va huquqlarini boshqarish
           </p>
         </div>
-        <PermissionGate permission={PermissionCode.ROLES_CREATE}>
-          <button className="btn btn-primary" onClick={() => openModal()}>
-            <Plus className="h-5 w-5" />
-            Yangi rol
-          </button>
-        </PermissionGate>
+        <div className="flex flex-wrap items-center gap-2">
+          <ExportButtons
+            onExportExcel={() => handleExport('excel')}
+            onExportPdf={() => handleExport('pdf')}
+            disabled={!roles?.content || roles.content.length === 0}
+            loading={isLoading}
+          />
+          <PermissionGate permission={PermissionCode.ROLES_CREATE}>
+            <button className="btn btn-primary" onClick={() => openModal()}>
+              <Plus className="h-5 w-5" />
+              Yangi rol
+            </button>
+          </PermissionGate>
+        </div>
       </div>
 
       {/* Search */}
