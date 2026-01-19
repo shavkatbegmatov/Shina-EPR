@@ -1,9 +1,7 @@
 package uz.shinamagazin.api.service.export;
 
 import org.springframework.stereotype.Component;
-import uz.shinamagazin.api.enums.CustomerType;
-import uz.shinamagazin.api.enums.EmployeeStatus;
-import uz.shinamagazin.api.enums.Season;
+import uz.shinamagazin.api.enums.*;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
@@ -74,7 +72,66 @@ public class ExportFormatter {
                 case TERMINATED -> "Ishdan bo'shatilgan";
             };
         }
-        // Add other enum translations as needed
+        if (value instanceof PurchaseOrderStatus status) {
+            return switch (status) {
+                case DRAFT -> "Qoralama";
+                case ORDERED -> "Buyurtma berilgan";
+                case PARTIAL -> "Qisman qabul qilingan";
+                case RECEIVED -> "To'liq qabul qilingan";
+                case CANCELLED -> "Bekor qilingan";
+            };
+        }
+        if (value instanceof PaymentStatus status) {
+            return switch (status) {
+                case PAID -> "To'liq to'langan";
+                case PARTIAL -> "Qisman to'langan";
+                case UNPAID -> "To'lanmagan";
+            };
+        }
+        if (value instanceof PaymentMethod method) {
+            return switch (method) {
+                case CASH -> "Naqd";
+                case CARD -> "Plastik karta";
+                case TRANSFER -> "Bank o'tkazmasi";
+                case MIXED -> "Aralash";
+            };
+        }
+        if (value instanceof PaymentType type) {
+            return switch (type) {
+                case SALE_PAYMENT -> "Sotuv uchun to'lov";
+                case DEBT_PAYMENT -> "Qarz uchun to'lov";
+            };
+        }
+        if (value instanceof SaleStatus status) {
+            return switch (status) {
+                case COMPLETED -> "Yakunlangan";
+                case CANCELLED -> "Bekor qilingan";
+                case REFUNDED -> "Qaytarilgan";
+            };
+        }
+        if (value instanceof DebtStatus status) {
+            return switch (status) {
+                case ACTIVE -> "Faol";
+                case PAID -> "To'langan";
+                case OVERDUE -> "Muddati o'tgan";
+            };
+        }
+        if (value instanceof MovementType type) {
+            return switch (type) {
+                case IN -> "Kirim";
+                case OUT -> "Chiqim";
+                case ADJUSTMENT -> "Tuzatish";
+            };
+        }
+        if (value instanceof PurchaseReturnStatus status) {
+            return switch (status) {
+                case PENDING -> "Kutilmoqda";
+                case APPROVED -> "Tasdiqlangan";
+                case COMPLETED -> "Yakunlangan";
+                case REJECTED -> "Rad etilgan";
+            };
+        }
+        // Default fallback for unknown enums
         return value.toString();
     }
 

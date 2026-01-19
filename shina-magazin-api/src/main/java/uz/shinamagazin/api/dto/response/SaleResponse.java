@@ -4,6 +4,9 @@ import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
+import uz.shinamagazin.api.annotation.ExportColumn;
+import uz.shinamagazin.api.annotation.ExportColumn.ColumnType;
+import uz.shinamagazin.api.annotation.ExportEntity;
 import uz.shinamagazin.api.entity.Sale;
 import uz.shinamagazin.api.enums.PaymentMethod;
 import uz.shinamagazin.api.enums.PaymentStatus;
@@ -18,25 +21,63 @@ import java.util.stream.Collectors;
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
+@ExportEntity(
+    sheetName = "Sotuvlar",
+    title = "Sotuvlar Hisoboti",
+    orientation = ExportEntity.Orientation.LANDSCAPE
+)
 public class SaleResponse {
+    @ExportColumn(header = "ID", order = 1, type = ColumnType.NUMBER)
     private Long id;
+
+    @ExportColumn(header = "Faktura raqami", order = 2)
     private String invoiceNumber;
-    private Long customerId;
+
+    private Long customerId; // Not exported
+
+    @ExportColumn(header = "Mijoz", order = 3)
     private String customerName;
+
+    @ExportColumn(header = "Telefon", order = 4)
     private String customerPhone;
+
+    @ExportColumn(header = "Sotuv sanasi", order = 5, type = ColumnType.DATETIME)
     private LocalDateTime saleDate;
+
+    @ExportColumn(header = "Oraliq summa", order = 6, type = ColumnType.CURRENCY)
     private BigDecimal subtotal;
+
+    @ExportColumn(header = "Chegirma summasi", order = 7, type = ColumnType.CURRENCY)
     private BigDecimal discountAmount;
+
+    @ExportColumn(header = "Chegirma %", order = 8, type = ColumnType.NUMBER)
     private BigDecimal discountPercent;
+
+    @ExportColumn(header = "Jami summa", order = 9, type = ColumnType.CURRENCY)
     private BigDecimal totalAmount;
+
+    @ExportColumn(header = "To'langan", order = 10, type = ColumnType.CURRENCY)
     private BigDecimal paidAmount;
+
+    @ExportColumn(header = "Qarz", order = 11, type = ColumnType.CURRENCY)
     private BigDecimal debtAmount;
+
+    @ExportColumn(header = "To'lov usuli", order = 12, type = ColumnType.ENUM)
     private PaymentMethod paymentMethod;
+
+    @ExportColumn(header = "To'lov holati", order = 13, type = ColumnType.ENUM)
     private PaymentStatus paymentStatus;
+
+    @ExportColumn(header = "Holat", order = 14, type = ColumnType.ENUM)
     private SaleStatus status;
+
+    @ExportColumn(header = "Izoh", order = 15)
     private String notes;
+
+    @ExportColumn(header = "Kim yaratgan", order = 16)
     private String createdByName;
-    private List<SaleItemResponse> items;
+
+    private List<SaleItemResponse> items; // Not exported (complex type)
 
     public static SaleResponse from(Sale sale) {
         return SaleResponse.builder()

@@ -4,6 +4,9 @@ import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
+import uz.shinamagazin.api.annotation.ExportColumn;
+import uz.shinamagazin.api.annotation.ExportColumn.ColumnType;
+import uz.shinamagazin.api.annotation.ExportEntity;
 import uz.shinamagazin.api.entity.RoleEntity;
 
 import java.time.LocalDateTime;
@@ -15,18 +18,40 @@ import java.util.stream.Collectors;
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
+@ExportEntity(sheetName = "Rollar", title = "Rollar Hisoboti")
 public class RoleResponse {
+    @ExportColumn(header = "ID", order = 1, type = ColumnType.NUMBER)
     private Long id;
+
+    @ExportColumn(header = "Nomi", order = 2)
     private String name;
+
+    @ExportColumn(header = "Kod", order = 3)
     private String code;
+
+    @ExportColumn(header = "Tavsif", order = 4)
     private String description;
+
+    @ExportColumn(header = "Tizim roli", order = 5, type = ColumnType.BOOLEAN)
     private Boolean isSystem;
+
+    @ExportColumn(header = "Faol", order = 6, type = ColumnType.BOOLEAN)
     private Boolean isActive;
-    private Set<String> permissions;
+
+    private Set<String> permissions; // Not exported (complex type)
+
+    @ExportColumn(header = "Ruxsatlar soni", order = 7, type = ColumnType.NUMBER)
     private Integer permissionCount;
+
+    @ExportColumn(header = "Foydalanuvchilar soni", order = 8, type = ColumnType.NUMBER)
     private Integer userCount;
-    private List<SimpleUserResponse> users;
+
+    private List<SimpleUserResponse> users; // Not exported (complex type)
+
+    @ExportColumn(header = "Yaratilgan", order = 9, type = ColumnType.DATETIME)
     private LocalDateTime createdAt;
+
+    @ExportColumn(header = "Yangilangan", order = 10, type = ColumnType.DATETIME)
     private LocalDateTime updatedAt;
 
     public static RoleResponse from(RoleEntity role) {
