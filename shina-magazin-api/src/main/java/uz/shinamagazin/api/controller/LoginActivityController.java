@@ -13,13 +13,14 @@ import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 import uz.shinamagazin.api.dto.response.ApiResponse;
 import uz.shinamagazin.api.dto.response.LoginAttemptResponse;
 import uz.shinamagazin.api.entity.LoginAttempt;
+import uz.shinamagazin.api.enums.PermissionCode;
 import uz.shinamagazin.api.security.CustomUserDetails;
+import uz.shinamagazin.api.security.RequiresPermission;
 import uz.shinamagazin.api.service.LoginAttemptService;
 import uz.shinamagazin.api.service.export.ExcelExportService;
 import uz.shinamagazin.api.service.export.PdfExportService;
@@ -41,7 +42,7 @@ public class LoginActivityController {
 
     @GetMapping
     @Operation(summary = "Get Login Activity", description = "Get login attempt history with filters")
-    @PreAuthorize("hasPermission('VIEW_LOGIN_ACTIVITY')")
+    @RequiresPermission(PermissionCode.USERS_VIEW)
     public ResponseEntity<ApiResponse<Page<LoginAttemptResponse>>> getLoginActivity(
             @RequestParam(required = false) String username,
             @RequestParam(required = false) String status,
@@ -87,7 +88,7 @@ public class LoginActivityController {
 
     @GetMapping("/export")
     @Operation(summary = "Export login activity", description = "Kirish tarixini Excel yoki PDF formatida eksport qilish")
-    @PreAuthorize("hasPermission('VIEW_LOGIN_ACTIVITY')")
+    @RequiresPermission(PermissionCode.REPORTS_EXPORT)
     public ResponseEntity<Resource> exportLoginActivity(
             @RequestParam(required = false) String username,
             @RequestParam(required = false) String status,
