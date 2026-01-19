@@ -1,5 +1,6 @@
 import api from './axios';
 import type { ApiResponse, PagedResponse, Sale, SaleRequest } from '../types';
+import { createExportApi } from './export.utils';
 
 export interface SaleFilters {
   page?: number;
@@ -41,4 +42,7 @@ export const salesApi = {
     const response = await api.put<ApiResponse<Sale>>(`/v1/sales/${id}/cancel`);
     return response.data.data;
   },
+
+  // Export functionality
+  export: createExportApi('/v1/sales'),
 };

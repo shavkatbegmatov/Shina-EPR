@@ -11,6 +11,7 @@ import type {
   PurchaseReturnRequest,
   PurchaseReturnStatus,
 } from '../types';
+import { createExportApi } from './export.utils';
 
 export interface PurchaseFilters {
   page?: number;
@@ -124,4 +125,8 @@ export const purchasesApi = {
   deleteReturn: async (returnId: number): Promise<void> => {
     await api.delete(`/v1/purchase-returns/${returnId}`);
   },
+
+  // Export functionality
+  export: createExportApi('/v1/purchases'),
+  exportReturns: createExportApi('/v1/purchase-returns'),
 };

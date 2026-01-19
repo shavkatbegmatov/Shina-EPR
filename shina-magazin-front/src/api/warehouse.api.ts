@@ -8,6 +8,7 @@ import type {
   StockMovement,
   WarehouseStats,
 } from '../types';
+import { createExportApi } from './export.utils';
 
 export interface MovementFilters {
   page?: number;
@@ -63,4 +64,7 @@ export const warehouseApi = {
     const response = await api.get<ApiResponse<Product[]>>('/v1/warehouse/low-stock');
     return response.data.data;
   },
+
+  // Export functionality
+  export: createExportApi('/v1/warehouse/movements'),
 };

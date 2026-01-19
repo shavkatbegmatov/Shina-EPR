@@ -1,5 +1,6 @@
 import api from './axios';
 import type { ApiResponse, AppSettings, SettingsUpdateRequest } from '../types';
+import { createExportApi } from './export.utils';
 
 export const settingsApi = {
   get: async (): Promise<AppSettings> => {
@@ -11,4 +12,7 @@ export const settingsApi = {
     const response = await api.put<ApiResponse<AppSettings>>('/v1/settings', data);
     return response.data.data;
   },
+
+  // Export functionality
+  export: createExportApi('/v1/settings'),
 };

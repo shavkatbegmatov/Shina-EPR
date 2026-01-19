@@ -1,5 +1,6 @@
 import api from './axios';
 import type { ApiResponse, Debt, DebtPaymentRequest, DebtStatus, PagedResponse, Payment } from '../types';
+import { createExportApi } from './export.utils';
 
 export interface DebtFilters {
   page?: number;
@@ -70,4 +71,7 @@ export const debtsApi = {
     const response = await api.get<ApiResponse<number>>(`/v1/debts/customer/${customerId}/total`);
     return response.data.data;
   },
+
+  // Export functionality
+  export: createExportApi('/v1/debts'),
 };

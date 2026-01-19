@@ -85,6 +85,9 @@ export const brandsApi = {
   delete: async (id: number): Promise<void> => {
     await api.delete(`/v1/brands/${id}`);
   },
+
+  // Export functionality
+  export: createExportApi('/v1/brands'),
 };
 
 export const categoriesApi = {
@@ -117,4 +120,7 @@ export const categoriesApi = {
   delete: async (id: number): Promise<void> => {
     await api.delete(`/v1/categories/${id}`);
   },
+
+  // Export functionality
+  export: createExportApi('/v1/categories'),
 };

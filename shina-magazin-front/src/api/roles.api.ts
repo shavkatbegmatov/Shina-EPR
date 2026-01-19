@@ -1,5 +1,6 @@
 import api from './axios';
 import type { ApiResponse, PagedResponse, Permission, Role, RoleRequest } from '../types';
+import { createExportApi } from './export.utils';
 
 export interface RoleFilters {
   page?: number;
@@ -60,6 +61,9 @@ export const rolesApi = {
     const response = await api.get<ApiResponse<Role[]>>(`/v1/roles/users/${userId}`);
     return response.data.data;
   },
+
+  // Export functionality
+  export: createExportApi('/v1/roles'),
 };
 
 export const permissionsApi = {
@@ -77,4 +81,7 @@ export const permissionsApi = {
     const response = await api.get<ApiResponse<string[]>>('/v1/permissions/modules');
     return response.data.data;
   },
+
+  // Export functionality
+  export: createExportApi('/v1/permissions'),
 };
