@@ -8,9 +8,13 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.web.PageableDefault;
 import org.springframework.format.annotation.DateTimeFormat;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.core.io.ByteArrayResource;
+import org.springframework.core.io.Resource;
 import uz.shinamagazin.api.dto.request.SaleRequest;
 import uz.shinamagazin.api.dto.response.ApiResponse;
 import uz.shinamagazin.api.dto.response.PagedResponse;
@@ -18,7 +22,9 @@ import uz.shinamagazin.api.dto.response.SaleResponse;
 import uz.shinamagazin.api.enums.PermissionCode;
 import uz.shinamagazin.api.security.RequiresPermission;
 import uz.shinamagazin.api.service.SaleService;
+import uz.shinamagazin.api.service.export.GenericExportService;
 
+import java.io.ByteArrayOutputStream;
 import java.time.LocalDate;
 import java.util.List;
 
@@ -29,6 +35,7 @@ import java.util.List;
 public class SaleController {
 
     private final SaleService saleService;
+    private final GenericExportService<SaleResponse> genericExportService;
 
     @GetMapping
     @RequiresPermission(PermissionCode.SALES_VIEW)
@@ -53,6 +60,44 @@ public class SaleController {
     @Operation(summary = "Get today's sales", description = "Bugungi sotuvlar")
     public ResponseEntity<ApiResponse<List<SaleResponse>>> getTodaySales() {
         return ResponseEntity.ok(ApiResponse.success(saleService.getTodaySales()));
+    }
+
+    @GetMapping("/export")
+    @RequiresPermission(PermissionCode.REPORTS_EXPORT)
+    @Operation(summary = "Export sales", description = "Sotuvlarni eksport qilish")
+    public ResponseEntity<Resource> exportSales(
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate startDate,
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate endDate,
+            @RequestParam(defaultValue = "excel") String format,
+            @RequestParam(defaultValue = "10000") int maxRecords) {
+        try {
+            Pageable pageable = Pageable.ofSize(maxRecords);
+            Page<SaleResponse> page = saleService.getAllSales(startDate, endDate, pageable);
+
+            ByteArrayOutputStream output = genericExportService.export(
+                    page.getContent(),
+                    SaleResponse.class,
+                    GenericExportService.ExportFormat.valueOf(format.toUpperCase()),
+                    "Sotuvlar Hisoboti"
+            );
+
+            String extension = format.equalsIgnoreCase("excel") ? "xlsx" : "pdf";
+            String contentType = format.equalsIgnoreCase("excel")
+                    ? "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+                    : "application/pdf";
+            String filename = "sales_" + LocalDate.now() + "." + extension;
+
+            ByteArrayResource resource = new ByteArrayResource(output.toByteArray());
+
+            return ResponseEntity.ok()
+                    .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"" + filename + "\"")
+                    .contentType(MediaType.parseMediaType(contentType))
+                    .contentLength(resource.contentLength())
+                    .body(resource);
+
+        } catch (Exception e) {
+            throw new RuntimeException("Eksport qilishda xatolik: " + e.getMessage(), e);
+        }
     }
 
     @PostMapping

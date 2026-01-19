@@ -7,9 +7,13 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.web.PageableDefault;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.core.io.ByteArrayResource;
+import org.springframework.core.io.Resource;
 import uz.shinamagazin.api.dto.request.StockAdjustmentRequest;
 import uz.shinamagazin.api.dto.response.ApiResponse;
 import uz.shinamagazin.api.dto.response.PagedResponse;
@@ -20,7 +24,10 @@ import uz.shinamagazin.api.enums.PermissionCode;
 import uz.shinamagazin.api.security.RequiresPermission;
 import uz.shinamagazin.api.service.ProductService;
 import uz.shinamagazin.api.service.StockMovementService;
+import uz.shinamagazin.api.service.export.GenericExportService;
 
+import java.io.ByteArrayOutputStream;
+import java.time.LocalDate;
 import java.util.List;
 import java.util.Map;
 
@@ -32,6 +39,7 @@ public class WarehouseController {
 
     private final StockMovementService stockMovementService;
     private final ProductService productService;
+    private final GenericExportService<StockMovementResponse> genericExportService;
 
     @GetMapping("/stats")
     @Operation(summary = "Get warehouse stats", description = "Ombor statistikasini olish")
@@ -57,6 +65,51 @@ public class WarehouseController {
         }
 
         return ResponseEntity.ok(ApiResponse.success(PagedResponse.from(movements)));
+    }
+
+    @GetMapping("/movements/export")
+    @RequiresPermission(PermissionCode.REPORTS_EXPORT)
+    @Operation(summary = "Export stock movements", description = "Zaxira harakatlarini eksport qilish")
+    public ResponseEntity<Resource> exportStockMovements(
+            @RequestParam(required = false) Long productId,
+            @RequestParam(required = false) MovementType movementType,
+            @RequestParam(required = false) String referenceType,
+            @RequestParam(defaultValue = "excel") String format,
+            @RequestParam(defaultValue = "10000") int maxRecords) {
+        try {
+            Pageable pageable = Pageable.ofSize(maxRecords);
+            Page<StockMovementResponse> page;
+
+            if (productId != null || movementType != null || referenceType != null) {
+                page = stockMovementService.getMovementsWithFilters(productId, movementType, referenceType, pageable);
+            } else {
+                page = stockMovementService.getAllMovements(pageable);
+            }
+
+            ByteArrayOutputStream output = genericExportService.export(
+                    page.getContent(),
+                    StockMovementResponse.class,
+                    GenericExportService.ExportFormat.valueOf(format.toUpperCase()),
+                    "Zaxira Harakatlari Hisoboti"
+            );
+
+            String extension = format.equalsIgnoreCase("excel") ? "xlsx" : "pdf";
+            String contentType = format.equalsIgnoreCase("excel")
+                    ? "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+                    : "application/pdf";
+            String filename = "stock_movements_" + LocalDate.now() + "." + extension;
+
+            ByteArrayResource resource = new ByteArrayResource(output.toByteArray());
+
+            return ResponseEntity.ok()
+                    .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"" + filename + "\"")
+                    .contentType(MediaType.parseMediaType(contentType))
+                    .contentLength(resource.contentLength())
+                    .body(resource);
+
+        } catch (Exception e) {
+            throw new RuntimeException("Eksport qilishda xatolik: " + e.getMessage(), e);
+        }
     }
 
     @GetMapping("/movements/{id}")

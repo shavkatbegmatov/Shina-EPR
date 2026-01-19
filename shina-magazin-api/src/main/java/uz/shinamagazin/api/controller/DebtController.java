@@ -7,17 +7,26 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.web.PageableDefault;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.core.io.ByteArrayResource;
+import org.springframework.core.io.Resource;
 import uz.shinamagazin.api.dto.request.DebtPaymentRequest;
 import uz.shinamagazin.api.dto.response.ApiResponse;
 import uz.shinamagazin.api.dto.response.DebtResponse;
 import uz.shinamagazin.api.dto.response.PagedResponse;
 import uz.shinamagazin.api.dto.response.PaymentResponse;
 import uz.shinamagazin.api.enums.DebtStatus;
+import uz.shinamagazin.api.enums.PermissionCode;
+import uz.shinamagazin.api.security.RequiresPermission;
 import uz.shinamagazin.api.service.DebtService;
+import uz.shinamagazin.api.service.export.GenericExportService;
 
+import java.io.ByteArrayOutputStream;
 import java.math.BigDecimal;
+import java.time.LocalDate;
 import java.util.List;
 
 @RestController
@@ -27,6 +36,7 @@ import java.util.List;
 public class DebtController {
 
     private final DebtService debtService;
+    private final GenericExportService<DebtResponse> genericExportService;
 
     @GetMapping
     @Operation(summary = "Get all debts", description = "Barcha qarzlarni olish")
@@ -36,6 +46,43 @@ public class DebtController {
 
         Page<DebtResponse> debts = debtService.getAllDebts(status, pageable);
         return ResponseEntity.ok(ApiResponse.success(PagedResponse.from(debts)));
+    }
+
+    @GetMapping("/export")
+    @RequiresPermission(PermissionCode.REPORTS_EXPORT)
+    @Operation(summary = "Export debts", description = "Qarzlarni eksport qilish")
+    public ResponseEntity<Resource> exportDebts(
+            @RequestParam(required = false) DebtStatus status,
+            @RequestParam(defaultValue = "excel") String format,
+            @RequestParam(defaultValue = "10000") int maxRecords) {
+        try {
+            Pageable pageable = Pageable.ofSize(maxRecords);
+            Page<DebtResponse> page = debtService.getAllDebts(status, pageable);
+
+            ByteArrayOutputStream output = genericExportService.export(
+                    page.getContent(),
+                    DebtResponse.class,
+                    GenericExportService.ExportFormat.valueOf(format.toUpperCase()),
+                    "Qarzlar Hisoboti"
+            );
+
+            String extension = format.equalsIgnoreCase("excel") ? "xlsx" : "pdf";
+            String contentType = format.equalsIgnoreCase("excel")
+                    ? "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+                    : "application/pdf";
+            String filename = "debts_" + LocalDate.now() + "." + extension;
+
+            ByteArrayResource resource = new ByteArrayResource(output.toByteArray());
+
+            return ResponseEntity.ok()
+                    .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"" + filename + "\"")
+                    .contentType(MediaType.parseMediaType(contentType))
+                    .contentLength(resource.contentLength())
+                    .body(resource);
+
+        } catch (Exception e) {
+            throw new RuntimeException("Eksport qilishda xatolik: " + e.getMessage(), e);
+        }
     }
 
     @GetMapping("/active")
