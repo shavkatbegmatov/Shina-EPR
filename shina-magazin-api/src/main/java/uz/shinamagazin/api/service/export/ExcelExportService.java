@@ -9,6 +9,7 @@ import org.apache.poi.xssf.streaming.SXSSFWorkbook;
 import org.springframework.stereotype.Service;
 import uz.shinamagazin.api.dto.response.AuditLogResponse;
 import uz.shinamagazin.api.dto.response.LoginAttemptResponse;
+import uz.shinamagazin.api.dto.response.UserActivityResponse;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
@@ -177,6 +178,98 @@ public class ExcelExportService {
                 // Apply data style to all cells
                 for (int i = 0; i < 7; i++) {
                     if (i != 5) { // Skip date cell (already has style)
+                        row.getCell(i).setCellStyle(dataStyle);
+                    }
+                }
+            }
+
+            // Auto-size columns
+            for (int i = 0; i < headers.length; i++) {
+                sheet.autoSizeColumn(i);
+            }
+
+            // Write to output stream
+            ByteArrayOutputStream out = new ByteArrayOutputStream();
+            workbook.write(out);
+            return out;
+        }
+    }
+
+    /**
+     * Export user activity to Excel format
+     */
+    public ByteArrayOutputStream exportUserActivity(
+            List<UserActivityResponse> activities,
+            String reportTitle
+    ) throws IOException {
+        try (SXSSFWorkbook workbook = new SXSSFWorkbook(100)) {
+            SXSSFSheet sheet = workbook.createSheet("User Activity");
+
+            // Track columns for auto-sizing (required for SXSSFWorkbook)
+            for (int i = 0; i < 10; i++) {
+                sheet.trackColumnForAutoSizing(i);
+            }
+
+            // Create styles
+            CellStyle headerStyle = createHeaderStyle(workbook);
+            CellStyle titleStyle = createTitleStyle(workbook);
+            CellStyle dataStyle = createDataStyle(workbook);
+            CellStyle dateStyle = createDateStyle(workbook);
+
+            int rowNum = 0;
+
+            // Title row
+            Row titleRow = sheet.createRow(rowNum++);
+            Cell titleCell = titleRow.createCell(0);
+            titleCell.setCellValue(reportTitle != null ? reportTitle : "Foydalanuvchi Faoliyati Hisoboti");
+            titleCell.setCellStyle(titleStyle);
+            sheet.addMergedRegion(new CellRangeAddress(0, 0, 0, 9));
+
+            // Metadata row
+            Row metaRow = sheet.createRow(rowNum++);
+            Cell metaCell = metaRow.createCell(0);
+            metaCell.setCellValue("Sana: " + LocalDateTime.now().format(DATE_FORMATTER));
+            metaCell.setCellStyle(dataStyle);
+            sheet.addMergedRegion(new CellRangeAddress(1, 1, 0, 9));
+
+            // Empty row
+            rowNum++;
+
+            // Header row
+            Row headerRow = sheet.createRow(rowNum++);
+            String[] headers = {
+                "ID", "Harakat", "Obyekt turi", "Obyekt ID",
+                "Tavsifi", "Foydalanuvchi", "Sana",
+                "Qurilma", "Brauzer", "IP manzil"
+            };
+            for (int i = 0; i < headers.length; i++) {
+                Cell cell = headerRow.createCell(i);
+                cell.setCellValue(headers[i]);
+                cell.setCellStyle(headerStyle);
+            }
+
+            // Data rows
+            for (UserActivityResponse activity : activities) {
+                Row row = sheet.createRow(rowNum++);
+
+                row.createCell(0).setCellValue(activity.getId());
+                row.createCell(1).setCellValue(translateAction(activity.getAction()));
+                row.createCell(2).setCellValue(activity.getEntityType());
+                row.createCell(3).setCellValue(activity.getEntityId());
+                row.createCell(4).setCellValue(activity.getDescription());
+                row.createCell(5).setCellValue(activity.getUsername() != null ? activity.getUsername() : "-");
+
+                Cell dateCell = row.createCell(6);
+                dateCell.setCellValue(activity.getTimestamp().format(DATE_FORMATTER));
+                dateCell.setCellStyle(dateStyle);
+
+                row.createCell(7).setCellValue(activity.getDeviceType() != null ? activity.getDeviceType() : "-");
+                row.createCell(8).setCellValue(activity.getBrowser() != null ? activity.getBrowser() : "-");
+                row.createCell(9).setCellValue(activity.getIpAddress() != null ? activity.getIpAddress() : "-");
+
+                // Apply data style to all cells
+                for (int i = 0; i < 10; i++) {
+                    if (i != 6) { // Skip date cell (already has style)
                         row.getCell(i).setCellStyle(dataStyle);
                     }
                 }

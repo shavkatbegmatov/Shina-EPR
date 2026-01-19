@@ -9,6 +9,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import uz.shinamagazin.api.dto.response.AuditLogResponse;
 import uz.shinamagazin.api.dto.response.LoginAttemptResponse;
+import uz.shinamagazin.api.dto.response.UserActivityResponse;
 
 import java.awt.Color;
 import java.io.ByteArrayOutputStream;
@@ -146,6 +147,85 @@ public class PdfExportService {
         // Footer
         Paragraph footer = new Paragraph(
                 String.format("Jami: %d ta yozuv", attempts.size()),
+                DATA_FONT
+        );
+        footer.setAlignment(Element.ALIGN_RIGHT);
+        footer.setSpacingBefore(20);
+        document.add(footer);
+
+        document.close();
+        return out;
+    }
+
+    /**
+     * Export user activity to PDF format
+     */
+    public ByteArrayOutputStream exportUserActivity(
+            List<UserActivityResponse> activities,
+            String reportTitle
+    ) throws DocumentException {
+        Document document = new Document(PageSize.A4.rotate()); // Landscape for more columns
+        ByteArrayOutputStream out = new ByteArrayOutputStream();
+        PdfWriter.getInstance(document, out);
+
+        document.open();
+
+        // Title
+        Paragraph title = new Paragraph(
+                reportTitle != null ? reportTitle : "Foydalanuvchi Faoliyati Hisoboti",
+                TITLE_FONT
+        );
+        title.setAlignment(Element.ALIGN_CENTER);
+        title.setSpacingAfter(10);
+        document.add(title);
+
+        // Metadata
+        Paragraph metadata = new Paragraph(
+                "Sana: " + LocalDateTime.now().format(DATE_FORMATTER),
+                DATA_FONT
+        );
+        metadata.setAlignment(Element.ALIGN_CENTER);
+        metadata.setSpacingAfter(20);
+        document.add(metadata);
+
+        // Table with 10 columns
+        PdfPTable table = new PdfPTable(10);
+        table.setWidthPercentage(100);
+        table.setSpacingBefore(10);
+
+        // Set relative column widths for better layout
+        try {
+            table.setWidths(new float[]{1f, 2f, 2f, 1.5f, 4f, 2f, 3f, 2f, 2f, 2f});
+        } catch (DocumentException e) {
+            log.error("Failed to set column widths: {}", e.getMessage());
+        }
+
+        // Headers
+        addTableHeader(table, new String[]{
+            "ID", "Harakat", "Obyekt", "ID",
+            "Tavsifi", "Foydalanuvchi", "Sana",
+            "Qurilma", "Brauzer", "IP"
+        });
+
+        // Data
+        for (UserActivityResponse activity : activities) {
+            addTableCell(table, String.valueOf(activity.getId()));
+            addTableCell(table, translateAction(activity.getAction()));
+            addTableCell(table, activity.getEntityType());
+            addTableCell(table, String.valueOf(activity.getEntityId()));
+            addTableCell(table, activity.getDescription());
+            addTableCell(table, activity.getUsername() != null ? activity.getUsername() : "-");
+            addTableCell(table, activity.getTimestamp().format(DATE_FORMATTER));
+            addTableCell(table, activity.getDeviceType() != null ? activity.getDeviceType() : "-");
+            addTableCell(table, activity.getBrowser() != null ? activity.getBrowser() : "-");
+            addTableCell(table, activity.getIpAddress() != null ? activity.getIpAddress() : "-");
+        }
+
+        document.add(table);
+
+        // Footer
+        Paragraph footer = new Paragraph(
+                String.format("Jami: %d ta yozuv", activities.size()),
                 DATA_FONT
         );
         footer.setAlignment(Element.ALIGN_RIGHT);

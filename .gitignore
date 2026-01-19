@@ -25,3 +25,4 @@ shina-magazin-front/.vite/
 /shina-magazin-api/check_v20_migration.sql
 /shina-magazin-api/CRITICAL_FIX_audit_logs_username.sql
 /audit-log.jpg
+/shina-magazin-api/check_user_agent_data.sql

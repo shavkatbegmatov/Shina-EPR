@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Activity, Loader2, RefreshCw, Filter, Calendar, Trash2, Edit, Plus } from 'lucide-react';
+import { Activity, Loader2, RefreshCw, Filter, Calendar, Trash2, Edit, Plus, FileSpreadsheet, FileDown } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { usersApi, type UserActivity } from '../../api/users.api';
 import { useAuthStore } from '../../store/authStore';
@@ -106,6 +106,20 @@ export function ActivityHistoryTab() {
     setCurrentPage(0);
   };
 
+  const handleExport = async (format: 'excel' | 'pdf') => {
+    if (!user?.id) return;
+
+    try {
+      await usersApi.exportUserActivity(user.id, format, {
+        entityType: entityTypeFilter || undefined,
+        action: actionFilter || undefined,
+      });
+      toast.success(`${format === 'excel' ? 'Excel' : 'PDF'} fayli yuklab olindi`);
+    } catch (error) {
+      toast.error('Eksport qilishda xatolik');
+    }
+  };
+
   if (loading && currentPage === 0) {
     return (
       <div className="flex items-center justify-center min-h-[400px]">
@@ -124,15 +138,39 @@ export function ActivityHistoryTab() {
             Tizim ichidagi barcha harakatlaringiz tarixi
           </p>
         </div>
-        <button
-          className="btn btn-ghost btn-sm w-full sm:w-auto"
-          onClick={fetchActivity}
-          disabled={loading}
-          title="Yangilash"
-        >
-          <RefreshCw className={`h-4 w-4 ${loading ? 'animate-spin' : ''}`} />
-          Yangilash
-        </button>
+        <div className="flex gap-2 w-full sm:w-auto">
+          <button
+            className="btn btn-ghost btn-sm flex-1 sm:flex-none"
+            onClick={fetchActivity}
+            disabled={loading}
+            title="Yangilash"
+          >
+            <RefreshCw className={`h-4 w-4 ${loading ? 'animate-spin' : ''}`} />
+            Yangilash
+          </button>
+
+          {/* Excel Export */}
+          <button
+            className="btn btn-success btn-sm flex-1 sm:flex-none"
+            onClick={() => handleExport('excel')}
+            disabled={loading || activities.length === 0}
+            title="Excel formatida eksport"
+          >
+            <FileSpreadsheet className="h-4 w-4" />
+            Excel
+          </button>
+
+          {/* PDF Export */}
+          <button
+            className="btn btn-error btn-sm flex-1 sm:flex-none"
+            onClick={() => handleExport('pdf')}
+            disabled={loading || activities.length === 0}
+            title="PDF formatida eksport"
+          >
+            <FileDown className="h-4 w-4" />
+            PDF
+          </button>
+        </div>
       </div>
 
       {/* Filters */}
