@@ -9,6 +9,7 @@ import { Select } from '../../components/ui/Select';
 import { SearchInput } from '../../components/ui/SearchInput';
 import { DataTable, Column } from '../../components/ui/DataTable';
 import { ModalPortal } from '../../components/common/Modal';
+import { ExportButtons } from '../../components/common/ExportButtons';
 import { useNotificationsStore } from '../../store/notificationsStore';
 import { usePermission, PermissionCode } from '../../hooks/usePermission';
 import { PermissionGate } from '../../components/common/PermissionGate';
@@ -253,6 +254,15 @@ export function ProductsPage() {
     }
   };
 
+  const handleExport = async (format: 'excel' | 'pdf') => {
+    await productsApi.export.exportData(format, {
+      brandId: brandFilter || undefined,
+      categoryId: categoryFilter || undefined,
+      season: seasonFilter || undefined,
+      search: search || undefined,
+    });
+  };
+
   return (
     <div className="space-y-6">
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
@@ -267,6 +277,12 @@ export function ProductsPage() {
               Filtrlarni tozalash
             </button>
           )}
+          <ExportButtons
+            onExportExcel={() => handleExport('excel')}
+            onExportPdf={() => handleExport('pdf')}
+            disabled={products.length === 0}
+            loading={refreshing}
+          />
           <PermissionGate permission={PermissionCode.PRODUCTS_CREATE}>
             <button className="btn btn-primary" onClick={handleOpenNewProductModal}>
               <Plus className="h-5 w-5" />

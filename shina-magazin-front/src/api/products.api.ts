@@ -1,5 +1,6 @@
 import api from './axios';
 import type { ApiResponse, Brand, Category, PagedResponse, Product, ProductRequest, Season } from '../types';
+import { createExportApi } from './export.utils';
 
 export interface ProductFilters {
   page?: number;
@@ -56,6 +57,9 @@ export const productsApi = {
     );
     return response.data.data;
   },
+
+  // Export functionality
+  export: createExportApi('/v1/products'),
 };
 
 export const brandsApi = {
