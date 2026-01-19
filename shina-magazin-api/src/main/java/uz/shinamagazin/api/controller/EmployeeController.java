@@ -4,10 +4,15 @@ import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.springframework.core.io.ByteArrayResource;
+import org.springframework.core.io.Resource;
 import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.web.PageableDefault;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import uz.shinamagazin.api.dto.request.ChangeRoleRequest;
@@ -20,7 +25,10 @@ import uz.shinamagazin.api.enums.EmployeeStatus;
 import uz.shinamagazin.api.enums.PermissionCode;
 import uz.shinamagazin.api.security.RequiresPermission;
 import uz.shinamagazin.api.service.EmployeeService;
+import uz.shinamagazin.api.service.export.GenericExportService;
 
+import java.io.ByteArrayOutputStream;
+import java.time.LocalDate;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -31,6 +39,7 @@ import java.util.stream.Collectors;
 public class EmployeeController {
 
     private final EmployeeService employeeService;
+    private final GenericExportService genericExportService;
 
     @GetMapping
     @RequiresPermission(PermissionCode.EMPLOYEES_VIEW)
@@ -127,5 +136,45 @@ public class EmployeeController {
                 "Rol o'zgartirildi",
                 employeeService.changeEmployeeRole(id, request.getRoleCode())
         ));
+    }
+
+    @GetMapping("/export")
+    @Operation(summary = "Export employees", description = "Xodimlarni eksport qilish")
+    @RequiresPermission(PermissionCode.REPORTS_EXPORT)
+    public ResponseEntity<Resource> exportEmployees(
+            @RequestParam(required = false) String search,
+            @RequestParam(defaultValue = "excel") String format,
+            @RequestParam(defaultValue = "10000") int maxRecords
+    ) {
+        try {
+            Pageable pageable = PageRequest.of(0, maxRecords);
+            Page<EmployeeResponse> page = search != null && !search.isEmpty()
+                    ? employeeService.searchEmployees(search, pageable)
+                    : employeeService.getAllEmployees(pageable);
+
+            ByteArrayOutputStream output = genericExportService.export(
+                    page.getContent(),
+                    EmployeeResponse.class,
+                    GenericExportService.ExportFormat.valueOf(format.toUpperCase()),
+                    "Xodimlar Hisoboti"
+            );
+
+            String extension = format.equalsIgnoreCase("excel") ? "xlsx" : "pdf";
+            String contentType = format.equalsIgnoreCase("excel")
+                    ? "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+                    : "application/pdf";
+            String filename = "employees_" + LocalDate.now() + "." + extension;
+
+            ByteArrayResource resource = new ByteArrayResource(output.toByteArray());
+
+            return ResponseEntity.ok()
+                    .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"" + filename + "\"")
+                    .contentType(MediaType.parseMediaType(contentType))
+                    .contentLength(resource.contentLength())
+                    .body(resource);
+
+        } catch (Exception e) {
+            throw new RuntimeException("Eksport qilishda xatolik: " + e.getMessage(), e);
+        }
     }
 }

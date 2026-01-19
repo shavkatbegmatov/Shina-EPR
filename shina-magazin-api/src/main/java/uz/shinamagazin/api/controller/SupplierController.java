@@ -4,10 +4,15 @@ import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.springframework.core.io.ByteArrayResource;
+import org.springframework.core.io.Resource;
 import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.web.PageableDefault;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import uz.shinamagazin.api.dto.request.SupplierRequest;
@@ -17,8 +22,11 @@ import uz.shinamagazin.api.dto.response.SupplierResponse;
 import uz.shinamagazin.api.enums.PermissionCode;
 import uz.shinamagazin.api.security.RequiresPermission;
 import uz.shinamagazin.api.service.SupplierService;
+import uz.shinamagazin.api.service.export.GenericExportService;
 
+import java.io.ByteArrayOutputStream;
 import java.math.BigDecimal;
+import java.time.LocalDate;
 import java.util.List;
 
 @RestController
@@ -28,6 +36,7 @@ import java.util.List;
 public class SupplierController {
 
     private final SupplierService supplierService;
+    private final GenericExportService genericExportService;
 
     @GetMapping
     @Operation(summary = "Get all suppliers", description = "Barcha ta'minotchilarni olish")
@@ -100,5 +109,45 @@ public class SupplierController {
     public ResponseEntity<ApiResponse<Void>> deleteSupplier(@PathVariable Long id) {
         supplierService.deleteSupplier(id);
         return ResponseEntity.ok(ApiResponse.success("Ta'minotchi o'chirildi"));
+    }
+
+    @GetMapping("/export")
+    @Operation(summary = "Export suppliers", description = "Ta'minotchilarni eksport qilish")
+    @RequiresPermission(PermissionCode.REPORTS_EXPORT)
+    public ResponseEntity<Resource> exportSuppliers(
+            @RequestParam(required = false) String search,
+            @RequestParam(defaultValue = "excel") String format,
+            @RequestParam(defaultValue = "10000") int maxRecords
+    ) {
+        try {
+            Pageable pageable = PageRequest.of(0, maxRecords);
+            Page<SupplierResponse> page = search != null && !search.isEmpty()
+                    ? supplierService.searchSuppliers(search, pageable)
+                    : supplierService.getAllSuppliers(pageable);
+
+            ByteArrayOutputStream output = genericExportService.export(
+                    page.getContent(),
+                    SupplierResponse.class,
+                    GenericExportService.ExportFormat.valueOf(format.toUpperCase()),
+                    "Ta'minotchilar Hisoboti"
+            );
+
+            String extension = format.equalsIgnoreCase("excel") ? "xlsx" : "pdf";
+            String contentType = format.equalsIgnoreCase("excel")
+                    ? "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+                    : "application/pdf";
+            String filename = "suppliers_" + LocalDate.now() + "." + extension;
+
+            ByteArrayResource resource = new ByteArrayResource(output.toByteArray());
+
+            return ResponseEntity.ok()
+                    .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"" + filename + "\"")
+                    .contentType(MediaType.parseMediaType(contentType))
+                    .contentLength(resource.contentLength())
+                    .body(resource);
+
+        } catch (Exception e) {
+            throw new RuntimeException("Eksport qilishda xatolik: " + e.getMessage(), e);
+        }
     }
 }
