@@ -1,33 +1,33 @@
 import { useState, useEffect } from 'react';
-import { Shield, CheckCircle, XCircle, Calendar, MapPin, Loader2, RefreshCw, FileSpreadsheet, FileDown } from 'lucide-react';
+import { Shield, CheckCircle, XCircle, Calendar, MapPin, Loader2 } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { loginActivityApi, type LoginAttempt } from '../../api/login-activity.api';
 import { formatDistanceToNow } from 'date-fns';
 import { uz } from 'date-fns/locale';
 import api from '../../api/axios';
+import { useDataRefresh } from '../../hooks/useDataRefresh';
+import { RefreshButton } from '../../components/common/RefreshButton';
+import { ExportButtons } from '../../components/common/ExportButtons';
+import { LoadingOverlay } from '../../components/common/LoadingOverlay';
 
 export function LoginActivityTab() {
   const [attempts, setAttempts] = useState<LoginAttempt[]>([]);
-  const [loading, setLoading] = useState(true);
   const [totalPages, setTotalPages] = useState(0);
   const [currentPage, setCurrentPage] = useState(0);
 
-  useEffect(() => {
-    fetchLoginHistory();
-  }, [currentPage]);
-
-  const fetchLoginHistory = async () => {
-    setLoading(true);
-    try {
+  const { initialLoading, refreshing, refreshSuccess, loadData } = useDataRefresh({
+    fetchFn: async () => {
       const data = await loginActivityApi.getMyLoginHistory(currentPage, 20);
       setAttempts(data.content);
       setTotalPages(data.totalPages);
-    } catch (error) {
-      toast.error('Kirish tarixini yuklashda xatolik');
-    } finally {
-      setLoading(false);
-    }
-  };
+      return data;
+    },
+    onError: () => toast.error('Kirish tarixini yuklashda xatolik'),
+  });
+
+  useEffect(() => {
+    loadData(false);
+  }, [currentPage, loadData]);
 
   const getStatusBadge = (attempt: LoginAttempt) => {
     if (attempt.status === 'SUCCESS') {
@@ -75,7 +75,7 @@ export function LoginActivityTab() {
     }
   };
 
-  if (loading && currentPage === 0) {
+  if (initialLoading) {
     return (
       <div className="flex items-center justify-center min-h-[400px]">
         <Loader2 className="h-8 w-8 animate-spin text-primary" />
@@ -93,38 +93,28 @@ export function LoginActivityTab() {
             Barcha kirish urinishlaringiz tarixi (muvaffaqiyatli va xato)
           </p>
         </div>
-        <div className="flex flex-wrap items-center gap-2">
-          <button
-            className="btn btn-success btn-sm"
-            onClick={() => handleExport('excel')}
-            title="Excel formatida yuklab olish"
-          >
-            <FileSpreadsheet className="h-4 w-4" />
-            Excel
-          </button>
-          <button
-            className="btn btn-error btn-sm"
-            onClick={() => handleExport('pdf')}
-            title="PDF formatida yuklab olish"
-          >
-            <FileDown className="h-4 w-4" />
-            PDF
-          </button>
-          <button
-            className="btn btn-ghost btn-sm"
-            onClick={fetchLoginHistory}
-            disabled={loading}
-            title="Yangilash"
-          >
-            <RefreshCw className={`h-4 w-4 ${loading ? 'animate-spin' : ''}`} />
-            Yangilash
-          </button>
+        <div className="flex gap-2 w-full sm:w-auto">
+          <RefreshButton
+            onClick={() => loadData(true)}
+            loading={refreshing}
+            success={refreshSuccess}
+            disabled={initialLoading}
+            className="flex-1 sm:flex-none"
+          />
+          <ExportButtons
+            onExportExcel={() => handleExport('excel')}
+            onExportPdf={() => handleExport('pdf')}
+            disabled={attempts.length === 0}
+            loading={refreshing}
+          />
         </div>
       </div>
 
       {/* Login attempts list */}
-      {attempts.length > 0 ? (
-        <div className="space-y-3">
+      <div className="relative">
+        <LoadingOverlay show={refreshing} message="Kirish tarixi yangilanmoqda..." />
+        {attempts.length > 0 ? (
+          <div className="space-y-3">
           {attempts.map((attempt) => (
             <div key={attempt.id} className="surface-card p-4 sm:p-6">
               <div className="flex flex-col sm:flex-row items-start justify-between gap-3 sm:gap-4">
@@ -177,7 +167,8 @@ export function LoginActivityTab() {
             Hozircha kirish urinishlari yo'q
           </p>
         </div>
-      )}
+        )}
+      </div>
 
       {/* Pagination */}
       {totalPages > 1 && (
@@ -185,7 +176,7 @@ export function LoginActivityTab() {
           <button
             className="btn btn-sm"
             onClick={() => setCurrentPage(prev => Math.max(0, prev - 1))}
-            disabled={currentPage === 0 || loading}
+            disabled={currentPage === 0 || refreshing}
           >
             Oldingi
           </button>
@@ -195,7 +186,7 @@ export function LoginActivityTab() {
           <button
             className="btn btn-sm"
             onClick={() => setCurrentPage(prev => Math.min(totalPages - 1, prev + 1))}
-            disabled={currentPage === totalPages - 1 || loading}
+            disabled={currentPage === totalPages - 1 || refreshing}
           >
             Keyingi
           </button>

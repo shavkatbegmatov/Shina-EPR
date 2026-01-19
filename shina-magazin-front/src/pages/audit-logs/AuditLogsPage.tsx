@@ -2,15 +2,12 @@ import { useState, useEffect } from 'react';
 import {
   Shield,
   Loader2,
-  RefreshCw,
   Filter,
   Search,
   Calendar,
   Trash2,
   Edit,
   Plus,
-  FileSpreadsheet,
-  FileDown,
   X,
 } from 'lucide-react';
 import toast from 'react-hot-toast';
@@ -18,10 +15,13 @@ import { auditLogsApi, type AuditLog } from '../../api/audit-logs.api';
 import { formatDistanceToNow } from 'date-fns';
 import { uz } from 'date-fns/locale';
 import clsx from 'clsx';
+import { useDataRefresh } from '../../hooks/useDataRefresh';
+import { RefreshButton } from '../../components/common/RefreshButton';
+import { ExportButtons } from '../../components/common/ExportButtons';
+import { LoadingOverlay } from '../../components/common/LoadingOverlay';
 
 export function AuditLogsPage() {
   const [auditLogs, setAuditLogs] = useState<AuditLog[]>([]);
-  const [loading, setLoading] = useState(true);
   const [totalPages, setTotalPages] = useState(0);
   const [currentPage, setCurrentPage] = useState(0);
   const [entityTypeFilter, setEntityTypeFilter] = useState<string>('');
@@ -29,13 +29,8 @@ export function AuditLogsPage() {
   const [searchQuery, setSearchQuery] = useState('');
   const [searchInput, setSearchInput] = useState('');
 
-  useEffect(() => {
-    fetchAuditLogs();
-  }, [currentPage, entityTypeFilter, actionFilter, searchQuery]);
-
-  const fetchAuditLogs = async () => {
-    setLoading(true);
-    try {
+  const { initialLoading, refreshing, refreshSuccess, loadData } = useDataRefresh({
+    fetchFn: async () => {
       const data = await auditLogsApi.searchAuditLogs(
         currentPage,
         20,
@@ -46,12 +41,14 @@ export function AuditLogsPage() {
       );
       setAuditLogs(data.content);
       setTotalPages(data.totalPages);
-    } catch (error) {
-      toast.error('Audit loglarni yuklashda xatolik');
-    } finally {
-      setLoading(false);
-    }
-  };
+      return data;
+    },
+    onError: () => toast.error('Audit loglarni yuklashda xatolik'),
+  });
+
+  useEffect(() => {
+    loadData(false);
+  }, [currentPage, entityTypeFilter, actionFilter, searchQuery, loadData]);
 
   const handleSearch = () => {
     setSearchQuery(searchInput);
@@ -138,7 +135,7 @@ export function AuditLogsPage() {
     });
   };
 
-  if (loading && currentPage === 0) {
+  if (initialLoading) {
     return (
       <div className="flex items-center justify-center min-h-[400px]">
         <Loader2 className="h-8 w-8 animate-spin text-primary" />
@@ -161,37 +158,19 @@ export function AuditLogsPage() {
         </div>
 
         <div className="flex gap-2 w-full sm:w-auto">
-          <button
-            className="btn btn-ghost btn-sm flex-1 sm:flex-none"
-            onClick={fetchAuditLogs}
-            disabled={loading}
-            title="Yangilash"
-          >
-            <RefreshCw className={`h-4 w-4 ${loading ? 'animate-spin' : ''}`} />
-            Yangilash
-          </button>
-
-          {/* Excel Export */}
-          <button
-            className="btn btn-success btn-sm flex-1 sm:flex-none"
-            onClick={() => handleExport('excel')}
-            disabled={loading || auditLogs.length === 0}
-            title="Excel formatida eksport"
-          >
-            <FileSpreadsheet className="h-4 w-4" />
-            Excel
-          </button>
-
-          {/* PDF Export */}
-          <button
-            className="btn btn-error btn-sm flex-1 sm:flex-none"
-            onClick={() => handleExport('pdf')}
-            disabled={loading || auditLogs.length === 0}
-            title="PDF formatida eksport"
-          >
-            <FileDown className="h-4 w-4" />
-            PDF
-          </button>
+          <RefreshButton
+            onClick={() => loadData(true)}
+            loading={refreshing}
+            success={refreshSuccess}
+            disabled={initialLoading}
+            className="flex-1 sm:flex-none"
+          />
+          <ExportButtons
+            onExportExcel={() => handleExport('excel')}
+            onExportPdf={() => handleExport('pdf')}
+            disabled={auditLogs.length === 0}
+            loading={refreshing}
+          />
         </div>
       </div>
 
@@ -221,7 +200,7 @@ export function AuditLogsPage() {
           <button
             className="btn btn-primary"
             onClick={handleSearch}
-            disabled={loading}
+            disabled={refreshing}
           >
             <Search className="h-4 w-4" />
             Qidirish
@@ -281,7 +260,9 @@ export function AuditLogsPage() {
       </div>
 
       {/* Audit Logs List */}
-      {auditLogs.length > 0 ? (
+      <div className="relative">
+        <LoadingOverlay show={refreshing} message="Audit loglar yangilanmoqda..." />
+        {auditLogs.length > 0 ? (
         <div className="space-y-3">
           {auditLogs.map((log) => (
             <div key={log.id} className="surface-card p-4 sm:p-6">
@@ -345,6 +326,7 @@ export function AuditLogsPage() {
           </p>
         </div>
       )}
+      </div>
 
       {/* Pagination */}
       {totalPages > 1 && (
@@ -352,7 +334,7 @@ export function AuditLogsPage() {
           <button
             className="btn btn-sm"
             onClick={() => setCurrentPage((prev) => Math.max(0, prev - 1))}
-            disabled={currentPage === 0 || loading}
+            disabled={currentPage === 0 || refreshing}
           >
             Oldingi
           </button>
@@ -362,7 +344,7 @@ export function AuditLogsPage() {
           <button
             className="btn btn-sm"
             onClick={() => setCurrentPage((prev) => Math.min(totalPages - 1, prev + 1))}
-            disabled={currentPage >= totalPages - 1 || loading}
+            disabled={currentPage >= totalPages - 1 || refreshing}
           >
             Keyingi
           </button>
