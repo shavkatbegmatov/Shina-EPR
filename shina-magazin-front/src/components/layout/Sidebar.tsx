@@ -15,6 +15,7 @@ import {
   X,
   UserCog,
   Shield,
+  FileText,
 } from 'lucide-react';
 import { useAuthStore } from '../../store/authStore';
 import { useUIStore } from '../../store/uiStore';
@@ -36,6 +37,7 @@ const menuItems = [
   { path: '/notifications', icon: Bell, label: 'Bildirishnomalar', permission: PermissionCode.NOTIFICATIONS_VIEW },
   { path: '/employees', icon: UserCog, label: 'Xodimlar', permission: PermissionCode.EMPLOYEES_VIEW },
   { path: '/roles', icon: Shield, label: 'Rollar', permission: PermissionCode.ROLES_VIEW },
+  { path: '/audit-logs', icon: FileText, label: 'Audit Loglar', permission: PermissionCode.SETTINGS_VIEW },
   { path: '/settings', icon: Settings, label: 'Sozlamalar', permission: PermissionCode.SETTINGS_VIEW },
 ];
 

@@ -21,6 +21,7 @@ import { ReportsPage } from '../pages/reports/ReportsPage';
 import { EmployeesPage } from '../pages/employees/EmployeesPage';
 import { RolesPage } from '../pages/roles/RolesPage';
 import { ProfilePage } from '../pages/profile/ProfilePage';
+import { AuditLogsPage } from '../pages/audit-logs/AuditLogsPage';
 
 // Portal imports
 import PortalLayout from '../portal/components/layout/PortalLayout';
@@ -192,6 +193,15 @@ export const router = createBrowserRouter([
           </ProtectedRoute>
         ),
         handle: { title: 'Bildirishnomalar' },
+      },
+      {
+        path: 'audit-logs',
+        element: (
+          <ProtectedRoute permission={PermissionCode.SETTINGS_VIEW}>
+            <AuditLogsPage />
+          </ProtectedRoute>
+        ),
+        handle: { title: 'Audit Loglar' },
       },
       {
         path: 'profile',
