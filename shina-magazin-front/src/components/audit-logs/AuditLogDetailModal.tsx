@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { X, Copy, ExternalLink, Loader2, Check } from 'lucide-react';
+import { X, Copy, ExternalLink, Loader2, Check, FileEdit, Code, Info } from 'lucide-react';
 import { format } from 'date-fns';
 import { uz } from 'date-fns/locale';
 import toast from 'react-hot-toast';
@@ -165,37 +165,84 @@ export function AuditLogDetailModal({ logId, onClose }: AuditLogDetailModalProps
         </div>
 
         {/* Tabs */}
-        <div className="border-b border-base-300 overflow-x-auto">
-          <div className="flex gap-2 md:gap-4 px-4 md:px-6 min-w-max md:min-w-0">
+        <div className="border-b-2 border-base-300 bg-base-100">
+          <div className="flex gap-1 px-3 md:px-6 overflow-x-auto">
             <button
-              className={`py-3 px-3 md:px-4 border-b-2 transition font-medium text-xs sm:text-sm whitespace-nowrap ${
-                activeTab === 'changes'
-                  ? 'border-primary text-primary'
-                  : 'border-transparent text-base-content/60 hover:text-base-content'
-              }`}
+              className={`
+                relative
+                min-h-[48px] px-4 md:px-5 py-3
+                flex items-center gap-2
+                font-semibold text-sm md:text-base
+                whitespace-nowrap
+                transition-all duration-200
+                rounded-t-lg
+                ${
+                  activeTab === 'changes'
+                    ? 'text-primary bg-primary/10'
+                    : 'text-base-content/60 hover:text-base-content hover:bg-base-200/50'
+                }
+              `}
               onClick={() => setActiveTab('changes')}
             >
-              O'zgarishlar
+              <FileEdit className="h-4 w-4 md:h-5 md:w-5 flex-shrink-0" />
+              <span>O'zgarishlar</span>
+              {detail?.fieldChanges && detail.fieldChanges.length > 0 && (
+                <span className={`
+                  badge badge-sm ml-1
+                  ${activeTab === 'changes' ? 'badge-primary' : 'badge-ghost'}
+                `}>
+                  {detail.fieldChanges.length}
+                </span>
+              )}
+              {activeTab === 'changes' && (
+                <div className="absolute bottom-0 left-0 right-0 h-[3px] bg-primary rounded-t-sm"></div>
+              )}
             </button>
             <button
-              className={`py-3 px-3 md:px-4 border-b-2 transition font-medium text-xs sm:text-sm whitespace-nowrap ${
-                activeTab === 'json'
-                  ? 'border-primary text-primary'
-                  : 'border-transparent text-base-content/60 hover:text-base-content'
-              }`}
+              className={`
+                relative
+                min-h-[48px] px-4 md:px-5 py-3
+                flex items-center gap-2
+                font-semibold text-sm md:text-base
+                whitespace-nowrap
+                transition-all duration-200
+                rounded-t-lg
+                ${
+                  activeTab === 'json'
+                    ? 'text-primary bg-primary/10'
+                    : 'text-base-content/60 hover:text-base-content hover:bg-base-200/50'
+                }
+              `}
               onClick={() => setActiveTab('json')}
             >
-              JSON Ko'rinishi
+              <Code className="h-4 w-4 md:h-5 md:w-5 flex-shrink-0" />
+              <span>JSON Ko'rinishi</span>
+              {activeTab === 'json' && (
+                <div className="absolute bottom-0 left-0 right-0 h-[3px] bg-primary rounded-t-sm"></div>
+              )}
             </button>
             <button
-              className={`py-3 px-3 md:px-4 border-b-2 transition font-medium text-xs sm:text-sm whitespace-nowrap ${
-                activeTab === 'meta'
-                  ? 'border-primary text-primary'
-                  : 'border-transparent text-base-content/60 hover:text-base-content'
-              }`}
+              className={`
+                relative
+                min-h-[48px] px-4 md:px-5 py-3
+                flex items-center gap-2
+                font-semibold text-sm md:text-base
+                whitespace-nowrap
+                transition-all duration-200
+                rounded-t-lg
+                ${
+                  activeTab === 'meta'
+                    ? 'text-primary bg-primary/10'
+                    : 'text-base-content/60 hover:text-base-content hover:bg-base-200/50'
+                }
+              `}
               onClick={() => setActiveTab('meta')}
             >
-              Texnik Ma'lumotlar
+              <Info className="h-4 w-4 md:h-5 md:w-5 flex-shrink-0" />
+              <span>Texnik Ma'lumotlar</span>
+              {activeTab === 'meta' && (
+                <div className="absolute bottom-0 left-0 right-0 h-[3px] bg-primary rounded-t-sm"></div>
+              )}
             </button>
           </div>
         </div>
