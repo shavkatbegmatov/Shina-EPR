@@ -271,12 +271,12 @@ export function PurchasesPage() {
 
   // Export handler
   const handleExport = async (format: 'excel' | 'pdf') => {
-    const { start, end } = getActiveDateRange();
+    const dateRange = getDateRangeValues(dateRangePreset);
     await purchasesApi.export.exportData(format, {
       supplierId: selectedSupplierId,
       status: selectedStatus || undefined,
-      startDate: start || undefined,
-      endDate: end || undefined,
+      startDate: dateRange?.start,
+      endDate: dateRange?.end,
     });
   };
 
