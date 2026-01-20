@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { createPortal } from 'react-dom';
 import { ChevronDown, ChevronRight, Eye, Loader2, Plus, Edit, Trash2 } from 'lucide-react';
 import { formatDistanceToNow } from 'date-fns';
 import { uz } from 'date-fns/locale';
@@ -135,6 +136,11 @@ export function AuditLogExpandableRow({
         <td className="px-4 py-3 text-sm">{log.username || '-'}</td>
         <td className="px-4 py-3 text-xs text-base-content/60">{log.ipAddress || '-'}</td>
       </tr>
+
+      {/* Detail Modal (Layer 3) - rendered via Portal */}
+      {showDetailModal && (
+        <ModalPortal logId={log.id} onClose={() => setShowDetailModal(false)} />
+      )}
 
       {/* Expanded content (Layer 2) */}
       {isExpanded && (
@@ -297,11 +303,14 @@ export function AuditLogExpandableRow({
           </td>
         </tr>
       )}
-
-      {/* Detail Modal (Layer 3) */}
-      {showDetailModal && (
-        <AuditLogDetailModal logId={log.id} onClose={() => setShowDetailModal(false)} />
-      )}
     </>
+  );
+}
+
+// Render modal outside tbody using Portal
+function ModalPortal({ logId, onClose }: { logId: number; onClose: () => void }) {
+  return createPortal(
+    <AuditLogDetailModal logId={logId} onClose={onClose} />,
+    document.body
   );
 }
