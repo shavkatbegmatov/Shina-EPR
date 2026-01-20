@@ -14,6 +14,7 @@ import { RefreshButton } from '../../components/common/RefreshButton';
 import { ExportButtons } from '../../components/common/ExportButtons';
 import { LoadingOverlay } from '../../components/common/LoadingOverlay';
 import { AuditLogExpandableRow } from '../../components/audit-logs/AuditLogExpandableRow';
+import { AuditLogMobileCard } from '../../components/audit-logs/AuditLogMobileCard';
 
 export function AuditLogsPage() {
   const [auditLogs, setAuditLogs] = useState<AuditLog[]>([]);
@@ -156,7 +157,7 @@ export function AuditLogsPage() {
       {/* Search and Filters */}
       <div className="surface-card p-4 space-y-4">
         {/* Search Bar */}
-        <div className="flex gap-2">
+        <div className="flex flex-col sm:flex-row gap-2">
           <div className="relative flex-1">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-base-content/40" />
             <input
@@ -169,20 +170,20 @@ export function AuditLogsPage() {
             />
             {searchInput && (
               <button
-                className="absolute right-3 top-1/2 -translate-y-1/2 text-base-content/40 hover:text-base-content"
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-base-content/40 hover:text-base-content min-h-[44px] min-w-[44px] flex items-center justify-center"
                 onClick={handleClearSearch}
               >
-                <X className="h-4 w-4" />
+                <X className="h-5 w-5 sm:h-4 sm:w-4" />
               </button>
             )}
           </div>
           <button
-            className="btn btn-primary"
+            className="btn btn-primary w-full sm:w-auto min-h-[44px] gap-2"
             onClick={handleSearch}
             disabled={refreshing}
           >
-            <Search className="h-4 w-4" />
-            Qidirish
+            <Search className="h-5 w-5 sm:h-4 sm:w-4" />
+            <span>Qidirish</span>
           </button>
         </div>
 
@@ -242,33 +243,50 @@ export function AuditLogsPage() {
       <div className="relative">
         <LoadingOverlay show={refreshing} message="Audit loglar yangilanmoqda..." />
         {auditLogs.length > 0 ? (
-          <div className="surface-card overflow-x-auto">
-            <table className="table w-full">
-              <thead className="bg-base-200">
-                <tr>
-                  <th className="w-12"></th>
-                  <th className="text-left">ID</th>
-                  <th className="text-left">Obyekt</th>
-                  <th className="text-left">Amal</th>
-                  <th className="text-left">Vaqt</th>
-                  <th className="text-left">Foydalanuvchi</th>
-                  <th className="text-left">IP Manzil</th>
-                </tr>
-              </thead>
-              <tbody>
-                {auditLogs.map((log) => (
-                  <AuditLogExpandableRow
-                    key={log.id}
-                    log={log}
-                    isExpanded={expandedRows.has(log.id)}
-                    onToggle={() => handleToggleExpand(log.id)}
-                    fieldChanges={fieldChangesCache.get(log.id)}
-                    onLoadDetail={() => handleLoadDetail(log.id)}
-                  />
-                ))}
-              </tbody>
-            </table>
-          </div>
+          <>
+            {/* Desktop table */}
+            <div className="hidden md:block surface-card overflow-x-auto">
+              <table className="table w-full">
+                <thead className="bg-base-200">
+                  <tr>
+                    <th className="w-12"></th>
+                    <th className="text-left">ID</th>
+                    <th className="text-left">Obyekt</th>
+                    <th className="text-left">Amal</th>
+                    <th className="text-left">Vaqt</th>
+                    <th className="text-left">Foydalanuvchi</th>
+                    <th className="text-left">IP Manzil</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {auditLogs.map((log) => (
+                    <AuditLogExpandableRow
+                      key={log.id}
+                      log={log}
+                      isExpanded={expandedRows.has(log.id)}
+                      onToggle={() => handleToggleExpand(log.id)}
+                      fieldChanges={fieldChangesCache.get(log.id)}
+                      onLoadDetail={() => handleLoadDetail(log.id)}
+                    />
+                  ))}
+                </tbody>
+              </table>
+            </div>
+
+            {/* Mobile card list */}
+            <div className="md:hidden space-y-3">
+              {auditLogs.map((log) => (
+                <AuditLogMobileCard
+                  key={log.id}
+                  log={log}
+                  isExpanded={expandedRows.has(log.id)}
+                  onToggle={() => handleToggleExpand(log.id)}
+                  fieldChanges={fieldChangesCache.get(log.id)}
+                  onLoadDetail={() => handleLoadDetail(log.id)}
+                />
+              ))}
+            </div>
+          </>
         ) : (
           <div className="surface-card p-8 sm:p-12 text-center">
             <Shield className="h-12 w-12 mx-auto text-base-content/30 mb-4" />
@@ -283,19 +301,19 @@ export function AuditLogsPage() {
 
       {/* Pagination */}
       {totalPages > 1 && (
-        <div className="flex justify-center gap-2">
+        <div className="flex justify-center items-center gap-3 sm:gap-4">
           <button
-            className="btn btn-sm"
+            className="btn btn-md sm:btn-sm min-h-[44px] sm:min-h-0"
             onClick={() => setCurrentPage((prev) => Math.max(0, prev - 1))}
             disabled={currentPage === 0 || refreshing}
           >
             Oldingi
           </button>
-          <span className="flex items-center px-4 text-sm">
+          <span className="flex items-center px-3 sm:px-4 text-base sm:text-sm font-medium">
             {currentPage + 1} / {totalPages}
           </span>
           <button
-            className="btn btn-sm"
+            className="btn btn-md sm:btn-sm min-h-[44px] sm:min-h-0"
             onClick={() => setCurrentPage((prev) => Math.min(totalPages - 1, prev + 1))}
             disabled={currentPage >= totalPages - 1 || refreshing}
           >

@@ -10,6 +10,7 @@ import { RefreshButton } from '../../components/common/RefreshButton';
 import { ExportButtons } from '../../components/common/ExportButtons';
 import { LoadingOverlay } from '../../components/common/LoadingOverlay';
 import { AuditLogExpandableRow } from '../../components/audit-logs/AuditLogExpandableRow';
+import { AuditLogMobileCard } from '../../components/audit-logs/AuditLogMobileCard';
 
 export function ActivityHistoryTab() {
   const [activities, setActivities] = useState<UserActivity[]>([]);
@@ -206,33 +207,50 @@ export function ActivityHistoryTab() {
       <div className="relative">
         <LoadingOverlay show={refreshing} message="Faoliyat tarixi yangilanmoqda..." />
         {activities.length > 0 ? (
-          <div className="surface-card overflow-x-auto">
-            <table className="table w-full table-sm">
-              <thead className="bg-base-200">
-                <tr>
-                  <th className="w-12"></th>
-                  <th className="text-left">ID</th>
-                  <th className="text-left">Obyekt</th>
-                  <th className="text-left">Amal</th>
-                  <th className="text-left">Vaqt</th>
-                  <th className="text-left">Foydalanuvchi</th>
-                  <th className="text-left">IP Manzil</th>
-                </tr>
-              </thead>
-              <tbody>
-                {activities.map((activity) => (
-                  <AuditLogExpandableRow
-                    key={activity.id}
-                    log={convertToAuditLog(activity)}
-                    isExpanded={expandedRows.has(activity.id)}
-                    onToggle={() => handleToggleExpand(activity.id)}
-                    fieldChanges={fieldChangesCache.get(activity.id)}
-                    onLoadDetail={() => handleLoadDetail(activity.id)}
-                  />
-                ))}
-              </tbody>
-            </table>
-          </div>
+          <>
+            {/* Desktop table */}
+            <div className="hidden md:block surface-card overflow-x-auto">
+              <table className="table w-full table-sm">
+                <thead className="bg-base-200">
+                  <tr>
+                    <th className="w-12"></th>
+                    <th className="text-left">ID</th>
+                    <th className="text-left">Obyekt</th>
+                    <th className="text-left">Amal</th>
+                    <th className="text-left">Vaqt</th>
+                    <th className="text-left">Foydalanuvchi</th>
+                    <th className="text-left">IP Manzil</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {activities.map((activity) => (
+                    <AuditLogExpandableRow
+                      key={activity.id}
+                      log={convertToAuditLog(activity)}
+                      isExpanded={expandedRows.has(activity.id)}
+                      onToggle={() => handleToggleExpand(activity.id)}
+                      fieldChanges={fieldChangesCache.get(activity.id)}
+                      onLoadDetail={() => handleLoadDetail(activity.id)}
+                    />
+                  ))}
+                </tbody>
+              </table>
+            </div>
+
+            {/* Mobile card list */}
+            <div className="md:hidden space-y-3">
+              {activities.map((activity) => (
+                <AuditLogMobileCard
+                  key={activity.id}
+                  log={convertToAuditLog(activity)}
+                  isExpanded={expandedRows.has(activity.id)}
+                  onToggle={() => handleToggleExpand(activity.id)}
+                  fieldChanges={fieldChangesCache.get(activity.id)}
+                  onLoadDetail={() => handleLoadDetail(activity.id)}
+                />
+              ))}
+            </div>
+          </>
         ) : (
           <div className="surface-card p-8 sm:p-12 text-center">
             <Activity className="h-12 w-12 mx-auto text-base-content/30 mb-4" />
@@ -247,19 +265,19 @@ export function ActivityHistoryTab() {
 
       {/* Pagination */}
       {totalPages > 1 && (
-        <div className="flex justify-center gap-2">
+        <div className="flex justify-center items-center gap-3 sm:gap-4">
           <button
-            className="btn btn-sm"
+            className="btn btn-md sm:btn-sm min-h-[44px] sm:min-h-0"
             onClick={() => setCurrentPage((prev) => Math.max(0, prev - 1))}
             disabled={currentPage === 0 || refreshing}
           >
             Oldingi
           </button>
-          <span className="flex items-center px-4 text-sm">
+          <span className="flex items-center px-3 sm:px-4 text-base sm:text-sm font-medium">
             {currentPage + 1} / {totalPages}
           </span>
           <button
-            className="btn btn-sm"
+            className="btn btn-md sm:btn-sm min-h-[44px] sm:min-h-0"
             onClick={() => setCurrentPage((prev) => Math.min(totalPages - 1, prev + 1))}
             disabled={currentPage >= totalPages - 1 || refreshing}
           >

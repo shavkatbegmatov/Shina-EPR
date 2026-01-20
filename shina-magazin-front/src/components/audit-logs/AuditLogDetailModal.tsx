@@ -139,16 +139,16 @@ export function AuditLogDetailModal({ logId, onClose }: AuditLogDetailModalProps
   if (!detail) return null;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4" onClick={onClose}>
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-0 md:p-4" onClick={onClose}>
       <div
-        className="bg-base-100 rounded-lg shadow-xl w-full max-w-4xl max-h-[90vh] flex flex-col"
+        className="bg-base-100 w-full h-full md:h-auto md:rounded-lg shadow-xl md:max-w-4xl md:max-h-[90vh] flex flex-col"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Header */}
-        <div className="px-6 py-4 border-b border-base-300 flex items-start justify-between">
-          <div className="flex-1">
-            <h2 className="text-xl font-bold">Audit Log Batafsil Ma'lumotlari</h2>
-            <p className="text-sm text-base-content/60 mt-1">
+        <div className="px-4 md:px-6 py-3 md:py-4 border-b border-base-300 flex items-start justify-between">
+          <div className="flex-1 min-w-0">
+            <h2 className="text-lg md:text-xl font-bold">Audit Log Batafsil Ma'lumotlari</h2>
+            <p className="text-xs md:text-sm text-base-content/60 mt-1">
               {detail.entityType} #{detail.entityId} -{' '}
               <span className={`badge badge-sm ${getActionBadgeClass(detail.action)}`}>
                 {translateAction(detail.action)}
@@ -157,7 +157,7 @@ export function AuditLogDetailModal({ logId, onClose }: AuditLogDetailModalProps
           </div>
           <button
             onClick={onClose}
-            className="btn btn-sm btn-ghost btn-circle"
+            className="btn btn-sm btn-ghost btn-circle flex-shrink-0 ml-2 min-h-[44px] min-w-[44px] md:min-h-0 md:min-w-0"
             aria-label="Yopish"
           >
             <X className="h-5 w-5" />
@@ -165,10 +165,10 @@ export function AuditLogDetailModal({ logId, onClose }: AuditLogDetailModalProps
         </div>
 
         {/* Tabs */}
-        <div className="border-b border-base-300">
-          <div className="flex gap-4 px-6">
+        <div className="border-b border-base-300 overflow-x-auto">
+          <div className="flex gap-2 md:gap-4 px-4 md:px-6 min-w-max md:min-w-0">
             <button
-              className={`py-3 px-4 border-b-2 transition font-medium text-sm ${
+              className={`py-3 px-3 md:px-4 border-b-2 transition font-medium text-xs sm:text-sm whitespace-nowrap ${
                 activeTab === 'changes'
                   ? 'border-primary text-primary'
                   : 'border-transparent text-base-content/60 hover:text-base-content'
@@ -178,7 +178,7 @@ export function AuditLogDetailModal({ logId, onClose }: AuditLogDetailModalProps
               O'zgarishlar
             </button>
             <button
-              className={`py-3 px-4 border-b-2 transition font-medium text-sm ${
+              className={`py-3 px-3 md:px-4 border-b-2 transition font-medium text-xs sm:text-sm whitespace-nowrap ${
                 activeTab === 'json'
                   ? 'border-primary text-primary'
                   : 'border-transparent text-base-content/60 hover:text-base-content'
@@ -188,7 +188,7 @@ export function AuditLogDetailModal({ logId, onClose }: AuditLogDetailModalProps
               JSON Ko'rinishi
             </button>
             <button
-              className={`py-3 px-4 border-b-2 transition font-medium text-sm ${
+              className={`py-3 px-3 md:px-4 border-b-2 transition font-medium text-xs sm:text-sm whitespace-nowrap ${
                 activeTab === 'meta'
                   ? 'border-primary text-primary'
                   : 'border-transparent text-base-content/60 hover:text-base-content'
@@ -201,12 +201,12 @@ export function AuditLogDetailModal({ logId, onClose }: AuditLogDetailModalProps
         </div>
 
         {/* Content */}
-        <div className="flex-1 overflow-y-auto p-6">
+        <div className="flex-1 overflow-y-auto p-4 md:p-6">
           {/* Changes Tab */}
           {activeTab === 'changes' && (
             <div className="space-y-4">
               {/* Summary Info */}
-              <div className="grid grid-cols-2 gap-4 p-4 bg-base-200 rounded-lg">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4 p-3 sm:p-4 bg-base-200 rounded-lg">
                 <div>
                   <label className="text-sm font-medium text-base-content/60">Foydalanuvchi</label>
                   <p className="font-medium">{detail.username}</p>
@@ -221,13 +221,13 @@ export function AuditLogDetailModal({ logId, onClose }: AuditLogDetailModalProps
                     {detail.ipAddress}
                     <button
                       onClick={() => copyToClipboard(detail.ipAddress, 'ip')}
-                      className="btn btn-ghost btn-xs btn-circle"
+                      className="btn btn-ghost btn-sm sm:btn-xs min-h-[44px] sm:min-h-0 min-w-[44px] sm:min-w-0"
                       title="Nusxalash"
                     >
                       {copiedField === 'ip' ? (
-                        <Check className="h-3 w-3 text-success" />
+                        <Check className="h-5 w-5 sm:h-3 sm:w-3 text-success" />
                       ) : (
-                        <Copy className="h-3 w-3" />
+                        <Copy className="h-5 w-5 sm:h-3 sm:w-3" />
                       )}
                     </button>
                   </p>
@@ -242,63 +242,123 @@ export function AuditLogDetailModal({ logId, onClose }: AuditLogDetailModalProps
 
               {/* Detailed field changes */}
               {detail.fieldChanges && detail.fieldChanges.length > 0 ? (
-                <div className="overflow-x-auto border border-base-300 rounded-lg">
-                  <table className="table w-full">
-                    <thead className="bg-base-200">
-                      <tr>
-                        <th className="text-left">Maydon</th>
-                        <th className="text-left">Eski qiymat</th>
-                        <th className="text-center w-12">→</th>
-                        <th className="text-left">Yangi qiymat</th>
-                        <th className="text-center w-32">Holat</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {detail.fieldChanges.map((change, index) => (
-                        <tr key={index} className="border-b border-base-300 last:border-0">
-                          <td>
-                            <div>
-                              <p className="font-medium">{change.fieldLabel}</p>
-                              <p className="text-xs text-base-content/50">{change.fieldName}</p>
-                            </div>
-                          </td>
-                          <td
+                <>
+                  {/* Desktop table */}
+                  <div className="hidden md:block overflow-x-auto border border-base-300 rounded-lg">
+                    <table className="table w-full">
+                      <thead className="bg-base-200">
+                        <tr>
+                          <th className="text-left">Maydon</th>
+                          <th className="text-left">Eski qiymat</th>
+                          <th className="text-center w-12">→</th>
+                          <th className="text-left">Yangi qiymat</th>
+                          <th className="text-center w-32">Holat</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {detail.fieldChanges.map((change, index) => (
+                          <tr key={index} className="border-b border-base-300 last:border-0">
+                            <td>
+                              <div>
+                                <p className="font-medium">{change.fieldLabel}</p>
+                                <p className="text-xs text-base-content/50">{change.fieldName}</p>
+                              </div>
+                            </td>
+                            <td
+                              className={
+                                change.changeType === 'REMOVED' ? 'line-through text-error' : ''
+                              }
+                            >
+                              {change.isSensitive ? (
+                                <span className="text-base-content/40">****** (Maxfiy)</span>
+                              ) : (
+                                <code className="bg-base-200 px-2 py-1 rounded text-xs">
+                                  {change.oldValueFormatted || '-'}
+                                </code>
+                              )}
+                            </td>
+                            <td className="text-center text-base-content/40">→</td>
+                            <td
+                              className={
+                                change.changeType === 'ADDED' ? 'font-medium text-success' : ''
+                              }
+                            >
+                              {change.isSensitive ? (
+                                <span className="text-base-content/40">****** (Maxfiy)</span>
+                              ) : (
+                                <code className="bg-base-200 px-2 py-1 rounded text-xs">
+                                  {change.newValueFormatted || '-'}
+                                </code>
+                              )}
+                            </td>
+                            <td className="text-center">
+                              <span className={`badge badge-sm ${getChangeTypeBadge(change.changeType)}`}>
+                                {translateChangeType(change.changeType)}
+                              </span>
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+
+                  {/* Mobile vertical stack */}
+                  <div className="md:hidden space-y-3">
+                    {detail.fieldChanges.map((change, index) => (
+                      <div key={index} className="border-l-4 border-base-300 pl-3 py-2 bg-base-100 rounded">
+                        {/* Field label and badge */}
+                        <div className="flex items-center justify-between mb-2">
+                          <div>
+                            <p className="font-medium text-sm">{change.fieldLabel}</p>
+                            <p className="text-xs text-base-content/50">{change.fieldName}</p>
+                          </div>
+                          <span className={`badge badge-sm ${getChangeTypeBadge(change.changeType)}`}>
+                            {translateChangeType(change.changeType)}
+                          </span>
+                        </div>
+
+                        {/* Values */}
+                        <div className="space-y-1.5 text-sm">
+                          {/* Old value */}
+                          <div
                             className={
-                              change.changeType === 'REMOVED' ? 'line-through text-error' : ''
+                              change.changeType === 'REMOVED'
+                                ? 'line-through text-error opacity-75'
+                                : ''
                             }
                           >
+                            <span className="text-base-content/60 text-xs">Eski: </span>
                             {change.isSensitive ? (
                               <span className="text-base-content/40">****** (Maxfiy)</span>
                             ) : (
-                              <code className="bg-base-200 px-2 py-1 rounded text-xs">
+                              <code className="bg-base-200 px-2 py-0.5 rounded text-xs break-all">
                                 {change.oldValueFormatted || '-'}
                               </code>
                             )}
-                          </td>
-                          <td className="text-center text-base-content/40">→</td>
-                          <td
+                          </div>
+
+                          {/* New value */}
+                          <div
                             className={
-                              change.changeType === 'ADDED' ? 'font-medium text-success' : ''
+                              change.changeType === 'ADDED'
+                                ? 'text-success font-medium'
+                                : ''
                             }
                           >
+                            <span className="text-base-content/60 text-xs">Yangi: </span>
                             {change.isSensitive ? (
                               <span className="text-base-content/40">****** (Maxfiy)</span>
                             ) : (
-                              <code className="bg-base-200 px-2 py-1 rounded text-xs">
+                              <code className="bg-base-200 px-2 py-0.5 rounded text-xs break-all">
                                 {change.newValueFormatted || '-'}
                               </code>
                             )}
-                          </td>
-                          <td className="text-center">
-                            <span className={`badge badge-sm ${getChangeTypeBadge(change.changeType)}`}>
-                              {translateChangeType(change.changeType)}
-                            </span>
-                          </td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </>
               ) : (
                 <div className="text-center py-8 text-base-content/60">
                   O'zgarishlar ma'lumoti mavjud emas
@@ -309,10 +369,10 @@ export function AuditLogDetailModal({ logId, onClose }: AuditLogDetailModalProps
                 <div className="pt-4">
                   <a
                     href={detail.entityLink}
-                    className="btn btn-primary btn-sm gap-2"
+                    className="btn btn-primary w-full sm:w-auto min-h-[44px] sm:min-h-0 gap-2"
                     onClick={onClose}
                   >
-                    <ExternalLink className="h-4 w-4" />
+                    <ExternalLink className="h-5 w-5 sm:h-4 sm:w-4" />
                     {detail.entityType} yozuviga o'tish
                   </a>
                 </div>
@@ -335,41 +395,41 @@ export function AuditLogDetailModal({ logId, onClose }: AuditLogDetailModalProps
           {activeTab === 'meta' && (
             <div className="space-y-4">
               {/* Device Info */}
-              <div className="border border-base-300 rounded-lg p-4 bg-base-100">
-                <h3 className="font-medium mb-3 flex items-center gap-2">
+              <div className="border border-base-300 rounded-lg p-3 sm:p-4 bg-base-100">
+                <h3 className="font-medium mb-3 flex items-center gap-2 text-sm sm:text-base">
                   🖥️ Qurilma Ma'lumotlari
                 </h3>
-                <dl className="grid grid-cols-2 gap-4">
+                <dl className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
                   <div>
-                    <dt className="text-sm text-base-content/60">Qurilma turi</dt>
-                    <dd className="font-medium">{detail.deviceInfo.deviceType}</dd>
+                    <dt className="text-xs sm:text-sm text-base-content/60">Qurilma turi</dt>
+                    <dd className="font-medium text-sm sm:text-base">{detail.deviceInfo.deviceType}</dd>
                   </div>
                   <div>
-                    <dt className="text-sm text-base-content/60">Brauzer</dt>
-                    <dd className="font-medium">
+                    <dt className="text-xs sm:text-sm text-base-content/60">Brauzer</dt>
+                    <dd className="font-medium text-sm sm:text-base">
                       {detail.deviceInfo.browser}{' '}
                       {detail.deviceInfo.browserVersion && `${detail.deviceInfo.browserVersion}`}
                     </dd>
                   </div>
                   <div>
-                    <dt className="text-sm text-base-content/60">Operatsion tizim</dt>
-                    <dd className="font-medium">
+                    <dt className="text-xs sm:text-sm text-base-content/60">Operatsion tizim</dt>
+                    <dd className="font-medium text-sm sm:text-base">
                       {detail.deviceInfo.os}{' '}
                       {detail.deviceInfo.osVersion && `${detail.deviceInfo.osVersion}`}
                     </dd>
                   </div>
-                  <div className="col-span-2">
-                    <dt className="text-sm text-base-content/60 mb-1">User-Agent (Raw)</dt>
+                  <div className="sm:col-span-2">
+                    <dt className="text-xs sm:text-sm text-base-content/60 mb-1">User-Agent (Raw)</dt>
                     <dd className="font-mono text-xs bg-base-200 p-2 rounded break-all">
                       {detail.deviceInfo.userAgent}
                       <button
                         onClick={() => copyToClipboard(detail.deviceInfo.userAgent, 'useragent')}
-                        className="btn btn-ghost btn-xs ml-2"
+                        className="btn btn-ghost btn-sm sm:btn-xs ml-2 min-h-[44px] sm:min-h-0 min-w-[44px] sm:min-w-0"
                       >
                         {copiedField === 'useragent' ? (
-                          <Check className="h-3 w-3 text-success" />
+                          <Check className="h-5 w-5 sm:h-3 sm:w-3 text-success" />
                         ) : (
-                          <Copy className="h-3 w-3" />
+                          <Copy className="h-5 w-5 sm:h-3 sm:w-3" />
                         )}
                       </button>
                     </dd>
@@ -378,38 +438,38 @@ export function AuditLogDetailModal({ logId, onClose }: AuditLogDetailModalProps
               </div>
 
               {/* General Info */}
-              <div className="border border-base-300 rounded-lg p-4 bg-base-100">
-                <h3 className="font-medium mb-3 flex items-center gap-2">
+              <div className="border border-base-300 rounded-lg p-3 sm:p-4 bg-base-100">
+                <h3 className="font-medium mb-3 flex items-center gap-2 text-sm sm:text-base">
                   📋 Umumiy Ma'lumotlar
                 </h3>
-                <dl className="grid grid-cols-2 gap-4">
+                <dl className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
                   <div>
-                    <dt className="text-sm text-base-content/60">Audit Log ID</dt>
-                    <dd className="font-medium">#{detail.id}</dd>
+                    <dt className="text-xs sm:text-sm text-base-content/60">Audit Log ID</dt>
+                    <dd className="font-medium text-sm sm:text-base">#{detail.id}</dd>
                   </div>
                   <div>
-                    <dt className="text-sm text-base-content/60">Foydalanuvchi ID</dt>
-                    <dd className="font-medium">#{detail.userId}</dd>
+                    <dt className="text-xs sm:text-sm text-base-content/60">Foydalanuvchi ID</dt>
+                    <dd className="font-medium text-sm sm:text-base">#{detail.userId}</dd>
                   </div>
                   <div>
-                    <dt className="text-sm text-base-content/60">Obyekt turi</dt>
-                    <dd className="font-medium">{detail.entityType}</dd>
+                    <dt className="text-xs sm:text-sm text-base-content/60">Obyekt turi</dt>
+                    <dd className="font-medium text-sm sm:text-base">{detail.entityType}</dd>
                   </div>
                   <div>
-                    <dt className="text-sm text-base-content/60">Obyekt ID</dt>
-                    <dd className="font-medium">#{detail.entityId}</dd>
+                    <dt className="text-xs sm:text-sm text-base-content/60">Obyekt ID</dt>
+                    <dd className="font-medium text-sm sm:text-base">#{detail.entityId}</dd>
                   </div>
                   <div>
-                    <dt className="text-sm text-base-content/60">Amal</dt>
+                    <dt className="text-xs sm:text-sm text-base-content/60">Amal</dt>
                     <dd>
-                      <span className={`badge ${getActionBadgeClass(detail.action)}`}>
+                      <span className={`badge badge-sm ${getActionBadgeClass(detail.action)}`}>
                         {translateAction(detail.action)}
                       </span>
                     </dd>
                   </div>
                   <div>
-                    <dt className="text-sm text-base-content/60">Vaqt (aniq)</dt>
-                    <dd className="font-medium text-sm">{formatFullTimestamp(detail.createdAt)}</dd>
+                    <dt className="text-xs sm:text-sm text-base-content/60">Vaqt (aniq)</dt>
+                    <dd className="font-medium text-xs sm:text-sm">{formatFullTimestamp(detail.createdAt)}</dd>
                   </div>
                 </dl>
               </div>
@@ -418,8 +478,8 @@ export function AuditLogDetailModal({ logId, onClose }: AuditLogDetailModalProps
         </div>
 
         {/* Footer */}
-        <div className="px-6 py-4 border-t border-base-300 flex justify-end">
-          <button onClick={onClose} className="btn btn-ghost">
+        <div className="px-4 md:px-6 py-3 md:py-4 border-t border-base-300 flex justify-end">
+          <button onClick={onClose} className="btn btn-ghost w-full sm:w-auto min-h-[44px]">
             Yopish
           </button>
         </div>

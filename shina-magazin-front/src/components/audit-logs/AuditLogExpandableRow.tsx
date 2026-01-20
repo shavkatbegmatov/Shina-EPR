@@ -148,67 +148,129 @@ export function AuditLogExpandableRow({
               <div className="space-y-4">
                 {/* Field changes table */}
                 {fieldChanges && fieldChanges.length > 0 ? (
-                  <div className="bg-base-100 rounded-lg shadow-sm overflow-hidden">
-                    <div className="px-4 py-3 bg-base-200/50 border-b border-base-300">
-                      <h4 className="font-medium text-sm">O'zgarishlar</h4>
+                  <>
+                    {/* Desktop table */}
+                    <div className="hidden md:block bg-base-100 rounded-lg shadow-sm overflow-hidden">
+                      <div className="px-4 py-3 bg-base-200/50 border-b border-base-300">
+                        <h4 className="font-medium text-sm">O'zgarishlar</h4>
+                      </div>
+                      <div className="overflow-x-auto">
+                        <table className="table table-sm w-full">
+                          <thead>
+                            <tr className="bg-base-200/30">
+                              <th className="text-left py-2 font-medium">Maydon</th>
+                              <th className="text-left py-2 font-medium">Eski qiymat</th>
+                              <th className="text-center py-2 w-12">→</th>
+                              <th className="text-left py-2 font-medium">Yangi qiymat</th>
+                              <th className="text-center py-2 font-medium w-32">Holat</th>
+                            </tr>
+                          </thead>
+                          <tbody>
+                            {fieldChanges.map((change, index) => (
+                              <tr key={index} className="border-b border-base-300 last:border-0">
+                                <td className="py-2 font-medium text-sm">{change.fieldLabel}</td>
+                                <td
+                                  className={`py-2 text-sm ${
+                                    change.changeType === 'REMOVED'
+                                      ? 'line-through text-error'
+                                      : ''
+                                  }`}
+                                >
+                                  {change.isSensitive ? (
+                                    <span className="text-base-content/40">****** (Maxfiy)</span>
+                                  ) : (
+                                    <code className="bg-base-200 px-2 py-0.5 rounded text-xs">
+                                      {change.oldValueFormatted || '-'}
+                                    </code>
+                                  )}
+                                </td>
+                                <td className="py-2 text-center text-base-content/40">→</td>
+                                <td
+                                  className={`py-2 text-sm ${
+                                    change.changeType === 'ADDED'
+                                      ? 'text-success font-medium'
+                                      : ''
+                                  }`}
+                                >
+                                  {change.isSensitive ? (
+                                    <span className="text-base-content/40">****** (Maxfiy)</span>
+                                  ) : (
+                                    <code className="bg-base-200 px-2 py-0.5 rounded text-xs">
+                                      {change.newValueFormatted || '-'}
+                                    </code>
+                                  )}
+                                </td>
+                                <td className="py-2 text-center">
+                                  <span className={`badge badge-sm ${getChangeTypeBadge(change.changeType)}`}>
+                                    {translateChangeType(change.changeType)}
+                                  </span>
+                                </td>
+                              </tr>
+                            ))}
+                          </tbody>
+                        </table>
+                      </div>
                     </div>
-                    <div className="overflow-x-auto">
-                      <table className="table table-sm w-full">
-                        <thead>
-                          <tr className="bg-base-200/30">
-                            <th className="text-left py-2 font-medium">Maydon</th>
-                            <th className="text-left py-2 font-medium">Eski qiymat</th>
-                            <th className="text-center py-2 w-12">→</th>
-                            <th className="text-left py-2 font-medium">Yangi qiymat</th>
-                            <th className="text-center py-2 font-medium w-32">Holat</th>
-                          </tr>
-                        </thead>
-                        <tbody>
-                          {fieldChanges.map((change, index) => (
-                            <tr key={index} className="border-b border-base-300 last:border-0">
-                              <td className="py-2 font-medium text-sm">{change.fieldLabel}</td>
-                              <td
-                                className={`py-2 text-sm ${
+
+                    {/* Mobile card view */}
+                    <div className="md:hidden bg-base-100 rounded-lg shadow-sm overflow-hidden">
+                      <div className="px-3 py-2 bg-base-200/50 border-b border-base-300">
+                        <h4 className="font-medium text-sm">O'zgarishlar ({fieldChanges.length})</h4>
+                      </div>
+                      <div className="p-3 space-y-3">
+                        {fieldChanges.map((change, index) => (
+                          <div key={index} className="border-l-4 border-base-300 pl-3 py-2 bg-base-50">
+                            {/* Field label and badge */}
+                            <div className="flex items-center justify-between mb-2">
+                              <span className="font-medium text-sm">{change.fieldLabel}</span>
+                              <span className={`badge badge-sm ${getChangeTypeBadge(change.changeType)}`}>
+                                {translateChangeType(change.changeType)}
+                              </span>
+                            </div>
+
+                            {/* Values */}
+                            <div className="space-y-1.5 text-sm">
+                              {/* Old value */}
+                              <div
+                                className={
                                   change.changeType === 'REMOVED'
-                                    ? 'line-through text-error'
+                                    ? 'line-through text-error opacity-75'
                                     : ''
-                                }`}
+                                }
                               >
+                                <span className="text-base-content/60 text-xs">Eski: </span>
                                 {change.isSensitive ? (
                                   <span className="text-base-content/40">****** (Maxfiy)</span>
                                 ) : (
-                                  <code className="bg-base-200 px-2 py-0.5 rounded text-xs">
+                                  <code className="bg-base-200 px-2 py-0.5 rounded text-xs break-all">
                                     {change.oldValueFormatted || '-'}
                                   </code>
                                 )}
-                              </td>
-                              <td className="py-2 text-center text-base-content/40">→</td>
-                              <td
-                                className={`py-2 text-sm ${
+                              </div>
+
+                              {/* New value */}
+                              <div
+                                className={
                                   change.changeType === 'ADDED'
                                     ? 'text-success font-medium'
                                     : ''
-                                }`}
+                                }
                               >
+                                <span className="text-base-content/60 text-xs">Yangi: </span>
                                 {change.isSensitive ? (
                                   <span className="text-base-content/40">****** (Maxfiy)</span>
                                 ) : (
-                                  <code className="bg-base-200 px-2 py-0.5 rounded text-xs">
+                                  <code className="bg-base-200 px-2 py-0.5 rounded text-xs break-all">
                                     {change.newValueFormatted || '-'}
                                   </code>
                                 )}
-                              </td>
-                              <td className="py-2 text-center">
-                                <span className={`badge badge-sm ${getChangeTypeBadge(change.changeType)}`}>
-                                  {translateChangeType(change.changeType)}
-                                </span>
-                              </td>
-                            </tr>
-                          ))}
-                        </tbody>
-                      </table>
+                              </div>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
                     </div>
-                  </div>
+                  </>
                 ) : (
                   <div className="bg-base-100 rounded-lg p-6 text-center text-sm text-base-content/60">
                     O'zgarishlar ma'lumoti mavjud emas
@@ -222,9 +284,9 @@ export function AuditLogExpandableRow({
                       e.stopPropagation();
                       setShowDetailModal(true);
                     }}
-                    className="btn btn-sm btn-primary gap-2"
+                    className="btn btn-primary w-full sm:w-auto min-h-[44px] sm:min-h-0 gap-2"
                   >
-                    <Eye className="h-4 w-4" />
+                    <Eye className="h-5 w-5 sm:h-4 sm:w-4" />
                     Batafsil ko'rish
                   </button>
 
