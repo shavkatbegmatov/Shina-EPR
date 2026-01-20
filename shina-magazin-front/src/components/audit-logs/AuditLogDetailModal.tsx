@@ -141,7 +141,7 @@ export function AuditLogDetailModal({ logId, onClose }: AuditLogDetailModalProps
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-0 md:p-4" onClick={onClose}>
       <div
-        className="bg-base-100 w-full h-full md:h-auto md:rounded-lg shadow-xl md:max-w-4xl md:max-h-[90vh] flex flex-col"
+        className="bg-base-100 w-full h-full md:h-[90vh] md:rounded-lg shadow-xl md:max-w-4xl flex flex-col"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Header */}
@@ -248,7 +248,7 @@ export function AuditLogDetailModal({ logId, onClose }: AuditLogDetailModalProps
         </div>
 
         {/* Content */}
-        <div className="flex-1 overflow-y-auto p-4 md:p-6">
+        <div className="flex-1 overflow-y-auto p-4 md:p-6 min-h-0">
           {/* Changes Tab */}
           {activeTab === 'changes' && (
             <div className="space-y-4">
@@ -429,7 +429,7 @@ export function AuditLogDetailModal({ logId, onClose }: AuditLogDetailModalProps
 
           {/* JSON Tab */}
           {activeTab === 'json' && (
-            <div className="space-y-4">
+            <div className="h-full">
               <JsonDiffViewer
                 oldValue={detail.oldValue}
                 newValue={detail.newValue}

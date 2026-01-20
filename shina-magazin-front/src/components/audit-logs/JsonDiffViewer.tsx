@@ -24,8 +24,8 @@ export function JsonDiffViewer({ oldValue, newValue, action }: JsonDiffViewerPro
   const newJson = newValue ? JSON.stringify(newValue, null, 2) : '';
 
   return (
-    <div className="border rounded-lg overflow-hidden">
-      <div className="bg-gray-50 px-3 sm:px-4 py-2 border-b">
+    <div className="border rounded-lg overflow-hidden h-full flex flex-col">
+      <div className="bg-gray-50 px-3 sm:px-4 py-2 border-b flex-shrink-0">
         <h4 className="font-medium text-sm sm:text-base">JSON Taqqoslash</h4>
         {isMobile && (
           <p className="text-xs text-base-content/60 mt-1">
@@ -33,7 +33,7 @@ export function JsonDiffViewer({ oldValue, newValue, action }: JsonDiffViewerPro
           </p>
         )}
       </div>
-      <div className="overflow-x-auto">
+      <div className="overflow-auto flex-1">
         <ReactDiffViewer
           oldValue={oldJson}
           newValue={newJson}
