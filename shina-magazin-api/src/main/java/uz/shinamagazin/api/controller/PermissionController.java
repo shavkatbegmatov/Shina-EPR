@@ -28,7 +28,7 @@ import java.util.Map;
 public class PermissionController {
 
     private final PermissionService permissionService;
-    private final GenericExportService<PermissionResponse> genericExportService;
+    private final GenericExportService genericExportService;
 
     @GetMapping
     @Operation(summary = "Get all permissions", description = "Barcha huquqlarni olish")

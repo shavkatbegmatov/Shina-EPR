@@ -33,7 +33,7 @@ import java.util.Collections;
 public class SettingsController {
 
     private final SettingsService settingsService;
-    private final GenericExportService<SettingsResponse> genericExportService;
+    private final GenericExportService genericExportService;
 
     @GetMapping
     @PreAuthorize("hasAuthority('PERM_SETTINGS_VIEW')")

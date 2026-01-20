@@ -35,7 +35,7 @@ import java.util.List;
 public class RoleController {
 
     private final RoleService roleService;
-    private final GenericExportService<RoleResponse> genericExportService;
+    private final GenericExportService genericExportService;
 
     @GetMapping
     @Operation(summary = "Get all roles", description = "Barcha faol rollarni olish")

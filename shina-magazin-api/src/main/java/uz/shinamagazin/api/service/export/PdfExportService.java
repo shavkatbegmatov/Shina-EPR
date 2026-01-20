@@ -7,6 +7,7 @@ import com.lowagie.text.pdf.PdfWriter;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
+import uz.shinamagazin.api.annotation.ExportEntity;
 import uz.shinamagazin.api.dto.response.AuditLogResponse;
 import uz.shinamagazin.api.dto.response.LoginAttemptResponse;
 import uz.shinamagazin.api.dto.response.UserActivityResponse;
@@ -16,6 +17,7 @@ import java.io.ByteArrayOutputStream;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.List;
+import java.util.Map;
 
 @Service
 @RequiredArgsConstructor
@@ -262,5 +264,73 @@ public class PdfExportService {
             case "DELETE" -> "O'chirildi";
             default -> action;
         };
+    }
+
+    /**
+     * Generic PDF export - works with any annotated entity
+     */
+    public ByteArrayOutputStream exportToPdf(
+            List<Map<String, Object>> rows,
+            List<ExportColumnConfig> columns,
+            ExportEntity entityConfig,
+            String title
+    ) throws DocumentException {
+        // Determine orientation
+        Rectangle pageSize = entityConfig != null && entityConfig.orientation() == ExportEntity.Orientation.LANDSCAPE
+                ? PageSize.A4.rotate()
+                : PageSize.A4;
+
+        Document document = new Document(pageSize);
+        ByteArrayOutputStream out = new ByteArrayOutputStream();
+        PdfWriter.getInstance(document, out);
+
+        document.open();
+
+        // Title
+        if (title != null && !title.isEmpty()) {
+            Paragraph titlePara = new Paragraph(title, TITLE_FONT);
+            titlePara.setAlignment(Element.ALIGN_CENTER);
+            titlePara.setSpacingAfter(15);
+            document.add(titlePara);
+        }
+
+        // Table
+        PdfPTable table = new PdfPTable(columns.size());
+        table.setWidthPercentage(100);
+        table.setSpacingBefore(10);
+
+        // Header row
+        for (ExportColumnConfig column : columns) {
+            PdfPCell headerCell = new PdfPCell(new Phrase(column.getHeader(), HEADER_FONT));
+            headerCell.setBackgroundColor(new Color(41, 128, 185)); // Blue header
+            headerCell.setHorizontalAlignment(Element.ALIGN_CENTER);
+            headerCell.setVerticalAlignment(Element.ALIGN_MIDDLE);
+            headerCell.setPadding(8);
+            table.addCell(headerCell);
+        }
+
+        // Data rows
+        for (Map<String, Object> row : rows) {
+            for (ExportColumnConfig column : columns) {
+                Object value = row.get(column.getHeader());
+                String cellValue = value != null ? value.toString() : "";
+                addTableCell(table, cellValue);
+            }
+        }
+
+        document.add(table);
+
+        // Footer with timestamp
+        Paragraph footer = new Paragraph(
+                "Yaratilgan: " + LocalDateTime.now().format(DATE_FORMATTER),
+                FontFactory.getFont(FontFactory.HELVETICA, 8, Color.GRAY)
+        );
+        footer.setAlignment(Element.ALIGN_RIGHT);
+        footer.setSpacingBefore(10);
+        document.add(footer);
+
+        document.close();
+
+        return out;
     }
 }

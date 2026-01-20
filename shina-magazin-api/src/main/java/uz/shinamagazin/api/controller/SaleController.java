@@ -35,7 +35,7 @@ import java.util.List;
 public class SaleController {
 
     private final SaleService saleService;
-    private final GenericExportService<SaleResponse> genericExportService;
+    private final GenericExportService genericExportService;
 
     @GetMapping
     @RequiresPermission(PermissionCode.SALES_VIEW)

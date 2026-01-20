@@ -36,7 +36,7 @@ import java.util.List;
 public class DebtController {
 
     private final DebtService debtService;
-    private final GenericExportService<DebtResponse> genericExportService;
+    private final GenericExportService genericExportService;
 
     @GetMapping
     @Operation(summary = "Get all debts", description = "Barcha qarzlarni olish")

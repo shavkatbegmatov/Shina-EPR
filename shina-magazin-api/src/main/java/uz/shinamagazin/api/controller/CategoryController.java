@@ -28,7 +28,7 @@ import java.util.List;
 public class CategoryController {
 
     private final CategoryService categoryService;
-    private final GenericExportService<CategoryResponse> genericExportService;
+    private final GenericExportService genericExportService;
 
     @GetMapping
     @Operation(summary = "Get all categories", description = "Barcha kategoriyalarni olish")

@@ -31,7 +31,7 @@ import java.time.LocalDate;
 public class PurchaseReturnController {
 
     private final PurchaseService purchaseService;
-    private final GenericExportService<PurchaseReturnResponse> genericExportService;
+    private final GenericExportService genericExportService;
 
     @GetMapping
     @Operation(summary = "Get all returns", description = "Barcha qaytarishlarni olish")

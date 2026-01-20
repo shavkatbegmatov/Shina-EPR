@@ -39,7 +39,7 @@ public class WarehouseController {
 
     private final StockMovementService stockMovementService;
     private final ProductService productService;
-    private final GenericExportService<StockMovementResponse> genericExportService;
+    private final GenericExportService genericExportService;
 
     @GetMapping("/stats")
     @Operation(summary = "Get warehouse stats", description = "Ombor statistikasini olish")

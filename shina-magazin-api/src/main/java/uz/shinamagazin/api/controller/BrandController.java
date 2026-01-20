@@ -28,7 +28,7 @@ import java.util.List;
 public class BrandController {
 
     private final BrandService brandService;
-    private final GenericExportService<BrandResponse> genericExportService;
+    private final GenericExportService genericExportService;
 
     @GetMapping
     @Operation(summary = "Get all brands", description = "Barcha brendlarni olish")

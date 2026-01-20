@@ -37,7 +37,7 @@ import java.util.List;
 public class PurchaseController {
 
     private final PurchaseService purchaseService;
-    private final GenericExportService<PurchaseOrderResponse> genericExportService;
+    private final GenericExportService genericExportService;
 
     // ==================== PURCHASE ORDERS ====================
 
