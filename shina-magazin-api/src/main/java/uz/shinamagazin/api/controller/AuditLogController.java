@@ -16,6 +16,7 @@ import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import uz.shinamagazin.api.dto.response.ApiResponse;
+import uz.shinamagazin.api.dto.response.AuditLogDetailResponse;
 import uz.shinamagazin.api.dto.response.AuditLogResponse;
 import uz.shinamagazin.api.enums.PermissionCode;
 import uz.shinamagazin.api.security.RequiresPermission;
@@ -102,6 +103,15 @@ public class AuditLogController {
     @RequiresPermission(PermissionCode.SETTINGS_VIEW)
     public ResponseEntity<ApiResponse<List<String>>> getAllActions() {
         return ResponseEntity.ok(ApiResponse.success(auditLogService.getAllActions()));
+    }
+
+    @GetMapping("/{id}/detail")
+    @Operation(summary = "Get audit log detail", description = "Audit log batafsil ma'lumotlari")
+    @RequiresPermission(PermissionCode.SETTINGS_VIEW)
+    public ResponseEntity<ApiResponse<AuditLogDetailResponse>> getAuditLogDetail(
+            @PathVariable Long id) {
+        AuditLogDetailResponse detail = auditLogService.getAuditLogDetail(id);
+        return ResponseEntity.ok(ApiResponse.success(detail));
     }
 
     @GetMapping("/export")

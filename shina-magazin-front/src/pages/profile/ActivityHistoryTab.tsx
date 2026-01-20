@@ -1,15 +1,15 @@
 import { useState, useEffect } from 'react';
-import { Activity, Loader2, Filter, Calendar, Trash2, Edit, Plus } from 'lucide-react';
+import { Activity, Loader2, Filter } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { usersApi, type UserActivity } from '../../api/users.api';
+import type { AuditLog } from '../../api/audit-logs.api';
+import type { FieldChange } from '../../types';
 import { useAuthStore } from '../../store/authStore';
-import { formatDistanceToNow } from 'date-fns';
-import { uz } from 'date-fns/locale';
-import clsx from 'clsx';
 import { useDataRefresh } from '../../hooks/useDataRefresh';
 import { RefreshButton } from '../../components/common/RefreshButton';
 import { ExportButtons } from '../../components/common/ExportButtons';
 import { LoadingOverlay } from '../../components/common/LoadingOverlay';
+import { AuditLogExpandableRow } from '../../components/audit-logs/AuditLogExpandableRow';
 
 export function ActivityHistoryTab() {
   const [activities, setActivities] = useState<UserActivity[]>([]);
@@ -18,6 +18,12 @@ export function ActivityHistoryTab() {
   const [entityTypeFilter, setEntityTypeFilter] = useState<string>('');
   const [actionFilter, setActionFilter] = useState<string>('');
   const { user } = useAuthStore();
+
+  // Expandable row state
+  const [expandedRows, setExpandedRows] = useState<Set<number>>(new Set());
+  const [fieldChangesCache, setFieldChangesCache] = useState<Map<number, FieldChange[]>>(
+    new Map()
+  );
 
   const { initialLoading, refreshing, refreshSuccess, loadData } = useDataRefresh({
     fetchFn: async () => {
@@ -41,65 +47,11 @@ export function ActivityHistoryTab() {
   useEffect(() => {
     if (user?.id) {
       loadData(false);
+      // Clear expanded rows and cache when filters change
+      setExpandedRows(new Set());
+      setFieldChangesCache(new Map());
     }
-  }, [currentPage, entityTypeFilter, actionFilter, user, loadData]);
-
-  const getActionIcon = (action: string) => {
-    switch (action) {
-      case 'CREATE':
-        return <Plus className="h-4 w-4" />;
-      case 'UPDATE':
-        return <Edit className="h-4 w-4" />;
-      case 'DELETE':
-        return <Trash2 className="h-4 w-4" />;
-      default:
-        return <Activity className="h-4 w-4" />;
-    }
-  };
-
-  const getActionBadge = (action: string) => {
-    switch (action) {
-      case 'CREATE':
-        return (
-          <span className="badge badge-success gap-1">
-            {getActionIcon(action)}
-            Yaratildi
-          </span>
-        );
-      case 'UPDATE':
-        return (
-          <span className="badge badge-info gap-1">
-            {getActionIcon(action)}
-            O'zgartirildi
-          </span>
-        );
-      case 'DELETE':
-        return (
-          <span className="badge badge-error gap-1">
-            {getActionIcon(action)}
-            O'chirildi
-          </span>
-        );
-      default:
-        return (
-          <span className="badge badge-ghost gap-1">
-            {getActionIcon(action)}
-            {action}
-          </span>
-        );
-    }
-  };
-
-  const formatTimeAgo = (dateString: string) => {
-    return formatDistanceToNow(new Date(dateString), {
-      addSuffix: true,
-      locale: uz,
-    });
-  };
-
-  const getDeviceIcon = (deviceType: string) => {
-    return deviceType === 'Mobile' ? '📱' : deviceType === 'Tablet' ? '📲' : '💻';
-  };
+  }, [currentPage, entityTypeFilter, actionFilter, user]);
 
   const resetFilters = () => {
     setEntityTypeFilter('');
@@ -119,6 +71,54 @@ export function ActivityHistoryTab() {
     } catch (error) {
       toast.error('Eksport qilishda xatolik');
     }
+  };
+
+  const handleToggleExpand = (activityId: number) => {
+    setExpandedRows((prev) => {
+      const newSet = new Set(prev);
+      if (newSet.has(activityId)) {
+        newSet.delete(activityId);
+      } else {
+        newSet.add(activityId);
+      }
+      return newSet;
+    });
+  };
+
+  const handleLoadDetail = async (activityId: number) => {
+    if (fieldChangesCache.has(activityId)) return; // Already loaded
+
+    try {
+      // Use audit logs detail endpoint since user activities are audit logs
+      const detail = await import('../../api/audit-logs.api').then((mod) =>
+        mod.auditLogsApi.getDetail(activityId)
+      );
+      setFieldChangesCache((prev) => {
+        const newMap = new Map(prev);
+        newMap.set(activityId, detail.fieldChanges);
+        return newMap;
+      });
+    } catch (error) {
+      console.error('Failed to load field changes:', error);
+      toast.error("Batafsil ma'lumotlarni yuklashda xatolik");
+    }
+  };
+
+  // Convert UserActivity to AuditLog format for the expandable row component
+  const convertToAuditLog = (activity: UserActivity): AuditLog => {
+    return {
+      id: activity.id,
+      entityType: activity.entityType,
+      entityId: activity.entityId,
+      action: activity.action,
+      oldValue: null, // Will be loaded in detail if needed
+      newValue: null, // Will be loaded in detail if needed
+      userId: user?.id || null,
+      username: activity.username,
+      ipAddress: activity.ipAddress,
+      userAgent: `${activity.deviceType} - ${activity.browser}`, // Combine for display
+      createdAt: activity.timestamp,
+    };
   };
 
   if (initialLoading) {
@@ -195,80 +195,54 @@ export function ActivityHistoryTab() {
           </select>
 
           {(entityTypeFilter || actionFilter) && (
-            <button
-              className="btn btn-ghost btn-sm"
-              onClick={resetFilters}
-            >
+            <button className="btn btn-ghost btn-sm" onClick={resetFilters}>
               Tozalash
             </button>
           )}
         </div>
       </div>
 
-      {/* Activity list */}
+      {/* Activity Table */}
       <div className="relative">
         <LoadingOverlay show={refreshing} message="Faoliyat tarixi yangilanmoqda..." />
         {activities.length > 0 ? (
-        <div className="space-y-3">
-          {activities.map((activity) => (
-            <div key={activity.id} className="surface-card p-4 sm:p-6">
-              <div className="flex flex-col sm:flex-row items-start justify-between gap-3 sm:gap-4">
-                <div className="flex items-start gap-3 sm:gap-4 flex-1 w-full">
-                  <div className={clsx(
-                    'p-3 rounded-xl flex-shrink-0',
-                    activity.action === 'CREATE' && 'bg-success/10',
-                    activity.action === 'UPDATE' && 'bg-info/10',
-                    activity.action === 'DELETE' && 'bg-error/10',
-                    !['CREATE', 'UPDATE', 'DELETE'].includes(activity.action) && 'bg-base-200'
-                  )}>
-                    {activity.action === 'CREATE' && <Plus className="h-5 w-5 text-success" />}
-                    {activity.action === 'UPDATE' && <Edit className="h-5 w-5 text-info" />}
-                    {activity.action === 'DELETE' && <Trash2 className="h-5 w-5 text-error" />}
-                    {!['CREATE', 'UPDATE', 'DELETE'].includes(activity.action) && (
-                      <Activity className="h-5 w-5 text-base-content/60" />
-                    )}
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-start justify-between gap-2 mb-2">
-                      <p className="font-medium text-sm sm:text-base break-words">
-                        {activity.description}
-                      </p>
-                      {getActionBadge(activity.action)}
-                    </div>
-                    <div className="flex flex-wrap items-center gap-3 text-xs sm:text-sm text-base-content/60">
-                      <span className="flex items-center gap-1">
-                        <Calendar className="h-3.5 w-3.5" />
-                        {formatTimeAgo(activity.timestamp)}
-                      </span>
-                      {activity.username && (
-                        <span className="flex items-center gap-1">
-                          👤 {activity.username}
-                        </span>
-                      )}
-                      <span className="flex items-center gap-1">
-                        {getDeviceIcon(activity.deviceType)} {activity.deviceType}
-                      </span>
-                      <span>{activity.browser}</span>
-                      {activity.ipAddress && (
-                        <span className="text-xs opacity-75">{activity.ipAddress}</span>
-                      )}
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
-          ))}
-        </div>
-      ) : (
-        <div className="surface-card p-8 sm:p-12 text-center">
-          <Activity className="h-12 w-12 mx-auto text-base-content/30 mb-4" />
-          <p className="text-sm sm:text-base text-base-content/60">
-            {entityTypeFilter || actionFilter
-              ? "Tanlangan filtrlar bo'yicha faoliyat topilmadi"
-              : 'Hali hech qanday faoliyat yo\'q'}
-          </p>
-        </div>
-      )}
+          <div className="surface-card overflow-x-auto">
+            <table className="table w-full table-sm">
+              <thead className="bg-base-200">
+                <tr>
+                  <th className="w-12"></th>
+                  <th className="text-left">ID</th>
+                  <th className="text-left">Obyekt</th>
+                  <th className="text-left">Amal</th>
+                  <th className="text-left">Vaqt</th>
+                  <th className="text-left">Foydalanuvchi</th>
+                  <th className="text-left">IP Manzil</th>
+                </tr>
+              </thead>
+              <tbody>
+                {activities.map((activity) => (
+                  <AuditLogExpandableRow
+                    key={activity.id}
+                    log={convertToAuditLog(activity)}
+                    isExpanded={expandedRows.has(activity.id)}
+                    onToggle={() => handleToggleExpand(activity.id)}
+                    fieldChanges={fieldChangesCache.get(activity.id)}
+                    onLoadDetail={() => handleLoadDetail(activity.id)}
+                  />
+                ))}
+              </tbody>
+            </table>
+          </div>
+        ) : (
+          <div className="surface-card p-8 sm:p-12 text-center">
+            <Activity className="h-12 w-12 mx-auto text-base-content/30 mb-4" />
+            <p className="text-sm sm:text-base text-base-content/60">
+              {entityTypeFilter || actionFilter
+                ? "Tanlangan filtrlar bo'yicha faoliyat topilmadi"
+                : "Hali hech qanday faoliyat yo'q"}
+            </p>
+          </div>
+        )}
       </div>
 
       {/* Pagination */}

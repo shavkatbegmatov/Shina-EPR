@@ -763,3 +763,6 @@ export interface EmployeeRequest {
   createUserAccount?: boolean;
   roleCode?: string;
 }
+
+// Audit Log Detail Types
+export * from './audit-log.types';

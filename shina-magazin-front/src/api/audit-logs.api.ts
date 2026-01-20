@@ -1,5 +1,5 @@
 import api from './axios';
-import type { ApiResponse, PagedResponse } from '../types';
+import type { ApiResponse, PagedResponse, AuditLogDetailResponse } from '../types';
 
 export interface AuditLog {
   id: number;
@@ -96,5 +96,15 @@ export const auditLogsApi = {
     link.download = `audit_logs_${new Date().toISOString().split('T')[0]}.${extension}`;
     link.click();
     window.URL.revokeObjectURL(url);
+  },
+
+  /**
+   * Get audit log detail with field changes
+   */
+  getDetail: async (id: number): Promise<AuditLogDetailResponse> => {
+    const response = await api.get<ApiResponse<AuditLogDetailResponse>>(
+      `/v1/audit-logs/${id}/detail`
+    );
+    return response.data.data;
   },
 };

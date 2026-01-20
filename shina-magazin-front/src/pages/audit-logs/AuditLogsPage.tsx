@@ -4,21 +4,16 @@ import {
   Loader2,
   Filter,
   Search,
-  Calendar,
-  Trash2,
-  Edit,
-  Plus,
   X,
 } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { auditLogsApi, type AuditLog } from '../../api/audit-logs.api';
-import { formatDistanceToNow } from 'date-fns';
-import { uz } from 'date-fns/locale';
-import clsx from 'clsx';
+import type { FieldChange } from '../../types';
 import { useDataRefresh } from '../../hooks/useDataRefresh';
 import { RefreshButton } from '../../components/common/RefreshButton';
 import { ExportButtons } from '../../components/common/ExportButtons';
 import { LoadingOverlay } from '../../components/common/LoadingOverlay';
+import { AuditLogExpandableRow } from '../../components/audit-logs/AuditLogExpandableRow';
 
 export function AuditLogsPage() {
   const [auditLogs, setAuditLogs] = useState<AuditLog[]>([]);
@@ -28,6 +23,12 @@ export function AuditLogsPage() {
   const [actionFilter, setActionFilter] = useState<string>('');
   const [searchQuery, setSearchQuery] = useState('');
   const [searchInput, setSearchInput] = useState('');
+
+  // Expandable row state
+  const [expandedRows, setExpandedRows] = useState<Set<number>>(new Set());
+  const [fieldChangesCache, setFieldChangesCache] = useState<Map<number, FieldChange[]>>(
+    new Map()
+  );
 
   const { initialLoading, refreshing, refreshSuccess, loadData } = useDataRefresh({
     fetchFn: async () => {
@@ -48,7 +49,10 @@ export function AuditLogsPage() {
 
   useEffect(() => {
     loadData(false);
-  }, [currentPage, entityTypeFilter, actionFilter, searchQuery, loadData]);
+    // Clear expanded rows and cache when filters change
+    setExpandedRows(new Set());
+    setFieldChangesCache(new Map());
+  }, [currentPage, entityTypeFilter, actionFilter, searchQuery]);
 
   const handleSearch = () => {
     setSearchQuery(searchInput);
@@ -82,57 +86,32 @@ export function AuditLogsPage() {
     }
   };
 
-  const getActionIcon = (action: string) => {
-    switch (action) {
-      case 'CREATE':
-        return <Plus className="h-4 w-4" />;
-      case 'UPDATE':
-        return <Edit className="h-4 w-4" />;
-      case 'DELETE':
-        return <Trash2 className="h-4 w-4" />;
-      default:
-        return <Shield className="h-4 w-4" />;
-    }
-  };
-
-  const getActionBadge = (action: string) => {
-    switch (action) {
-      case 'CREATE':
-        return (
-          <span className="badge badge-success gap-1">
-            {getActionIcon(action)}
-            Yaratildi
-          </span>
-        );
-      case 'UPDATE':
-        return (
-          <span className="badge badge-info gap-1">
-            {getActionIcon(action)}
-            O'zgartirildi
-          </span>
-        );
-      case 'DELETE':
-        return (
-          <span className="badge badge-error gap-1">
-            {getActionIcon(action)}
-            O'chirildi
-          </span>
-        );
-      default:
-        return (
-          <span className="badge badge-ghost gap-1">
-            {getActionIcon(action)}
-            {action}
-          </span>
-        );
-    }
-  };
-
-  const formatTimeAgo = (dateString: string) => {
-    return formatDistanceToNow(new Date(dateString), {
-      addSuffix: true,
-      locale: uz,
+  const handleToggleExpand = (logId: number) => {
+    setExpandedRows((prev) => {
+      const newSet = new Set(prev);
+      if (newSet.has(logId)) {
+        newSet.delete(logId);
+      } else {
+        newSet.add(logId);
+      }
+      return newSet;
     });
+  };
+
+  const handleLoadDetail = async (logId: number) => {
+    if (fieldChangesCache.has(logId)) return; // Already loaded
+
+    try {
+      const detail = await auditLogsApi.getDetail(logId);
+      setFieldChangesCache((prev) => {
+        const newMap = new Map(prev);
+        newMap.set(logId, detail.fieldChanges);
+        return newMap;
+      });
+    } catch (error) {
+      console.error('Failed to load field changes:', error);
+      toast.error('Batafsil ma\'lumotlarni yuklashda xatolik');
+    }
   };
 
   if (initialLoading) {
@@ -259,73 +238,47 @@ export function AuditLogsPage() {
         </div>
       </div>
 
-      {/* Audit Logs List */}
+      {/* Audit Logs Table */}
       <div className="relative">
         <LoadingOverlay show={refreshing} message="Audit loglar yangilanmoqda..." />
         {auditLogs.length > 0 ? (
-        <div className="space-y-3">
-          {auditLogs.map((log) => (
-            <div key={log.id} className="surface-card p-4 sm:p-6">
-              <div className="flex flex-col sm:flex-row items-start justify-between gap-3 sm:gap-4">
-                <div className="flex items-start gap-3 sm:gap-4 flex-1 w-full">
-                  <div
-                    className={clsx(
-                      'p-3 rounded-xl flex-shrink-0',
-                      log.action === 'CREATE' && 'bg-success/10',
-                      log.action === 'UPDATE' && 'bg-info/10',
-                      log.action === 'DELETE' && 'bg-error/10',
-                      !['CREATE', 'UPDATE', 'DELETE'].includes(log.action) && 'bg-base-200'
-                    )}
-                  >
-                    {log.action === 'CREATE' && <Plus className="h-5 w-5 text-success" />}
-                    {log.action === 'UPDATE' && <Edit className="h-5 w-5 text-info" />}
-                    {log.action === 'DELETE' && <Trash2 className="h-5 w-5 text-error" />}
-                    {!['CREATE', 'UPDATE', 'DELETE'].includes(log.action) && (
-                      <Shield className="h-5 w-5 text-base-content/60" />
-                    )}
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-start justify-between gap-2 mb-2">
-                      <div>
-                        <p className="font-medium text-sm sm:text-base">
-                          {log.entityType} #{log.entityId}
-                        </p>
-                        <p className="text-xs text-base-content/60">
-                          ID: {log.id}
-                        </p>
-                      </div>
-                      {getActionBadge(log.action)}
-                    </div>
-                    <div className="flex flex-wrap items-center gap-3 text-xs sm:text-sm text-base-content/60">
-                      <span className="flex items-center gap-1">
-                        <Calendar className="h-3.5 w-3.5" />
-                        {formatTimeAgo(log.createdAt)}
-                      </span>
-                      {log.username && (
-                        <span className="flex items-center gap-1">
-                          👤 {log.username}
-                        </span>
-                      )}
-                      {log.ipAddress && (
-                        <span className="text-xs opacity-75">{log.ipAddress}</span>
-                      )}
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
-          ))}
-        </div>
-      ) : (
-        <div className="surface-card p-8 sm:p-12 text-center">
-          <Shield className="h-12 w-12 mx-auto text-base-content/30 mb-4" />
-          <p className="text-sm sm:text-base text-base-content/60">
-            {entityTypeFilter || actionFilter || searchQuery
-              ? "Tanlangan filtrlar bo'yicha audit loglar topilmadi"
-              : 'Hali hech qanday audit log yo\'q'}
-          </p>
-        </div>
-      )}
+          <div className="surface-card overflow-x-auto">
+            <table className="table w-full">
+              <thead className="bg-base-200">
+                <tr>
+                  <th className="w-12"></th>
+                  <th className="text-left">ID</th>
+                  <th className="text-left">Obyekt</th>
+                  <th className="text-left">Amal</th>
+                  <th className="text-left">Vaqt</th>
+                  <th className="text-left">Foydalanuvchi</th>
+                  <th className="text-left">IP Manzil</th>
+                </tr>
+              </thead>
+              <tbody>
+                {auditLogs.map((log) => (
+                  <AuditLogExpandableRow
+                    key={log.id}
+                    log={log}
+                    isExpanded={expandedRows.has(log.id)}
+                    onToggle={() => handleToggleExpand(log.id)}
+                    fieldChanges={fieldChangesCache.get(log.id)}
+                    onLoadDetail={() => handleLoadDetail(log.id)}
+                  />
+                ))}
+              </tbody>
+            </table>
+          </div>
+        ) : (
+          <div className="surface-card p-8 sm:p-12 text-center">
+            <Shield className="h-12 w-12 mx-auto text-base-content/30 mb-4" />
+            <p className="text-sm sm:text-base text-base-content/60">
+              {entityTypeFilter || actionFilter || searchQuery
+                ? "Tanlangan filtrlar bo'yicha audit loglar topilmadi"
+                : "Hali hech qanday audit log yo'q"}
+            </p>
+          </div>
+        )}
       </div>
 
       {/* Pagination */}
