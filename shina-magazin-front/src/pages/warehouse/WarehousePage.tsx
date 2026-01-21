@@ -223,23 +223,23 @@ export function WarehousePage() {
   }, [loadStats, loadLowStockProducts, loadAllSuppliers]);
 
   useEffect(() => {
-    loadInitialData();
-    loadMovements(true);
+    void loadInitialData();
+    void loadMovements(true);
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   // Reload when filters change
   useEffect(() => {
-    loadMovements();
+    void loadMovements();
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [page, pageSize, movementTypeFilter, referenceTypeFilter]);
 
   // WebSocket orqali yangi notification kelganda ombor ma'lumotlarini yangilash
   useEffect(() => {
     if (notifications.length > 0) {
-      loadStats();
-      loadMovements();
-      loadLowStockProducts();
+      void loadStats();
+      void loadMovements();
+      void loadLowStockProducts();
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [notifications.length]);

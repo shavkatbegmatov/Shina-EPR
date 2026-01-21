@@ -97,7 +97,7 @@ export function ProfilePage() {
         setLoading(false);
       }
     };
-    fetchData();
+    void fetchData();
   }, []);
 
   // Helper function to get role label

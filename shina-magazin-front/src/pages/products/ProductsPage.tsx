@@ -158,21 +158,21 @@ export function ProductsPage() {
   }, [brandFilter, categoryFilter, page, pageSize, search, seasonFilter]);
 
   useEffect(() => {
-    loadData();
-    loadProducts(true);
+    void loadData();
+    void loadProducts(true);
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   // Reload when filters change
   useEffect(() => {
-    loadProducts();
+    void loadProducts();
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [page, pageSize, search, brandFilter, categoryFilter, seasonFilter]);
 
   // WebSocket orqali yangi notification kelganda mahsulotlarni yangilash
   useEffect(() => {
     if (notifications.length > 0) {
-      loadProducts();
+      void loadProducts();
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [notifications.length]);

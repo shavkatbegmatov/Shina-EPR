@@ -231,7 +231,7 @@ export function DashboardPage() {
 
   useEffect(() => {
     if (notifications.length > 0) {
-      loadData();
+      void loadData();
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [notifications.length]);
