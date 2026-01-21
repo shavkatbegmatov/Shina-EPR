@@ -222,7 +222,8 @@ public class RoleService {
      */
     @Transactional
     public void assignRoleToUser(Long userId, Long roleId, Long currentUserId) {
-        User user = userRepository.findById(userId)
+        // Fetch with roles for proper audit logging
+        User user = userRepository.findByIdWithRolesAndPermissions(userId)
                 .orElseThrow(() -> new ResourceNotFoundException("Foydalanuvchi", "id", userId));
 
         RoleEntity role = roleRepository.findById(roleId)
@@ -261,7 +262,8 @@ public class RoleService {
      */
     @Transactional
     public void removeRoleFromUser(Long userId, Long roleId, Long currentUserId) {
-        User user = userRepository.findById(userId)
+        // Fetch with roles for proper audit logging
+        User user = userRepository.findByIdWithRolesAndPermissions(userId)
                 .orElseThrow(() -> new ResourceNotFoundException("Foydalanuvchi", "id", userId));
 
         RoleEntity role = roleRepository.findById(roleId)

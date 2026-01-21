@@ -224,7 +224,8 @@ public class UserService {
      */
     @Transactional
     public void changePassword(Long userId, String currentPassword, String newPassword) {
-        User user = userRepository.findById(userId)
+        // Fetch with roles for proper audit logging
+        User user = userRepository.findByIdWithRolesAndPermissions(userId)
                 .orElseThrow(() -> new ResourceNotFoundException("Foydalanuvchi topilmadi"));
 
         // Verify current password
@@ -261,7 +262,8 @@ public class UserService {
      */
     @Transactional
     public CredentialsInfo resetPassword(Long userId) {
-        User user = userRepository.findById(userId)
+        // Fetch with roles for proper audit logging
+        User user = userRepository.findByIdWithRolesAndPermissions(userId)
                 .orElseThrow(() -> new ResourceNotFoundException("Foydalanuvchi topilmadi"));
 
         String temporaryPassword = generateTemporaryPassword();
@@ -296,7 +298,8 @@ public class UserService {
      */
     @Transactional
     public void deactivateUser(Long userId) {
-        User user = userRepository.findById(userId)
+        // Fetch with roles for proper audit logging
+        User user = userRepository.findByIdWithRolesAndPermissions(userId)
                 .orElseThrow(() -> new ResourceNotFoundException("Foydalanuvchi topilmadi"));
 
         user.setActive(false);
@@ -322,7 +325,8 @@ public class UserService {
      */
     @Transactional
     public void activateUser(Long userId) {
-        User user = userRepository.findById(userId)
+        // Fetch with roles for proper audit logging
+        User user = userRepository.findByIdWithRolesAndPermissions(userId)
                 .orElseThrow(() -> new ResourceNotFoundException("Foydalanuvchi topilmadi"));
 
         user.setActive(true);

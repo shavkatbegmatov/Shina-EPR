@@ -3,6 +3,7 @@ package uz.shinamagazin.api.entity;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
 import lombok.*;
+import org.hibernate.Hibernate;
 import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 import uz.shinamagazin.api.audit.Auditable;
 import uz.shinamagazin.api.audit.AuditEntityListener;
@@ -10,6 +11,7 @@ import uz.shinamagazin.api.entity.base.BaseEntity;
 import uz.shinamagazin.api.enums.Role;
 
 import java.time.LocalDateTime;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
@@ -119,9 +121,14 @@ public class User extends BaseEntity implements Auditable {
             map.put("createdById", this.createdBy.getId());
         }
 
-        // Include role count but not full role details (lazy loading)
-        if (this.roles != null) {
-            map.put("roleCount", this.roles.size());
+        // Include role names for audit trail (with lazy loading safety)
+        if (this.roles != null && Hibernate.isInitialized(this.roles) && !this.roles.isEmpty()) {
+            map.put("roles", this.roles.stream()
+                    .map(RoleEntity::getName)
+                    .sorted()
+                    .toList());
+        } else {
+            map.put("roles", Collections.emptyList());
         }
 
         return map;
