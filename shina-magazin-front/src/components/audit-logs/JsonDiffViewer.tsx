@@ -1,5 +1,5 @@
 import { useState, useEffect, useMemo } from 'react';
-import { Copy, Check, Maximize2, Minimize2 } from 'lucide-react';
+import { Copy, Check, Maximize2, Minimize2, Download } from 'lucide-react';
 import toast from 'react-hot-toast';
 
 interface JsonDiffViewerProps {
@@ -152,6 +152,36 @@ function CopyButton({ text }: { text: string }) {
   );
 }
 
+// Download button component
+function DownloadButton({ json, filename }: { json: string; filename: string }) {
+  const handleDownload = () => {
+    try {
+      const blob = new Blob([json], { type: 'application/json' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = filename;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+      toast.success('Yuklab olindi');
+    } catch {
+      toast.error('Yuklab olishda xatolik');
+    }
+  };
+
+  return (
+    <button
+      onClick={handleDownload}
+      className="btn btn-ghost btn-xs opacity-70 hover:opacity-100"
+      title="Yuklab olish"
+    >
+      <Download className="h-3 w-3" />
+    </button>
+  );
+}
+
 // Single JSON panel component
 function JsonPanel({
   title,
@@ -162,6 +192,7 @@ function JsonPanel({
   isExpanded,
   canExpand,
   onToggleExpand,
+  filename,
 }: {
   title: string;
   json: string;
@@ -171,6 +202,7 @@ function JsonPanel({
   isExpanded: boolean;
   canExpand: boolean;
   onToggleExpand: () => void;
+  filename: string;
 }) {
   const colors = {
     old: {
@@ -202,6 +234,7 @@ function JsonPanel({
         </span>
         <div className="flex items-center gap-1">
           {!isEmpty && <CopyButton text={json} />}
+          {!isEmpty && <DownloadButton json={json} filename={filename} />}
           {!isEmpty && canExpand && (
             <button
               onClick={onToggleExpand}
@@ -279,6 +312,7 @@ export function JsonDiffViewer({ oldValue, newValue, action }: JsonDiffViewerPro
           isExpanded={false}
           canExpand={false}
           onToggleExpand={() => {}}
+          filename="deleted-value.json"
         />
       </div>
     );
@@ -297,6 +331,7 @@ export function JsonDiffViewer({ oldValue, newValue, action }: JsonDiffViewerPro
           isExpanded={false}
           canExpand={false}
           onToggleExpand={() => {}}
+          filename="created-value.json"
         />
       </div>
     );
@@ -316,6 +351,7 @@ export function JsonDiffViewer({ oldValue, newValue, action }: JsonDiffViewerPro
           isExpanded={true}
           canExpand={true}
           onToggleExpand={() => toggleExpand('old')}
+          filename="old-value.json"
         />
       </div>
     );
@@ -333,6 +369,7 @@ export function JsonDiffViewer({ oldValue, newValue, action }: JsonDiffViewerPro
           isExpanded={true}
           canExpand={true}
           onToggleExpand={() => toggleExpand('new')}
+          filename="new-value.json"
         />
       </div>
     );
@@ -350,6 +387,7 @@ export function JsonDiffViewer({ oldValue, newValue, action }: JsonDiffViewerPro
         isExpanded={false}
         canExpand={!isMobile && hasOldValue && hasNewValue}
         onToggleExpand={() => toggleExpand('old')}
+        filename="old-value.json"
       />
       <JsonPanel
         title="Yangi qiymat"
@@ -360,6 +398,7 @@ export function JsonDiffViewer({ oldValue, newValue, action }: JsonDiffViewerPro
         isExpanded={false}
         canExpand={!isMobile && hasOldValue && hasNewValue}
         onToggleExpand={() => toggleExpand('new')}
+        filename="new-value.json"
       />
     </div>
   );
