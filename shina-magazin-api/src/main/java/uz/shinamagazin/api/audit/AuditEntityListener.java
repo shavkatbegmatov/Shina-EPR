@@ -98,6 +98,11 @@ public class AuditEntityListener {
         }
 
         try {
+            // Force initialize lazy collections for User entity (for role audit)
+            if (entity instanceof uz.shinamagazin.api.entity.User user) {
+                org.hibernate.Hibernate.initialize(user.getRoles());
+            }
+
             String cacheKey = getCacheKey(entity.getClass(), auditable.getId());
             Map<String, Object> originalData = auditable.toAuditMap();
             originalStateCache.put(cacheKey, originalData);
