@@ -305,9 +305,9 @@ export function WarehousePage() {
       });
 
       handleCloseAdjustmentModal();
-      loadStats();
-      loadMovements();
-      loadLowStockProducts();
+      void loadStats();
+      void loadMovements();
+      void loadLowStockProducts();
     } catch (error) {
       console.error('Failed to create adjustment:', error);
     } finally {

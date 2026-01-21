@@ -38,7 +38,7 @@ export function ProductDetailPage() {
   }, [id]);
 
   useEffect(() => {
-    loadProduct();
+    void loadProduct();
   }, [loadProduct]);
 
   // Season label helper

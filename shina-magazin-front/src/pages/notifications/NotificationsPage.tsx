@@ -89,7 +89,7 @@ export function NotificationsPage() {
   } = useNotificationsStore();
   const [filter, setFilter] = useState<FilterType>('all');
   useEffect(() => {
-    fetchNotifications();
+    void fetchNotifications();
   }, [fetchNotifications]);
 
   const filteredNotifications = notifications.filter((n) => {
@@ -99,7 +99,7 @@ export function NotificationsPage() {
   });
 
   const handleRefresh = () => {
-    fetchNotifications();
+    void fetchNotifications();
   };
 
   return (

@@ -176,14 +176,14 @@ export function CustomersPage() {
 
   // Reload when filters change
   useEffect(() => {
-    loadCustomers();
+    void loadCustomers();
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [page, pageSize, search]);
 
   // WebSocket orqali yangi notification kelganda mijozlarni yangilash
   useEffect(() => {
     if (notifications.length > 0) {
-      loadCustomers();
+      void loadCustomers();
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [notifications.length]);
@@ -229,7 +229,7 @@ export function CustomersPage() {
         toast.success('Yangi mijoz muvaffaqiyatli qo\'shildi');
       }
       handleCloseModal();
-      loadCustomers();
+      void loadCustomers();
     } catch (error: unknown) {
       const err = error as { response?: { status?: number; data?: { message?: string } } };
       // Skip toast for 403 errors (axios interceptor handles them)

@@ -211,15 +211,15 @@ export function PurchasesPage() {
   // Initial load
   useEffect(() => {
     loadPurchases(true);
-    loadPurchaseStats();
-    loadSuppliers();
+    void loadPurchaseStats();
+    void loadSuppliers();
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   // Reload when filters change
   useEffect(() => {
     if (dateRangePreset !== 'custom' || (customRange.start && customRange.end)) {
-      loadPurchases();
+      void loadPurchases();
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [page, pageSize, selectedSupplierId, selectedStatus, dateRangePreset, customRange.start, customRange.end]);
@@ -227,8 +227,8 @@ export function PurchasesPage() {
   // Real-time updates
   useEffect(() => {
     if (notifications.length > 0) {
-      loadPurchases();
-      loadPurchaseStats();
+      void loadPurchases();
+      void loadPurchaseStats();
     }
   }, [notifications.length, loadPurchases, loadPurchaseStats]);
 
@@ -347,8 +347,8 @@ export function PurchasesPage() {
 
       await purchasesApi.create(request);
       handleClosePurchaseModal();
-      loadPurchases();
-      loadPurchaseStats();
+      void loadPurchases();
+      void loadPurchaseStats();
     } catch (error) {
       console.error('Failed to save purchase:', error);
     } finally {

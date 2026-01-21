@@ -66,7 +66,7 @@ export function SessionsTab() {
 
   useEffect(() => {
     console.log('[SessionsTab] 🚀 Component mounted, fetching initial sessions');
-    fetchSessions();
+    void fetchSessions();
 
     // Listen for session updates via custom event (dispatched from notificationsStore)
     const handleSessionUpdate = (event: Event) => {
@@ -99,7 +99,7 @@ export function SessionsTab() {
           // (Toast notification is shown globally by notificationsStore)
           console.log('[SessionsTab] 🔄 Another device logged out - refreshing list...');
           console.log('[SessionsTab] 🎬 About to call fetchSessions()');
-          fetchSessions();
+          void fetchSessions();
           console.log('[SessionsTab] ✓ fetchSessions() called');
         }
       } else if (data.type === 'SESSION_CREATED') {
@@ -110,7 +110,7 @@ export function SessionsTab() {
         console.log('[SessionsTab] 💬 Reason:', data.reason);
         console.log('[SessionsTab] 🔄 Refreshing session list...');
         console.log('[SessionsTab] 🎬 About to call fetchSessions()');
-        fetchSessions();
+        void fetchSessions();
         console.log('[SessionsTab] ✓ fetchSessions() called');
       }
     };
@@ -133,7 +133,7 @@ export function SessionsTab() {
     try {
       await sessionsApi.revokeSession(sessionId, 'Foydalanuvchi tomonidan tugatildi');
       toast.success('Session tugatildi');
-      fetchSessions();
+      void fetchSessions();
     } catch (error: unknown) {
       // If 401, session was already revoked or user logged out
       const axiosError = error as { response?: { status?: number } };
@@ -158,7 +158,7 @@ export function SessionsTab() {
     try {
       const result = await sessionsApi.revokeAllOtherSessions();
       toast.success(`${result.revokedCount} ta session tugatildi`);
-      fetchSessions();
+      void fetchSessions();
     } catch (error: unknown) {
       // If 401, session was already revoked or user logged out
       const axiosError = error as { response?: { status?: number } };

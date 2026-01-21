@@ -40,7 +40,7 @@ export function EmployeeDetailPage() {
   }, [id]);
 
   useEffect(() => {
-    loadEmployee();
+    void loadEmployee();
   }, [loadEmployee]);
 
   // Status label helper

@@ -52,13 +52,13 @@ export function POSPage() {
   }, [search]);
 
   useEffect(() => {
-    loadProducts();
+    void loadProducts();
   }, [loadProducts]);
 
   // WebSocket orqali yangi notification kelganda mahsulotlarni yangilash (zaxira o'zgarishi)
   useEffect(() => {
     if (notifications.length > 0) {
-      loadProducts();
+      void loadProducts();
     }
   }, [notifications.length, loadProducts]);
 
@@ -92,7 +92,7 @@ export function POSPage() {
 
   useEffect(() => {
     if (showCustomerModal) {
-      loadModalCustomers();
+      void loadModalCustomers();
     }
   }, [showCustomerModal, loadModalCustomers]);
 
@@ -205,7 +205,7 @@ export function POSPage() {
       cart.clear();
       setShowPayment(false);
       setPaidAmount(0);
-      loadProducts();
+      void loadProducts();
     } catch (error: unknown) {
       const err = error as { response?: { data?: { message?: string } } };
       toast.error(err.response?.data?.message || 'Xatolik yuz berdi');

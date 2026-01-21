@@ -271,14 +271,14 @@ export function SalesPage() {
 
   // Reload when page/pageSize or date range changes
   useEffect(() => {
-    loadSales();
+    void loadSales();
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [page, pageSize, dateRangePreset, customRange.start, customRange.end]);
 
   // WebSocket orqali yangi notification kelganda sotuvlarni yangilash
   useEffect(() => {
     if (notifications.length > 0) {
-      loadSales();
+      void loadSales();
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [notifications.length]);
@@ -317,7 +317,7 @@ export function SalesPage() {
       toast.success('Sotuv bekor qilindi');
       setShowCancelModal(false);
       setSelectedSale(null);
-      loadSales();
+      void loadSales();
     } catch (error: unknown) {
       const err = error as { response?: { status?: number; data?: { message?: string } } };
       // Skip toast for 403 errors (axios interceptor handles them)

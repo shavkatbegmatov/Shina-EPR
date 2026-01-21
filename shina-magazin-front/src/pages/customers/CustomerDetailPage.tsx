@@ -35,7 +35,7 @@ export function CustomerDetailPage() {
   }, [id]);
 
   useEffect(() => {
-    loadCustomer();
+    void loadCustomer();
   }, [loadCustomer]);
 
   // Customer type label helper

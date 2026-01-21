@@ -115,17 +115,17 @@ export function PurchaseDetailPage() {
   // Initial load
   useEffect(() => {
     loadPurchase(true);
-    loadPayments();
-    loadReturns();
+    void loadPayments();
+    void loadReturns();
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [id]);
 
   // Real-time updates
   useEffect(() => {
     if (notifications.length > 0) {
-      loadPurchase();
-      loadPayments();
-      loadReturns();
+      void loadPurchase();
+      void loadPayments();
+      void loadReturns();
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [notifications.length]);
@@ -162,8 +162,8 @@ export function PurchaseDetailPage() {
 
       await purchasesApi.addPayment(Number(id), request);
       handleClosePaymentModal();
-      loadPurchase();
-      loadPayments();
+      void loadPurchase();
+      void loadPayments();
     } catch (error) {
       console.error('Failed to save payment:', error);
     } finally {
@@ -225,8 +225,8 @@ export function PurchaseDetailPage() {
 
       await purchasesApi.createReturn(Number(id), request);
       handleCloseReturnModal();
-      loadPurchase();
-      loadReturns();
+      void loadPurchase();
+      void loadReturns();
     } catch (error) {
       console.error('Failed to save return:', error);
     } finally {
@@ -238,7 +238,7 @@ export function PurchaseDetailPage() {
   const handleApproveReturn = async (returnId: number) => {
     try {
       await purchasesApi.approveReturn(returnId);
-      loadReturns();
+      void loadReturns();
     } catch (error) {
       console.error('Failed to approve return:', error);
     }
@@ -248,8 +248,8 @@ export function PurchaseDetailPage() {
   const handleCompleteReturn = async (returnId: number) => {
     try {
       await purchasesApi.completeReturn(returnId);
-      loadReturns();
-      loadPurchase();
+      void loadReturns();
+      void loadPurchase();
     } catch (error) {
       console.error('Failed to complete return:', error);
     }
@@ -260,7 +260,7 @@ export function PurchaseDetailPage() {
     if (!confirm("Qaytarishni o'chirishni xohlaysizmi?")) return;
     try {
       await purchasesApi.deleteReturn(returnId);
-      loadReturns();
+      void loadReturns();
     } catch (error) {
       console.error('Failed to delete return:', error);
     }

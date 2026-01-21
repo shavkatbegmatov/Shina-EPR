@@ -431,14 +431,14 @@ export function SuppliersPage() {
   // Initial load for suppliers
   useEffect(() => {
     loadSuppliers(true);
-    loadStats();
-    loadAllSuppliers();
+    void loadStats();
+    void loadAllSuppliers();
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   // Reload when supplier filters change
   useEffect(() => {
-    loadSuppliers();
+    void loadSuppliers();
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [page, pageSize, search]);
 
@@ -446,7 +446,7 @@ export function SuppliersPage() {
   useEffect(() => {
     if (activeTab === 'purchases') {
       loadPurchases(true);
-      loadPurchaseStats();
+      void loadPurchaseStats();
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [activeTab]);
@@ -454,7 +454,7 @@ export function SuppliersPage() {
   // Reload when purchase filters change
   useEffect(() => {
     if (activeTab === 'purchases') {
-      loadPurchases();
+      void loadPurchases();
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [purchasesPage, purchasesPageSize]);
@@ -462,11 +462,11 @@ export function SuppliersPage() {
   // Real-time updates
   useEffect(() => {
     if (notifications.length > 0) {
-      loadSuppliers();
-      loadStats();
+      void loadSuppliers();
+      void loadStats();
       if (activeTab === 'purchases') {
-        loadPurchases();
-        loadPurchaseStats();
+        void loadPurchases();
+        void loadPurchaseStats();
       }
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -499,9 +499,9 @@ export function SuppliersPage() {
         await suppliersApi.create(formData);
       }
       handleCloseModal();
-      loadSuppliers();
-      loadStats();
-      loadAllSuppliers();
+      void loadSuppliers();
+      void loadStats();
+      void loadAllSuppliers();
     } catch (error) {
       console.error('Failed to save supplier:', error);
     } finally {
@@ -583,9 +583,9 @@ export function SuppliersPage() {
 
       await purchasesApi.create(request);
       handleClosePurchaseModal();
-      loadPurchases();
-      loadPurchaseStats();
-      loadStats();
+      void loadPurchases();
+      void loadPurchaseStats();
+      void loadStats();
     } catch (error) {
       console.error('Failed to save purchase:', error);
     } finally {

@@ -240,7 +240,7 @@ export function ProductsPage() {
         await productsApi.create(formData);
       }
       handleCloseNewProductModal();
-      loadProducts();
+      void loadProducts();
     } catch (error) {
       console.error('Failed to save product:', error);
     } finally {

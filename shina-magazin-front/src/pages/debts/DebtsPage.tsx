@@ -215,8 +215,8 @@ export function DebtsPage() {
 
   useEffect(() => {
     loadDebts(true);
-    loadTotalDebt();
-    loadAllDebts();
+    void loadTotalDebt();
+    void loadAllDebts();
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
@@ -314,16 +314,16 @@ export function DebtsPage() {
 
   // Reload when filters change
   useEffect(() => {
-    loadDebts();
+    void loadDebts();
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [page, pageSize, statusFilter]);
 
   // WebSocket orqali yangi notification kelganda qarzlarni yangilash
   useEffect(() => {
     if (notifications.length > 0) {
-      loadDebts();
-      loadTotalDebt();
-      loadAllDebts();
+      void loadDebts();
+      void loadTotalDebt();
+      void loadAllDebts();
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [notifications.length]);
@@ -376,9 +376,9 @@ export function DebtsPage() {
       }
 
       handleClosePaymentModal();
-      loadDebts();
-      loadTotalDebt();
-      loadAllDebts();
+      void loadDebts();
+      void loadTotalDebt();
+      void loadAllDebts();
 
       // Refresh selected debt
       const updatedDebt = await debtsApi.getById(selectedDebt.id);

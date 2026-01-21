@@ -38,7 +38,7 @@ export function SupplierDetailPage() {
   }, [id]);
 
   useEffect(() => {
-    loadSupplier();
+    void loadSupplier();
   }, [loadSupplier]);
 
   if (loading) {

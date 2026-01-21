@@ -110,9 +110,9 @@ export function SettingsPage() {
   }, []);
 
   useEffect(() => {
-    loadBrands();
-    loadCategories();
-    loadSettings();
+    void loadBrands();
+    void loadCategories();
+    void loadSettings();
   }, [loadBrands, loadCategories, loadSettings]);
 
   // Export handlers
@@ -156,7 +156,7 @@ export function SettingsPage() {
         await brandsApi.create(brandForm.name, brandForm.country || undefined);
       }
       handleCloseBrandModal();
-      loadBrands();
+      void loadBrands();
     } catch (error) {
       console.error('Failed to save brand:', error);
     } finally {
@@ -170,7 +170,7 @@ export function SettingsPage() {
     try {
       await brandsApi.delete(deletingBrand.id);
       setDeletingBrand(null);
-      loadBrands();
+      void loadBrands();
     } catch (error) {
       console.error('Failed to delete brand:', error);
     } finally {
@@ -219,7 +219,7 @@ export function SettingsPage() {
         );
       }
       handleCloseCategoryModal();
-      loadCategories();
+      void loadCategories();
     } catch (error) {
       console.error('Failed to save category:', error);
     } finally {
@@ -233,7 +233,7 @@ export function SettingsPage() {
     try {
       await categoriesApi.delete(deletingCategory.id);
       setDeletingCategory(null);
-      loadCategories();
+      void loadCategories();
     } catch (error) {
       console.error('Failed to delete category:', error);
     } finally {

@@ -38,7 +38,7 @@ export function SaleDetailPage() {
   }, [id]);
 
   useEffect(() => {
-    loadSale();
+    void loadSale();
   }, [loadSale]);
 
   // Status helpers

@@ -131,7 +131,7 @@ export function EmployeesPage() {
       userId: employee.userId,
     });
     setModalTab('basic');
-    loadRoles(); // Load roles for role display and editing
+    void loadRoles(); // Load roles for role display and editing
     setShowModal(true);
   };
 
@@ -309,13 +309,13 @@ export function EmployeesPage() {
   // Initial load
   useEffect(() => {
     loadEmployees(true);
-    loadStats();
+    void loadStats();
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   // Reload when filters change
   useEffect(() => {
-    loadEmployees();
+    void loadEmployees();
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [page, pageSize, search]);
 
@@ -324,8 +324,8 @@ export function EmployeesPage() {
     setFormData(emptyFormData);
     setModalTab('basic');
     setAccessType('none');
-    loadAvailableUsers();
-    loadRoles();
+    void loadAvailableUsers();
+    void loadRoles();
     setShowModal(true);
   };
 
@@ -389,8 +389,8 @@ export function EmployeesPage() {
       }
 
       handleCloseModal();
-      loadEmployees();
-      loadStats();
+      void loadEmployees();
+      void loadStats();
     } catch (error: unknown) {
       const err = error as { response?: { status?: number; data?: { message?: string; data?: Record<string, string> } } };
 
@@ -429,8 +429,8 @@ export function EmployeesPage() {
       await employeesApi.delete(editingEmployee.id);
       toast.success('Xodim muvaffaqiyatli o\'chirildi');
       handleCloseModal();
-      loadEmployees();
-      loadStats();
+      void loadEmployees();
+      void loadStats();
     } catch (error: unknown) {
       const err = error as { response?: { status?: number; data?: { message?: string } } };
       // Skip toast for 403 errors (axios interceptor handles them)
@@ -467,7 +467,7 @@ export function EmployeesPage() {
       setIsEditingRole(false);
       setSelectedNewRoleCode('');
       // Reload to get updated data
-      loadEmployees();
+      void loadEmployees();
       // Update local state immediately for better UX
       setEditingEmployee(prev => prev ? { ...prev, userRole: selectedNewRoleCode } : null);
     } catch (error: unknown) {
