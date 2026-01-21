@@ -9,6 +9,7 @@ import { DashboardPage } from '../pages/dashboard/DashboardPage';
 import { ProductsPage } from '../pages/products/ProductsPage';
 import { ProductDetailPage } from '../pages/products/ProductDetailPage';
 import { CustomersPage } from '../pages/customers/CustomersPage';
+import { CustomerDetailPage } from '../pages/customers/CustomerDetailPage';
 import { POSPage } from '../pages/sales/POSPage';
 import { SalesPage } from '../pages/sales/SalesPage';
 import { DebtsPage } from '../pages/debts/DebtsPage';
@@ -107,6 +108,15 @@ export const router = createBrowserRouter([
           </ProtectedRoute>
         ),
         handle: { title: 'Mijozlar' },
+      },
+      {
+        path: 'customers/:id',
+        element: (
+          <ProtectedRoute permission={PermissionCode.CUSTOMERS_VIEW}>
+            <CustomerDetailPage />
+          </ProtectedRoute>
+        ),
+        handle: { title: 'Mijoz tafsiloti' },
       },
       {
         path: 'debts',
