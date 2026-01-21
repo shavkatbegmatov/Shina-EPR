@@ -70,21 +70,24 @@ export function AuditLogMobileCard({
     <>
       <div className="surface-card">
         {/* Card header - touch-friendly */}
-        <button
-          onClick={handleExpand}
-          className="w-full p-4 text-left flex items-start gap-3 active:bg-base-200 transition-colors"
-        >
-          {/* Expand icon */}
-          <div className="flex-shrink-0 mt-1">
+        <div className="flex items-start gap-3 p-4">
+          {/* Expand button */}
+          <button
+            onClick={handleExpand}
+            className="flex-shrink-0 mt-1 p-1 -m-1 active:bg-base-200 rounded transition-colors"
+          >
             {isExpanded ? (
               <ChevronDown className="h-5 w-5 text-base-content/60" />
             ) : (
               <ChevronRight className="h-5 w-5 text-base-content/60" />
             )}
-          </div>
+          </button>
 
-          {/* Content */}
-          <div className="flex-1 min-w-0">
+          {/* Content - clickable to expand */}
+          <button
+            onClick={handleExpand}
+            className="flex-1 min-w-0 text-left"
+          >
             {/* Title and action badge */}
             <div className="flex items-center justify-between gap-2 mb-2">
               <span className="font-medium text-base">
@@ -104,8 +107,17 @@ export function AuditLogMobileCard({
               {log.username && <span>👤 {log.username}</span>}
               {log.ipAddress && <span className="text-xs">{log.ipAddress}</span>}
             </div>
-          </div>
-        </button>
+          </button>
+
+          {/* Direct detail button */}
+          <button
+            onClick={() => setShowDetailModal(true)}
+            className="flex-shrink-0 btn btn-ghost btn-sm btn-circle text-primary"
+            title="Batafsil"
+          >
+            <Eye className="h-5 w-5" />
+          </button>
+        </div>
 
         {/* Expanded content */}
         {isExpanded && (

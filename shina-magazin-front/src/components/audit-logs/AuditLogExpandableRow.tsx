@@ -135,6 +135,19 @@ export function AuditLogExpandableRow({
         <td className="px-4 py-3 text-sm">{formatTimestamp(log.createdAt)}</td>
         <td className="px-4 py-3 text-sm">{log.username || '-'}</td>
         <td className="px-4 py-3 text-xs text-base-content/60">{log.ipAddress || '-'}</td>
+        <td className="px-4 py-3">
+          <button
+            onClick={(e) => {
+              e.stopPropagation();
+              setShowDetailModal(true);
+            }}
+            className="btn btn-ghost btn-sm gap-1.5 text-primary hover:bg-primary/10"
+            title="Batafsil ko'rish"
+          >
+            <Eye className="h-4 w-4" />
+            <span className="hidden lg:inline">Batafsil</span>
+          </button>
+        </td>
       </tr>
 
       {/* Detail Modal (Layer 3) - rendered via Portal */}
@@ -145,7 +158,7 @@ export function AuditLogExpandableRow({
       {/* Expanded content (Layer 2) */}
       {isExpanded && (
         <tr>
-          <td colSpan={7} className="px-4 py-4 bg-base-200/30">
+          <td colSpan={8} className="px-4 py-4 bg-base-200/30">
             {loading ? (
               <div className="flex justify-center py-8">
                 <Loader2 className="h-6 w-6 animate-spin text-primary" />
