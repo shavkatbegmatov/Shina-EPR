@@ -1,5 +1,4 @@
-import { useState, useEffect } from 'react';
-import ReactDiffViewer, { DiffMethod } from 'react-diff-viewer-continued';
+import { useState, useEffect, useMemo } from 'react';
 import { Copy, Download, Check, Maximize2, Minimize2 } from 'lucide-react';
 import toast from 'react-hot-toast';
 
@@ -7,6 +6,104 @@ interface JsonDiffViewerProps {
   oldValue: Record<string, any> | null;
   newValue: Record<string, any> | null;
   action: string;
+}
+
+// Find changed keys between two objects
+function getChangedKeys(oldObj: Record<string, any> | null, newObj: Record<string, any> | null): Set<string> {
+  const changed = new Set<string>();
+  if (!oldObj || !newObj) return changed;
+
+  const allKeys = new Set([...Object.keys(oldObj), ...Object.keys(newObj)]);
+
+  for (const key of allKeys) {
+    const oldVal = JSON.stringify(oldObj[key]);
+    const newVal = JSON.stringify(newObj[key]);
+    if (oldVal !== newVal) {
+      changed.add(key);
+    }
+  }
+
+  return changed;
+}
+
+// Syntax highlight JSON with diff support
+function highlightJson(
+  obj: Record<string, any> | null,
+  changedKeys: Set<string>,
+  type: 'old' | 'new'
+): JSX.Element[] {
+  if (!obj) return [];
+
+  const lines: JSX.Element[] = [];
+  const entries = Object.entries(obj);
+
+  lines.push(<span key="open" className="text-base-content">{'{'}</span>);
+
+  entries.forEach(([key, value], index) => {
+    const isChanged = changedKeys.has(key);
+    const isLast = index === entries.length - 1;
+    const comma = isLast ? '' : ',';
+
+    // Highlight background for changed lines
+    const bgClass = isChanged
+      ? type === 'old'
+        ? 'bg-error/20 -mx-3 px-3 block'
+        : 'bg-success/20 -mx-3 px-3 block'
+      : '';
+
+    const formattedValue = formatValue(value, isChanged, type);
+
+    lines.push(
+      <span key={key} className={bgClass}>
+        <span className="text-primary">{`  "${key}"`}</span>
+        <span className="text-base-content">: </span>
+        {formattedValue}
+        <span className="text-base-content">{comma}</span>
+      </span>
+    );
+  });
+
+  lines.push(<span key="close" className="text-base-content">{'}'}</span>);
+
+  return lines;
+}
+
+// Format a single value with syntax highlighting
+function formatValue(value: any, isChanged: boolean, type: 'old' | 'new'): JSX.Element {
+  if (value === null) {
+    return <span className="text-warning">null</span>;
+  }
+
+  if (typeof value === 'boolean') {
+    return <span className="text-accent">{value.toString()}</span>;
+  }
+
+  if (typeof value === 'number') {
+    return <span className="text-secondary">{value}</span>;
+  }
+
+  if (typeof value === 'string') {
+    // Highlight changed string values
+    const textClass = isChanged
+      ? type === 'old'
+        ? 'text-error font-medium'
+        : 'text-success font-medium'
+      : 'text-info';
+    return <span className={textClass}>"{value}"</span>;
+  }
+
+  if (Array.isArray(value)) {
+    if (value.length === 0) {
+      return <span className="text-base-content">[]</span>;
+    }
+    return <span className="text-info">{JSON.stringify(value)}</span>;
+  }
+
+  if (typeof value === 'object') {
+    return <span className="text-info">{JSON.stringify(value)}</span>;
+  }
+
+  return <span className="text-base-content">{String(value)}</span>;
 }
 
 export function JsonDiffViewer({ oldValue, newValue, action }: JsonDiffViewerProps) {
@@ -27,6 +124,13 @@ export function JsonDiffViewer({ oldValue, newValue, action }: JsonDiffViewerPro
 
   const oldJson = oldValue ? JSON.stringify(oldValue, null, 2) : '';
   const newJson = newValue ? JSON.stringify(newValue, null, 2) : '';
+
+  // Calculate changed keys
+  const changedKeys = useMemo(() => getChangedKeys(oldValue, newValue), [oldValue, newValue]);
+
+  // Highlighted JSON elements
+  const oldHighlighted = useMemo(() => highlightJson(oldValue, changedKeys, 'old'), [oldValue, changedKeys]);
+  const newHighlighted = useMemo(() => highlightJson(newValue, changedKeys, 'new'), [newValue, changedKeys]);
 
   const copyToClipboard = async (text: string, type: 'old' | 'new') => {
     try {
@@ -83,6 +187,9 @@ export function JsonDiffViewer({ oldValue, newValue, action }: JsonDiffViewerPro
               </h4>
               <p className="text-xs text-base-content/60 mt-0.5">
                 {isMobile ? 'Unified view' : 'Side-by-side comparison'}
+                {changedKeys.size > 0 && (
+                  <span className="ml-2 text-warning">• {changedKeys.size} ta farq</span>
+                )}
               </p>
             </div>
           </div>
@@ -172,91 +279,103 @@ export function JsonDiffViewer({ oldValue, newValue, action }: JsonDiffViewerPro
 
       {/* Diff Viewer Content */}
       <div className={`overflow-auto flex-1 ${isExpanded ? 'p-0' : 'p-2'}`}>
-        <ReactDiffViewer
-          oldValue={oldJson}
-          newValue={newJson}
-          splitView={!isMobile}
-          compareMethod={DiffMethod.WORDS}
-          leftTitle={action === 'CREATE' ? '' : '🔴 Eski qiymat'}
-          rightTitle={action === 'DELETE' ? '' : '🟢 Yangi qiymat'}
-          showDiffOnly={false}
-          useDarkTheme={false}
-          styles={{
-            variables: {
-              light: {
-                // Background colors - professional palette
-                diffViewerBackground: '#ffffff',
-                diffViewerColor: '#1f2937',
+        {isMobile ? (
+          /* Mobile: Separate JSON blocks */
+          <div className="space-y-3">
+            {/* Old Value */}
+            {hasOldValue && (
+              <div className="border border-error/30 rounded-lg overflow-hidden">
+                <div className="bg-error/10 px-3 py-2 border-b border-error/30 flex items-center justify-between">
+                  <span className="text-xs font-semibold text-error">Eski qiymat</span>
+                  <button
+                    onClick={() => copyToClipboard(oldJson, 'old')}
+                    className="btn btn-xs btn-ghost"
+                  >
+                    {copiedOld ? <Check className="h-3 w-3 text-success" /> : <Copy className="h-3 w-3" />}
+                  </button>
+                </div>
+                <div className="p-3 text-[11px] leading-[1.3] overflow-auto bg-base-200/50 font-mono whitespace-pre">
+                  {oldHighlighted.map((line, i) => (
+                    <div key={i}>{line}</div>
+                  ))}
+                </div>
+              </div>
+            )}
 
-                // Added lines - soft green
-                addedBackground: '#d1fae5',
-                addedColor: '#065f46',
-                addedGutterBackground: '#a7f3d0',
+            {/* New Value */}
+            {hasNewValue && (
+              <div className="border border-success/30 rounded-lg overflow-hidden">
+                <div className="bg-success/10 px-3 py-2 border-b border-success/30 flex items-center justify-between">
+                  <span className="text-xs font-semibold text-success">Yangi qiymat</span>
+                  <button
+                    onClick={() => copyToClipboard(newJson, 'new')}
+                    className="btn btn-xs btn-ghost"
+                  >
+                    {copiedNew ? <Check className="h-3 w-3 text-success" /> : <Copy className="h-3 w-3" />}
+                  </button>
+                </div>
+                <div className="p-3 text-[11px] leading-[1.3] overflow-auto bg-base-200/50 font-mono whitespace-pre">
+                  {newHighlighted.map((line, i) => (
+                    <div key={i}>{line}</div>
+                  ))}
+                </div>
+              </div>
+            )}
+          </div>
+        ) : (
+          /* Desktop: Side-by-side JSON blocks */
+          <div className="grid grid-cols-2 gap-3 h-full">
+            {/* Old Value */}
+            <div className={`border border-error/30 rounded-lg overflow-hidden flex flex-col ${!hasOldValue ? 'opacity-50' : ''}`}>
+              <div className="bg-error/10 px-3 py-2 border-b border-error/30 flex items-center justify-between flex-shrink-0">
+                <span className="text-sm font-semibold text-error">Eski qiymat</span>
+                {hasOldValue && (
+                  <button
+                    onClick={() => copyToClipboard(oldJson, 'old')}
+                    className="btn btn-xs btn-ghost gap-1"
+                  >
+                    {copiedOld ? <Check className="h-3 w-3 text-success" /> : <Copy className="h-3 w-3" />}
+                    <span>Nusxalash</span>
+                  </button>
+                )}
+              </div>
+              <div className="p-3 text-[12px] leading-[1.3] overflow-auto flex-1 bg-base-200/50 font-mono whitespace-pre m-0">
+                {hasOldValue ? (
+                  oldHighlighted.map((line, i) => (
+                    <div key={i}>{line}</div>
+                  ))
+                ) : (
+                  <span className="text-base-content/50">Ma'lumot yo'q</span>
+                )}
+              </div>
+            </div>
 
-                // Removed lines - soft red
-                removedBackground: '#fee2e2',
-                removedColor: '#991b1b',
-                removedGutterBackground: '#fecaca',
-
-                // Word-level changes - vibrant highlights
-                wordAddedBackground: '#6ee7b7',
-                wordRemovedBackground: '#fca5a5',
-
-                // Gutter (line numbers) - elegant gray
-                gutterBackground: '#f9fafb',
-                gutterBackgroundDark: '#f3f4f6',
-                gutterColor: '#6b7280',
-
-                // Highlighted lines - soft yellow
-                highlightBackground: '#fef3c7',
-                highlightGutterBackground: '#fde68a',
-
-                // Code syntax colors
-                codeFoldGutterBackground: '#e5e7eb',
-                codeFoldBackground: '#f3f4f6',
-
-                // Empty lines
-                emptyLineBackground: '#fafafa',
-              },
-            },
-            diffContainer: {
-              borderRadius: isExpanded ? '0' : '8px',
-              overflow: 'hidden',
-            },
-            contentText: {
-              fontFamily: 'ui-monospace, "SF Mono", "Monaco", "Inconsolata", "Fira Code", "Droid Sans Mono", monospace',
-              fontSize: isMobile ? '12px' : '14px',
-              lineHeight: isMobile ? '1.5' : '1.6',
-              letterSpacing: '0.01em',
-            },
-            line: {
-              padding: isMobile ? '6px 8px' : '8px 12px',
-              wordBreak: 'break-all',
-              whiteSpace: 'pre-wrap',
-            },
-            gutter: {
-              padding: isMobile ? '6px 4px' : '8px 8px',
-              minWidth: isMobile ? '36px' : '48px',
-              fontFamily: 'ui-monospace, monospace',
-              fontSize: isMobile ? '11px' : '13px',
-              fontWeight: '500',
-              userSelect: 'none',
-            },
-            marker: {
-              padding: isMobile ? '6px 4px' : '8px 6px',
-              fontSize: isMobile ? '12px' : '14px',
-            },
-            titleBlock: {
-              padding: isMobile ? '8px 12px' : '10px 16px',
-              background: 'linear-gradient(to right, #f9fafb, #f3f4f6)',
-              borderBottom: '2px solid #e5e7eb',
-              fontWeight: '600',
-              fontSize: isMobile ? '13px' : '14px',
-              color: '#374151',
-              letterSpacing: '0.02em',
-            },
-          }}
-        />
+            {/* New Value */}
+            <div className={`border border-success/30 rounded-lg overflow-hidden flex flex-col ${!hasNewValue ? 'opacity-50' : ''}`}>
+              <div className="bg-success/10 px-3 py-2 border-b border-success/30 flex items-center justify-between flex-shrink-0">
+                <span className="text-sm font-semibold text-success">Yangi qiymat</span>
+                {hasNewValue && (
+                  <button
+                    onClick={() => copyToClipboard(newJson, 'new')}
+                    className="btn btn-xs btn-ghost gap-1"
+                  >
+                    {copiedNew ? <Check className="h-3 w-3 text-success" /> : <Copy className="h-3 w-3" />}
+                    <span>Nusxalash</span>
+                  </button>
+                )}
+              </div>
+              <div className="p-3 text-[12px] leading-[1.3] overflow-auto flex-1 bg-base-200/50 font-mono whitespace-pre m-0">
+                {hasNewValue ? (
+                  newHighlighted.map((line, i) => (
+                    <div key={i}>{line}</div>
+                  ))
+                ) : (
+                  <span className="text-base-content/50">Ma'lumot yo'q</span>
+                )}
+              </div>
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );

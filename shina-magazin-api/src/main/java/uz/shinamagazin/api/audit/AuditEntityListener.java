@@ -14,6 +14,7 @@ import uz.shinamagazin.api.security.CustomUserDetails;
 import uz.shinamagazin.api.service.AuditLogService;
 
 import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * JPA Entity Listener for automatic audit trail logging.
@@ -59,6 +60,10 @@ public class AuditEntityListener {
     private static SensitiveDataMasker sensitiveDataMasker;
     private static ObjectMapper objectMapper;
 
+    // Cache to store original entity state when loaded from database
+    // Key: "EntityClass:EntityId", Value: audit map of original values
+    private static final ConcurrentHashMap<String, Map<String, Object>> originalStateCache = new ConcurrentHashMap<>();
+
     /**
      * Spring autowiring method to inject dependencies into static fields.
      * This is a workaround for JPA entity listeners not being Spring-managed.
@@ -78,6 +83,35 @@ public class AuditEntityListener {
         AuditEntityListener.sensitiveDataMasker = masker;
         AuditEntityListener.objectMapper = mapper;
         log.info("AuditEntityListener initialized successfully");
+    }
+
+    /**
+     * Called after an entity is loaded from the database.
+     * Caches the original state for later comparison during updates.
+     *
+     * @param entity the entity that was loaded
+     */
+    @PostLoad
+    public void onPostLoad(Object entity) {
+        if (!(entity instanceof Auditable auditable)) {
+            return;
+        }
+
+        try {
+            String cacheKey = getCacheKey(entity.getClass(), auditable.getId());
+            Map<String, Object> originalData = auditable.toAuditMap();
+            originalStateCache.put(cacheKey, originalData);
+            log.debug("Cached original state for {} with id {}", auditable.getEntityName(), auditable.getId());
+        } catch (Exception e) {
+            log.warn("Could not cache original state for {}: {}", entity.getClass().getSimpleName(), e.getMessage());
+        }
+    }
+
+    /**
+     * Generates a cache key for an entity.
+     */
+    private String getCacheKey(Class<?> entityClass, Long entityId) {
+        return entityClass.getName() + ":" + entityId;
     }
 
     /**
@@ -122,12 +156,8 @@ public class AuditEntityListener {
 
     /**
      * Called before an entity is updated (UPDATE operation).
-     * Fetches the old state from the database and logs an UPDATE action
+     * Uses the cached original state and logs an UPDATE action
      * with both old and new values.
-     *
-     * <p>Note: This method fetches the old state with a separate query.
-     * For better performance, consider implementing a snapshot cache using
-     * ThreadLocal if you experience performance issues.</p>
      *
      * @param entity the entity being updated
      */
@@ -138,39 +168,44 @@ public class AuditEntityListener {
         }
 
         try {
-            // Fetch old state from database
-            Object oldEntity = entityManager.find(entity.getClass(), auditable.getId());
+            String cacheKey = getCacheKey(entity.getClass(), auditable.getId());
 
-            if (oldEntity instanceof Auditable oldAuditable) {
-                Long userId = getCurrentUserId();
-                String ipAddress = getClientIpAddress();
-                String userAgent = getUserAgent();
+            // Get old data from cache (captured at @PostLoad)
+            Map<String, Object> originalData = originalStateCache.remove(cacheKey);
 
-                // Get old data and mask sensitive fields
-                Map<String, Object> oldData = sensitiveDataMasker.mask(
-                        oldAuditable.toAuditMap(),
-                        oldAuditable.getSensitiveFields()
-                );
-
-                // Get new data and mask sensitive fields
-                Map<String, Object> newData = sensitiveDataMasker.mask(
-                        auditable.toAuditMap(),
-                        auditable.getSensitiveFields()
-                );
-
-                auditLogService.logUpdateWithContext(
-                        auditable.getEntityName(),
-                        auditable.getId(),
-                        oldData,
-                        newData,
-                        userId,
-                        ipAddress,
-                        userAgent
-                );
-
-                log.debug("Logged UPDATE for {} with id {}",
+            if (originalData == null) {
+                log.warn("No cached original state found for {} with id {}. Skipping audit log.",
                         auditable.getEntityName(), auditable.getId());
+                return;
             }
+
+            Long userId = getCurrentUserId();
+            String ipAddress = getClientIpAddress();
+            String userAgent = getUserAgent();
+
+            // Mask sensitive fields in old data
+            Map<String, Object> oldData = sensitiveDataMasker.mask(
+                    originalData,
+                    auditable.getSensitiveFields()
+            );
+
+            // Get new data and mask sensitive fields
+            Map<String, Object> newData = sensitiveDataMasker.mask(
+                    auditable.toAuditMap(),
+                    auditable.getSensitiveFields()
+            );
+
+            auditLogService.logUpdateWithContext(
+                    auditable.getEntityName(),
+                    auditable.getId(),
+                    oldData,
+                    newData,
+                    userId,
+                    ipAddress,
+                    userAgent
+            );
+
+            log.debug("Logged UPDATE for {} with id {}", auditable.getEntityName(), auditable.getId());
 
         } catch (Exception e) {
             log.error("Error logging UPDATE operation for {}: {}",
@@ -191,6 +226,10 @@ public class AuditEntityListener {
         }
 
         try {
+            // Clean up cache entry
+            String cacheKey = getCacheKey(entity.getClass(), auditable.getId());
+            originalStateCache.remove(cacheKey);
+
             Long userId = getCurrentUserId();
             String ipAddress = getClientIpAddress();
             String userAgent = getUserAgent();
