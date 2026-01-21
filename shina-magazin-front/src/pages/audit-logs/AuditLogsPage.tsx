@@ -5,19 +5,33 @@ import {
   Filter,
   Search,
   X,
+  Layers,
+  List,
 } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { auditLogsApi, type AuditLog } from '../../api/audit-logs.api';
-import type { FieldChange } from '../../types';
+import type { FieldChange, AuditLogGroup } from '../../types';
 import { useDataRefresh } from '../../hooks/useDataRefresh';
 import { RefreshButton } from '../../components/common/RefreshButton';
 import { ExportButtons } from '../../components/common/ExportButtons';
 import { LoadingOverlay } from '../../components/common/LoadingOverlay';
 import { AuditLogExpandableRow } from '../../components/audit-logs/AuditLogExpandableRow';
 import { AuditLogMobileCard } from '../../components/audit-logs/AuditLogMobileCard';
+import { AuditLogGroupCard, AuditLogGroupRow } from '../../components/audit-logs/AuditLogGroupCard';
+
+type ViewMode = 'grouped' | 'simple';
 
 export function AuditLogsPage() {
+  // View mode state - default to grouped
+  const [viewMode, setViewMode] = useState<ViewMode>('grouped');
+
+  // Simple view state
   const [auditLogs, setAuditLogs] = useState<AuditLog[]>([]);
+
+  // Grouped view state
+  const [auditLogGroups, setAuditLogGroups] = useState<AuditLogGroup[]>([]);
+
+  // Common state
   const [totalPages, setTotalPages] = useState(0);
   const [currentPage, setCurrentPage] = useState(0);
   const [entityTypeFilter, setEntityTypeFilter] = useState<string>('');
@@ -25,7 +39,7 @@ export function AuditLogsPage() {
   const [searchQuery, setSearchQuery] = useState('');
   const [searchInput, setSearchInput] = useState('');
 
-  // Expandable row state
+  // Expandable row state (for simple view)
   const [expandedRows, setExpandedRows] = useState<Set<number>>(new Set());
   const [fieldChangesCache, setFieldChangesCache] = useState<Map<number, FieldChange[]>>(
     new Map()
@@ -33,17 +47,31 @@ export function AuditLogsPage() {
 
   const { initialLoading, refreshing, refreshSuccess, loadData } = useDataRefresh({
     fetchFn: async () => {
-      const data = await auditLogsApi.searchAuditLogs(
-        currentPage,
-        20,
-        entityTypeFilter || undefined,
-        actionFilter || undefined,
-        undefined,
-        searchQuery || undefined
-      );
-      setAuditLogs(data.content);
-      setTotalPages(data.totalPages);
-      return data;
+      if (viewMode === 'grouped') {
+        const data = await auditLogsApi.searchGroupedAuditLogs(
+          currentPage,
+          20,
+          entityTypeFilter || undefined,
+          actionFilter || undefined,
+          undefined,
+          searchQuery || undefined
+        );
+        setAuditLogGroups(data.content);
+        setTotalPages(data.totalPages);
+        return data;
+      } else {
+        const data = await auditLogsApi.searchAuditLogs(
+          currentPage,
+          20,
+          entityTypeFilter || undefined,
+          actionFilter || undefined,
+          undefined,
+          searchQuery || undefined
+        );
+        setAuditLogs(data.content);
+        setTotalPages(data.totalPages);
+        return data;
+      }
     },
     onError: () => toast.error('Audit loglarni yuklashda xatolik'),
   });
@@ -53,7 +81,7 @@ export function AuditLogsPage() {
     // Clear expanded rows and cache when filters change
     setExpandedRows(new Set());
     setFieldChangesCache(new Map());
-  }, [currentPage, entityTypeFilter, actionFilter, searchQuery]);
+  }, [currentPage, entityTypeFilter, actionFilter, searchQuery, viewMode]);
 
   const handleSearch = () => {
     setSearchQuery(searchInput);
@@ -72,6 +100,13 @@ export function AuditLogsPage() {
     setSearchInput('');
     setSearchQuery('');
     setCurrentPage(0);
+  };
+
+  const handleViewModeChange = (mode: ViewMode) => {
+    if (mode !== viewMode) {
+      setViewMode(mode);
+      setCurrentPage(0);
+    }
   };
 
   const handleExport = async (format: 'excel' | 'pdf') => {
@@ -137,7 +172,31 @@ export function AuditLogsPage() {
           </p>
         </div>
 
-        <div className="flex gap-2 w-full sm:w-auto">
+        <div className="flex flex-wrap gap-2 w-full sm:w-auto">
+          {/* View mode toggle */}
+          <div className="join">
+            <button
+              className={`join-item btn btn-sm min-h-[36px] gap-1.5 ${
+                viewMode === 'grouped' ? 'btn-primary' : 'btn-ghost'
+              }`}
+              onClick={() => handleViewModeChange('grouped')}
+              title="Guruhlangan ko'rinish"
+            >
+              <Layers className="h-4 w-4" />
+              <span className="hidden sm:inline">Guruhlangan</span>
+            </button>
+            <button
+              className={`join-item btn btn-sm min-h-[36px] gap-1.5 ${
+                viewMode === 'simple' ? 'btn-primary' : 'btn-ghost'
+              }`}
+              onClick={() => handleViewModeChange('simple')}
+              title="Oddiy ko'rinish"
+            >
+              <List className="h-4 w-4" />
+              <span className="hidden sm:inline">Oddiy</span>
+            </button>
+          </div>
+
           <RefreshButton
             onClick={() => loadData(true)}
             loading={refreshing}
@@ -148,7 +207,7 @@ export function AuditLogsPage() {
           <ExportButtons
             onExportExcel={() => handleExport('excel')}
             onExportPdf={() => handleExport('pdf')}
-            disabled={auditLogs.length === 0}
+            disabled={viewMode === 'grouped' ? auditLogGroups.length === 0 : auditLogs.length === 0}
             loading={refreshing}
           />
         </div>
@@ -239,29 +298,96 @@ export function AuditLogsPage() {
         </div>
       </div>
 
-      {/* Audit Logs Table */}
+      {/* Audit Logs Content */}
       <div className="relative">
         <LoadingOverlay show={refreshing} message="Audit loglar yangilanmoqda..." />
-        {auditLogs.length > 0 ? (
+
+        {/* Grouped View */}
+        {viewMode === 'grouped' && (
           <>
-            {/* Desktop table */}
-            <div className="hidden md:block surface-card overflow-x-auto">
-              <table className="table w-full">
-                <thead className="bg-base-200">
-                  <tr>
-                    <th className="w-12"></th>
-                    <th className="text-left">ID</th>
-                    <th className="text-left">Obyekt</th>
-                    <th className="text-left">Amal</th>
-                    <th className="text-left">Vaqt</th>
-                    <th className="text-left">Foydalanuvchi</th>
-                    <th className="text-left">IP Manzil</th>
-                    <th className="text-left w-28"></th>
-                  </tr>
-                </thead>
-                <tbody>
+            {auditLogGroups.length > 0 ? (
+              <>
+                {/* Desktop table */}
+                <div className="hidden md:block surface-card overflow-x-auto">
+                  <table className="table w-full">
+                    <thead className="bg-base-200">
+                      <tr>
+                        <th className="w-12"></th>
+                        <th className="text-left">Operatsiya</th>
+                        <th className="text-left">Obyektlar</th>
+                        <th className="text-left">Loglar</th>
+                        <th className="text-left">Vaqt</th>
+                        <th className="text-left">Foydalanuvchi</th>
+                        <th className="text-left">IP Manzil</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {auditLogGroups.map((group) => (
+                        <AuditLogGroupRow key={group.groupKey} group={group} />
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+
+                {/* Mobile card list */}
+                <div className="md:hidden space-y-3">
+                  {auditLogGroups.map((group) => (
+                    <AuditLogGroupCard key={group.groupKey} group={group} />
+                  ))}
+                </div>
+              </>
+            ) : (
+              <div className="surface-card p-8 sm:p-12 text-center">
+                <Shield className="h-12 w-12 mx-auto text-base-content/30 mb-4" />
+                <p className="text-sm sm:text-base text-base-content/60">
+                  {entityTypeFilter || actionFilter || searchQuery
+                    ? "Tanlangan filtrlar bo'yicha audit loglar topilmadi"
+                    : "Hali hech qanday audit log yo'q"}
+                </p>
+              </div>
+            )}
+          </>
+        )}
+
+        {/* Simple View */}
+        {viewMode === 'simple' && (
+          <>
+            {auditLogs.length > 0 ? (
+              <>
+                {/* Desktop table */}
+                <div className="hidden md:block surface-card overflow-x-auto">
+                  <table className="table w-full">
+                    <thead className="bg-base-200">
+                      <tr>
+                        <th className="w-12"></th>
+                        <th className="text-left">ID</th>
+                        <th className="text-left">Obyekt</th>
+                        <th className="text-left">Amal</th>
+                        <th className="text-left">Vaqt</th>
+                        <th className="text-left">Foydalanuvchi</th>
+                        <th className="text-left">IP Manzil</th>
+                        <th className="text-left w-28"></th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {auditLogs.map((log) => (
+                        <AuditLogExpandableRow
+                          key={log.id}
+                          log={log}
+                          isExpanded={expandedRows.has(log.id)}
+                          onToggle={() => handleToggleExpand(log.id)}
+                          fieldChanges={fieldChangesCache.get(log.id)}
+                          onLoadDetail={() => handleLoadDetail(log.id)}
+                        />
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+
+                {/* Mobile card list */}
+                <div className="md:hidden space-y-3">
                   {auditLogs.map((log) => (
-                    <AuditLogExpandableRow
+                    <AuditLogMobileCard
                       key={log.id}
                       log={log}
                       isExpanded={expandedRows.has(log.id)}
@@ -270,33 +396,19 @@ export function AuditLogsPage() {
                       onLoadDetail={() => handleLoadDetail(log.id)}
                     />
                   ))}
-                </tbody>
-              </table>
-            </div>
-
-            {/* Mobile card list */}
-            <div className="md:hidden space-y-3">
-              {auditLogs.map((log) => (
-                <AuditLogMobileCard
-                  key={log.id}
-                  log={log}
-                  isExpanded={expandedRows.has(log.id)}
-                  onToggle={() => handleToggleExpand(log.id)}
-                  fieldChanges={fieldChangesCache.get(log.id)}
-                  onLoadDetail={() => handleLoadDetail(log.id)}
-                />
-              ))}
-            </div>
+                </div>
+              </>
+            ) : (
+              <div className="surface-card p-8 sm:p-12 text-center">
+                <Shield className="h-12 w-12 mx-auto text-base-content/30 mb-4" />
+                <p className="text-sm sm:text-base text-base-content/60">
+                  {entityTypeFilter || actionFilter || searchQuery
+                    ? "Tanlangan filtrlar bo'yicha audit loglar topilmadi"
+                    : "Hali hech qanday audit log yo'q"}
+                </p>
+              </div>
+            )}
           </>
-        ) : (
-          <div className="surface-card p-8 sm:p-12 text-center">
-            <Shield className="h-12 w-12 mx-auto text-base-content/30 mb-4" />
-            <p className="text-sm sm:text-base text-base-content/60">
-              {entityTypeFilter || actionFilter || searchQuery
-                ? "Tanlangan filtrlar bo'yicha audit loglar topilmadi"
-                : "Hali hech qanday audit log yo'q"}
-            </p>
-          </div>
         )}
       </div>
 

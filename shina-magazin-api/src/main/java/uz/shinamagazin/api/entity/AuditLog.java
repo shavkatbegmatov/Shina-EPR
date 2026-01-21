@@ -7,6 +7,7 @@ import org.hibernate.type.SqlTypes;
 
 import java.time.LocalDateTime;
 import java.util.Map;
+import java.util.UUID;
 
 @Entity
 @Table(name = "audit_logs")
@@ -49,6 +50,9 @@ public class AuditLog {
 
     @Column(name = "user_agent", length = 500)
     private String userAgent;
+
+    @Column(name = "correlation_id")
+    private UUID correlationId;
 
     @Column(name = "created_at", nullable = false, updatable = false)
     private LocalDateTime createdAt;

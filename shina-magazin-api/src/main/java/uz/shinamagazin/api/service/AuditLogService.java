@@ -14,6 +14,7 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.context.request.RequestContextHolder;
 import org.springframework.web.context.request.ServletRequestAttributes;
 import uz.shinamagazin.api.dto.response.AuditLogDetailResponse;
+import uz.shinamagazin.api.dto.response.AuditLogGroupResponse;
 import uz.shinamagazin.api.dto.response.AuditLogResponse;
 import uz.shinamagazin.api.dto.response.UserActivityResponse;
 import uz.shinamagazin.api.entity.AuditLog;
@@ -26,7 +27,9 @@ import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
+import java.time.temporal.ChronoUnit;
 import java.util.*;
+import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -107,8 +110,8 @@ public class AuditLogService {
     @Async
     @Transactional
     public void logCreateWithContext(String entityType, Long entityId, Object newValue, Long userId,
-                                      String ipAddress, String userAgent) {
-        logWithContext(entityType, entityId, "CREATE", null, newValue, userId, ipAddress, userAgent);
+                                      String ipAddress, String userAgent, UUID correlationId) {
+        logWithContext(entityType, entityId, "CREATE", null, newValue, userId, ipAddress, userAgent, correlationId);
     }
 
     /**
@@ -117,8 +120,8 @@ public class AuditLogService {
     @Async
     @Transactional
     public void logUpdateWithContext(String entityType, Long entityId, Object oldValue, Object newValue,
-                                      Long userId, String ipAddress, String userAgent) {
-        logWithContext(entityType, entityId, "UPDATE", oldValue, newValue, userId, ipAddress, userAgent);
+                                      Long userId, String ipAddress, String userAgent, UUID correlationId) {
+        logWithContext(entityType, entityId, "UPDATE", oldValue, newValue, userId, ipAddress, userAgent, correlationId);
     }
 
     /**
@@ -127,15 +130,16 @@ public class AuditLogService {
     @Async
     @Transactional
     public void logDeleteWithContext(String entityType, Long entityId, Object oldValue, Long userId,
-                                      String ipAddress, String userAgent) {
-        logWithContext(entityType, entityId, "DELETE", oldValue, null, userId, ipAddress, userAgent);
+                                      String ipAddress, String userAgent, UUID correlationId) {
+        logWithContext(entityType, entityId, "DELETE", oldValue, null, userId, ipAddress, userAgent, correlationId);
     }
 
     /**
      * Log an audit event with explicit IP and user agent (bypasses RequestContextHolder)
      */
     private void logWithContext(String entityType, Long entityId, String action, Object oldValue,
-                                 Object newValue, Long userId, String ipAddress, String userAgent) {
+                                 Object newValue, Long userId, String ipAddress, String userAgent,
+                                 UUID correlationId) {
         try {
             String username = null;
             if (userId != null) {
@@ -154,11 +158,12 @@ public class AuditLogService {
                     .username(username)
                     .ipAddress(ipAddress)
                     .userAgent(userAgent)
+                    .correlationId(correlationId)
                     .build();
 
             auditLogRepository.save(auditLog);
-            log.debug("Audit log created with context: {} {} {} by {} from {} ({})",
-                    action, entityType, entityId, username, ipAddress, userAgent);
+            log.debug("Audit log created with context: {} {} {} by {} from {} ({}) correlationId={}",
+                    action, entityType, entityId, username, ipAddress, userAgent, correlationId);
         } catch (Exception e) {
             log.error("Failed to create audit log with context: {}", e.getMessage(), e);
         }
@@ -247,6 +252,348 @@ public class AuditLogService {
 
         return auditLogRepository.searchAuditLogs(entityType, action, userId, trimmedSearch, pageable)
                 .map(AuditLogResponse::from);
+    }
+
+    // ==================== GROUPED AUDIT LOGS ====================
+
+    /**
+     * Time window for grouping logs without correlation_id (in seconds)
+     */
+    private static final int GROUPING_TIME_WINDOW_SECONDS = 3;
+
+    /**
+     * Get grouped audit logs.
+     * Groups by correlationId when available, otherwise by time window + userId.
+     */
+    public Page<AuditLogGroupResponse> searchGroupedAuditLogs(
+            String entityType,
+            String action,
+            Long userId,
+            String search,
+            Pageable pageable
+    ) {
+        // Fetch more records than requested to account for grouping
+        int fetchSize = pageable.getPageSize() * 5;
+        int fetchPage = pageable.getPageNumber() * pageable.getPageSize() / fetchSize;
+        Pageable fetchPageable = org.springframework.data.domain.PageRequest.of(
+                fetchPage, fetchSize, pageable.getSort()
+        );
+
+        String trimmedSearch = (search == null || search.trim().isEmpty()) ? null : search.trim();
+
+        List<AuditLog> auditLogs;
+        long totalElements;
+
+        if (trimmedSearch == null) {
+            Page<AuditLog> page = auditLogRepository.filterAuditLogs(entityType, action, userId, fetchPageable);
+            auditLogs = page.getContent();
+            totalElements = page.getTotalElements();
+        } else {
+            Page<AuditLog> page = auditLogRepository.searchAuditLogs(entityType, action, userId, trimmedSearch, fetchPageable);
+            auditLogs = page.getContent();
+            totalElements = page.getTotalElements();
+        }
+
+        // Group the logs
+        List<AuditLogGroupResponse> groups = groupAuditLogs(auditLogs);
+
+        // Apply pagination to groups
+        int start = (pageable.getPageNumber() * pageable.getPageSize()) % fetchSize;
+        int end = Math.min(start + pageable.getPageSize(), groups.size());
+
+        List<AuditLogGroupResponse> pageContent = start < groups.size()
+                ? groups.subList(start, end)
+                : Collections.emptyList();
+
+        // Estimate total groups (roughly totalElements / average group size)
+        long estimatedTotalGroups = groups.isEmpty() ? 0 : totalElements / Math.max(1, auditLogs.size() / groups.size());
+
+        return new org.springframework.data.domain.PageImpl<>(
+                pageContent,
+                pageable,
+                Math.max(estimatedTotalGroups, groups.size())
+        );
+    }
+
+    /**
+     * Group audit logs by correlation ID or time window
+     */
+    private List<AuditLogGroupResponse> groupAuditLogs(List<AuditLog> logs) {
+        if (logs.isEmpty()) {
+            return Collections.emptyList();
+        }
+
+        // Separate logs with and without correlation_id
+        Map<UUID, List<AuditLog>> correlatedGroups = logs.stream()
+                .filter(log -> log.getCorrelationId() != null)
+                .collect(Collectors.groupingBy(AuditLog::getCorrelationId));
+
+        List<AuditLog> uncorrelatedLogs = logs.stream()
+                .filter(log -> log.getCorrelationId() == null)
+                .toList();
+
+        List<AuditLogGroupResponse> groups = new ArrayList<>();
+
+        // Convert correlated groups
+        for (Map.Entry<UUID, List<AuditLog>> entry : correlatedGroups.entrySet()) {
+            groups.add(createGroupResponse(entry.getKey(), entry.getValue()));
+        }
+
+        // Group uncorrelated logs by time window and userId
+        groups.addAll(groupByTimeWindow(uncorrelatedLogs));
+
+        // Sort groups by timestamp (most recent first)
+        groups.sort((a, b) -> b.getTimestamp().compareTo(a.getTimestamp()));
+
+        return groups;
+    }
+
+    /**
+     * Group logs without correlation_id by time window and userId
+     */
+    private List<AuditLogGroupResponse> groupByTimeWindow(List<AuditLog> logs) {
+        if (logs.isEmpty()) {
+            return Collections.emptyList();
+        }
+
+        List<AuditLogGroupResponse> groups = new ArrayList<>();
+        List<AuditLog> sorted = logs.stream()
+                .sorted(Comparator.comparing(AuditLog::getCreatedAt).reversed())
+                .toList();
+
+        List<AuditLog> currentGroup = new ArrayList<>();
+        LocalDateTime groupStart = null;
+        Long groupUserId = null;
+
+        for (AuditLog log : sorted) {
+            if (groupStart == null) {
+                // Start new group
+                currentGroup.add(log);
+                groupStart = log.getCreatedAt();
+                groupUserId = log.getUserId();
+            } else {
+                long secondsDiff = ChronoUnit.SECONDS.between(log.getCreatedAt(), groupStart);
+                boolean sameUser = Objects.equals(log.getUserId(), groupUserId);
+
+                if (secondsDiff <= GROUPING_TIME_WINDOW_SECONDS && sameUser) {
+                    // Add to current group
+                    currentGroup.add(log);
+                } else {
+                    // Close current group and start new one
+                    groups.add(createGroupResponse(null, currentGroup));
+                    currentGroup = new ArrayList<>();
+                    currentGroup.add(log);
+                    groupStart = log.getCreatedAt();
+                    groupUserId = log.getUserId();
+                }
+            }
+        }
+
+        // Don't forget the last group
+        if (!currentGroup.isEmpty()) {
+            groups.add(createGroupResponse(null, currentGroup));
+        }
+
+        return groups;
+    }
+
+    /**
+     * Create a group response from a list of audit logs
+     */
+    private AuditLogGroupResponse createGroupResponse(UUID correlationId, List<AuditLog> logs) {
+        if (logs.isEmpty()) {
+            throw new IllegalArgumentException("Cannot create group from empty log list");
+        }
+
+        // Sort by createdAt descending
+        List<AuditLog> sortedLogs = logs.stream()
+                .sorted(Comparator.comparing(AuditLog::getCreatedAt).reversed())
+                .toList();
+
+        AuditLog firstLog = sortedLogs.get(0);
+
+        // Get unique entity types
+        List<String> entityTypes = sortedLogs.stream()
+                .map(AuditLog::getEntityType)
+                .distinct()
+                .toList();
+
+        // Determine primary action
+        String primaryAction = determinePrimaryAction(sortedLogs);
+
+        // Build summary
+        String summary = buildGroupSummary(sortedLogs, entityTypes);
+
+        // Generate group key for time-based groups
+        String groupKey = correlationId != null
+                ? correlationId.toString()
+                : firstLog.getCreatedAt().toString() + "_" + firstLog.getUserId();
+
+        return AuditLogGroupResponse.builder()
+                .correlationId(correlationId)
+                .groupKey(groupKey)
+                .timestamp(firstLog.getCreatedAt())
+                .username(firstLog.getUsername())
+                .primaryAction(primaryAction)
+                .summary(summary)
+                .logCount(sortedLogs.size())
+                .logs(sortedLogs.stream().map(AuditLogResponse::from).toList())
+                .entityTypes(entityTypes)
+                .build();
+    }
+
+    /**
+     * Determine the primary action description for a group
+     */
+    private String determinePrimaryAction(List<AuditLog> logs) {
+        Set<String> entityTypes = logs.stream()
+                .map(AuditLog::getEntityType)
+                .collect(Collectors.toSet());
+
+        Set<String> actions = logs.stream()
+                .map(AuditLog::getAction)
+                .collect(Collectors.toSet());
+
+        // Check for payment + debt combination (debt payment)
+        if (entityTypes.contains("Payment") && entityTypes.contains("Debt")) {
+            return "Qarz to'lash";
+        }
+
+        // Check for sale creation
+        if (entityTypes.contains("Sale") && actions.contains("CREATE")) {
+            if (entityTypes.contains("Payment") || entityTypes.contains("Debt")) {
+                return "Sotuv yaratish";
+            }
+            return "Sotuv yaratish";
+        }
+
+        // Check for purchase order creation
+        if (entityTypes.contains("PurchaseOrder") && actions.contains("CREATE")) {
+            return "Xarid yaratish";
+        }
+
+        // Check for purchase payment
+        if (entityTypes.contains("PurchasePayment")) {
+            return "Xarid to'lovi";
+        }
+
+        // Check for stock movement
+        if (entityTypes.contains("StockMovement")) {
+            return "Ombor harakati";
+        }
+
+        // Single entity type operations
+        if (entityTypes.size() == 1) {
+            String entityType = entityTypes.iterator().next();
+            String action = logs.get(0).getAction();
+
+            return switch (entityType) {
+                case "Product" -> switch (action) {
+                    case "CREATE" -> "Mahsulot qo'shish";
+                    case "UPDATE" -> "Mahsulot tahrirlash";
+                    case "DELETE" -> "Mahsulot o'chirish";
+                    default -> entityType + " " + action;
+                };
+                case "Customer" -> switch (action) {
+                    case "CREATE" -> "Mijoz qo'shish";
+                    case "UPDATE" -> "Mijoz tahrirlash";
+                    case "DELETE" -> "Mijoz o'chirish";
+                    default -> entityType + " " + action;
+                };
+                case "Employee" -> switch (action) {
+                    case "CREATE" -> "Xodim qo'shish";
+                    case "UPDATE" -> "Xodim tahrirlash";
+                    case "DELETE" -> "Xodim o'chirish";
+                    default -> entityType + " " + action;
+                };
+                case "Supplier" -> switch (action) {
+                    case "CREATE" -> "Ta'minotchi qo'shish";
+                    case "UPDATE" -> "Ta'minotchi tahrirlash";
+                    case "DELETE" -> "Ta'minotchi o'chirish";
+                    default -> entityType + " " + action;
+                };
+                case "User" -> switch (action) {
+                    case "CREATE" -> "Foydalanuvchi yaratish";
+                    case "UPDATE" -> "Foydalanuvchi tahrirlash";
+                    case "DELETE" -> "Foydalanuvchi o'chirish";
+                    default -> entityType + " " + action;
+                };
+                case "Role" -> switch (action) {
+                    case "CREATE" -> "Rol yaratish";
+                    case "UPDATE" -> "Rol tahrirlash";
+                    case "DELETE" -> "Rol o'chirish";
+                    default -> entityType + " " + action;
+                };
+                case "Brand" -> switch (action) {
+                    case "CREATE" -> "Brend qo'shish";
+                    case "UPDATE" -> "Brend tahrirlash";
+                    case "DELETE" -> "Brend o'chirish";
+                    default -> entityType + " " + action;
+                };
+                case "Category" -> switch (action) {
+                    case "CREATE" -> "Kategoriya qo'shish";
+                    case "UPDATE" -> "Kategoriya tahrirlash";
+                    case "DELETE" -> "Kategoriya o'chirish";
+                    default -> entityType + " " + action;
+                };
+                default -> getEntityTypeLabel(entityType) + " " + getActionLabel(action);
+            };
+        }
+
+        // Multiple entity types - generic description
+        return logs.size() + " ta o'zgarish";
+    }
+
+    /**
+     * Build a summary string for the group
+     */
+    private String buildGroupSummary(List<AuditLog> logs, List<String> entityTypes) {
+        if (logs.size() == 1) {
+            AuditLog log = logs.get(0);
+            return getEntityTypeLabel(log.getEntityType()) + " " + getActionLabel(log.getAction());
+        }
+
+        String entityTypesStr = entityTypes.stream()
+                .map(this::getEntityTypeLabel)
+                .collect(Collectors.joining(", "));
+
+        return logs.size() + " ta o'zgarish: " + entityTypesStr;
+    }
+
+    /**
+     * Get Uzbek label for entity type
+     */
+    private String getEntityTypeLabel(String entityType) {
+        return switch (entityType) {
+            case "Product" -> "Mahsulot";
+            case "Sale" -> "Sotuv";
+            case "Customer" -> "Mijoz";
+            case "Payment" -> "To'lov";
+            case "Debt" -> "Qarz";
+            case "PurchaseOrder" -> "Xarid";
+            case "PurchasePayment" -> "Xarid to'lovi";
+            case "PurchaseReturn" -> "Xarid qaytarish";
+            case "Supplier" -> "Ta'minotchi";
+            case "Employee" -> "Xodim";
+            case "User" -> "Foydalanuvchi";
+            case "Role" -> "Rol";
+            case "Brand" -> "Brend";
+            case "Category" -> "Kategoriya";
+            case "StockMovement" -> "Ombor harakati";
+            default -> entityType;
+        };
+    }
+
+    /**
+     * Get Uzbek label for action
+     */
+    private String getActionLabel(String action) {
+        return switch (action) {
+            case "CREATE" -> "yaratildi";
+            case "UPDATE" -> "o'zgartirildi";
+            case "DELETE" -> "o'chirildi";
+            default -> action;
+        };
     }
 
     /**

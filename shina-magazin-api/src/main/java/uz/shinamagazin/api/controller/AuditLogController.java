@@ -17,6 +17,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import uz.shinamagazin.api.dto.response.ApiResponse;
 import uz.shinamagazin.api.dto.response.AuditLogDetailResponse;
+import uz.shinamagazin.api.dto.response.AuditLogGroupResponse;
 import uz.shinamagazin.api.dto.response.AuditLogResponse;
 import uz.shinamagazin.api.enums.PermissionCode;
 import uz.shinamagazin.api.security.RequiresPermission;
@@ -51,6 +52,21 @@ public class AuditLogController {
     ) {
         return ResponseEntity.ok(ApiResponse.success(
                 auditLogService.searchAuditLogs(entityType, action, userId, search, pageable)
+        ));
+    }
+
+    @GetMapping("/grouped")
+    @Operation(summary = "Search grouped audit logs", description = "Guruhlangan audit loglarni qidirish")
+    @RequiresPermission(PermissionCode.SETTINGS_VIEW)
+    public ResponseEntity<ApiResponse<Page<AuditLogGroupResponse>>> searchGroupedAuditLogs(
+            @RequestParam(required = false) String entityType,
+            @RequestParam(required = false) String action,
+            @RequestParam(required = false) Long userId,
+            @RequestParam(required = false) String search,
+            @PageableDefault(size = 20, sort = "createdAt") Pageable pageable
+    ) {
+        return ResponseEntity.ok(ApiResponse.success(
+                auditLogService.searchGroupedAuditLogs(entityType, action, userId, search, pageable)
         ));
     }
 

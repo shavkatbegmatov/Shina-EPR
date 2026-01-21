@@ -101,7 +101,21 @@ export interface AuditLog {
   username?: string;
   ipAddress?: string;
   userAgent?: string;
+  correlationId?: string;
   createdAt: string;
+}
+
+// Audit Log Group Types (for grouped view)
+export interface AuditLogGroup {
+  correlationId: string | null;
+  groupKey: string;
+  timestamp: string;
+  username: string | null;
+  primaryAction: string;
+  summary: string;
+  logCount: number;
+  logs: AuditLog[];
+  entityTypes: string[];
 }
 
 // API Response Types

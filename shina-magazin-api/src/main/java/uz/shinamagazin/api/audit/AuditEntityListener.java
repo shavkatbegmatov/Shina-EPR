@@ -142,7 +142,8 @@ public class AuditEntityListener {
                     newData,
                     userId,
                     ipAddress,
-                    userAgent
+                    userAgent,
+                    AuditCorrelationContext.get()
             );
 
             log.debug("Logged CREATE for {} with id {}",
@@ -202,7 +203,8 @@ public class AuditEntityListener {
                     newData,
                     userId,
                     ipAddress,
-                    userAgent
+                    userAgent,
+                    AuditCorrelationContext.get()
             );
 
             log.debug("Logged UPDATE for {} with id {}", auditable.getEntityName(), auditable.getId());
@@ -245,7 +247,8 @@ public class AuditEntityListener {
                     oldData,
                     userId,
                     ipAddress,
-                    userAgent
+                    userAgent,
+                    AuditCorrelationContext.get()
             );
 
             log.debug("Logged DELETE for {} with id {}",

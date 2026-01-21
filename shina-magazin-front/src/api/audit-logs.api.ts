@@ -1,5 +1,5 @@
 import api from './axios';
-import type { ApiResponse, PagedResponse, AuditLogDetailResponse } from '../types';
+import type { ApiResponse, PagedResponse, AuditLogDetailResponse, AuditLogGroup } from '../types';
 
 export interface AuditLog {
   id: number;
@@ -12,6 +12,7 @@ export interface AuditLog {
   username: string | null;
   ipAddress: string | null;
   userAgent: string | null;
+  correlationId: string | null;
   createdAt: string;
 }
 
@@ -40,6 +41,34 @@ export const auditLogsApi = {
 
     const response = await api.get<ApiResponse<PagedResponse<AuditLog>>>(
       `/v1/audit-logs?${params.toString()}`
+    );
+    return response.data.data;
+  },
+
+  /**
+   * Search grouped audit logs with filters and pagination
+   */
+  searchGroupedAuditLogs: async (
+    page: number = 0,
+    size: number = 20,
+    entityType?: string,
+    action?: string,
+    userId?: number,
+    search?: string
+  ): Promise<PagedResponse<AuditLogGroup>> => {
+    const params = new URLSearchParams({
+      page: page.toString(),
+      size: size.toString(),
+      sort: 'createdAt,desc',
+    });
+
+    if (entityType) params.append('entityType', entityType);
+    if (action) params.append('action', action);
+    if (userId) params.append('userId', userId.toString());
+    if (search) params.append('search', search);
+
+    const response = await api.get<ApiResponse<PagedResponse<AuditLogGroup>>>(
+      `/v1/audit-logs/grouped?${params.toString()}`
     );
     return response.data.data;
   },

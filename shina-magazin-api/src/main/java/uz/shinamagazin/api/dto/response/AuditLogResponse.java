@@ -8,6 +8,7 @@ import uz.shinamagazin.api.entity.AuditLog;
 
 import java.time.LocalDateTime;
 import java.util.Map;
+import java.util.UUID;
 
 @Data
 @Builder
@@ -24,6 +25,7 @@ public class AuditLogResponse {
     private String username;
     private String ipAddress;
     private String userAgent;
+    private UUID correlationId;
     private LocalDateTime createdAt;
 
     public static AuditLogResponse from(AuditLog auditLog) {
@@ -38,6 +40,7 @@ public class AuditLogResponse {
                 .username(auditLog.getUsername())
                 .ipAddress(auditLog.getIpAddress())
                 .userAgent(auditLog.getUserAgent())
+                .correlationId(auditLog.getCorrelationId())
                 .createdAt(auditLog.getCreatedAt())
                 .build();
     }

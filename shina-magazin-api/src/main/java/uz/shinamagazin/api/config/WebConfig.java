@@ -1,17 +1,30 @@
 package uz.shinamagazin.api.config;
 
+import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.CorsConfigurationSource;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
+import org.springframework.web.servlet.config.annotation.InterceptorRegistry;
 import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
+import uz.shinamagazin.api.audit.AuditCorrelationInterceptor;
 
 import java.util.Arrays;
 import java.util.List;
 
 @Configuration
+@RequiredArgsConstructor
 public class WebConfig implements WebMvcConfigurer {
+
+    private final AuditCorrelationInterceptor auditCorrelationInterceptor;
+
+    @Override
+    public void addInterceptors(InterceptorRegistry registry) {
+        registry.addInterceptor(auditCorrelationInterceptor)
+                .addPathPatterns("/v1/**")  // Apply to all API endpoints
+                .excludePathPatterns("/v1/auth/**");  // Exclude auth endpoints
+    }
 
     @Bean
     public CorsConfigurationSource corsConfigurationSource() {
