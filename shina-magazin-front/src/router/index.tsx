@@ -7,6 +7,7 @@ import { RegisterPage } from '../pages/auth/RegisterPage';
 import { ChangePasswordPage } from '../pages/auth/ChangePasswordPage';
 import { DashboardPage } from '../pages/dashboard/DashboardPage';
 import { ProductsPage } from '../pages/products/ProductsPage';
+import { ProductDetailPage } from '../pages/products/ProductDetailPage';
 import { CustomersPage } from '../pages/customers/CustomersPage';
 import { POSPage } from '../pages/sales/POSPage';
 import { SalesPage } from '../pages/sales/SalesPage';
@@ -70,6 +71,15 @@ export const router = createBrowserRouter([
           </ProtectedRoute>
         ),
         handle: { title: 'Mahsulotlar' },
+      },
+      {
+        path: 'products/:id',
+        element: (
+          <ProtectedRoute permission={PermissionCode.PRODUCTS_VIEW}>
+            <ProductDetailPage />
+          </ProtectedRoute>
+        ),
+        handle: { title: 'Mahsulot tafsiloti' },
       },
       {
         path: 'pos',
