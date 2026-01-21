@@ -12,15 +12,18 @@ import { CustomersPage } from '../pages/customers/CustomersPage';
 import { CustomerDetailPage } from '../pages/customers/CustomerDetailPage';
 import { POSPage } from '../pages/sales/POSPage';
 import { SalesPage } from '../pages/sales/SalesPage';
+import { SaleDetailPage } from '../pages/sales/SaleDetailPage';
 import { DebtsPage } from '../pages/debts/DebtsPage';
 import { WarehousePage } from '../pages/warehouse/WarehousePage';
 import { SuppliersPage } from '../pages/suppliers/SuppliersPage';
+import { SupplierDetailPage } from '../pages/suppliers/SupplierDetailPage';
 import { PurchasesPage } from '../pages/purchases/PurchasesPage';
 import { PurchaseDetailPage } from '../pages/purchases/PurchaseDetailPage';
 import { SettingsPage } from '../pages/settings/SettingsPage';
 import { NotificationsPage } from '../pages/notifications/NotificationsPage';
 import { ReportsPage } from '../pages/reports/ReportsPage';
 import { EmployeesPage } from '../pages/employees/EmployeesPage';
+import { EmployeeDetailPage } from '../pages/employees/EmployeeDetailPage';
 import { RolesPage } from '../pages/roles/RolesPage';
 import { ProfilePage } from '../pages/profile/ProfilePage';
 import { AuditLogsPage } from '../pages/audit-logs/AuditLogsPage';
@@ -101,6 +104,15 @@ export const router = createBrowserRouter([
         handle: { title: 'Sotuvlar' },
       },
       {
+        path: 'sales/:id',
+        element: (
+          <ProtectedRoute permission={PermissionCode.SALES_VIEW}>
+            <SaleDetailPage />
+          </ProtectedRoute>
+        ),
+        handle: { title: 'Sotuv tafsiloti' },
+      },
+      {
         path: 'customers',
         element: (
           <ProtectedRoute permission={PermissionCode.CUSTOMERS_VIEW}>
@@ -144,6 +156,15 @@ export const router = createBrowserRouter([
           </ProtectedRoute>
         ),
         handle: { title: "Ta'minotchilar" },
+      },
+      {
+        path: 'suppliers/:id',
+        element: (
+          <ProtectedRoute permission={PermissionCode.SUPPLIERS_VIEW}>
+            <SupplierDetailPage />
+          </ProtectedRoute>
+        ),
+        handle: { title: "Ta'minotchi tafsiloti" },
       },
       {
         path: 'purchases',
@@ -195,6 +216,15 @@ export const router = createBrowserRouter([
           </ProtectedRoute>
         ),
         handle: { title: 'Xodimlar' },
+      },
+      {
+        path: 'employees/:id',
+        element: (
+          <ProtectedRoute permission={PermissionCode.EMPLOYEES_VIEW}>
+            <EmployeeDetailPage />
+          </ProtectedRoute>
+        ),
+        handle: { title: 'Xodim tafsiloti' },
       },
       {
         path: 'roles',
