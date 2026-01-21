@@ -1,5 +1,5 @@
 import { useState, useEffect, useMemo } from 'react';
-import { Copy, Check } from 'lucide-react';
+import { Copy, Check, Maximize2, Minimize2 } from 'lucide-react';
 import toast from 'react-hot-toast';
 
 interface JsonDiffViewerProps {
@@ -7,6 +7,8 @@ interface JsonDiffViewerProps {
   newValue: Record<string, unknown> | null;
   action: string;
 }
+
+type ExpandedPanel = 'none' | 'old' | 'new';
 
 // Find changed keys between two objects
 function getChangedKeys(
@@ -121,13 +123,7 @@ function formatValue(
 }
 
 // Copy button component
-function CopyButton({
-  text,
-  size = 'sm',
-}: {
-  text: string;
-  size?: 'sm' | 'xs';
-}) {
+function CopyButton({ text }: { text: string }) {
   const [copied, setCopied] = useState(false);
 
   const handleCopy = async () => {
@@ -141,18 +137,16 @@ function CopyButton({
     }
   };
 
-  const iconSize = size === 'xs' ? 'h-3 w-3' : 'h-3.5 w-3.5';
-
   return (
     <button
       onClick={handleCopy}
-      className={`btn btn-ghost btn-${size} gap-1.5 opacity-70 hover:opacity-100`}
+      className="btn btn-ghost btn-xs gap-1 opacity-70 hover:opacity-100"
       title="Nusxalash"
     >
       {copied ? (
-        <Check className={`${iconSize} text-success`} />
+        <Check className="h-3 w-3 text-success" />
       ) : (
-        <Copy className={iconSize} />
+        <Copy className="h-3 w-3" />
       )}
     </button>
   );
@@ -165,12 +159,18 @@ function JsonPanel({
   highlighted,
   variant,
   isEmpty,
+  isExpanded,
+  canExpand,
+  onToggleExpand,
 }: {
   title: string;
   json: string;
   highlighted: JSX.Element[];
   variant: 'old' | 'new';
   isEmpty: boolean;
+  isExpanded: boolean;
+  canExpand: boolean;
+  onToggleExpand: () => void;
 }) {
   const colors = {
     old: {
@@ -200,7 +200,22 @@ function JsonPanel({
         <span className={`text-xs font-semibold uppercase tracking-wider ${color.headerText}`}>
           {title}
         </span>
-        {!isEmpty && <CopyButton text={json} size="xs" />}
+        <div className="flex items-center gap-1">
+          {!isEmpty && <CopyButton text={json} />}
+          {!isEmpty && canExpand && (
+            <button
+              onClick={onToggleExpand}
+              className="btn btn-ghost btn-xs opacity-70 hover:opacity-100"
+              title={isExpanded ? 'Kichraytirish' : 'Kengaytirish'}
+            >
+              {isExpanded ? (
+                <Minimize2 className="h-3 w-3" />
+              ) : (
+                <Maximize2 className="h-3 w-3" />
+              )}
+            </button>
+          )}
+        </div>
       </div>
 
       {/* Panel Content */}
@@ -217,6 +232,7 @@ function JsonPanel({
 
 export function JsonDiffViewer({ oldValue, newValue, action }: JsonDiffViewerProps) {
   const [isMobile, setIsMobile] = useState(false);
+  const [expandedPanel, setExpandedPanel] = useState<ExpandedPanel>('none');
 
   useEffect(() => {
     const checkMobile = () => setIsMobile(window.innerWidth < 768);
@@ -246,6 +262,10 @@ export function JsonDiffViewer({ oldValue, newValue, action }: JsonDiffViewerPro
   const hasOldValue = oldValue !== null && action !== 'CREATE';
   const hasNewValue = newValue !== null && action !== 'DELETE';
 
+  const toggleExpand = (panel: 'old' | 'new') => {
+    setExpandedPanel(expandedPanel === panel ? 'none' : panel);
+  };
+
   // Only old value (DELETE)
   if (!hasNewValue && hasOldValue) {
     return (
@@ -256,6 +276,9 @@ export function JsonDiffViewer({ oldValue, newValue, action }: JsonDiffViewerPro
           highlighted={oldHighlighted}
           variant="old"
           isEmpty={false}
+          isExpanded={false}
+          canExpand={false}
+          onToggleExpand={() => {}}
         />
       </div>
     );
@@ -271,12 +294,51 @@ export function JsonDiffViewer({ oldValue, newValue, action }: JsonDiffViewerPro
           highlighted={newHighlighted}
           variant="new"
           isEmpty={false}
+          isExpanded={false}
+          canExpand={false}
+          onToggleExpand={() => {}}
         />
       </div>
     );
   }
 
-  // Both values (UPDATE) - side by side or stacked
+  // Both values (UPDATE)
+  // If a panel is expanded, show only that panel
+  if (expandedPanel === 'old') {
+    return (
+      <div className="h-full">
+        <JsonPanel
+          title="Eski qiymat"
+          json={oldJson}
+          highlighted={oldHighlighted}
+          variant="old"
+          isEmpty={!hasOldValue}
+          isExpanded={true}
+          canExpand={true}
+          onToggleExpand={() => toggleExpand('old')}
+        />
+      </div>
+    );
+  }
+
+  if (expandedPanel === 'new') {
+    return (
+      <div className="h-full">
+        <JsonPanel
+          title="Yangi qiymat"
+          json={newJson}
+          highlighted={newHighlighted}
+          variant="new"
+          isEmpty={!hasNewValue}
+          isExpanded={true}
+          canExpand={true}
+          onToggleExpand={() => toggleExpand('new')}
+        />
+      </div>
+    );
+  }
+
+  // Default: side by side or stacked
   return (
     <div className={`h-full ${isMobile ? 'space-y-3' : 'grid grid-cols-2 gap-3'}`}>
       <JsonPanel
@@ -285,6 +347,9 @@ export function JsonDiffViewer({ oldValue, newValue, action }: JsonDiffViewerPro
         highlighted={oldHighlighted}
         variant="old"
         isEmpty={!hasOldValue}
+        isExpanded={false}
+        canExpand={!isMobile && hasOldValue && hasNewValue}
+        onToggleExpand={() => toggleExpand('old')}
       />
       <JsonPanel
         title="Yangi qiymat"
@@ -292,6 +357,9 @@ export function JsonDiffViewer({ oldValue, newValue, action }: JsonDiffViewerPro
         highlighted={newHighlighted}
         variant="new"
         isEmpty={!hasNewValue}
+        isExpanded={false}
+        canExpand={!isMobile && hasOldValue && hasNewValue}
+        onToggleExpand={() => toggleExpand('new')}
       />
     </div>
   );
