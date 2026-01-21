@@ -7,6 +7,30 @@ export default defineConfig({
     // SockJS uchun global polyfill
     global: 'globalThis',
   },
+  build: {
+    rollupOptions: {
+      output: {
+        manualChunks: {
+          // React core libraries
+          'vendor-react': ['react', 'react-dom', 'react-router-dom'],
+          // State management & data fetching
+          'vendor-state': ['zustand', 'axios'],
+          // UI libraries
+          'vendor-ui': ['lucide-react', 'clsx'],
+          // Charts (heavy)
+          'vendor-charts': ['recharts'],
+          // Date utilities
+          'vendor-date': ['date-fns'],
+          // Form handling
+          'vendor-form': ['react-hook-form'],
+          // PDF & export utilities
+          'vendor-export': ['jspdf', 'jspdf-autotable', 'html2canvas'],
+          // WebSocket
+          'vendor-websocket': ['sockjs-client', '@stomp/stompjs'],
+        },
+      },
+    },
+  },
   server: {
     // Port removed - Vite will use any available port (default 5173)
     // This allows flexibility when multiple dev servers are running
