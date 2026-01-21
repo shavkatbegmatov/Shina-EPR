@@ -20,8 +20,8 @@ export interface AuditLogDetailResponse {
   fieldChanges: FieldChange[];
 
   // Raw JSON
-  oldValue: Record<string, any>;
-  newValue: Record<string, any>;
+  oldValue: Record<string, unknown>;
+  newValue: Record<string, unknown>;
 
   // Entity metadata
   entityName?: string;
@@ -34,8 +34,8 @@ export interface AuditLogDetailResponse {
 export interface FieldChange {
   fieldName: string;
   fieldLabel: string;
-  oldValue: any;
-  newValue: any;
+  oldValue: unknown;
+  newValue: unknown;
   changeType: 'ADDED' | 'REMOVED' | 'MODIFIED' | 'UNCHANGED';
   fieldType: 'STRING' | 'NUMBER' | 'CURRENCY' | 'DATE' | 'DATETIME' | 'BOOLEAN' | 'ENUM' | 'JSON';
   isSensitive: boolean;

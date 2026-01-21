@@ -22,7 +22,7 @@ export const createExportApi = (baseUrl: string) => ({
    */
   exportData: async (
     format: 'excel' | 'pdf',
-    filters?: Record<string, any>
+    filters?: Record<string, string | number | boolean | undefined | null>
   ): Promise<void> => {
     try {
       const params = new URLSearchParams({ format });

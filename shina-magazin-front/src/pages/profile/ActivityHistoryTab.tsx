@@ -69,7 +69,7 @@ export function ActivityHistoryTab() {
         action: actionFilter || undefined,
       });
       toast.success(`${format === 'excel' ? 'Excel' : 'PDF'} fayli yuklab olindi`);
-    } catch (error) {
+    } catch {
       toast.error('Eksport qilishda xatolik');
     }
   };
@@ -99,8 +99,8 @@ export function ActivityHistoryTab() {
         newMap.set(activityId, detail.fieldChanges);
         return newMap;
       });
-    } catch (error) {
-      console.error('Failed to load field changes:', error);
+    } catch (err) {
+      console.error('Failed to load field changes:', err);
       toast.error("Batafsil ma'lumotlarni yuklashda xatolik");
     }
   };
@@ -118,6 +118,7 @@ export function ActivityHistoryTab() {
       username: activity.username,
       ipAddress: activity.ipAddress,
       userAgent: `${activity.deviceType} - ${activity.browser}`, // Combine for display
+      correlationId: null,
       createdAt: activity.timestamp,
     };
   };

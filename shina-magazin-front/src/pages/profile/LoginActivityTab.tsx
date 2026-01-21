@@ -70,7 +70,7 @@ export function LoginActivityTab() {
       window.URL.revokeObjectURL(url);
 
       toast.success('Fayl yuklab olindi!', { id: 'export' });
-    } catch (error) {
+    } catch {
       toast.error('Eksport qilishda xatolik', { id: 'export' });
     }
   };

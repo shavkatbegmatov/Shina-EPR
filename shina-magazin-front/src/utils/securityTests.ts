@@ -271,9 +271,29 @@ export const runAllSecurityTests = async () => {
   console.log('ℹ️  Manual tests require multiple tabs/browsers');
 };
 
+// Security tests interface for Window
+interface SecurityTestsInterface {
+  testTokenManipulation: typeof testTokenManipulation;
+  testConcurrentRevocation: typeof testConcurrentRevocation;
+  testRateLimiting: typeof testRateLimiting;
+  testXSSPrevention: typeof testXSSPrevention;
+  testCrossTabSync: typeof testCrossTabSync;
+  testSessionOwnership: typeof testSessionOwnership;
+  testDatabaseConsistency: typeof testDatabaseConsistency;
+  testSessionHijacking: typeof testSessionHijacking;
+  runAllSecurityTests: typeof runAllSecurityTests;
+}
+
+// Extend Window interface for console access
+declare global {
+  interface Window {
+    securityTests: SecurityTestsInterface;
+  }
+}
+
 // Export for console usage
 if (typeof window !== 'undefined') {
-  (window as any).securityTests = {
+  window.securityTests = {
     testTokenManipulation,
     testConcurrentRevocation,
     testRateLimiting,

@@ -14,7 +14,7 @@ import {
 } from 'lucide-react';
 import clsx from 'clsx';
 import { useNotificationsStore, type Notification } from '../../store/notificationsStore';
-import { usePermission, PermissionCode } from '../../hooks/usePermission';
+import { PermissionCode } from '../../hooks/usePermission';
 import { PermissionGate } from '../../components/common/PermissionGate';
 
 type NotificationType = Notification['type'];
@@ -88,13 +88,6 @@ export function NotificationsPage() {
     deleteNotification,
   } = useNotificationsStore();
   const [filter, setFilter] = useState<FilterType>('all');
-  const { hasPermission } = usePermission();
-
-  // Early return if no VIEW permission - prevents API calls
-  if (!hasPermission(PermissionCode.NOTIFICATIONS_VIEW)) {
-    return null;
-  }
-
   useEffect(() => {
     fetchNotifications();
   }, [fetchNotifications]);

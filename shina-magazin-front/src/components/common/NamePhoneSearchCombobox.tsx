@@ -69,7 +69,7 @@ function useEntitySearch<T>(
         if (!controller.signal.aborted) {
           setData(results);
         }
-      } catch (err) {
+      } catch {
         if (!controller.signal.aborted) {
           setError('Xatolik yuz berdi');
           setData([]);

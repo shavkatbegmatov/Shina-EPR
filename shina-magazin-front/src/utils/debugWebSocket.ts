@@ -96,9 +96,16 @@ export function debugWebSocket() {
   console.log('%c========================================', 'color: #3b82f6;');
 }
 
+// Extend Window interface for console access
+declare global {
+  interface Window {
+    debugWebSocket: typeof debugWebSocket;
+  }
+}
+
 // Export for console usage
 if (typeof window !== 'undefined') {
-  (window as any).debugWebSocket = debugWebSocket;
+  window.debugWebSocket = debugWebSocket;
   console.log('🔍 WebSocket debug helper loaded!');
   console.log('Run: debugWebSocket()');
 }

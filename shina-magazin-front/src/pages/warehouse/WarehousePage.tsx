@@ -25,7 +25,7 @@ import { ModalPortal } from '../../components/common/Modal';
 import { SearchInput } from '../../components/ui/SearchInput';
 import { ExportButtons } from '../../components/common/ExportButtons';
 import { useNotificationsStore } from '../../store/notificationsStore';
-import { usePermission, PermissionCode } from '../../hooks/usePermission';
+import { PermissionCode } from '../../hooks/usePermission';
 import { PermissionGate } from '../../components/common/PermissionGate';
 import {
   formatNumber,
@@ -78,13 +78,6 @@ export function WarehousePage() {
   const [unitPrice, setUnitPrice] = useState<number>(0);
 
   const { notifications } = useNotificationsStore();
-  const { hasPermission } = usePermission();
-
-  // Early return if no VIEW permission - prevents API calls
-  if (!hasPermission(PermissionCode.WAREHOUSE_VIEW)) {
-    return null;
-  }
-
   const getMovementIcon = (type: MovementType) => {
     switch (type) {
       case 'IN':

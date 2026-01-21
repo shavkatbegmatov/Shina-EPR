@@ -11,7 +11,7 @@ import { DataTable, Column } from '../../components/ui/DataTable';
 import { ModalPortal } from '../../components/common/Modal';
 import { ExportButtons } from '../../components/common/ExportButtons';
 import { useNotificationsStore } from '../../store/notificationsStore';
-import { usePermission, PermissionCode } from '../../hooks/usePermission';
+import { PermissionCode } from '../../hooks/usePermission';
 import { PermissionGate } from '../../components/common/PermissionGate';
 import { useHighlight } from '../../hooks/useHighlight';
 import type { Product, Brand, Category, Season, ProductRequest } from '../../types';
@@ -43,13 +43,7 @@ export function ProductsPage() {
   const [saving, setSaving] = useState(false);
 
   const { notifications } = useNotificationsStore();
-  const { hasPermission } = usePermission();
   const { highlightId, clearHighlight } = useHighlight();
-
-  // Early return if no VIEW permission - prevents API calls
-  if (!hasPermission(PermissionCode.PRODUCTS_VIEW)) {
-    return null;
-  }
 
   const activeFilters = useMemo(() => {
     let count = 0;

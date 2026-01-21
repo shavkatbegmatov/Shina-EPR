@@ -61,10 +61,11 @@ export function useSessionMonitor(options: UseSessionMonitorOptions = {}) {
           navigate('/login', { replace: true });
         }, 1000);
       }
-    } catch (error: any) {
+    } catch (error: unknown) {
       // If 401/403, session is invalid - let axios interceptor handle it
-      if (error?.response?.status === 401 || error?.response?.status === 403) {
-        console.warn(`[Session Monitor] Session validation failed with ${error.response.status}`);
+      const axiosError = error as { response?: { status?: number } };
+      if (axiosError?.response?.status === 401 || axiosError?.response?.status === 403) {
+        console.warn(`[Session Monitor] Session validation failed with ${axiosError.response?.status}`);
         // Axios interceptor will handle logout automatically
       } else {
         // Network error or other issue - log but don't logout

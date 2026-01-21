@@ -11,7 +11,6 @@ import {
   Calendar,
   CreditCard,
   Shield,
-  FileText,
   AlertCircle,
   UserCog,
   Heart,

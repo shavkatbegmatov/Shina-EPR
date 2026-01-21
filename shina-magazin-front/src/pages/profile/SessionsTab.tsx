@@ -46,10 +46,11 @@ export function SessionsTab() {
       }
 
       console.log('[SessionsTab] 🎯 State updated with', data.length, 'sessions');
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('[SessionsTab] ❌ Error fetching sessions:', error);
       // If 401 Unauthorized, the session was revoked from another device
-      if (error?.response?.status === 401) {
+      const axiosError = error as { response?: { status?: number } };
+      if (axiosError?.response?.status === 401) {
         toast.error('Sessioningiz boshqa qurilmadan yopilgan. Qayta kiring.');
         setTimeout(() => {
           logout();
@@ -133,9 +134,10 @@ export function SessionsTab() {
       await sessionsApi.revokeSession(sessionId, 'Foydalanuvchi tomonidan tugatildi');
       toast.success('Session tugatildi');
       fetchSessions();
-    } catch (error: any) {
+    } catch (error: unknown) {
       // If 401, session was already revoked or user logged out
-      if (error?.response?.status === 401) {
+      const axiosError = error as { response?: { status?: number } };
+      if (axiosError?.response?.status === 401) {
         toast.error('Sessioningiz yaroqsiz. Qayta kiring.');
         setTimeout(() => {
           logout();
@@ -157,9 +159,10 @@ export function SessionsTab() {
       const result = await sessionsApi.revokeAllOtherSessions();
       toast.success(`${result.revokedCount} ta session tugatildi`);
       fetchSessions();
-    } catch (error: any) {
+    } catch (error: unknown) {
       // If 401, session was already revoked or user logged out
-      if (error?.response?.status === 401) {
+      const axiosError = error as { response?: { status?: number } };
+      if (axiosError?.response?.status === 401) {
         toast.error('Sessioningiz yaroqsiz. Qayta kiring.');
         setTimeout(() => {
           logout();

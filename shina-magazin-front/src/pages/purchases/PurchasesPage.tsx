@@ -36,7 +36,7 @@ import { CurrencyInput } from '../../components/ui/CurrencyInput';
 import { Select } from '../../components/ui/Select';
 import { useNotificationsStore } from '../../store/notificationsStore';
 import { useHighlight } from '../../hooks/useHighlight';
-import { usePermission, PermissionCode } from '../../hooks/usePermission';
+import { PermissionCode } from '../../hooks/usePermission';
 import { PermissionGate } from '../../components/common/PermissionGate';
 import type {
   Supplier,
@@ -58,13 +58,6 @@ interface CartItem {
 export function PurchasesPage() {
   const navigate = useNavigate();
   const { notifications } = useNotificationsStore();
-  const { hasPermission } = usePermission();
-
-  // Early return if no VIEW permission - prevents API calls
-  if (!hasPermission(PermissionCode.PURCHASES_VIEW)) {
-    return null;
-  }
-
   // Purchases state
   const [purchases, setPurchases] = useState<PurchaseOrder[]>([]);
   const [initialLoading, setInitialLoading] = useState(true);

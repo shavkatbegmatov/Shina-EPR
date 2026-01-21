@@ -111,7 +111,7 @@ export function AuditLogDetailModal({ logId, onClose }: AuditLogDetailModalProps
       setCopiedField(fieldName);
       setTimeout(() => setCopiedField(null), 2000);
       toast.success('Nusxalandi');
-    } catch (error) {
+    } catch {
       toast.error('Nusxalashda xatolik');
     }
   };

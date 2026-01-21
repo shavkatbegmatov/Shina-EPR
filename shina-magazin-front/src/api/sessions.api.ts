@@ -26,9 +26,10 @@ class SessionsApi {
         `${this.BASE_URL}/validate`
       );
       return response.data.data.valid;
-    } catch (error: any) {
+    } catch (error: unknown) {
       // If 401, session is invalid
-      if (error?.response?.status === 401) {
+      const axiosError = error as { response?: { status?: number } };
+      if (axiosError?.response?.status === 401) {
         return false;
       }
       throw error;

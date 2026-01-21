@@ -43,7 +43,7 @@ import {
 import { DateRangePicker, type DateRangePreset, type DateRange } from '../../components/common/DateRangePicker';
 import type { SalesReport, WarehouseReport, DebtsReport } from '../../types';
 import { useNotificationsStore } from '../../store/notificationsStore';
-import { usePermission, PermissionCode } from '../../hooks/usePermission';
+import { PermissionCode } from '../../hooks/usePermission';
 import { PermissionGate } from '../../components/common/PermissionGate';
 
 type ReportTab = 'sales' | 'warehouse' | 'debts';
@@ -60,12 +60,6 @@ export function ReportsPage() {
   const [dateRangePreset, setDateRangePreset] = useState<DateRangePreset>('month');
   const [customRange, setCustomRange] = useState<DateRange>({ start: '', end: '' });
   const { notifications } = useNotificationsStore();
-  const { canViewReports } = usePermission();
-
-  // Early return if no VIEW permission - prevents API calls
-  if (!canViewReports) {
-    return null;
-  }
 
   // Toshkent timezone da sana oralig'ini hisoblash
   const getDateRangeValues = useCallback((preset: DateRangePreset): { start: string; end: string } => {

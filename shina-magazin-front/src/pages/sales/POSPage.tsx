@@ -15,7 +15,6 @@ import { DataTable, Column } from '../../components/ui/DataTable';
 import { ModalPortal } from '../../components/common/Modal';
 import { SearchInput } from '../../components/ui/SearchInput';
 import { CustomerSearchCombobox } from '../../components/common/NamePhoneSearchCombobox';
-import { usePermission, PermissionCode } from '../../hooks/usePermission';
 import type { Product, PaymentMethod, Customer } from '../../types';
 
 export function POSPage() {
@@ -40,13 +39,6 @@ export function POSPage() {
 
   const cart = useCartStore();
   const { notifications } = useNotificationsStore();
-  const { hasPermission } = usePermission();
-
-  // Early return if no CREATE permission - prevents API calls
-  if (!hasPermission(PermissionCode.SALES_CREATE)) {
-    return null;
-  }
-
   const loadProducts = useCallback(async () => {
     try {
       const data = await productsApi.getAll({

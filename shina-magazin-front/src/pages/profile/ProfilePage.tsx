@@ -91,7 +91,7 @@ export function ProfilePage() {
         ]);
         setUserData(userData);
         setRoles(rolesData);
-      } catch (error) {
+      } catch {
         toast.error("Ma'lumotlarni yuklashda xatolik");
       } finally {
         setLoading(false);

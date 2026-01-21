@@ -263,7 +263,7 @@ export const useNotificationsStore = create<NotificationsState>((set, get) => ({
             // Another device logged out - show toast notification
             console.log('[Session] Current session is still valid - another device logged out');
             toast('Sessiya ro\'yxati yangilandi', { icon: '🔄' });
-          } catch (error: any) {
+          } catch (error: unknown) {
             console.error('[Session] Error validating session:', error);
           }
         }

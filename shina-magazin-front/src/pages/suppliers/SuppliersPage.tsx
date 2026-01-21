@@ -28,7 +28,7 @@ import { ModalPortal } from '../../components/common/Modal';
 import { PhoneInput } from '../../components/ui/PhoneInput';
 import { Select } from '../../components/ui/Select';
 import { useNotificationsStore } from '../../store/notificationsStore';
-import { usePermission, PermissionCode } from '../../hooks/usePermission';
+import { PermissionCode } from '../../hooks/usePermission';
 import { PermissionGate } from '../../components/common/PermissionGate';
 import { useHighlight } from '../../hooks/useHighlight';
 import type {
@@ -114,13 +114,7 @@ export function SuppliersPage() {
   const [allSuppliers, setAllSuppliers] = useState<Supplier[]>([]);
 
   const { notifications } = useNotificationsStore();
-  const { hasPermission } = usePermission();
   const { highlightId, clearHighlight } = useHighlight();
-
-  // Early return if no VIEW permission - prevents API calls
-  if (!hasPermission(PermissionCode.SUPPLIERS_VIEW)) {
-    return null;
-  }
 
   const hasSearch = useMemo(() => search.trim().length > 0, [search]);
 

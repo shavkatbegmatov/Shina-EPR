@@ -28,7 +28,7 @@ import { ExportButtons } from '../../components/common/ExportButtons';
 import type { Debt, DebtStatus, Payment, PaymentMethod } from '../../types';
 import { useNotificationsStore } from '../../store/notificationsStore';
 import { useHighlight } from '../../hooks/useHighlight';
-import { usePermission, PermissionCode } from '../../hooks/usePermission';
+import { PermissionCode } from '../../hooks/usePermission';
 import { PermissionGate } from '../../components/common/PermissionGate';
 
 type TabType = 'all' | 'by-customer' | 'overdue' | 'stats';
@@ -76,13 +76,6 @@ export function DebtsPage() {
   const [, setTotalActiveDebt] = useState(0);
 
   const { highlightId, clearHighlight } = useHighlight();
-  const { hasPermission } = usePermission();
-
-  // Early return if no VIEW permission - prevents API calls
-  if (!hasPermission(PermissionCode.DEBTS_VIEW)) {
-    return null;
-  }
-
   // Tabs configuration
   const tabs = [
     { id: 'all' as TabType, label: 'Umumiy ro\'yxat', icon: List },

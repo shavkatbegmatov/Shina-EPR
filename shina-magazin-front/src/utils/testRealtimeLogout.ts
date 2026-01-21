@@ -137,9 +137,16 @@ export async function testRealtimeLogout() {
   }
 }
 
+// Extend Window interface for console access
+declare global {
+  interface Window {
+    testRealtimeLogout: typeof testRealtimeLogout;
+  }
+}
+
 // Export for console usage
 if (typeof window !== 'undefined') {
-  (window as any).testRealtimeLogout = testRealtimeLogout;
+  window.testRealtimeLogout = testRealtimeLogout;
   console.log('🧪 Real-time logout test loaded!');
   console.log('Run: testRealtimeLogout()');
 }

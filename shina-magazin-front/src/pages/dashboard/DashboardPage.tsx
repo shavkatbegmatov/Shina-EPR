@@ -36,7 +36,6 @@ import { dashboardApi } from '../../api/dashboard.api';
 import { formatCurrency, formatNumber } from '../../config/constants';
 import type { DashboardStats, ChartData } from '../../types';
 import { useNotificationsStore } from '../../store/notificationsStore';
-import { usePermission, PermissionCode } from '../../hooks/usePermission';
 
 // Professional rang palitrasi
 const COLORS = {
@@ -170,13 +169,26 @@ function ChartCard({
   );
 }
 
+// Recharts tooltip types
+interface TooltipPayloadEntry {
+  name: string;
+  value: number;
+  color: string;
+}
+
+interface CustomTooltipProps {
+  active?: boolean;
+  payload?: TooltipPayloadEntry[];
+  label?: string;
+}
+
 // Custom Tooltip
-const CustomTooltip = ({ active, payload, label }: any) => {
+const CustomTooltip = ({ active, payload, label }: CustomTooltipProps) => {
   if (active && payload && payload.length) {
     return (
       <div className="rounded-xl border border-base-200 bg-base-100 p-3 shadow-lg">
         <p className="mb-2 font-medium">{label}</p>
-        {payload.map((entry: any, index: number) => (
+        {payload.map((entry: TooltipPayloadEntry, index: number) => (
           <p key={index} className="text-sm" style={{ color: entry.color }}>
             {entry.name}: {entry.name.includes('Daromad') ? formatCurrency(entry.value) : entry.value}
           </p>
@@ -194,13 +206,6 @@ export function DashboardPage() {
   const [refreshing, setRefreshing] = useState(false);
   const [period, setPeriod] = useState<7 | 30>(30);
   const { notifications } = useNotificationsStore();
-  const { hasPermission } = usePermission();
-
-  // Early return if no VIEW permission - prevents API calls
-  if (!hasPermission(PermissionCode.DASHBOARD_VIEW)) {
-    return null;
-  }
-
   const loadData = useCallback(async (isInitial = false) => {
     try {
       if (!isInitial) {
