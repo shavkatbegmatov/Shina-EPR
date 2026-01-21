@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { X, Copy, ExternalLink, Loader2, Check, FileEdit, Code, Info } from 'lucide-react';
+import { X, Copy, ExternalLink, Loader2, Check, FileEdit, Code, Info, User } from 'lucide-react';
 import { format } from 'date-fns';
 import { uz } from 'date-fns/locale';
 import toast from 'react-hot-toast';
@@ -412,16 +412,32 @@ export function AuditLogDetailModal({ logId, onClose }: AuditLogDetailModalProps
                 </div>
               )}
 
-              {detail.entityLink && (
-                <div className="pt-4">
-                  <a
-                    href={detail.entityLink}
-                    className="btn btn-primary w-full sm:w-auto min-h-[44px] sm:min-h-0 gap-2"
-                    onClick={onClose}
-                  >
-                    <ExternalLink className="h-5 w-5 sm:h-4 sm:w-4" />
-                    {detail.entityType} yozuviga o'tish
-                  </a>
+              {/* Navigatsiya tugmalari */}
+              {(detail.operatorLink || detail.entityLink) && (
+                <div className="flex flex-wrap gap-2 pt-4">
+                  {/* Operator (xodim) tugmasi */}
+                  {detail.operatorLink && (
+                    <a
+                      href={detail.operatorLink}
+                      className="btn btn-outline w-full sm:w-auto min-h-[44px] sm:min-h-0 gap-2"
+                      onClick={onClose}
+                    >
+                      <User className="h-5 w-5 sm:h-4 sm:w-4" />
+                      {detail.username}
+                    </a>
+                  )}
+
+                  {/* Obyekt tugmasi */}
+                  {detail.entityLink && (
+                    <a
+                      href={detail.entityLink}
+                      className="btn btn-primary w-full sm:w-auto min-h-[44px] sm:min-h-0 gap-2"
+                      onClick={onClose}
+                    >
+                      <ExternalLink className="h-5 w-5 sm:h-4 sm:w-4" />
+                      {detail.entityType} sahifasi
+                    </a>
+                  )}
                 </div>
               )}
             </div>

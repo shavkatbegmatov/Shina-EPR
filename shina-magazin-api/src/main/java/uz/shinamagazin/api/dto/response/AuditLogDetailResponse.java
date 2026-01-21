@@ -42,6 +42,7 @@ public class AuditLogDetailResponse {
     // Entity metadata
     private String entityName; // Friendly name for display
     private String entityLink; // URL to view entity (if exists)
+    private String operatorLink; // URL to view operator's employee page
 
     /**
      * Individual field change detail

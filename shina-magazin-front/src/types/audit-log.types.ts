@@ -26,6 +26,7 @@ export interface AuditLogDetailResponse {
   // Entity metadata
   entityName?: string;
   entityLink?: string;
+  operatorLink?: string;
 }
 
 /**

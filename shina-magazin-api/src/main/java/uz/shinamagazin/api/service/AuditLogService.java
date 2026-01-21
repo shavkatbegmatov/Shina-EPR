@@ -21,6 +21,7 @@ import uz.shinamagazin.api.entity.AuditLog;
 import uz.shinamagazin.api.entity.User;
 import uz.shinamagazin.api.exception.ResourceNotFoundException;
 import uz.shinamagazin.api.repository.AuditLogRepository;
+import uz.shinamagazin.api.repository.EmployeeRepository;
 import uz.shinamagazin.api.repository.UserRepository;
 
 import java.math.BigDecimal;
@@ -38,6 +39,7 @@ public class AuditLogService {
 
     private final AuditLogRepository auditLogRepository;
     private final UserRepository userRepository;
+    private final EmployeeRepository employeeRepository;
     private final ObjectMapper objectMapper;
     private final FieldLabelService fieldLabelService;
 
@@ -750,6 +752,8 @@ public class AuditLogService {
             auditLog.getEntityId()
         );
 
+        String operatorLink = buildOperatorLink(auditLog.getUserId());
+
         return AuditLogDetailResponse.builder()
             .id(auditLog.getId())
             .entityType(auditLog.getEntityType())
@@ -765,6 +769,7 @@ public class AuditLogService {
             .newValue(auditLog.getNewValue())
             .entityName(getEntityName(auditLog.getEntityType(), auditLog.getEntityId()))
             .entityLink(entityLink)
+            .operatorLink(operatorLink)
             .build();
     }
 
@@ -1107,6 +1112,19 @@ public class AuditLogService {
             case "Category" -> "/settings#categories";
             default -> null;
         };
+    }
+
+    /**
+     * Build operator (employee) navigation link
+     */
+    private String buildOperatorLink(Long userId) {
+        if (userId == null) {
+            return null;
+        }
+
+        return employeeRepository.findByUserId(userId)
+            .map(employee -> "/employees/" + employee.getId())
+            .orElse(null);
     }
 
     /**
