@@ -141,10 +141,10 @@ export function AuditLogExpandableRow({
               e.stopPropagation();
               setShowDetailModal(true);
             }}
-            className="btn btn-ghost btn-sm gap-1.5 text-primary hover:bg-primary/10"
+            className="btn btn-ghost btn-sm h-auto min-h-[2rem] py-1 gap-1.5 text-primary hover:bg-primary/10"
             title="Batafsil ko'rish"
           >
-            <Eye className="h-4 w-4" />
+            <Eye className="h-4 w-4 flex-shrink-0" />
             <span className="hidden lg:inline">Batafsil</span>
           </button>
         </td>
