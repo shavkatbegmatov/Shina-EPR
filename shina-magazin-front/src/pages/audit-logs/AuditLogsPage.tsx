@@ -33,6 +33,7 @@ export function AuditLogsPage() {
 
   // Common state
   const [totalPages, setTotalPages] = useState(0);
+  const [totalElements, setTotalElements] = useState(0);
   const [currentPage, setCurrentPage] = useState(0);
   const [entityTypeFilter, setEntityTypeFilter] = useState<string>('');
   const [actionFilter, setActionFilter] = useState<string>('');
@@ -58,6 +59,7 @@ export function AuditLogsPage() {
         );
         setAuditLogGroups(data.content);
         setTotalPages(data.totalPages);
+        setTotalElements(data.totalElements);
         return data;
       } else {
         const data = await auditLogsApi.searchAuditLogs(
@@ -70,6 +72,7 @@ export function AuditLogsPage() {
         );
         setAuditLogs(data.content);
         setTotalPages(data.totalPages);
+        setTotalElements(data.totalElements);
         return data;
       }
     },
@@ -415,24 +418,31 @@ export function AuditLogsPage() {
 
       {/* Pagination */}
       {totalPages > 1 && (
-        <div className="flex justify-center items-center gap-3 sm:gap-4">
-          <button
-            className="btn btn-md sm:btn-sm min-h-[44px] sm:min-h-0"
-            onClick={() => setCurrentPage((prev) => Math.max(0, prev - 1))}
-            disabled={currentPage === 0 || refreshing}
-          >
-            Oldingi
-          </button>
-          <span className="flex items-center px-3 sm:px-4 text-base sm:text-sm font-medium">
-            {currentPage + 1} / {totalPages}
+        <div className="flex flex-col items-center gap-2">
+          <div className="flex justify-center items-center gap-3 sm:gap-4">
+            <button
+              className="btn btn-md sm:btn-sm min-h-[44px] sm:min-h-0"
+              onClick={() => setCurrentPage((prev) => Math.max(0, prev - 1))}
+              disabled={currentPage === 0 || refreshing}
+            >
+              Oldingi
+            </button>
+            <span className="flex items-center px-3 sm:px-4 text-base sm:text-sm font-medium">
+              {currentPage + 1} / {totalPages}
+            </span>
+            <button
+              className="btn btn-md sm:btn-sm min-h-[44px] sm:min-h-0"
+              onClick={() => setCurrentPage((prev) => Math.min(totalPages - 1, prev + 1))}
+              disabled={currentPage >= totalPages - 1 || refreshing}
+            >
+              Keyingi
+            </button>
+          </div>
+          <span className="text-xs text-base-content/50">
+            {viewMode === 'grouped'
+              ? `Jami ${totalElements} ta guruh, sahifada ${auditLogGroups.length} ta`
+              : `Jami ${totalElements} ta log, sahifada ${auditLogs.length} ta`}
           </span>
-          <button
-            className="btn btn-md sm:btn-sm min-h-[44px] sm:min-h-0"
-            onClick={() => setCurrentPage((prev) => Math.min(totalPages - 1, prev + 1))}
-            disabled={currentPage >= totalPages - 1 || refreshing}
-          >
-            Keyingi
-          </button>
         </div>
       )}
     </div>
