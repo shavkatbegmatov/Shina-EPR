@@ -266,6 +266,7 @@ public class AuditLogService {
     /**
      * Get grouped audit logs.
      * Groups by correlationId when available, otherwise by time window + userId.
+     * Uses database-level grouping for efficient pagination of large datasets.
      */
     public Page<AuditLogGroupResponse> searchGroupedAuditLogs(
             String entityType,
@@ -276,32 +277,104 @@ public class AuditLogService {
     ) {
         String trimmedSearch = (search == null || search.trim().isEmpty()) ? null : search.trim();
 
-        // First, get total count of distinct correlation groups + ungrouped logs for accurate pagination
-        // For simplicity, we'll fetch all logs and group them, then paginate
-        // This is acceptable for audit logs as they're typically not huge datasets per filter
-
-        // Fetch enough logs to build groups - we need to fetch all to get accurate grouping
-        // Use a large page size to get all relevant logs
-        int maxFetchSize = 2000; // Reasonable limit
-        Pageable fetchPageable = org.springframework.data.domain.PageRequest.of(0, maxFetchSize, pageable.getSort());
-
-        List<AuditLog> allLogs;
-        long totalRawLogs;
-
-        if (trimmedSearch == null) {
-            Page<AuditLog> page = auditLogRepository.filterAuditLogs(entityType, action, userId, fetchPageable);
-            allLogs = page.getContent();
-            totalRawLogs = page.getTotalElements();
-        } else {
-            Page<AuditLog> page = auditLogRepository.searchAuditLogs(entityType, action, userId, trimmedSearch, fetchPageable);
-            allLogs = page.getContent();
-            totalRawLogs = page.getTotalElements();
+        // For search queries, fall back to memory-based grouping with reasonable limit
+        if (trimmedSearch != null) {
+            return searchGroupedAuditLogsWithSearch(entityType, action, userId, trimmedSearch, pageable);
         }
 
-        // Group all fetched logs
+        // Step 1: Get all distinct correlation IDs ordered by max timestamp
+        List<Object[]> correlationResults = auditLogRepository.findDistinctCorrelationIds(entityType, action, userId);
+        List<UUID> allCorrelationIds = correlationResults.stream()
+                .map(row -> (UUID) row[0])
+                .toList();
+
+        // Step 2: Get uncorrelated logs and group them by time window
+        // Limit to 5000 for performance, this covers most use cases
+        Pageable uncorrelatedPageable = org.springframework.data.domain.PageRequest.of(0, 5000);
+        List<AuditLog> uncorrelatedLogs = auditLogRepository.findUncorrelatedLogs(entityType, action, userId, uncorrelatedPageable);
+        List<AuditLogGroupResponse> uncorrelatedGroups = groupByTimeWindow(uncorrelatedLogs);
+
+        // Step 3: Combine correlated group count + uncorrelated groups count
+        int totalCorrelatedGroups = allCorrelationIds.size();
+        int totalUncorrelatedGroups = uncorrelatedGroups.size();
+        int totalGroups = totalCorrelatedGroups + totalUncorrelatedGroups;
+
+        // Step 4: Determine which groups are on the current page
+        int pageStart = pageable.getPageNumber() * pageable.getPageSize();
+        int pageEnd = Math.min(pageStart + pageable.getPageSize(), totalGroups);
+
+        if (pageStart >= totalGroups) {
+            return new org.springframework.data.domain.PageImpl<>(
+                    Collections.emptyList(), pageable, totalGroups
+            );
+        }
+
+        List<AuditLogGroupResponse> pageContent = new ArrayList<>();
+
+        // Correlated groups come first (they're usually more recent due to correlation)
+        if (pageStart < totalCorrelatedGroups) {
+            // Need some correlated groups
+            int correlatedStart = pageStart;
+            int correlatedEnd = Math.min(pageEnd, totalCorrelatedGroups);
+
+            List<UUID> pageCorrelationIds = allCorrelationIds.subList(correlatedStart, correlatedEnd);
+
+            if (!pageCorrelationIds.isEmpty()) {
+                List<AuditLog> logsForPage = auditLogRepository.findByCorrelationIdIn(pageCorrelationIds);
+
+                // Group by correlation ID
+                Map<UUID, List<AuditLog>> groupedLogs = logsForPage.stream()
+                        .collect(Collectors.groupingBy(AuditLog::getCorrelationId));
+
+                // Create responses in the same order as pageCorrelationIds
+                for (UUID correlationId : pageCorrelationIds) {
+                    List<AuditLog> groupLogs = groupedLogs.get(correlationId);
+                    if (groupLogs != null && !groupLogs.isEmpty()) {
+                        pageContent.add(createGroupResponse(correlationId, groupLogs));
+                    }
+                }
+            }
+        }
+
+        // Add uncorrelated groups if needed
+        if (pageEnd > totalCorrelatedGroups && !uncorrelatedGroups.isEmpty()) {
+            int uncorrelatedStart = Math.max(0, pageStart - totalCorrelatedGroups);
+            int uncorrelatedEnd = Math.min(pageEnd - totalCorrelatedGroups, totalUncorrelatedGroups);
+
+            if (uncorrelatedStart < uncorrelatedEnd) {
+                pageContent.addAll(uncorrelatedGroups.subList(uncorrelatedStart, uncorrelatedEnd));
+            }
+        }
+
+        // Sort combined results by timestamp descending
+        pageContent.sort((a, b) -> b.getTimestamp().compareTo(a.getTimestamp()));
+
+        return new org.springframework.data.domain.PageImpl<>(
+                pageContent,
+                pageable,
+                totalGroups
+        );
+    }
+
+    /**
+     * Fallback method for search queries - uses memory-based grouping
+     */
+    private Page<AuditLogGroupResponse> searchGroupedAuditLogsWithSearch(
+            String entityType,
+            String action,
+            Long userId,
+            String search,
+            Pageable pageable
+    ) {
+        // For search, use memory-based grouping with limit
+        int maxFetchSize = 5000;
+        Pageable fetchPageable = org.springframework.data.domain.PageRequest.of(0, maxFetchSize, pageable.getSort());
+
+        Page<AuditLog> page = auditLogRepository.searchAuditLogs(entityType, action, userId, search, fetchPageable);
+        List<AuditLog> allLogs = page.getContent();
+
         List<AuditLogGroupResponse> allGroups = groupAuditLogs(allLogs);
 
-        // Calculate actual pagination on groups
         int totalGroups = allGroups.size();
         int start = pageable.getPageNumber() * pageable.getPageSize();
         int end = Math.min(start + pageable.getPageSize(), totalGroups);
@@ -310,17 +383,10 @@ public class AuditLogService {
                 ? allGroups.subList(start, end)
                 : Collections.emptyList();
 
-        // If we hit the fetch limit, estimate remaining groups
-        long estimatedTotalGroups = totalGroups;
-        if (totalRawLogs > maxFetchSize && totalGroups > 0) {
-            double avgLogsPerGroup = (double) allLogs.size() / totalGroups;
-            estimatedTotalGroups = (long) Math.ceil(totalRawLogs / avgLogsPerGroup);
-        }
-
         return new org.springframework.data.domain.PageImpl<>(
                 pageContent,
                 pageable,
-                estimatedTotalGroups
+                totalGroups
         );
     }
 

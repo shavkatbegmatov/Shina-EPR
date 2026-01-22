@@ -83,4 +83,87 @@ public interface AuditLogRepository extends JpaRepository<AuditLog, Long> {
     List<String> findAllActions();
 
     void deleteByCreatedAtBefore(LocalDateTime date);
+
+    // ==================== GROUPED PAGINATION QUERIES ====================
+
+    /**
+     * Get distinct correlation IDs with filters, ordered by max created_at desc.
+     * Returns correlation_id and the max timestamp for ordering.
+     */
+    @Query(value = """
+        SELECT correlation_id, MAX(created_at) as max_time
+        FROM audit_logs
+        WHERE correlation_id IS NOT NULL
+        AND (:entityType IS NULL OR entity_type = :entityType)
+        AND (:action IS NULL OR action = :action)
+        AND (:userId IS NULL OR user_id = :userId)
+        GROUP BY correlation_id
+        ORDER BY max_time DESC
+        """, nativeQuery = true)
+    List<Object[]> findDistinctCorrelationIds(
+        @Param("entityType") String entityType,
+        @Param("action") String action,
+        @Param("userId") Long userId
+    );
+
+    /**
+     * Count distinct correlation IDs (groups with correlation_id)
+     */
+    @Query(value = """
+        SELECT COUNT(DISTINCT correlation_id)
+        FROM audit_logs
+        WHERE correlation_id IS NOT NULL
+        AND (:entityType IS NULL OR entity_type = :entityType)
+        AND (:action IS NULL OR action = :action)
+        AND (:userId IS NULL OR user_id = :userId)
+        """, nativeQuery = true)
+    long countDistinctCorrelationIds(
+        @Param("entityType") String entityType,
+        @Param("action") String action,
+        @Param("userId") Long userId
+    );
+
+    /**
+     * Get logs by correlation IDs
+     */
+    @Query("""
+        SELECT a FROM AuditLog a
+        WHERE a.correlationId IN :correlationIds
+        ORDER BY a.createdAt DESC
+        """)
+    List<AuditLog> findByCorrelationIdIn(@Param("correlationIds") List<java.util.UUID> correlationIds);
+
+    /**
+     * Get logs without correlation_id (for time-based grouping)
+     */
+    @Query("""
+        SELECT a FROM AuditLog a
+        WHERE a.correlationId IS NULL
+        AND (:entityType IS NULL OR a.entityType = :entityType)
+        AND (:action IS NULL OR a.action = :action)
+        AND (:userId IS NULL OR a.userId = :userId)
+        ORDER BY a.createdAt DESC
+        """)
+    List<AuditLog> findUncorrelatedLogs(
+        @Param("entityType") String entityType,
+        @Param("action") String action,
+        @Param("userId") Long userId,
+        Pageable pageable
+    );
+
+    /**
+     * Count logs without correlation_id
+     */
+    @Query("""
+        SELECT COUNT(a) FROM AuditLog a
+        WHERE a.correlationId IS NULL
+        AND (:entityType IS NULL OR a.entityType = :entityType)
+        AND (:action IS NULL OR a.action = :action)
+        AND (:userId IS NULL OR a.userId = :userId)
+        """)
+    long countUncorrelatedLogs(
+        @Param("entityType") String entityType,
+        @Param("action") String action,
+        @Param("userId") Long userId
+    );
 }
