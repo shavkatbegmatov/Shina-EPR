@@ -274,46 +274,53 @@ public class AuditLogService {
             String search,
             Pageable pageable
     ) {
-        // Fetch more records than requested to account for grouping
-        int fetchSize = pageable.getPageSize() * 5;
-        int fetchPage = pageable.getPageNumber() * pageable.getPageSize() / fetchSize;
-        Pageable fetchPageable = org.springframework.data.domain.PageRequest.of(
-                fetchPage, fetchSize, pageable.getSort()
-        );
-
         String trimmedSearch = (search == null || search.trim().isEmpty()) ? null : search.trim();
 
-        List<AuditLog> auditLogs;
-        long totalElements;
+        // First, get total count of distinct correlation groups + ungrouped logs for accurate pagination
+        // For simplicity, we'll fetch all logs and group them, then paginate
+        // This is acceptable for audit logs as they're typically not huge datasets per filter
+
+        // Fetch enough logs to build groups - we need to fetch all to get accurate grouping
+        // Use a large page size to get all relevant logs
+        int maxFetchSize = 2000; // Reasonable limit
+        Pageable fetchPageable = org.springframework.data.domain.PageRequest.of(0, maxFetchSize, pageable.getSort());
+
+        List<AuditLog> allLogs;
+        long totalRawLogs;
 
         if (trimmedSearch == null) {
             Page<AuditLog> page = auditLogRepository.filterAuditLogs(entityType, action, userId, fetchPageable);
-            auditLogs = page.getContent();
-            totalElements = page.getTotalElements();
+            allLogs = page.getContent();
+            totalRawLogs = page.getTotalElements();
         } else {
             Page<AuditLog> page = auditLogRepository.searchAuditLogs(entityType, action, userId, trimmedSearch, fetchPageable);
-            auditLogs = page.getContent();
-            totalElements = page.getTotalElements();
+            allLogs = page.getContent();
+            totalRawLogs = page.getTotalElements();
         }
 
-        // Group the logs
-        List<AuditLogGroupResponse> groups = groupAuditLogs(auditLogs);
+        // Group all fetched logs
+        List<AuditLogGroupResponse> allGroups = groupAuditLogs(allLogs);
 
-        // Apply pagination to groups
-        int start = (pageable.getPageNumber() * pageable.getPageSize()) % fetchSize;
-        int end = Math.min(start + pageable.getPageSize(), groups.size());
+        // Calculate actual pagination on groups
+        int totalGroups = allGroups.size();
+        int start = pageable.getPageNumber() * pageable.getPageSize();
+        int end = Math.min(start + pageable.getPageSize(), totalGroups);
 
-        List<AuditLogGroupResponse> pageContent = start < groups.size()
-                ? groups.subList(start, end)
+        List<AuditLogGroupResponse> pageContent = (start < totalGroups)
+                ? allGroups.subList(start, end)
                 : Collections.emptyList();
 
-        // Estimate total groups (roughly totalElements / average group size)
-        long estimatedTotalGroups = groups.isEmpty() ? 0 : totalElements / Math.max(1, auditLogs.size() / groups.size());
+        // If we hit the fetch limit, estimate remaining groups
+        long estimatedTotalGroups = totalGroups;
+        if (totalRawLogs > maxFetchSize && totalGroups > 0) {
+            double avgLogsPerGroup = (double) allLogs.size() / totalGroups;
+            estimatedTotalGroups = (long) Math.ceil(totalRawLogs / avgLogsPerGroup);
+        }
 
         return new org.springframework.data.domain.PageImpl<>(
                 pageContent,
                 pageable,
-                Math.max(estimatedTotalGroups, groups.size())
+                estimatedTotalGroups
         );
     }
 
