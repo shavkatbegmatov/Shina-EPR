@@ -384,9 +384,9 @@ export function AuditLogGroupRow({ group }: AuditLogGroupRowProps) {
             <ChevronRight className="h-5 w-5 text-base-content/60" />
           )}
         </td>
-        <td className="px-4 py-3">
-          <div className="font-medium text-sm">{group.primaryAction}</div>
-          <div className="text-xs text-base-content/60 mt-0.5">{group.summary}</div>
+        <td className="px-4 py-3 max-w-[280px]">
+          <div className="font-medium text-sm truncate" title={group.primaryAction}>{group.primaryAction}</div>
+          <div className="text-xs text-base-content/60 mt-0.5 truncate" title={group.summary}>{group.summary}</div>
         </td>
         <td className="px-4 py-3">
           <div className="flex flex-wrap gap-1">

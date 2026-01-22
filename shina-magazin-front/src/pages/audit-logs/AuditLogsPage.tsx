@@ -313,7 +313,7 @@ export function AuditLogsPage() {
                     <thead className="bg-base-200">
                       <tr>
                         <th className="w-12"></th>
-                        <th className="text-left">Operatsiya</th>
+                        <th className="text-left max-w-[280px]">Operatsiya</th>
                         <th className="text-left">Obyektlar</th>
                         <th className="text-left">Loglar</th>
                         <th className="text-left">Vaqt</th>
