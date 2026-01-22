@@ -1,4 +1,37 @@
 /**
+ * Operation types for grouped audit logs
+ */
+export type AuditOperationType =
+  | 'DEBT_PAYMENT'
+  | 'SALE_CREATE'
+  | 'GENERIC';
+
+/**
+ * Individual detail item for group detail modal
+ */
+export interface GroupDetailItem {
+  label: string;
+  value: string;
+  oldValue?: string;
+  icon?: string;
+  link?: string;
+  changeType?: 'ADDED' | 'MODIFIED' | 'REMOVED';
+}
+
+/**
+ * Audit log group detail for modal display
+ */
+export interface AuditLogGroupDetail {
+  operationType: AuditOperationType;
+  operationLabel: string;
+  timestamp: string;
+  operatorUsername: string;
+  operatorLink?: string;
+  details: GroupDetailItem[];
+  logs: import('./index').AuditLog[];
+}
+
+/**
  * Detailed audit log response with parsed field changes and device info
  */
 export interface AuditLogDetailResponse {

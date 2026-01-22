@@ -10,11 +10,14 @@ import {
   Layers,
   User,
   Globe,
+  FileSearch,
 } from 'lucide-react';
 import { formatDistanceToNow } from 'date-fns';
 import { uz } from 'date-fns/locale';
 import type { AuditLogGroup, AuditLog } from '../../types';
 import { AuditLogDetailModal } from './AuditLogDetailModal';
+import { AuditLogGroupDetailModal } from './AuditLogGroupDetailModal';
+import { extractGroupDetail } from '../../utils/audit-log-extractors';
 
 interface AuditLogGroupCardProps {
   group: AuditLogGroup;
@@ -24,6 +27,7 @@ export function AuditLogGroupCard({ group }: AuditLogGroupCardProps) {
   const [isExpanded, setIsExpanded] = useState(false);
   const [showDetailModal, setShowDetailModal] = useState(false);
   const [selectedLogId, setSelectedLogId] = useState<number | null>(null);
+  const [showGroupDetailModal, setShowGroupDetailModal] = useState(false);
 
   const formatTimestamp = (dateString: string): string => {
     return formatDistanceToNow(new Date(dateString), {
@@ -199,13 +203,26 @@ export function AuditLogGroupCard({ group }: AuditLogGroupCardProps) {
                 )}
               </div>
 
-              {/* Entity type badges */}
-              <div className="flex flex-wrap gap-1.5 mt-2">
-                {group.entityTypes.map((entityType) => (
-                  <span key={entityType} className="badge badge-sm badge-outline">
-                    {getEntityTypeLabel(entityType)}
-                  </span>
-                ))}
+              {/* Entity type badges and action button */}
+              <div className="flex items-center justify-between gap-3 mt-2">
+                <div className="flex flex-wrap gap-1.5">
+                  {group.entityTypes.map((entityType) => (
+                    <span key={entityType} className="badge badge-sm badge-outline">
+                      {getEntityTypeLabel(entityType)}
+                    </span>
+                  ))}
+                </div>
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setShowGroupDetailModal(true);
+                  }}
+                  className="btn btn-ghost btn-sm h-auto min-h-[2rem] py-1 gap-1.5 text-primary hover:bg-primary/10 flex-shrink-0"
+                  title="Guruh batafsil"
+                >
+                  <FileSearch className="h-4 w-4 flex-shrink-0" />
+                  Batafsil
+                </button>
               </div>
             </div>
           </div>
@@ -239,6 +256,17 @@ export function AuditLogGroupCard({ group }: AuditLogGroupCardProps) {
           document.body
         )
       )}
+
+      {/* Group Detail Modal */}
+      {showGroupDetailModal && (
+        createPortal(
+          <AuditLogGroupDetailModal
+            detail={extractGroupDetail(group)}
+            onClose={() => setShowGroupDetailModal(false)}
+          />,
+          document.body
+        )
+      )}
     </>
   );
 }
@@ -252,6 +280,7 @@ export function AuditLogGroupRow({ group }: AuditLogGroupRowProps) {
   const [isExpanded, setIsExpanded] = useState(false);
   const [showDetailModal, setShowDetailModal] = useState(false);
   const [selectedLogId, setSelectedLogId] = useState<number | null>(null);
+  const [showGroupDetailModal, setShowGroupDetailModal] = useState(false);
 
   const formatTimestamp = (dateString: string): string => {
     return formatDistanceToNow(new Date(dateString), {
@@ -381,12 +410,25 @@ export function AuditLogGroupRow({ group }: AuditLogGroupRowProps) {
         <td className="px-4 py-3 text-xs text-base-content/60">
           {group.logs[0]?.ipAddress || '-'}
         </td>
+        <td className="px-4 py-3 text-right">
+          <button
+            onClick={(e) => {
+              e.stopPropagation();
+              setShowGroupDetailModal(true);
+            }}
+            className="btn btn-ghost btn-sm h-auto min-h-[2rem] py-1 gap-1.5 text-primary hover:bg-primary/10"
+            title="Guruh batafsil"
+          >
+            <FileSearch className="h-4 w-4 flex-shrink-0" />
+            Batafsil
+          </button>
+        </td>
       </tr>
 
       {/* Expanded content */}
       {isExpanded && (
         <tr>
-          <td colSpan={7} className="px-4 py-4 bg-base-200/30">
+          <td colSpan={8} className="px-4 py-4 bg-base-200/30">
             <div className="bg-base-100 rounded-lg shadow-sm overflow-hidden">
               <div className="px-4 py-2 bg-base-200/50 border-b border-base-300">
                 <h4 className="font-medium text-sm">Guruhdagi loglar ({group.logCount})</h4>
@@ -445,6 +487,17 @@ export function AuditLogGroupRow({ group }: AuditLogGroupRowProps) {
               setShowDetailModal(false);
               setSelectedLogId(null);
             }}
+          />,
+          document.body
+        )
+      )}
+
+      {/* Group Detail Modal */}
+      {showGroupDetailModal && (
+        createPortal(
+          <AuditLogGroupDetailModal
+            detail={extractGroupDetail(group)}
+            onClose={() => setShowGroupDetailModal(false)}
           />,
           document.body
         )

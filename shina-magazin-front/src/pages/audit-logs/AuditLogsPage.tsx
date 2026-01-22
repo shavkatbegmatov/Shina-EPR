@@ -319,6 +319,7 @@ export function AuditLogsPage() {
                         <th className="text-left">Vaqt</th>
                         <th className="text-left">Foydalanuvchi</th>
                         <th className="text-left">IP Manzil</th>
+                        <th className="text-right w-28"></th>
                       </tr>
                     </thead>
                     <tbody>
