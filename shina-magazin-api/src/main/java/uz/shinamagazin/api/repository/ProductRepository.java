@@ -29,12 +29,14 @@ public interface ProductRepository extends JpaRepository<Product, Long> {
             "LOWER(p.brand.name) LIKE LOWER(CONCAT('%', :search, '%')))")
     Page<Product> searchProducts(@Param("search") String search, Pageable pageable);
 
-    @Query("SELECT p FROM Product p WHERE p.active = true AND " +
-            "(:brandId IS NULL OR p.brand.id = :brandId) AND " +
-            "(:categoryId IS NULL OR p.category.id = :categoryId) AND " +
-            "(:season IS NULL OR p.season = :season) AND " +
-            "(:search IS NULL OR LOWER(p.name) LIKE LOWER(CONCAT('%', :search, '%')) OR " +
-            "LOWER(p.sku) LIKE LOWER(CONCAT('%', :search, '%')))")
+    @Query("SELECT p FROM Product p " +
+            "LEFT JOIN p.brand b " +
+            "LEFT JOIN p.category c " +
+            "WHERE p.active = true " +
+            "AND (:brandId IS NULL OR b.id = :brandId) " +
+            "AND (:categoryId IS NULL OR c.id = :categoryId) " +
+            "AND (:season IS NULL OR p.season = :season) " +
+            "AND (:search IS NULL OR :search = '' OR LOWER(p.name) LIKE LOWER(CONCAT('%', :search, '%')) OR LOWER(p.sku) LIKE LOWER(CONCAT('%', :search, '%')))")
     Page<Product> findWithFilters(
             @Param("brandId") Long brandId,
             @Param("categoryId") Long categoryId,

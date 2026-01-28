@@ -1,0 +1,936 @@
+import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
+import {
+  Plus,
+  ShoppingCart,
+  Calendar,
+  TrendingUp,
+  Wallet,
+  Package,
+  Truck,
+  X,
+  Trash2,
+  RefreshCw,
+  RotateCcw,
+  FileText,
+  Hash,
+} from 'lucide-react';
+import clsx from 'clsx';
+import { purchasesApi, type PurchaseFilters } from '../../api/purchases.api';
+import { suppliersApi } from '../../api/suppliers.api';
+import { productsApi } from '../../api/products.api';
+import {
+  formatCurrency,
+  formatDate,
+  getTashkentToday,
+  getDateDaysAgo,
+  getDateMonthsAgo,
+  getDateYearsAgo,
+} from '../../config/constants';
+import { DataTable, Column } from '../../components/ui/DataTable';
+import { ModalPortal } from '../../components/common/Modal';
+import { ExportButtons } from '../../components/common/ExportButtons';
+import { DateRangePicker, type DateRangePreset, type DateRange } from '../../components/common/DateRangePicker';
+import { ProductSearchCombobox } from '../../components/common/ProductSearchCombobox';
+import { CurrencyInput } from '../../components/ui/CurrencyInput';
+import { Select } from '../../components/ui/Select';
+import { useNotificationsStore } from '../../store/notificationsStore';
+import { useHighlight } from '../../hooks/useHighlight';
+import { PermissionCode } from '../../hooks/usePermission';
+import { PermissionGate } from '../../components/common/PermissionGate';
+import type {
+  Supplier,
+  PurchaseOrder,
+  PurchaseStats,
+  PurchaseRequest,
+  PurchaseItemRequest,
+  Product,
+  PurchaseStatus,
+  PaymentStatus,
+} from '../../types';
+
+interface CartItem {
+  product: Product;
+  quantity: number;
+  unitPrice: number;
+}
+
+export function PurchasesPage() {
+  const navigate = useNavigate();
+  const { notifications } = useNotificationsStore();
+  // Purchases state
+  const [purchases, setPurchases] = useState<PurchaseOrder[]>([]);
+  const [initialLoading, setInitialLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
+  const [page, setPage] = useState(0);
+  const [pageSize, setPageSize] = useState(20);
+  const [totalPages, setTotalPages] = useState(0);
+  const [totalElements, setTotalElements] = useState(0);
+  const [purchaseStats, setPurchaseStats] = useState<PurchaseStats | null>(null);
+
+  // Filter state
+  const [dateRangePreset, setDateRangePreset] = useState<DateRangePreset>('all');
+  const [customRange, setCustomRange] = useState<DateRange>({ start: '', end: '' });
+  const [selectedSupplierId, setSelectedSupplierId] = useState<number | undefined>(undefined);
+  const [selectedStatus, setSelectedStatus] = useState<PurchaseStatus | ''>('');
+  const [selectedPaymentStatus, setSelectedPaymentStatus] = useState<PaymentStatus | ''>('');
+
+  // Suppliers for filter dropdown
+  const [suppliers, setSuppliers] = useState<Supplier[]>([]);
+
+  // Purchase modal state
+  const [showPurchaseModal, setShowPurchaseModal] = useState(false);
+  const [purchaseSaving, setPurchaseSaving] = useState(false);
+  const [selectedSupplier, setSelectedSupplier] = useState<Supplier | null>(null);
+  const [purchaseDate, setPurchaseDate] = useState(getTashkentToday());
+  const [cartItems, setCartItems] = useState<CartItem[]>([]);
+  const [paidAmount, setPaidAmount] = useState<number>(0);
+  const [purchaseNotes, setPurchaseNotes] = useState('');
+
+  // Product search
+  const [productSearch, setProductSearch] = useState('');
+  const [productResults, setProductResults] = useState<Product[]>([]);
+  const [productSearchLoading, setProductSearchLoading] = useState(false);
+
+  // Calculate cart totals
+  const cartTotal = useMemo(() =>
+    cartItems.reduce((sum, item) => sum + (item.quantity * item.unitPrice), 0),
+    [cartItems]
+  );
+  const cartTotalQuantity = useMemo(() =>
+    cartItems.reduce((sum, item) => sum + item.quantity, 0),
+    [cartItems]
+  );
+  const debtAmount = useMemo(() => Math.max(0, cartTotal - paidAmount), [cartTotal, paidAmount]);
+
+  const { highlightId, clearHighlight } = useHighlight();
+
+  // Toshkent timezone da sana oralig'ini hisoblash
+  const getDateRangeValues = useCallback((preset: DateRangePreset): { start: string; end: string } | null => {
+    if (preset === 'all') {
+      return null; // Barcha vaqt uchun - sana filtri yo'q
+    }
+
+    const end = getTashkentToday();
+
+    switch (preset) {
+      case 'today':
+        return { start: end, end };
+      case 'week':
+        return { start: getDateDaysAgo(7), end };
+      case 'month':
+        return { start: getDateMonthsAgo(1), end };
+      case 'quarter':
+        return { start: getDateMonthsAgo(3), end };
+      case 'year':
+        return { start: getDateYearsAgo(1), end };
+      case 'custom':
+        if (customRange.start && customRange.end) {
+          return { start: customRange.start, end: customRange.end };
+        }
+        return null;
+      default:
+        return null;
+    }
+  }, [customRange.start, customRange.end]);
+
+  // Load purchases
+  const loadPurchases = useCallback(async (isInitial = false) => {
+    if (!isInitial) {
+      setRefreshing(true);
+    }
+    try {
+      const dateRange = getDateRangeValues(dateRangePreset);
+
+      const filters: PurchaseFilters = {
+        page,
+        size: pageSize,
+        supplierId: selectedSupplierId,
+        status: selectedStatus || undefined,
+        startDate: dateRange?.start,
+        endDate: dateRange?.end,
+      };
+
+      const data = await purchasesApi.getAll(filters);
+      setPurchases(data.content);
+      setTotalPages(data.totalPages);
+      setTotalElements(data.totalElements);
+    } catch (error) {
+      console.error('Failed to load purchases:', error);
+    } finally {
+      setInitialLoading(false);
+      setRefreshing(false);
+    }
+  }, [page, pageSize, selectedSupplierId, selectedStatus, dateRangePreset, getDateRangeValues]);
+
+  // Load purchase stats
+  const loadPurchaseStats = useCallback(async () => {
+    try {
+      const stats = await purchasesApi.getStats();
+      setPurchaseStats(stats);
+    } catch (error) {
+      console.error('Failed to load purchase stats:', error);
+    }
+  }, []);
+
+  // Load suppliers for filter dropdown
+  const loadSuppliers = useCallback(async () => {
+    try {
+      const data = await suppliersApi.getActive();
+      setSuppliers(data);
+    } catch (error) {
+      console.error('Failed to load suppliers:', error);
+    }
+  }, []);
+
+  // Search products
+  const searchProducts = useCallback(async (query: string) => {
+    if (!query.trim()) {
+      setProductResults([]);
+      return;
+    }
+    setProductSearchLoading(true);
+    try {
+      const data = await productsApi.getAll({ search: query, size: 10 });
+      setProductResults(data.content);
+    } catch (error) {
+      console.error('Failed to search products:', error);
+    } finally {
+      setProductSearchLoading(false);
+    }
+  }, []);
+
+  // Debounced product search
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      searchProducts(productSearch);
+    }, 300);
+    return () => clearTimeout(timer);
+  }, [productSearch, searchProducts]);
+
+  // Initial load
+  useEffect(() => {
+    loadPurchases(true);
+    void loadPurchaseStats();
+    void loadSuppliers();
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  // Reload when filters change
+  useEffect(() => {
+    if (dateRangePreset !== 'custom' || (customRange.start && customRange.end)) {
+      void loadPurchases();
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [page, pageSize, selectedSupplierId, selectedStatus, dateRangePreset, customRange.start, customRange.end]);
+
+  // Real-time updates
+  useEffect(() => {
+    if (notifications.length > 0) {
+      void loadPurchases();
+      void loadPurchaseStats();
+    }
+  }, [notifications.length, loadPurchases, loadPurchaseStats]);
+
+  const handlePageSizeChange = (newSize: number) => {
+    setPageSize(newSize);
+    setPage(0);
+  };
+
+  const handleDateRangeChange = (preset: DateRangePreset, range?: DateRange) => {
+    setDateRangePreset(preset);
+    if (range) {
+      setCustomRange(range);
+    }
+    setPage(0);
+  };
+
+  const handleClearFilters = () => {
+    setSelectedSupplierId(undefined);
+    setSelectedStatus('');
+    setSelectedPaymentStatus('');
+    setDateRangePreset('all');
+    setCustomRange({ start: '', end: '' });
+    setPage(0);
+  };
+
+  const hasActiveFilters = useMemo(() =>
+    selectedSupplierId !== undefined ||
+    selectedStatus !== '' ||
+    selectedPaymentStatus !== '' ||
+    dateRangePreset !== 'all',
+    [selectedSupplierId, selectedStatus, selectedPaymentStatus, dateRangePreset]
+  );
+
+  // Export handler
+  const handleExport = async (format: 'excel' | 'pdf') => {
+    const dateRange = getDateRangeValues(dateRangePreset);
+    await purchasesApi.export.exportData(format, {
+      supplierId: selectedSupplierId,
+      status: selectedStatus || undefined,
+      startDate: dateRange?.start,
+      endDate: dateRange?.end,
+    });
+  };
+
+  // Purchase modal handlers
+  const handleOpenPurchaseModal = () => {
+    setSelectedSupplier(null);
+    setPurchaseDate(getTashkentToday());
+    setCartItems([]);
+    setPaidAmount(0);
+    setPurchaseNotes('');
+    setProductSearch('');
+    setProductResults([]);
+    setShowPurchaseModal(true);
+  };
+
+  const handleClosePurchaseModal = () => {
+    setShowPurchaseModal(false);
+    setSelectedSupplier(null);
+    setCartItems([]);
+    setPaidAmount(0);
+    setPurchaseNotes('');
+    setProductSearch('');
+    setProductResults([]);
+  };
+
+  const handleAddToCart = (product: Product) => {
+    const existing = cartItems.find(item => item.product.id === product.id);
+    if (existing) {
+      setCartItems(prev => prev.map(item =>
+        item.product.id === product.id
+          ? { ...item, quantity: item.quantity + 1 }
+          : item
+      ));
+    } else {
+      setCartItems(prev => [...prev, {
+        product,
+        quantity: 1,
+        unitPrice: product.purchasePrice || Math.round(product.sellingPrice * 0.7),
+      }]);
+    }
+    setProductSearch('');
+    setProductResults([]);
+  };
+
+  const handleUpdateCartItem = (productId: number, field: 'quantity' | 'unitPrice', value: number) => {
+    setCartItems(prev => prev.map(item =>
+      item.product.id === productId
+        ? { ...item, [field]: value }
+        : item
+    ));
+  };
+
+  const handleRemoveFromCart = (productId: number) => {
+    setCartItems(prev => prev.filter(item => item.product.id !== productId));
+  };
+
+  const handleSavePurchase = async () => {
+    if (!selectedSupplier || cartItems.length === 0) return;
+
+    setPurchaseSaving(true);
+    try {
+      const items: PurchaseItemRequest[] = cartItems.map(item => ({
+        productId: item.product.id,
+        quantity: item.quantity,
+        unitPrice: item.unitPrice,
+      }));
+
+      const request: PurchaseRequest = {
+        supplierId: selectedSupplier.id,
+        orderDate: purchaseDate,
+        paidAmount,
+        notes: purchaseNotes || undefined,
+        items,
+      };
+
+      await purchasesApi.create(request);
+      handleClosePurchaseModal();
+      void loadPurchases();
+      void loadPurchaseStats();
+    } catch (error) {
+      console.error('Failed to save purchase:', error);
+    } finally {
+      setPurchaseSaving(false);
+    }
+  };
+
+  // Navigate to detail page
+  const handleRowClick = (purchase: PurchaseOrder) => {
+    navigate(`/purchases/${purchase.id}`);
+  };
+
+  // Table columns
+  const columns: Column<PurchaseOrder>[] = useMemo(() => [
+    {
+      key: 'orderNumber',
+      header: 'Raqam',
+      render: (purchase) => (
+        <div className="flex items-center gap-2">
+          <Hash className="h-4 w-4 text-base-content/50" />
+          <span className="font-mono font-medium">{purchase.orderNumber}</span>
+        </div>
+      ),
+    },
+    {
+      key: 'orderDate',
+      header: 'Sana',
+      render: (purchase) => (
+        <div className="flex items-center gap-2">
+          <Calendar className="h-4 w-4 text-base-content/50" />
+          <span>{formatDate(purchase.orderDate)}</span>
+        </div>
+      ),
+    },
+    {
+      key: 'supplierName',
+      header: "Ta'minotchi",
+      render: (purchase) => (
+        <div className="flex items-center gap-2">
+          <Truck className="h-4 w-4 text-base-content/50" />
+          <span className="font-medium">{purchase.supplierName}</span>
+        </div>
+      ),
+    },
+    {
+      key: 'items',
+      header: 'Mahsulotlar',
+      render: (purchase) => (
+        <div className="flex items-center gap-2">
+          <Package className="h-4 w-4 text-base-content/50" />
+          <span>{purchase.itemCount} xil, {purchase.totalQuantity} dona</span>
+        </div>
+      ),
+    },
+    {
+      key: 'totalAmount',
+      header: 'Summa',
+      getValue: (purchase) => purchase.totalAmount,
+      render: (purchase) => (
+        <span className="font-semibold">{formatCurrency(purchase.totalAmount)}</span>
+      ),
+    },
+    {
+      key: 'paidAmount',
+      header: "To'langan",
+      getValue: (purchase) => purchase.paidAmount,
+      render: (purchase) => (
+        <span className="text-success">{formatCurrency(purchase.paidAmount)}</span>
+      ),
+    },
+    {
+      key: 'debtAmount',
+      header: 'Qarz',
+      getValue: (purchase) => purchase.debtAmount,
+      render: (purchase) => (
+        <span className={clsx(
+          'font-medium',
+          purchase.debtAmount > 0 ? 'text-error' : 'text-success'
+        )}>
+          {purchase.debtAmount > 0 ? formatCurrency(purchase.debtAmount) : "To'langan"}
+        </span>
+      ),
+    },
+    {
+      key: 'paymentStatus',
+      header: "To'lov",
+      render: (purchase) => (
+        <span className={clsx(
+          'badge badge-sm',
+          purchase.paymentStatus === 'PAID' && 'badge-success',
+          purchase.paymentStatus === 'PARTIAL' && 'badge-warning',
+          purchase.paymentStatus === 'UNPAID' && 'badge-error'
+        )}>
+          {purchase.paymentStatus === 'PAID' && "To'langan"}
+          {purchase.paymentStatus === 'PARTIAL' && 'Qisman'}
+          {purchase.paymentStatus === 'UNPAID' && "To'lanmagan"}
+        </span>
+      ),
+    },
+    {
+      key: 'status',
+      header: 'Status',
+      render: (purchase) => (
+        <span className={clsx(
+          'badge badge-sm',
+          purchase.status === 'RECEIVED' && 'badge-success',
+          purchase.status === 'DRAFT' && 'badge-warning',
+          purchase.status === 'CANCELLED' && 'badge-error'
+        )}>
+          {purchase.status === 'RECEIVED' && 'Qabul'}
+          {purchase.status === 'DRAFT' && 'Qoralama'}
+          {purchase.status === 'CANCELLED' && 'Bekor'}
+        </span>
+      ),
+    },
+  ], []);
+
+  return (
+    <div className="space-y-6">
+      {/* Header */}
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+        <div>
+          <h1 className="section-title">Xaridlar</h1>
+          <p className="section-subtitle">Ta'minotchilardan mahsulot xaridlari</p>
+        </div>
+        <div className="flex items-center gap-2">
+          <span className="pill">{totalElements} ta xarid</span>
+          <ExportButtons
+            onExportExcel={() => handleExport('excel')}
+            onExportPdf={() => handleExport('pdf')}
+            disabled={purchases.length === 0}
+            loading={refreshing}
+          />
+          <PermissionGate permission={PermissionCode.PURCHASES_CREATE}>
+            <button className="btn btn-primary" onClick={handleOpenPurchaseModal}>
+              <Plus className="h-5 w-5" />
+              Yangi xarid
+            </button>
+          </PermissionGate>
+        </div>
+      </div>
+
+      {/* Stats Cards */}
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-5">
+        <div className="surface-card p-4">
+          <div className="flex items-center gap-3">
+            <div className="rounded-lg bg-primary/10 p-2.5">
+              <ShoppingCart className="h-5 w-5 text-primary" />
+            </div>
+            <div>
+              <p className="text-xs text-base-content/60">Jami xaridlar</p>
+              <p className="text-xl font-bold">{purchaseStats?.totalPurchases || 0}</p>
+            </div>
+          </div>
+        </div>
+
+        <div className="surface-card p-4">
+          <div className="flex items-center gap-3">
+            <div className="rounded-lg bg-info/10 p-2.5">
+              <Calendar className="h-5 w-5 text-info" />
+            </div>
+            <div>
+              <p className="text-xs text-base-content/60">Bugungi</p>
+              <p className="text-xl font-bold">{purchaseStats?.todayPurchases || 0}</p>
+            </div>
+          </div>
+        </div>
+
+        <div className="surface-card p-4">
+          <div className="flex items-center gap-3">
+            <div className="rounded-lg bg-secondary/10 p-2.5">
+              <FileText className="h-5 w-5 text-secondary" />
+            </div>
+            <div>
+              <p className="text-xs text-base-content/60">Oylik</p>
+              <p className="text-xl font-bold">{purchaseStats?.monthPurchases || 0}</p>
+            </div>
+          </div>
+        </div>
+
+        <div className="surface-card p-4">
+          <div className="flex items-center gap-3">
+            <div className="rounded-lg bg-success/10 p-2.5">
+              <TrendingUp className="h-5 w-5 text-success" />
+            </div>
+            <div>
+              <p className="text-xs text-base-content/60">Jami summa</p>
+              <p className="text-lg font-bold">{formatCurrency(purchaseStats?.totalAmount || 0)}</p>
+            </div>
+          </div>
+        </div>
+
+        <div className="surface-card p-4">
+          <div className="flex items-center gap-3">
+            <div className="rounded-lg bg-error/10 p-2.5">
+              <Wallet className="h-5 w-5 text-error" />
+            </div>
+            <div>
+              <p className="text-xs text-base-content/60">Jami qarz</p>
+              <p className="text-lg font-bold text-error">{formatCurrency(purchaseStats?.totalDebt || 0)}</p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Pending Returns Info */}
+      {purchaseStats && purchaseStats.pendingReturns > 0 && (
+        <div className="alert alert-warning">
+          <RotateCcw className="h-5 w-5" />
+          <span>
+            <strong>{purchaseStats.pendingReturns}</strong> ta kutilayotgan qaytarish mavjud
+          </span>
+        </div>
+      )}
+
+      {/* Filters */}
+      <div className="surface-card p-4">
+        <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
+          <div className="flex flex-wrap items-end gap-3">
+            {/* Date Range */}
+            <div>
+              <span className="block mb-1 text-xs font-semibold uppercase tracking-[0.18em] text-base-content/50">
+                Davr
+              </span>
+              <DateRangePicker
+                value={dateRangePreset}
+                customRange={customRange}
+                onChange={handleDateRangeChange}
+              />
+            </div>
+
+            {/* Supplier Filter */}
+            <Select
+              label="Ta'minotchi"
+              value={selectedSupplierId || ''}
+              onChange={(value) => {
+                setSelectedSupplierId(value ? Number(value) : undefined);
+                setPage(0);
+              }}
+              placeholder="Barchasi"
+              options={suppliers.map(supplier => ({
+                value: supplier.id,
+                label: supplier.name,
+              }))}
+              className="w-44"
+            />
+
+            {/* Status Filter */}
+            <Select
+              label="Status"
+              value={selectedStatus}
+              onChange={(value) => {
+                setSelectedStatus(value as PurchaseStatus | '');
+                setPage(0);
+              }}
+              placeholder="Barchasi"
+              options={[
+                { value: 'RECEIVED', label: 'Qabul qilingan' },
+                { value: 'DRAFT', label: 'Qoralama' },
+                { value: 'CANCELLED', label: 'Bekor qilingan' },
+              ]}
+              className="w-36"
+            />
+
+            {/* Payment Status Filter */}
+            <Select
+              label="To'lov"
+              value={selectedPaymentStatus}
+              onChange={(value) => {
+                setSelectedPaymentStatus(value as PaymentStatus | '');
+                setPage(0);
+              }}
+              placeholder="Barchasi"
+              options={[
+                { value: 'PAID', label: "To'langan" },
+                { value: 'PARTIAL', label: 'Qisman' },
+                { value: 'UNPAID', label: "To'lanmagan" },
+              ]}
+              className="w-36"
+            />
+          </div>
+
+          <div className="flex items-center gap-2">
+            {hasActiveFilters && (
+              <button
+                className="btn btn-ghost btn-sm"
+                onClick={handleClearFilters}
+              >
+                <X className="h-4 w-4" />
+                Tozalash
+              </button>
+            )}
+            <button
+              className="btn btn-ghost btn-sm"
+              onClick={() => loadPurchases()}
+            >
+              <RefreshCw className="h-4 w-4" />
+              Yangilash
+            </button>
+          </div>
+        </div>
+      </div>
+
+      {/* Purchases Table */}
+      <div className="relative">
+        {refreshing && (
+          <div className="absolute inset-0 z-10 flex items-center justify-center rounded-xl bg-base-100/60 backdrop-blur-sm">
+            <div className="flex flex-col items-center gap-3">
+              <span className="loading loading-spinner loading-lg text-primary"></span>
+              <span className="text-sm font-medium text-base-content/70">Yangilanmoqda...</span>
+            </div>
+          </div>
+        )}
+        <DataTable
+          data={purchases}
+          columns={columns}
+          keyExtractor={(purchase) => purchase.id}
+          loading={initialLoading && !refreshing}
+          highlightId={highlightId}
+          onHighlightComplete={clearHighlight}
+          emptyIcon={<ShoppingCart className="h-12 w-12" />}
+        emptyTitle="Xaridlar topilmadi"
+        emptyDescription="Yangi xarid qo'shish uchun tugmani bosing"
+        onRowClick={handleRowClick}
+        rowClassName={(purchase) => clsx(
+          'cursor-pointer hover:bg-base-200/50',
+          purchase.debtAmount > 0 && 'bg-error/5'
+        )}
+        currentPage={page}
+        totalPages={totalPages}
+        totalElements={totalElements}
+        pageSize={pageSize}
+        onPageChange={setPage}
+        onPageSizeChange={handlePageSizeChange}
+        renderMobileCard={(purchase) => (
+          <div
+            className="surface-panel flex flex-col gap-3 rounded-xl p-4 cursor-pointer"
+            onClick={() => handleRowClick(purchase)}
+          >
+            <div className="flex items-start justify-between gap-3">
+              <div>
+                <p className="font-mono font-semibold">{purchase.orderNumber}</p>
+                <p className="text-sm font-medium text-base-content/80">{purchase.supplierName}</p>
+                <p className="text-xs text-base-content/60">
+                  {formatDate(purchase.orderDate)}
+                </p>
+              </div>
+              <div className="flex flex-col items-end gap-1">
+                <span className={clsx(
+                  'badge badge-sm',
+                  purchase.status === 'RECEIVED' && 'badge-success',
+                  purchase.status === 'DRAFT' && 'badge-warning',
+                  purchase.status === 'CANCELLED' && 'badge-error'
+                )}>
+                  {purchase.status === 'RECEIVED' && 'Qabul'}
+                  {purchase.status === 'DRAFT' && 'Qoralama'}
+                  {purchase.status === 'CANCELLED' && 'Bekor'}
+                </span>
+                <span className={clsx(
+                  'badge badge-sm',
+                  purchase.paymentStatus === 'PAID' && 'badge-success',
+                  purchase.paymentStatus === 'PARTIAL' && 'badge-warning',
+                  purchase.paymentStatus === 'UNPAID' && 'badge-error'
+                )}>
+                  {purchase.paymentStatus === 'PAID' && "To'langan"}
+                  {purchase.paymentStatus === 'PARTIAL' && 'Qisman'}
+                  {purchase.paymentStatus === 'UNPAID' && "To'lanmagan"}
+                </span>
+              </div>
+            </div>
+
+            <div className="flex items-center gap-2 text-sm text-base-content/70">
+              <Package className="h-4 w-4" />
+              {purchase.itemCount} xil, {purchase.totalQuantity} dona
+            </div>
+
+            <div className="flex items-center justify-between pt-2 border-t border-base-200">
+              <div>
+                <p className="text-sm font-semibold">{formatCurrency(purchase.totalAmount)}</p>
+                {purchase.debtAmount > 0 && (
+                  <p className="text-xs text-error">Qarz: {formatCurrency(purchase.debtAmount)}</p>
+                )}
+              </div>
+            </div>
+          </div>
+        )}
+      />
+      </div>
+
+      {/* Purchase Modal */}
+      <ModalPortal isOpen={showPurchaseModal} onClose={handleClosePurchaseModal}>
+        <div className="w-full max-w-4xl bg-base-100 rounded-2xl shadow-2xl max-h-[90vh] overflow-y-auto">
+          <div className="p-4 sm:p-6">
+            <div className="flex items-start justify-between gap-4">
+              <div>
+                <h3 className="text-xl font-semibold">Yangi xarid</h3>
+                <p className="text-sm text-base-content/60">
+                  Ta'minotchidan mahsulot xarid qilish
+                </p>
+              </div>
+              <button className="btn btn-ghost btn-sm" onClick={handleClosePurchaseModal}>
+                <X className="h-4 w-4" />
+              </button>
+            </div>
+
+            <div className="mt-6 space-y-5">
+              {/* Ta'minotchi va sana */}
+              <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                <Select
+                  label="Ta'minotchi *"
+                  value={selectedSupplier?.id || ''}
+                  onChange={(value) => {
+                    const supplier = suppliers.find(s => s.id === Number(value));
+                    setSelectedSupplier(supplier || null);
+                  }}
+                  placeholder="Ta'minotchini tanlang"
+                  options={suppliers.map(supplier => ({
+                    value: supplier.id,
+                    label: supplier.name,
+                  }))}
+                />
+                <label className="form-control">
+                  <span className="label-text mb-1 text-xs font-semibold uppercase tracking-[0.18em] text-base-content/50">
+                    Sana *
+                  </span>
+                  <input
+                    type="date"
+                    className="input input-bordered w-full"
+                    value={purchaseDate}
+                    onChange={(e) => setPurchaseDate(e.target.value)}
+                  />
+                </label>
+              </div>
+
+              {/* Mahsulotlar */}
+              <div className="surface-soft rounded-xl p-4">
+                <h4 className="text-sm font-semibold uppercase tracking-[0.15em] text-base-content/60 mb-4 flex items-center gap-2">
+                  <Package className="h-4 w-4" />
+                  Mahsulotlar
+                </h4>
+
+                {/* Product search with Portal-based dropdown */}
+                <ProductSearchCombobox
+                  value={productSearch}
+                  onChange={setProductSearch}
+                  onSelect={handleAddToCart}
+                  products={productResults}
+                  isLoading={productSearchLoading}
+                  placeholder="Mahsulot qidirish..."
+                  className="mb-4"
+                />
+
+                {/* Cart items table */}
+                {cartItems.length > 0 ? (
+                  <div className="overflow-x-auto">
+                    <table className="table table-sm">
+                      <thead>
+                        <tr>
+                          <th>Mahsulot</th>
+                          <th className="w-28">Miqdor</th>
+                          <th className="w-36">Narx</th>
+                          <th className="w-32 text-right">Summa</th>
+                          <th className="w-12"></th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {cartItems.map(item => (
+                          <tr key={item.product.id}>
+                            <td>
+                              <div>
+                                <p className="font-medium">{item.product.name}</p>
+                                <p className="text-xs text-base-content/60">{item.product.sku}</p>
+                              </div>
+                            </td>
+                            <td>
+                              <input
+                                type="number"
+                                min={1}
+                                className="input input-bordered input-sm w-full"
+                                value={item.quantity}
+                                onChange={(e) => handleUpdateCartItem(item.product.id, 'quantity', Number(e.target.value) || 1)}
+                              />
+                            </td>
+                            <td>
+                              <CurrencyInput
+                                value={item.unitPrice}
+                                onChange={(val) => handleUpdateCartItem(item.product.id, 'unitPrice', val)}
+                                size="sm"
+                                min={0}
+                              />
+                            </td>
+                            <td className="text-right font-semibold">
+                              {formatCurrency(item.quantity * item.unitPrice)}
+                            </td>
+                            <td>
+                              <button
+                                className="btn btn-ghost btn-sm btn-square text-error"
+                                onClick={() => handleRemoveFromCart(item.product.id)}
+                              >
+                                <Trash2 className="h-4 w-4" />
+                              </button>
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                ) : (
+                  <div className="text-center py-8 text-base-content/50">
+                    <Package className="h-12 w-12 mx-auto mb-2 opacity-50" />
+                    <p>Mahsulot qo'shilmagan</p>
+                  </div>
+                )}
+              </div>
+
+              {/* Summary */}
+              {cartItems.length > 0 && (
+                <div className="surface-soft rounded-xl p-4">
+                  <div className="space-y-3">
+                    <div className="flex justify-between text-sm">
+                      <span className="text-base-content/70">Jami mahsulotlar:</span>
+                      <span className="font-medium">{cartTotalQuantity} dona</span>
+                    </div>
+                    <div className="flex justify-between text-lg font-semibold">
+                      <span>Jami summa:</span>
+                      <span>{formatCurrency(cartTotal)}</span>
+                    </div>
+                    <div className="divider my-2"></div>
+                    <label className="form-control">
+                      <span className="label-text mb-1 text-xs font-semibold uppercase tracking-[0.18em] text-base-content/50">
+                        To'langan summa
+                      </span>
+                      <input
+                        type="number"
+                        min={0}
+                        max={cartTotal}
+                        className="input input-bordered w-full"
+                        value={paidAmount}
+                        onChange={(e) => setPaidAmount(Number(e.target.value) || 0)}
+                      />
+                    </label>
+                    <div className="flex justify-between text-lg">
+                      <span className="text-base-content/70">Qarz:</span>
+                      <span className={clsx('font-semibold', debtAmount > 0 ? 'text-error' : 'text-success')}>
+                        {formatCurrency(debtAmount)}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* Notes */}
+              <label className="form-control">
+                <span className="label-text mb-1 text-xs font-semibold uppercase tracking-[0.18em] text-base-content/50">
+                  Izoh
+                </span>
+                <textarea
+                  className="textarea textarea-bordered w-full"
+                  rows={2}
+                  value={purchaseNotes}
+                  onChange={(e) => setPurchaseNotes(e.target.value)}
+                  placeholder="Qo'shimcha ma'lumot..."
+                />
+              </label>
+            </div>
+
+            <div className="mt-6 flex justify-end gap-2">
+              <button className="btn btn-ghost" onClick={handleClosePurchaseModal} disabled={purchaseSaving}>
+                Bekor qilish
+              </button>
+              <button
+                className="btn btn-primary"
+                onClick={handleSavePurchase}
+                disabled={purchaseSaving || !selectedSupplier || cartItems.length === 0}
+              >
+                {purchaseSaving && <span className="loading loading-spinner loading-sm" />}
+                Saqlash va omborga kirim
+              </button>
+            </div>
+          </div>
+        </div>
+      </ModalPortal>
+    </div>
+  );
+}

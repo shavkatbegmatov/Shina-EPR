@@ -5,7 +5,6 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 import uz.shinamagazin.api.entity.User;
-import uz.shinamagazin.api.enums.Role;
 
 @Data
 @Builder
@@ -17,18 +16,32 @@ public class UserResponse {
     private String fullName;
     private String email;
     private String phone;
-    private Role role;
+    private String role; // Changed from Role enum to String to support custom roles
     private Boolean active;
+    private Boolean mustChangePassword;
 
     public static UserResponse from(User user) {
+        // Get role from new RBAC system (roles collection), fallback to legacy role field
+        String roleCode;
+        if (user.getRoles() != null && !user.getRoles().isEmpty()) {
+            // Use first role from RBAC system
+            roleCode = user.getRoles().iterator().next().getCode();
+        } else if (user.getRole() != null) {
+            // Fallback to legacy role field
+            roleCode = user.getRole().name();
+        } else {
+            roleCode = null;
+        }
+
         return UserResponse.builder()
                 .id(user.getId())
                 .username(user.getUsername())
                 .fullName(user.getFullName())
                 .email(user.getEmail())
                 .phone(user.getPhone())
-                .role(user.getRole())
+                .role(roleCode)
                 .active(user.getActive())
+                .mustChangePassword(user.getMustChangePassword())
                 .build();
     }
 }

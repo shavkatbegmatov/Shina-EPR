@@ -1,5 +1,5 @@
-import { useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { useMemo, useState } from 'react';
+import { Link, Navigate, useLocation, useNavigate } from 'react-router-dom';
 import { useForm } from 'react-hook-form';
 import {
   LogIn,
@@ -18,7 +18,17 @@ export function LoginPage() {
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
-  const { setAuth } = useAuthStore();
+  const location = useLocation();
+  const { setAuth, isAuthenticated } = useAuthStore();
+
+  const redirectTo = useMemo(() => {
+    const from = (location.state as { from?: { pathname?: string; search?: string; hash?: string } } | null)?.from;
+    const path = from?.pathname ? `${from.pathname}${from.search || ''}${from.hash || ''}` : '/';
+    if (path.startsWith('/login') || path.startsWith('/register')) {
+      return '/';
+    }
+    return path;
+  }, [location.state]);
 
   const {
     register,
@@ -30,9 +40,24 @@ export function LoginPage() {
     setLoading(true);
     try {
       const response = await authApi.login(data);
-      setAuth(response.user, response.accessToken, response.refreshToken);
+
+      // Update user object with mustChangePassword flag from response
+      const userWithPasswordFlag = {
+        ...response.user,
+        mustChangePassword: response.requiresPasswordChange || false,
+      };
+
+      setAuth(
+        userWithPasswordFlag,
+        response.accessToken,
+        response.refreshToken,
+        response.permissions,
+        response.roles
+      );
+
       toast.success('Muvaffaqiyatli kirish!');
-      navigate('/');
+      // Navigate to main app - modal will show automatically if mustChangePassword is true
+      navigate(redirectTo, { replace: true });
     } catch (error: unknown) {
       const err = error as { response?: { data?: { message?: string } } };
       toast.error(err.response?.data?.message || 'Kirish xatosi');
@@ -40,6 +65,10 @@ export function LoginPage() {
       setLoading(false);
     }
   };
+
+  if (isAuthenticated) {
+    return <Navigate to={redirectTo} replace />;
+  }
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-primary/15 via-base-100 to-secondary/15 p-4">

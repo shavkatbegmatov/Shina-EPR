@@ -1,0 +1,115 @@
+{
+  "common": {
+    "loading": "Загрузка...",
+    "error": "Произошла ошибка",
+    "retry": "Повторить",
+    "cancel": "Отмена",
+    "save": "Сохранить",
+    "confirm": "Подтвердить",
+    "back": "Назад",
+    "noData": "Данные не найдены",
+    "sum": "сум",
+    "all": "Все"
+  },
+  "auth": {
+    "login": "Вход",
+    "logout": "Выход",
+    "phone": "Номер телефона",
+    "phonePlaceholder": "+998901234567",
+    "pin": "PIN код",
+    "pinPlaceholder": "****",
+    "loginButton": "Войти",
+    "invalidCredentials": "Неверный номер телефона или PIN код",
+    "accountLocked": "Ваш аккаунт временно заблокирован",
+    "welcome": "Добро пожаловать!",
+    "enterCredentials": "Введите данные для входа в систему"
+  },
+  "nav": {
+    "home": "Главная",
+    "purchases": "Покупки",
+    "debts": "Долги",
+    "notifications": "Уведомления",
+    "profile": "Профиль"
+  },
+  "dashboard": {
+    "title": "Главная",
+    "greeting": "Привет",
+    "balance": "Баланс",
+    "totalDebt": "Общий долг",
+    "totalPurchases": "Всего покупок",
+    "recentPurchases": "Последние покупки",
+    "viewAll": "Показать все",
+    "noDebt": "У вас нет долга",
+    "hasDebt": "У вас есть долг"
+  },
+  "purchases": {
+    "title": "История покупок",
+    "invoiceNumber": "Номер счета",
+    "date": "Дата",
+    "total": "Итого",
+    "paid": "Оплачено",
+    "debt": "Долг",
+    "status": "Статус",
+    "items": "Товары",
+    "quantity": "Кол-во",
+    "price": "Цена",
+    "discount": "Скидка",
+    "subtotal": "Подытог",
+    "noPurchases": "У вас пока нет покупок"
+  },
+  "debts": {
+    "title": "Долги",
+    "originalAmount": "Начальная сумма",
+    "remainingAmount": "Остаток",
+    "paidAmount": "Оплачено",
+    "dueDate": "Срок",
+    "status": "Статус",
+    "active": "Активный",
+    "paid": "Оплачен",
+    "overdue": "Просрочен",
+    "noDebts": "У вас нет долгов",
+    "totalDebt": "Ваш общий долг"
+  },
+  "notifications": {
+    "title": "Уведомления",
+    "markAllRead": "Отметить все прочитанными",
+    "noNotifications": "Нет уведомлений",
+    "unread": "Непрочитанные",
+    "debtReminder": "Напоминание о долге",
+    "paymentReceived": "Платеж принят",
+    "promotion": "Акция",
+    "system": "Системное сообщение"
+  },
+  "profile": {
+    "title": "Профиль",
+    "personalInfo": "Личная информация",
+    "fullName": "Полное имя",
+    "phone": "Телефон",
+    "phone2": "Доп. телефон",
+    "address": "Адрес",
+    "company": "Компания",
+    "memberSince": "Дата регистрации",
+    "language": "Язык",
+    "changeLanguage": "Изменить язык",
+    "changePin": "Изменить PIN код",
+    "currentPin": "Текущий PIN",
+    "newPin": "Новый PIN",
+    "confirmPin": "Подтвердите PIN",
+    "pinChanged": "PIN успешно изменен",
+    "theme": "Тема",
+    "changeTheme": "Изменить тему",
+    "themeLight": "Светлая",
+    "themeDark": "Тёмная",
+    "themeSystem": "Система"
+  },
+  "status": {
+    "completed": "Завершен",
+    "cancelled": "Отменен",
+    "refunded": "Возвращен"
+  },
+  "payment": {
+    "paid": "Оплачен",
+    "partial": "Частично",
+    "unpaid": "Не оплачен"
+  }
+}

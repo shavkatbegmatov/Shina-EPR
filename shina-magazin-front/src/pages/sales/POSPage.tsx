@@ -1,12 +1,21 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { Search, Plus, Minus, Trash2, ShoppingCart, User } from 'lucide-react';
+import { Plus, Minus, Trash2, ShoppingCart, User, X, Users, ArrowRight, Phone } from 'lucide-react';
 import toast from 'react-hot-toast';
 import clsx from 'clsx';
 import { productsApi } from '../../api/products.api';
 import { salesApi } from '../../api/sales.api';
+import { customersApi } from '../../api/customers.api';
 import { useCartStore } from '../../store/cartStore';
-import { formatCurrency, PAYMENT_METHODS } from '../../config/constants';
-import type { Product, PaymentMethod } from '../../types';
+import { useNotificationsStore } from '../../store/notificationsStore';
+import { formatCurrency, PAYMENT_METHODS, CUSTOMER_TYPES } from '../../config/constants';
+import { CurrencyInput } from '../../components/ui/CurrencyInput';
+import { PercentInput } from '../../components/ui/PercentInput';
+import { Select } from '../../components/ui/Select';
+import { DataTable, Column } from '../../components/ui/DataTable';
+import { ModalPortal } from '../../components/common/Modal';
+import { SearchInput } from '../../components/ui/SearchInput';
+import { CustomerSearchCombobox } from '../../components/common/NamePhoneSearchCombobox';
+import type { Product, PaymentMethod, Customer } from '../../types';
 
 export function POSPage() {
   const [products, setProducts] = useState<Product[]>([]);
@@ -16,8 +25,20 @@ export function POSPage() {
   const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>('CASH');
   const [paidAmount, setPaidAmount] = useState(0);
 
-  const cart = useCartStore();
+  // Customer search state
+  const [customerSearch, setCustomerSearch] = useState('');
 
+  // Modal state
+  const [showCustomerModal, setShowCustomerModal] = useState(false);
+  const [modalCustomers, setModalCustomers] = useState<Customer[]>([]);
+  const [modalPage, setModalPage] = useState(0);
+  const [modalPageSize, setModalPageSize] = useState(20);
+  const [modalTotalPages, setModalTotalPages] = useState(0);
+  const [modalTotalElements, setModalTotalElements] = useState(0);
+  const [modalLoading, setModalLoading] = useState(false);
+
+  const cart = useCartStore();
+  const { notifications } = useNotificationsStore();
   const loadProducts = useCallback(async () => {
     try {
       const data = await productsApi.getAll({
@@ -31,8 +52,133 @@ export function POSPage() {
   }, [search]);
 
   useEffect(() => {
-    loadProducts();
+    void loadProducts();
   }, [loadProducts]);
+
+  // WebSocket orqali yangi notification kelganda mahsulotlarni yangilash (zaxira o'zgarishi)
+  useEffect(() => {
+    if (notifications.length > 0) {
+      void loadProducts();
+    }
+  }, [notifications.length, loadProducts]);
+
+  const handleSelectCustomer = (customer: Customer) => {
+    cart.setCustomer(customer);
+    setCustomerSearch('');
+  };
+
+  const handleClearCustomer = () => {
+    cart.setCustomer(null);
+  };
+
+  const loadModalCustomers = useCallback(async () => {
+    setModalLoading(true);
+    try {
+      const data = await customersApi.getAll({
+        page: modalPage,
+        size: modalPageSize,
+        search: customerSearch || undefined,
+      });
+      setModalCustomers(data.content);
+      setModalTotalPages(data.totalPages);
+      setModalTotalElements(data.totalElements);
+    } catch (error) {
+      console.error('Failed to load customers:', error);
+      toast.error('Mijozlarni yuklashda xatolik');
+    } finally {
+      setModalLoading(false);
+    }
+  }, [modalPage, modalPageSize, customerSearch]);
+
+  useEffect(() => {
+    if (showCustomerModal) {
+      void loadModalCustomers();
+    }
+  }, [showCustomerModal, loadModalCustomers]);
+
+  const handleOpenModal = () => {
+    setModalPage(0);
+    setShowCustomerModal(true);
+  };
+
+  const handleModalSelectCustomer = (customer: Customer) => {
+    cart.setCustomer(customer);
+    setCustomerSearch('');
+    setShowCustomerModal(false);
+  };
+
+  const handleModalPageSizeChange = (size: number) => {
+    setModalPageSize(size);
+    setModalPage(0);
+  };
+
+  const columns: Column<Customer>[] = useMemo(() => [
+    {
+      key: 'fullName',
+      header: 'Mijoz',
+      render: (customer) => (
+        <div className="flex items-center gap-3">
+          <div className="avatar placeholder">
+            <div className="w-10 rounded-full bg-primary/15 text-primary">
+              <span>{customer.fullName.charAt(0).toUpperCase()}</span>
+            </div>
+          </div>
+          <div>
+            <div className="font-medium">{customer.fullName}</div>
+            {customer.companyName && (
+              <div className="text-sm text-base-content/70">
+                {customer.companyName}
+              </div>
+            )}
+          </div>
+        </div>
+      ),
+    },
+    {
+      key: 'phone',
+      header: 'Telefon',
+      render: (customer) => (
+        <div>
+          <div className="flex items-center gap-2">
+            <Phone className="h-4 w-4 text-base-content/50" />
+            {customer.phone}
+          </div>
+          {customer.phone2 && (
+            <div className="text-sm text-base-content/70">{customer.phone2}</div>
+          )}
+        </div>
+      ),
+    },
+    {
+      key: 'customerType',
+      header: 'Turi',
+      render: (customer) => (
+        <span className="badge badge-outline badge-sm">
+          {CUSTOMER_TYPES[customer.customerType]?.label}
+        </span>
+      ),
+    },
+    {
+      key: 'balance',
+      header: 'Balans',
+      render: (customer) => (
+        <div>
+          <span
+            className={clsx(
+              'font-medium',
+              customer.balance < 0 && 'text-error',
+              customer.balance > 0 && 'text-success'
+            )}
+          >
+            {formatCurrency(customer.balance)}
+          </span>
+          {customer.hasDebt && (
+            <span className="badge badge-error badge-sm ml-2">Qarz</span>
+          )}
+        </div>
+      ),
+    },
+  ], []);
 
   const handleCompleteSale = async () => {
     if (cart.items.length === 0) {
@@ -59,7 +205,7 @@ export function POSPage() {
       cart.clear();
       setShowPayment(false);
       setPaidAmount(0);
-      loadProducts();
+      void loadProducts();
     } catch (error: unknown) {
       const err = error as { response?: { data?: { message?: string } } };
       toast.error(err.response?.data?.message || 'Xatolik yuz berdi');
@@ -76,14 +222,18 @@ export function POSPage() {
   const isDebt = change < 0;
 
   const discountSummary = useMemo(() => {
-    if (cart.discount > 0) {
-      return `-${formatCurrency(cart.discount)}`;
+    // So'm kiritilsa → foizda ko'rsat
+    if (cart.discount > 0 && subtotal > 0) {
+      const percent = ((cart.discount / subtotal) * 100).toFixed(1);
+      return `-${percent}%`;
     }
+    // Foiz kiritilsa → so'mda ko'rsat
     if (cart.discountPercent > 0) {
-      return `-${cart.discountPercent}%`;
+      const amount = (subtotal * cart.discountPercent) / 100;
+      return `-${formatCurrency(amount)}`;
     }
     return null;
-  }, [cart.discount, cart.discountPercent]);
+  }, [cart.discount, cart.discountPercent, subtotal]);
 
   return (
     <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_380px]">
@@ -97,20 +247,14 @@ export function POSPage() {
                 {products.length} ta mahsulot topildi
               </p>
             </div>
-            <div className="form-control w-full md:max-w-sm">
-              <div className="input-group">
-                <span className="bg-base-200">
-                  <Search className="h-5 w-5" />
-                </span>
-                <input
-                  type="text"
-                  placeholder="Mahsulot qidirish..."
-                  className="input input-bordered w-full"
-                  value={search}
-                  onChange={(e) => setSearch(e.target.value)}
-                />
-              </div>
-            </div>
+            <SearchInput
+              value={search}
+              onValueChange={setSearch}
+              label="Mahsulot qidirish"
+              placeholder="Mahsulot qidirish..."
+              hideLabel
+              className="w-full md:max-w-sm"
+            />
           </div>
         </div>
 
@@ -181,10 +325,62 @@ export function POSPage() {
 
         {/* Customer Selection */}
         <div className="border-b border-base-200 p-4">
-          <button className="btn btn-outline btn-sm w-full gap-2">
-            <User className="h-4 w-4" />
-            {cart.customer ? cart.customer.fullName : 'Mijoz tanlash'}
-          </button>
+          {cart.customer ? (
+            <div className="flex items-center justify-between gap-2 rounded-lg bg-primary/10 p-2">
+              <div className="flex items-center gap-2">
+                <div className="flex h-8 w-8 items-center justify-center rounded-full bg-primary text-primary-content">
+                  <User className="h-4 w-4" />
+                </div>
+                <div>
+                  <p className="text-sm font-medium">{cart.customer.fullName}</p>
+                  <p className="text-xs text-base-content/60">{cart.customer.phone}</p>
+                </div>
+              </div>
+              <button
+                className="btn btn-ghost btn-sm btn-circle"
+                onClick={handleClearCustomer}
+              >
+                <X className="h-4 w-4" />
+              </button>
+            </div>
+          ) : (
+            <div className="flex items-center gap-2">
+              <div className="flex-1">
+                <CustomerSearchCombobox
+                  value={customerSearch}
+                  onChange={setCustomerSearch}
+                  onSelect={handleSelectCustomer}
+                  placeholder="Mijozni qidirish..."
+                  getSubtitle={(customer) => {
+                    const parts = [];
+                    if (customer.companyName) parts.push(customer.companyName);
+                    if (customer.hasDebt) parts.push('Qarz bor');
+                    return parts.join(' • ') || undefined;
+                  }}
+                  dropdownFooter={
+                    <button
+                      className="w-full px-4 py-3 text-left transition-colors hover:bg-base-200 flex items-center justify-between gap-2 text-sm font-medium text-primary"
+                      onClick={handleOpenModal}
+                    >
+                      <div className="flex items-center gap-2">
+                        <Users className="h-4 w-4" />
+                        <span>Barchasini ko'rish</span>
+                      </div>
+                      <ArrowRight className="h-4 w-4" />
+                    </button>
+                  }
+                />
+              </div>
+              <button
+                className="btn btn-primary btn-sm h-12"
+                onClick={handleOpenModal}
+                title="Barcha mijozlarni ko'rish"
+              >
+                <Users className="h-5 w-5" />
+                <span className="hidden sm:inline ml-1">Ko'rish</span>
+              </button>
+            </div>
+          )}
         </div>
 
         {/* Cart Items */}
@@ -262,41 +458,30 @@ export function POSPage() {
               <span className="font-medium">{formatCurrency(subtotal)}</span>
             </div>
             <div className="grid grid-cols-2 gap-2">
-              <label className="form-control">
-                <span className="label-text text-xs">Chegirma (so'm)</span>
-                <input
-                  type="number"
-                  min={0}
-                  className="input input-bordered input-sm w-full"
-                  value={cart.discount}
-                  onChange={(e) =>
-                    cart.setDiscount(
-                      Math.min(subtotal, Math.max(0, Number(e.target.value)))
-                    )
-                  }
-                />
-              </label>
-              <label className="form-control">
-                <span className="label-text text-xs">Chegirma (%)</span>
-                <input
-                  type="number"
-                  min={0}
-                  max={100}
-                  className="input input-bordered input-sm w-full"
-                  value={cart.discountPercent}
-                  onChange={(e) =>
-                    cart.setDiscountPercent(
-                      Math.min(100, Math.max(0, Number(e.target.value)))
-                    )
-                  }
-                />
-              </label>
+              <CurrencyInput
+                label="Chegirma (so'm)"
+                value={cart.discount}
+                onChange={(val) => cart.setDiscount(Math.min(subtotal, Math.max(0, val)))}
+                min={0}
+                max={subtotal}
+                size="sm"
+              />
+              <PercentInput
+                label="Chegirma (%)"
+                value={cart.discountPercent}
+                onChange={(val) => cart.setDiscountPercent(val)}
+                min={0}
+                max={100}
+                size="sm"
+              />
             </div>
-            {discountSummary && (
-              <div className="text-xs text-success">
-                Umumiy chegirma: {discountSummary}
-              </div>
-            )}
+            <div className={clsx(
+              'flex items-center justify-between text-sm transition-opacity duration-200',
+              discountSummary ? 'opacity-100' : 'opacity-0'
+            )}>
+              <span className="text-base-content/60">Chegirma:</span>
+              <span className="font-semibold text-success">{discountSummary || '-'}</span>
+            </div>
           </div>
         </div>
 
@@ -320,52 +505,39 @@ export function POSPage() {
       </aside>
 
       {/* Payment Modal */}
-      {showPayment && (
-        <div className="modal modal-open">
-          <div className="modal-box max-w-lg">
+      <ModalPortal isOpen={showPayment} onClose={() => setShowPayment(false)}>
+        <div className="w-full max-w-lg bg-base-100 rounded-2xl shadow-2xl relative">
+          <div className="p-4 sm:p-6">
+            <button
+              className="btn btn-circle btn-ghost btn-sm absolute right-4 top-4"
+              onClick={() => setShowPayment(false)}
+            >
+              <X className="h-5 w-5" />
+            </button>
             <h3 className="text-lg font-semibold">To'lov</h3>
             <p className="text-sm text-base-content/60">
               {itemCount} ta mahsulot · {formatCurrency(total)}
             </p>
 
             <div className="mt-6 space-y-4">
-              <label className="form-control">
-                <span className="label-text">To'lov usuli</span>
-                <select
-                  className="select select-bordered w-full"
-                  value={paymentMethod}
-                  onChange={(e) =>
-                    setPaymentMethod(e.target.value as PaymentMethod)
-                  }
-                >
-                  {Object.entries(PAYMENT_METHODS).map(([key, { label }]) => (
-                    <option key={key} value={key}>
-                      {label}
-                    </option>
-                  ))}
-                </select>
-              </label>
+              <Select
+                label="To'lov usuli"
+                value={paymentMethod}
+                onChange={(val) => setPaymentMethod(val as PaymentMethod)}
+                options={Object.entries(PAYMENT_METHODS).map(([key, { label }]) => ({
+                  value: key,
+                  label,
+                }))}
+                placeholder="To'lov usulini tanlang"
+              />
 
-              <div className="form-control">
-                <label className="label">
-                  <span className="label-text">To'langan summa</span>
-                </label>
-                <div className="flex items-center gap-2">
-                  <input
-                    type="number"
-                    min={0}
-                    className="input input-bordered w-full"
-                    value={paidAmount}
-                    onChange={(e) => setPaidAmount(Number(e.target.value))}
-                  />
-                  <button
-                    className="btn btn-ghost btn-sm"
-                    onClick={() => setPaidAmount(total)}
-                  >
-                    To'liq
-                  </button>
-                </div>
-              </div>
+              <CurrencyInput
+                label="To'langan summa"
+                value={paidAmount}
+                onChange={(val) => setPaidAmount(Math.max(0, val))}
+                min={0}
+                showQuickButtons
+              />
 
               <div className="surface-soft rounded-xl p-4">
                 <div className="flex justify-between text-sm">
@@ -395,7 +567,7 @@ export function POSPage() {
               </div>
             </div>
 
-            <div className="modal-action">
+            <div className="mt-6 flex justify-end gap-2">
               <button
                 className="btn btn-ghost"
                 onClick={() => setShowPayment(false)}
@@ -416,7 +588,111 @@ export function POSPage() {
             </div>
           </div>
         </div>
-      )}
+      </ModalPortal>
+
+      {/* Customer Selection Modal */}
+      <ModalPortal
+        isOpen={showCustomerModal}
+        onClose={() => setShowCustomerModal(false)}
+      >
+        <div className="w-full max-w-5xl bg-base-100 rounded-2xl shadow-2xl max-h-[90vh] overflow-hidden flex flex-col">
+          {/* Header */}
+          <div className="p-4 sm:p-6 border-b border-base-200">
+            <div className="flex items-start justify-between gap-4">
+              <div>
+                <h3 className="text-xl font-semibold">Mijozlarni tanlash</h3>
+                <p className="text-sm text-base-content/60 mt-1">
+                  Jami {modalTotalElements} ta mijoz
+                </p>
+              </div>
+              <button
+                className="btn btn-ghost btn-sm"
+                onClick={() => setShowCustomerModal(false)}
+              >
+                <X className="h-4 w-4" />
+              </button>
+            </div>
+
+            {/* Search */}
+            <div className="mt-4">
+              <SearchInput
+                value={customerSearch}
+                onValueChange={(value) => {
+                  setCustomerSearch(value);
+                  setModalPage(0);
+                }}
+                placeholder="Ism, telefon yoki kompaniya nomi bo'yicha qidirish..."
+                hideLabel
+              />
+            </div>
+          </div>
+
+          {/* DataTable */}
+          <div className="flex-1 overflow-auto">
+            <DataTable
+              data={modalCustomers}
+              columns={columns}
+              keyExtractor={(customer) => customer.id}
+              loading={modalLoading}
+              onRowClick={handleModalSelectCustomer}
+              rowClassName={(customer) =>
+                clsx(
+                  'cursor-pointer',
+                  customer.hasDebt && 'bg-error/5'
+                )
+              }
+              currentPage={modalPage}
+              totalPages={modalTotalPages}
+              totalElements={modalTotalElements}
+              pageSize={modalPageSize}
+              onPageChange={setModalPage}
+              onPageSizeChange={handleModalPageSizeChange}
+              emptyIcon={<Users className="h-12 w-12" />}
+              emptyTitle="Mijozlar topilmadi"
+              emptyDescription="Qidiruv so'zini o'zgartiring yoki yangi mijoz qo'shing"
+              renderMobileCard={(customer) => (
+                <div
+                  className="p-4 border border-base-200 rounded-lg bg-base-100 cursor-pointer hover:bg-base-200 transition"
+                  onClick={() => handleModalSelectCustomer(customer)}
+                >
+                  <div className="flex items-center gap-3 mb-2">
+                    <div className="avatar placeholder">
+                      <div className="w-10 rounded-full bg-primary/15 text-primary">
+                        <span>{customer.fullName.charAt(0).toUpperCase()}</span>
+                      </div>
+                    </div>
+                    <div className="flex-1">
+                      <div className="font-medium">{customer.fullName}</div>
+                      {customer.companyName && (
+                        <div className="text-sm text-base-content/70">
+                          {customer.companyName}
+                        </div>
+                      )}
+                    </div>
+                    {customer.hasDebt && (
+                      <span className="badge badge-error badge-sm">Qarz</span>
+                    )}
+                  </div>
+                  <div className="flex items-center gap-4 text-sm">
+                    <div className="flex items-center gap-1 text-base-content/70">
+                      <Phone className="h-4 w-4" />
+                      {customer.phone}
+                    </div>
+                    <div className={clsx(
+                      'font-medium',
+                      customer.balance < 0 && 'text-error',
+                      customer.balance > 0 && 'text-success'
+                    )}>
+                      {formatCurrency(customer.balance)}
+                    </div>
+                  </div>
+                </div>
+              )}
+            />
+          </div>
+        </div>
+      </ModalPortal>
+
     </div>
   );
 }

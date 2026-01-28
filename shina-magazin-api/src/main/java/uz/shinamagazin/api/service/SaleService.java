@@ -36,8 +36,29 @@ public class SaleService {
     private final UserRepository userRepository;
     private final DebtRepository debtRepository;
     private final StockMovementRepository stockMovementRepository;
+    private final StaffNotificationService staffNotificationService;
+    private final NotificationService customerNotificationService;
+    private final SettingsService settingsService;
 
-    public Page<SaleResponse> getAllSales(Pageable pageable) {
+    public Page<SaleResponse> getAllSales(LocalDate startDate, LocalDate endDate, Pageable pageable) {
+        LocalDate effectiveStart = startDate;
+        LocalDate effectiveEnd = endDate;
+
+        if (effectiveStart == null && effectiveEnd != null) {
+            effectiveStart = effectiveEnd;
+        }
+
+        if (effectiveEnd == null && effectiveStart != null) {
+            effectiveEnd = effectiveStart;
+        }
+
+        if (effectiveStart != null && effectiveEnd != null) {
+            LocalDateTime start = effectiveStart.atStartOfDay();
+            LocalDateTime end = effectiveEnd.atTime(LocalTime.MAX);
+            return saleRepository.findBySaleDateBetween(start, end, pageable)
+                    .map(SaleResponse::from);
+        }
+
         return saleRepository.findAll(pageable)
                 .map(SaleResponse::from);
     }
@@ -113,8 +134,14 @@ public class SaleService {
 
             // Reduce stock
             int previousStock = product.getQuantity();
-            product.setQuantity(previousStock - itemRequest.getQuantity());
+            int newStock = previousStock - itemRequest.getQuantity();
+            product.setQuantity(newStock);
             productRepository.save(product);
+
+            // Check for low stock and notify
+            if (newStock > 0 && newStock <= 5) {
+                staffNotificationService.notifyLowStock(product.getName(), newStock, product.getId());
+            }
 
             // Record stock movement
             StockMovement movement = StockMovement.builder()
@@ -122,7 +149,7 @@ public class SaleService {
                     .movementType(MovementType.OUT)
                     .quantity(-itemRequest.getQuantity())
                     .previousStock(previousStock)
-                    .newStock(product.getQuantity())
+                    .newStock(newStock)
                     .referenceType("SALE")
                     .notes("Sotuv: " + sale.getInvoiceNumber())
                     .createdBy(currentUser)
@@ -168,18 +195,36 @@ public class SaleService {
 
         Sale savedSale = saleRepository.save(sale);
 
+        // Send notification about new sale to staff
+        String customerName = customer != null ? customer.getFullName() : "Noma'lum mijoz";
+        staffNotificationService.notifyNewOrder(savedSale.getInvoiceNumber(), customerName, savedSale.getId());
+
+        // Send notification to customer about their purchase
+        if (customer != null && Boolean.TRUE.equals(customer.getPortalEnabled())) {
+            String formattedTotal = String.format("%,.0f", totalAmount);
+            String metadata = String.format("{\"saleId\": %d, \"invoiceNumber\": \"%s\"}",
+                    savedSale.getId(), savedSale.getInvoiceNumber());
+            customerNotificationService.sendPurchaseCompleted(
+                    customer.getId(),
+                    savedSale.getInvoiceNumber(),
+                    formattedTotal,
+                    metadata
+            );
+        }
+
         // Create debt record if partial/unpaid
         if (debtAmount.compareTo(BigDecimal.ZERO) > 0) {
             if (customer == null) {
                 throw new BadRequestException("Qarzga sotish uchun mijoz tanlash shart");
             }
 
+            int dueDays = settingsService.getDebtDueDays();
             Debt debt = Debt.builder()
                     .customer(customer)
                     .sale(savedSale)
                     .originalAmount(debtAmount)
                     .remainingAmount(debtAmount)
-                    .dueDate(LocalDate.now().plusDays(30))
+                    .dueDate(LocalDate.now().plusDays(dueDays))
                     .status(DebtStatus.ACTIVE)
                     .build();
             debtRepository.save(debt);

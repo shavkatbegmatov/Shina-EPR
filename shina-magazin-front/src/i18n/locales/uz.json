@@ -1,0 +1,115 @@
+{
+  "common": {
+    "loading": "Yuklanmoqda...",
+    "error": "Xatolik yuz berdi",
+    "retry": "Qayta urinish",
+    "cancel": "Bekor qilish",
+    "save": "Saqlash",
+    "confirm": "Tasdiqlash",
+    "back": "Orqaga",
+    "noData": "Ma'lumot topilmadi",
+    "sum": "so'm",
+    "all": "Hammasi"
+  },
+  "auth": {
+    "login": "Kirish",
+    "logout": "Chiqish",
+    "phone": "Telefon raqam",
+    "phonePlaceholder": "+998901234567",
+    "pin": "PIN kod",
+    "pinPlaceholder": "****",
+    "loginButton": "Kirish",
+    "invalidCredentials": "Telefon raqam yoki PIN kod noto'g'ri",
+    "accountLocked": "Hisobingiz vaqtincha bloklangan",
+    "welcome": "Xush kelibsiz!",
+    "enterCredentials": "Tizimga kirish uchun ma'lumotlaringizni kiriting"
+  },
+  "nav": {
+    "home": "Bosh sahifa",
+    "purchases": "Xaridlar",
+    "debts": "Qarzlar",
+    "notifications": "Bildirishnomalar",
+    "profile": "Profil"
+  },
+  "dashboard": {
+    "title": "Bosh sahifa",
+    "greeting": "Salom",
+    "balance": "Balans",
+    "totalDebt": "Jami qarz",
+    "totalPurchases": "Jami xaridlar",
+    "recentPurchases": "So'nggi xaridlar",
+    "viewAll": "Hammasini ko'rish",
+    "noDebt": "Qarzingiz yo'q",
+    "hasDebt": "Sizda qarz mavjud"
+  },
+  "purchases": {
+    "title": "Xaridlar tarixi",
+    "invoiceNumber": "Hisob-faktura",
+    "date": "Sana",
+    "total": "Jami",
+    "paid": "To'langan",
+    "debt": "Qarz",
+    "status": "Holat",
+    "items": "Mahsulotlar",
+    "quantity": "Soni",
+    "price": "Narx",
+    "discount": "Chegirma",
+    "subtotal": "Jami summa",
+    "noPurchases": "Sizda hali xaridlar yo'q"
+  },
+  "debts": {
+    "title": "Qarzlar",
+    "originalAmount": "Asl summa",
+    "remainingAmount": "Qolgan summa",
+    "paidAmount": "To'langan",
+    "dueDate": "Muddat",
+    "status": "Holat",
+    "active": "Faol",
+    "paid": "To'langan",
+    "overdue": "Muddati o'tgan",
+    "noDebts": "Sizda qarz yo'q",
+    "totalDebt": "Jami qarzingiz"
+  },
+  "notifications": {
+    "title": "Bildirishnomalar",
+    "markAllRead": "Barchasini o'qilgan qilish",
+    "noNotifications": "Bildirishnomalar yo'q",
+    "unread": "O'qilmagan",
+    "debtReminder": "Qarz eslatmasi",
+    "paymentReceived": "To'lov qabul qilindi",
+    "promotion": "Aksiya",
+    "system": "Tizim xabari"
+  },
+  "profile": {
+    "title": "Profil",
+    "personalInfo": "Shaxsiy ma'lumotlar",
+    "fullName": "To'liq ism",
+    "phone": "Telefon",
+    "phone2": "Qo'shimcha telefon",
+    "address": "Manzil",
+    "company": "Kompaniya",
+    "memberSince": "A'zo bo'lgan sana",
+    "language": "Til",
+    "changeLanguage": "Tilni o'zgartirish",
+    "changePin": "PIN kodni o'zgartirish",
+    "currentPin": "Joriy PIN",
+    "newPin": "Yangi PIN",
+    "confirmPin": "PIN ni tasdiqlang",
+    "pinChanged": "PIN muvaffaqiyatli o'zgartirildi",
+    "theme": "Mavzu",
+    "changeTheme": "Mavzuni o'zgartirish",
+    "themeLight": "Yorug'",
+    "themeDark": "Qorong'i",
+    "themeSystem": "Tizim"
+  },
+  "status": {
+    "completed": "Yakunlangan",
+    "cancelled": "Bekor qilingan",
+    "refunded": "Qaytarilgan"
+  },
+  "payment": {
+    "paid": "To'langan",
+    "partial": "Qisman",
+    "unpaid": "To'lanmagan"
+  }
+}

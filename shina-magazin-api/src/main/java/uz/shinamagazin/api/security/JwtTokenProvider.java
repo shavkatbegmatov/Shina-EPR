@@ -11,7 +11,7 @@ import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.stereotype.Component;
 
 import javax.crypto.SecretKey;
-import java.util.Date;
+import java.util.*;
 
 @Component
 @Slf4j
@@ -36,41 +36,145 @@ public class JwtTokenProvider {
 
     public String generateToken(Authentication authentication) {
         UserDetails userDetails = (UserDetails) authentication.getPrincipal();
+        if (userDetails instanceof CustomUserDetails) {
+            CustomUserDetails customUserDetails = (CustomUserDetails) userDetails;
+            return generateStaffTokenWithPermissions(
+                    customUserDetails.getUsername(),
+                    customUserDetails.getId(),
+                    customUserDetails.getRoleCodes(),
+                    customUserDetails.getPermissions()
+            );
+        }
         return generateToken(userDetails.getUsername());
     }
 
     public String generateToken(String username) {
+        return generateToken(username, "STAFF");
+    }
+
+    public String generateToken(String username, String tokenType) {
+        return generateToken(username, tokenType, null);
+    }
+
+    public String generateToken(String username, String tokenType, Long userId) {
         Date now = new Date();
         Date expiryDate = new Date(now.getTime() + jwtExpiration);
 
-        return Jwts.builder()
+        var builder = Jwts.builder()
                 .subject(username)
+                .claim("type", tokenType)
                 .issuedAt(now)
-                .expiration(expiryDate)
-                .signWith(key)
-                .compact();
+                .expiration(expiryDate);
+
+        if (userId != null) {
+            builder.claim("userId", userId);
+        }
+
+        return builder.signWith(key).compact();
+    }
+
+    /**
+     * Generate token with permissions for staff users
+     */
+    public String generateStaffTokenWithPermissions(String username, Long userId, Set<String> roles, Set<String> permissions) {
+        Date now = new Date();
+        Date expiryDate = new Date(now.getTime() + jwtExpiration);
+
+        var builder = Jwts.builder()
+                .subject(username)
+                .claim("type", "STAFF")
+                .claim("userId", userId)
+                .claim("roles", new ArrayList<>(roles))
+                .claim("permissions", new ArrayList<>(permissions))
+                .issuedAt(now)
+                .expiration(expiryDate);
+
+        return builder.signWith(key).compact();
     }
 
     public String generateRefreshToken(String username) {
+        return generateRefreshToken(username, "STAFF");
+    }
+
+    public String generateRefreshToken(String username, String tokenType) {
+        return generateRefreshToken(username, tokenType, null);
+    }
+
+    public String generateRefreshToken(String username, String tokenType, Long userId) {
         Date now = new Date();
         Date expiryDate = new Date(now.getTime() + refreshExpiration);
 
-        return Jwts.builder()
+        var builder = Jwts.builder()
                 .subject(username)
+                .claim("type", tokenType)
                 .issuedAt(now)
-                .expiration(expiryDate)
-                .signWith(key)
-                .compact();
+                .expiration(expiryDate);
+
+        if (userId != null) {
+            builder.claim("userId", userId);
+        }
+
+        return builder.signWith(key).compact();
+    }
+
+    // Customer portal uchun token generatsiya
+    public String generateCustomerToken(String phone, Long customerId) {
+        return generateToken(phone, "CUSTOMER", customerId);
+    }
+
+    public String generateCustomerRefreshToken(String phone, Long customerId) {
+        return generateRefreshToken(phone, "CUSTOMER", customerId);
+    }
+
+    // Staff uchun token generatsiya (userId bilan)
+    public String generateStaffToken(String username, Long userId) {
+        return generateToken(username, "STAFF", userId);
+    }
+
+    public String generateStaffRefreshToken(String username, Long userId) {
+        return generateRefreshToken(username, "STAFF", userId);
     }
 
     public String getUsernameFromToken(String token) {
-        Claims claims = Jwts.parser()
+        Claims claims = getClaims(token);
+        return claims.getSubject();
+    }
+
+    public Long getUserIdFromToken(String token) {
+        Claims claims = getClaims(token);
+        return claims.get("userId", Long.class);
+    }
+
+    public String getTokenType(String token) {
+        Claims claims = getClaims(token);
+        String type = claims.get("type", String.class);
+        return type != null ? type : "STAFF"; // Default STAFF for old tokens
+    }
+
+    public boolean isCustomerToken(String token) {
+        return "CUSTOMER".equals(getTokenType(token));
+    }
+
+    @SuppressWarnings("unchecked")
+    public Set<String> getRolesFromToken(String token) {
+        Claims claims = getClaims(token);
+        List<String> roles = claims.get("roles", List.class);
+        return roles != null ? new HashSet<>(roles) : new HashSet<>();
+    }
+
+    @SuppressWarnings("unchecked")
+    public Set<String> getPermissionsFromToken(String token) {
+        Claims claims = getClaims(token);
+        List<String> permissions = claims.get("permissions", List.class);
+        return permissions != null ? new HashSet<>(permissions) : new HashSet<>();
+    }
+
+    private Claims getClaims(String token) {
+        return Jwts.parser()
                 .verifyWith(key)
                 .build()
                 .parseSignedClaims(token)
                 .getPayload();
-
-        return claims.getSubject();
     }
 
     public boolean validateToken(String token) {

@@ -13,11 +13,11 @@ import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
 import org.springframework.security.config.http.SessionCreationPolicy;
-import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
+import uz.shinamagazin.api.security.CustomUserDetailsService;
 import uz.shinamagazin.api.security.JwtAuthenticationEntryPoint;
 import uz.shinamagazin.api.security.JwtAuthenticationFilter;
 
@@ -29,7 +29,7 @@ public class SecurityConfig {
 
     private final JwtAuthenticationFilter jwtAuthenticationFilter;
     private final JwtAuthenticationEntryPoint jwtAuthenticationEntryPoint;
-    private final UserDetailsService userDetailsService;
+    private final CustomUserDetailsService staffUserDetailsService;
 
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
@@ -45,26 +45,17 @@ public class SecurityConfig {
                 .authorizeHttpRequests(auth -> auth
                         // Public endpoints
                         .requestMatchers("/v1/auth/**").permitAll()
+                        .requestMatchers("/v1/customer-auth/**").permitAll()
                         .requestMatchers("/swagger-ui/**", "/api-docs/**", "/swagger-ui.html").permitAll()
                         .requestMatchers("/actuator/**").permitAll()
+                        // WebSocket endpoint (JWT token interceptor'da tekshiriladi)
+                        .requestMatchers("/v1/ws/**").permitAll()
 
-                        // Admin only
-                        .requestMatchers("/v1/users/**").hasRole("ADMIN")
-                        .requestMatchers(HttpMethod.DELETE, "/v1/**").hasRole("ADMIN")
+                        // Customer Portal - faqat CUSTOMER roli uchun (saqlanadi)
+                        .requestMatchers("/v1/portal/**").hasRole("CUSTOMER")
 
-                        // Manager and Admin
-                        .requestMatchers("/v1/reports/**").hasAnyRole("ADMIN", "MANAGER")
-                        .requestMatchers("/v1/suppliers/**").hasAnyRole("ADMIN", "MANAGER")
-                        .requestMatchers("/v1/purchase-orders/**").hasAnyRole("ADMIN", "MANAGER")
-                        .requestMatchers("/v1/stock/**").hasAnyRole("ADMIN", "MANAGER")
-                        .requestMatchers(HttpMethod.POST, "/v1/products/**").hasAnyRole("ADMIN", "MANAGER")
-                        .requestMatchers(HttpMethod.PUT, "/v1/products/**").hasAnyRole("ADMIN", "MANAGER")
-                        .requestMatchers(HttpMethod.POST, "/v1/brands/**").hasAnyRole("ADMIN", "MANAGER")
-                        .requestMatchers(HttpMethod.PUT, "/v1/brands/**").hasAnyRole("ADMIN", "MANAGER")
-                        .requestMatchers(HttpMethod.POST, "/v1/categories/**").hasAnyRole("ADMIN", "MANAGER")
-                        .requestMatchers(HttpMethod.PUT, "/v1/categories/**").hasAnyRole("ADMIN", "MANAGER")
-
-                        // All authenticated users
+                        // All other requests require authentication
+                        // Permissions checked at method level via @RequiresPermission
                         .anyRequest().authenticated()
                 )
                 .authenticationProvider(authenticationProvider())
@@ -76,7 +67,7 @@ public class SecurityConfig {
     @Bean
     public AuthenticationProvider authenticationProvider() {
         DaoAuthenticationProvider authProvider = new DaoAuthenticationProvider();
-        authProvider.setUserDetailsService(userDetailsService);
+        authProvider.setUserDetailsService(staffUserDetailsService);
         authProvider.setPasswordEncoder(passwordEncoder());
         return authProvider;
     }

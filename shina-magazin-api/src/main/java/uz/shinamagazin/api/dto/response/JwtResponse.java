@@ -5,6 +5,8 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
+import java.util.Set;
+
 @Data
 @Builder
 @NoArgsConstructor
@@ -15,4 +17,12 @@ public class JwtResponse {
     @Builder.Default
     private String tokenType = "Bearer";
     private UserResponse user;
+    private Set<String> permissions;
+    private Set<String> roles;
+
+    /**
+     * Indicates if user must change password on first login.
+     * Frontend should redirect to change-password page if true.
+     */
+    private Boolean requiresPasswordChange;
 }

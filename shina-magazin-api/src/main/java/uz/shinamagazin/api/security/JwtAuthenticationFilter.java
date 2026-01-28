@@ -10,11 +10,11 @@ import org.springframework.lang.NonNull;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.UserDetails;
-import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.web.authentication.WebAuthenticationDetailsSource;
 import org.springframework.stereotype.Component;
 import org.springframework.util.StringUtils;
 import org.springframework.web.filter.OncePerRequestFilter;
+import uz.shinamagazin.api.service.SessionService;
 
 import java.io.IOException;
 
@@ -24,7 +24,16 @@ import java.io.IOException;
 public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
     private final JwtTokenProvider tokenProvider;
-    private final UserDetailsService userDetailsService;
+    private final CustomUserDetailsService staffUserDetailsService;
+    private final CustomerUserDetailsService customerUserDetailsService;
+    private final SessionService sessionService;
+
+    @Override
+    protected boolean shouldNotFilter(HttpServletRequest request) {
+        String path = request.getRequestURI();
+        // WebSocket endpoint'larni filtrlashdan o'tkazib yuborish
+        return path.startsWith("/v1/ws");
+    }
 
     @Override
     protected void doFilterInternal(
@@ -36,8 +45,24 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
             String jwt = getJwtFromRequest(request);
 
             if (StringUtils.hasText(jwt) && tokenProvider.validateToken(jwt)) {
+                // Check if session is still active in database (only for staff tokens)
+                boolean isCustomerToken = tokenProvider.isCustomerToken(jwt);
+                if (!isCustomerToken && !sessionService.isSessionValid(jwt)) {
+                    log.warn("JWT is valid but session has been revoked");
+                    filterChain.doFilter(request, response);
+                    return;
+                }
+
                 String username = tokenProvider.getUsernameFromToken(jwt);
-                UserDetails userDetails = userDetailsService.loadUserByUsername(username);
+
+                UserDetails userDetails;
+                if (isCustomerToken) {
+                    // Mijoz tokeni - phone orqali yuklash
+                    userDetails = customerUserDetailsService.loadUserByUsername(username);
+                } else {
+                    // Staff tokeni - username orqali yuklash
+                    userDetails = staffUserDetailsService.loadUserByUsername(username);
+                }
 
                 UsernamePasswordAuthenticationToken authentication =
                         new UsernamePasswordAuthenticationToken(
@@ -51,6 +76,15 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
                 );
 
                 SecurityContextHolder.getContext().setAuthentication(authentication);
+
+                // Update last activity for staff sessions
+                if (!isCustomerToken) {
+                    try {
+                        sessionService.updateLastActivity(jwt);
+                    } catch (Exception e) {
+                        log.warn("Failed to update session activity", e);
+                    }
+                }
             }
         } catch (Exception ex) {
             log.error("Could not set user authentication in security context", ex);

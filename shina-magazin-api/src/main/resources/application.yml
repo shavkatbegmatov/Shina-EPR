@@ -5,6 +5,11 @@ spring:
   profiles:
     active: dev
 
+  # Timezone - Toshkent vaqti
+  jackson:
+    time-zone: Asia/Tashkent
+    date-format: yyyy-MM-dd HH:mm:ss
+
   jpa:
     hibernate:
       ddl-auto: validate
@@ -13,6 +18,8 @@ spring:
       hibernate:
         format_sql: true
         dialect: org.hibernate.dialect.PostgreSQLDialect
+        jdbc:
+          time_zone: Asia/Tashkent
 
   flyway:
     enabled: true
@@ -43,4 +50,6 @@ logging:
   level:
     root: INFO
     uz.shinamagazin: DEBUG
-    org.springframework.security: INFO
+    org.springframework.security: DEBUG
+    org.springframework.security.web.access: DEBUG
+    org.springframework.security.access: DEBUG

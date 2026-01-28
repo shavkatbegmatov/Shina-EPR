@@ -1,20 +1,28 @@
 package uz.shinamagazin.api.entity;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
 import lombok.*;
+import org.springframework.data.jpa.domain.support.AuditingEntityListener;
+import uz.shinamagazin.api.audit.Auditable;
+import uz.shinamagazin.api.audit.AuditEntityListener;
 import uz.shinamagazin.api.entity.base.BaseEntity;
 import uz.shinamagazin.api.enums.Season;
 
 import java.math.BigDecimal;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.Set;
 
 @Entity
 @Table(name = "products")
+@EntityListeners({AuditingEntityListener.class, AuditEntityListener.class})
 @Getter
 @Setter
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-public class Product extends BaseEntity {
+public class Product extends BaseEntity implements Auditable {
 
     @Column(nullable = false, unique = true, length = 50)
     private String sku;
@@ -84,5 +92,54 @@ public class Product extends BaseEntity {
             return String.format("%d/%d R%d", width, profile, diameter);
         }
         return null;
+    }
+
+    // ============================================
+    // Auditable Interface Implementation
+    // ============================================
+
+    @Override
+    public String getEntityName() {
+        return "Product";
+    }
+
+    @Override
+    @JsonIgnore
+    public Map<String, Object> toAuditMap() {
+        Map<String, Object> map = new HashMap<>();
+        map.put("id", getId());
+        map.put("sku", this.sku);
+        map.put("name", this.name);
+        map.put("width", this.width);
+        map.put("profile", this.profile);
+        map.put("diameter", this.diameter);
+        map.put("loadIndex", this.loadIndex);
+        map.put("speedRating", this.speedRating);
+        map.put("season", this.season);
+        map.put("purchasePrice", this.purchasePrice);
+        map.put("sellingPrice", this.sellingPrice);
+        map.put("quantity", this.quantity);
+        map.put("minStockLevel", this.minStockLevel);
+        map.put("description", this.description);
+        map.put("imageUrl", this.imageUrl);
+        map.put("active", this.active);
+
+        // Avoid lazy loading
+        if (this.brand != null) {
+            map.put("brandId", this.brand.getId());
+        }
+        if (this.category != null) {
+            map.put("categoryId", this.category.getId());
+        }
+        if (this.createdBy != null) {
+            map.put("createdById", this.createdBy.getId());
+        }
+
+        return map;
+    }
+
+    @Override
+    public Set<String> getSensitiveFields() {
+        return Set.of(); // No sensitive fields
     }
 }

@@ -1,28 +1,60 @@
-import { Outlet, Navigate } from 'react-router-dom';
+import { useState, useEffect } from 'react';
+import { Outlet, Navigate, useLocation } from 'react-router-dom';
 import { useAuthStore } from '../../store/authStore';
+import { useSessionMonitor } from '../../hooks/useSessionMonitor';
+import { useCrossTabSync } from '../../hooks/useCrossTabSync';
 import { Sidebar } from './Sidebar';
 import { Header } from './Header';
 import { Footer } from './Footer';
+import { PasswordChangeModal } from '../common/PasswordChangeModal';
 
 export function MainLayout() {
-  const { isAuthenticated } = useAuthStore();
+  const { isAuthenticated, user } = useAuthStore();
+  const location = useLocation();
+  const [showPasswordModal, setShowPasswordModal] = useState(false);
+
+  // Professional session monitoring:
+  // - Checks session every 60 seconds
+  // - Validates session when tab becomes visible
+  // - Auto-logout if session revoked from another device
+  useSessionMonitor({
+    enabled: true,
+    pollingInterval: 60000, // 60 seconds
+    checkOnFocus: true,
+  });
+
+  // Cross-tab session synchronization:
+  // - Detects logout in other tabs and syncs immediately
+  // - Prevents user from being logged in on one tab and logged out on another
+  useCrossTabSync();
+
+  // Show password change modal if user must change password
+  useEffect(() => {
+    if (user?.mustChangePassword) {
+      setShowPasswordModal(true);
+    }
+  }, [user?.mustChangePassword]);
 
   if (!isAuthenticated) {
-    return <Navigate to="/login" replace />;
+    return <Navigate to="/login" replace state={{ from: location }} />;
   }
 
   return (
-    <div className="flex min-h-screen text-base-content">
+    <div className="flex h-screen overflow-hidden text-base-content">
       <Sidebar />
-      <div className="flex min-w-0 flex-1 flex-col">
+      <div className="flex min-w-0 flex-1 flex-col overflow-hidden">
         <Header />
-        <main className="flex-1 overflow-auto px-4 pb-8 pt-6 lg:px-8">
-          <div className="mx-auto flex w-full max-w-[1400px] flex-col gap-8">
-            <Outlet />
-            <Footer />
-          </div>
+        <main className="flex-1 overflow-y-auto overflow-x-hidden px-4 pb-6 pt-6 lg:px-8" style={{ scrollbarGutter: 'stable' }}>
+          <Outlet />
         </main>
+        <Footer />
       </div>
+
+      {/* Password Change Modal - shows if user mustChangePassword */}
+      <PasswordChangeModal
+        isOpen={showPasswordModal}
+        onClose={() => setShowPasswordModal(false)}
+      />
     </div>
   );
 }

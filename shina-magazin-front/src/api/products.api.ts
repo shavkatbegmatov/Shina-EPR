@@ -1,5 +1,6 @@
 import api from './axios';
 import type { ApiResponse, Brand, Category, PagedResponse, Product, ProductRequest, Season } from '../types';
+import { createExportApi } from './export.utils';
 
 export interface ProductFilters {
   page?: number;
@@ -56,6 +57,9 @@ export const productsApi = {
     );
     return response.data.data;
   },
+
+  // Export functionality
+  export: createExportApi('/v1/products'),
 };
 
 export const brandsApi = {
@@ -81,6 +85,9 @@ export const brandsApi = {
   delete: async (id: number): Promise<void> => {
     await api.delete(`/v1/brands/${id}`);
   },
+
+  // Export functionality
+  export: createExportApi('/v1/brands'),
 };
 
 export const categoriesApi = {
@@ -102,7 +109,18 @@ export const categoriesApi = {
     return response.data.data;
   },
 
+  update: async (id: number, name: string, description?: string, parentId?: number): Promise<Category> => {
+    const params = new URLSearchParams({ name });
+    if (description) params.append('description', description);
+    if (parentId) params.append('parentId', parentId.toString());
+    const response = await api.put<ApiResponse<Category>>(`/v1/categories/${id}?${params}`);
+    return response.data.data;
+  },
+
   delete: async (id: number): Promise<void> => {
     await api.delete(`/v1/categories/${id}`);
   },
+
+  // Export functionality
+  export: createExportApi('/v1/categories'),
 };
