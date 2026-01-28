@@ -1,45 +1,77 @@
-import { defineConfig } from 'vite'
+import { defineConfig, type ProxyOptions } from 'vite'
 import react from '@vitejs/plugin-react-swc'
+import type { IncomingMessage, ClientRequest } from 'node:http'
 
 export default defineConfig({
   plugins: [react()],
   define: {
-    // SockJS uchun global polyfill
     global: 'globalThis',
   },
+
   build: {
     rollupOptions: {
       output: {
         manualChunks: {
-          // React core libraries
           'vendor-react': ['react', 'react-dom', 'react-router-dom'],
-          // State management & data fetching
           'vendor-state': ['zustand', 'axios'],
-          // UI libraries
           'vendor-ui': ['lucide-react', 'clsx'],
-          // Charts (heavy)
           'vendor-charts': ['recharts'],
-          // Date utilities
           'vendor-date': ['date-fns'],
-          // Form handling
           'vendor-form': ['react-hook-form'],
-          // PDF & export utilities
           'vendor-export': ['jspdf', 'jspdf-autotable', 'html2canvas'],
-          // WebSocket
           'vendor-websocket': ['sockjs-client', '@stomp/stompjs'],
         },
       },
     },
   },
+
   server: {
-    // Port removed - Vite will use any available port (default 5173)
-    // This allows flexibility when multiple dev servers are running
+    port: 5245,
+    host: true,
+
     proxy: {
+      // 1) REST API proxy (faqat HTTP)
       '/api': {
-        target: 'http://localhost:8080',
+        target: 'http://localhost:8245',
         changeOrigin: true,
-        ws: true, // WebSocket support
-      },
+        secure: false,
+        ws: false,
+        configure: (proxy) => {
+          proxy.on('error', (err: Error) => {
+            console.log('Proxy error:', err.message)
+          })
+
+          proxy.on('proxyReq', (_proxyReq: ClientRequest, req: IncomingMessage) => {
+            console.log("Backendga so'rov ketdi:", req.method, req.url ?? '')
+          })
+
+          proxy.on('proxyRes', (proxyRes: IncomingMessage, req: IncomingMessage) => {
+            console.log('Backenddan javob keldi:', proxyRes.statusCode ?? 0, req.url ?? '')
+          })
+        },
+      } satisfies ProxyOptions,
+
+      // 2) WS/SockJS proxy (faqat WS): /api/v1/ws -> /v1/ws
+      '/api/v1/ws': {
+        target: 'http://localhost:8245',
+        changeOrigin: true,
+        secure: false,
+        ws: true,
+        rewrite: (path) => path.replace(/^\/api/, ''),
+        configure: (proxy) => {
+          proxy.on('error', (err: Error) => {
+            console.log('WS Proxy error:', err.message)
+          })
+
+          proxy.on('proxyReq', (_proxyReq: ClientRequest, req: IncomingMessage) => {
+            console.log('WS so‘rov:', req.method, req.url ?? '')
+          })
+
+          proxy.on('proxyRes', (proxyRes: IncomingMessage, req: IncomingMessage) => {
+            console.log('WS javob:', proxyRes.statusCode ?? 0, req.url ?? '')
+          })
+        },
+      } satisfies ProxyOptions,
     },
   },
 })
