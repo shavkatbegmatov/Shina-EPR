@@ -1,5 +1,4 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
 import {
   Package,
   TrendingUp,
@@ -11,25 +10,22 @@ import {
   ArrowDownCircle,
   ArrowUpCircle,
   RefreshCw,
-  Truck,
-  ExternalLink,
 } from 'lucide-react';
 import clsx from 'clsx';
 import { warehouseApi } from '../../api/warehouse.api';
 import { productsApi } from '../../api/products.api';
-import { suppliersApi } from '../../api/suppliers.api';
 import { NumberInput } from '../../components/ui/NumberInput';
 import { Select } from '../../components/ui/Select';
 import { DataTable, Column } from '../../components/ui/DataTable';
 import { ModalPortal } from '../../components/common/Modal';
 import { SearchInput } from '../../components/ui/SearchInput';
 import { ExportButtons } from '../../components/common/ExportButtons';
+import { IncomeModal } from '../../components/warehouse/IncomeModal';
 import { useNotificationsStore } from '../../store/notificationsStore';
 import { PermissionCode } from '../../hooks/usePermission';
 import { PermissionGate } from '../../components/common/PermissionGate';
 import {
   formatNumber,
-  formatCurrency,
   formatDateTime,
   MOVEMENT_TYPES,
   REFERENCE_TYPES,
@@ -39,11 +35,9 @@ import type {
   Product,
   StockMovement,
   WarehouseStats,
-  Supplier,
 } from '../../types';
 
 export function WarehousePage() {
-  const navigate = useNavigate();
   const [stats, setStats] = useState<WarehouseStats | null>(null);
   const [movements, setMovements] = useState<StockMovement[]>([]);
   const [lowStockProducts, setLowStockProducts] = useState<Product[]>([]);
@@ -59,9 +53,12 @@ export function WarehousePage() {
   const [movementTypeFilter, setMovementTypeFilter] = useState<MovementType | ''>('');
   const [referenceTypeFilter, setReferenceTypeFilter] = useState('');
 
-  // Adjustment modal
+  // Income modal (alohida komponent)
+  const [showIncomeModal, setShowIncomeModal] = useState(false);
+
+  // Adjustment/Out modal (eski modal - faqat OUT va ADJUSTMENT uchun)
   const [showAdjustmentModal, setShowAdjustmentModal] = useState(false);
-  const [adjustmentType, setAdjustmentType] = useState<MovementType>('IN');
+  const [adjustmentType, setAdjustmentType] = useState<MovementType>('OUT');
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
   const [adjustmentQuantity, setAdjustmentQuantity] = useState('');
   const [adjustmentNotes, setAdjustmentNotes] = useState('');
@@ -71,11 +68,6 @@ export function WarehousePage() {
   const [productSearch, setProductSearch] = useState('');
   const [searchResults, setSearchResults] = useState<Product[]>([]);
   const [searchLoading, setSearchLoading] = useState(false);
-
-  // Supplier for IN movements
-  const [allSuppliers, setAllSuppliers] = useState<Supplier[]>([]);
-  const [selectedSupplier, setSelectedSupplier] = useState<Supplier | null>(null);
-  const [unitPrice, setUnitPrice] = useState<number>(0);
 
   const { notifications } = useNotificationsStore();
   const getMovementIcon = (type: MovementType) => {
@@ -207,20 +199,11 @@ export function WarehousePage() {
     }
   }, []);
 
-  const loadAllSuppliers = useCallback(async () => {
-    try {
-      const data = await suppliersApi.getActive();
-      setAllSuppliers(data);
-    } catch (error) {
-      console.error('Failed to load suppliers:', error);
-    }
-  }, []);
-
   const loadInitialData = useCallback(async () => {
     setLoading(true);
-    await Promise.all([loadStats(), loadLowStockProducts(), loadAllSuppliers()]);
+    await Promise.all([loadStats(), loadLowStockProducts()]);
     setLoading(false);
-  }, [loadStats, loadLowStockProducts, loadAllSuppliers]);
+  }, [loadStats, loadLowStockProducts]);
 
   useEffect(() => {
     void loadInitialData();
@@ -268,6 +251,7 @@ export function WarehousePage() {
     setSearchResults([]);
   };
 
+  // Faqat OUT va ADJUSTMENT uchun
   const handleOpenAdjustmentModal = (type: MovementType) => {
     setAdjustmentType(type);
     setSelectedProduct(null);
@@ -275,8 +259,6 @@ export function WarehousePage() {
     setAdjustmentNotes('');
     setProductSearch('');
     setSearchResults([]);
-    setSelectedSupplier(null);
-    setUnitPrice(0);
     setShowAdjustmentModal(true);
   };
 
@@ -285,8 +267,14 @@ export function WarehousePage() {
     setSelectedProduct(null);
     setAdjustmentQuantity('');
     setAdjustmentNotes('');
-    setSelectedSupplier(null);
-    setUnitPrice(0);
+  };
+
+  // IncomeModal muvaffaqiyatli bajarilganda
+  const handleIncomeSuccess = () => {
+    setShowIncomeModal(false);
+    void loadStats();
+    void loadMovements();
+    void loadLowStockProducts();
   };
 
   const handleSubmitAdjustment = async () => {
@@ -349,7 +337,7 @@ export function WarehousePage() {
           <PermissionGate permission={PermissionCode.WAREHOUSE_ADJUST}>
             <button
               className="btn btn-success"
-              onClick={() => handleOpenAdjustmentModal('IN')}
+              onClick={() => setShowIncomeModal(true)}
             >
               <Plus className="h-5 w-5" />
               Kirim
@@ -577,19 +565,24 @@ export function WarehousePage() {
         </div>
       </div>
 
-      {/* Adjustment Modal */}
+      {/* Income Modal (alohida komponent) */}
+      <IncomeModal
+        isOpen={showIncomeModal}
+        onClose={() => setShowIncomeModal(false)}
+        onSuccess={handleIncomeSuccess}
+      />
+
+      {/* Adjustment/Out Modal - faqat OUT va ADJUSTMENT uchun */}
       <ModalPortal isOpen={showAdjustmentModal} onClose={handleCloseAdjustmentModal}>
         <div className="w-full max-w-lg bg-base-100 rounded-2xl shadow-2xl max-h-[90vh] overflow-y-auto">
           <div className="p-4 sm:p-6">
             <div className="flex items-start justify-between gap-4">
               <div>
                 <h3 className="text-xl font-semibold">
-                  {adjustmentType === 'IN' && 'Kirim qo\'shish'}
                   {adjustmentType === 'OUT' && 'Chiqim qo\'shish'}
                   {adjustmentType === 'ADJUSTMENT' && 'Zaxirani tuzatish'}
                 </h3>
                 <p className="text-sm text-base-content/60">
-                  {adjustmentType === 'IN' && 'Omborga yangi mahsulot kirimi'}
                   {adjustmentType === 'OUT' && 'Ombordan mahsulot chiqimi'}
                   {adjustmentType === 'ADJUSTMENT' && "Zaxira miqdorini to'g'rilash"}
                 </p>
@@ -678,69 +671,6 @@ export function WarehousePage() {
                 )}
               </div>
 
-              {/* Supplier section - only for IN movements */}
-              {adjustmentType === 'IN' && (
-                <div className="surface-soft rounded-xl p-4 space-y-4">
-                  <h4 className="text-sm font-semibold uppercase tracking-[0.15em] text-base-content/60 flex items-center gap-2">
-                    <Truck className="h-4 w-4" />
-                    Ta'minotchi (ixtiyoriy)
-                  </h4>
-
-                  <label className="form-control">
-                    <span className="label-text mb-1 text-xs font-semibold uppercase tracking-[0.18em] text-base-content/50">
-                      Ta'minotchi
-                    </span>
-                    <div className="flex gap-2">
-                      <Select
-                        value={selectedSupplier?.id || undefined}
-                        onChange={(val) => {
-                          const supplier = allSuppliers.find(s => s.id === Number(val));
-                          setSelectedSupplier(supplier || null);
-                        }}
-                        options={[
-                          { value: '', label: "Ta'minotchisiz" },
-                          ...allSuppliers.map(supplier => ({
-                            value: supplier.id,
-                            label: supplier.name,
-                          })),
-                        ]}
-                        placeholder="Ta'minotchisiz"
-                        className="flex-1"
-                      />
-                      <button
-                        type="button"
-                        className="btn btn-outline btn-sm"
-                        onClick={() => navigate('/suppliers')}
-                        title="Yangi ta'minotchi qo'shish"
-                      >
-                        <ExternalLink className="h-4 w-4" />
-                      </button>
-                    </div>
-                  </label>
-
-                  {selectedSupplier && (
-                    <label className="form-control">
-                      <span className="label-text mb-1 text-xs font-semibold uppercase tracking-[0.18em] text-base-content/50">
-                        Birlik narxi
-                      </span>
-                      <input
-                        type="number"
-                        min={0}
-                        className="input input-bordered w-full"
-                        value={unitPrice || ''}
-                        onChange={(e) => setUnitPrice(Number(e.target.value) || 0)}
-                        placeholder="0"
-                      />
-                      {unitPrice > 0 && adjustmentQuantity && (
-                        <span className="label-text-alt mt-1 text-base-content/70">
-                          Jami: {formatCurrency(unitPrice * parseInt(adjustmentQuantity || '0'))}
-                        </span>
-                      )}
-                    </label>
-                  )}
-                </div>
-              )}
-
               <label className="form-control">
                 <span className="label-text mb-1 text-xs font-semibold uppercase tracking-[0.18em] text-base-content/50">
                   Izoh
@@ -766,7 +696,6 @@ export function WarehousePage() {
               <button
                 className={clsx(
                   'btn',
-                  adjustmentType === 'IN' && 'btn-success',
                   adjustmentType === 'OUT' && 'btn-error',
                   adjustmentType === 'ADJUSTMENT' && 'btn-info'
                 )}
@@ -779,7 +708,6 @@ export function WarehousePage() {
                 }
               >
                 {submitting && <span className="loading loading-spinner loading-sm" />}
-                {adjustmentType === 'IN' && 'Kirim qo\'shish'}
                 {adjustmentType === 'OUT' && 'Chiqim qo\'shish'}
                 {adjustmentType === 'ADJUSTMENT' && 'Tuzatish'}
               </button>
