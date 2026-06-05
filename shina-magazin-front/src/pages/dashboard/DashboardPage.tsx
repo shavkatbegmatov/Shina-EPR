@@ -48,6 +48,10 @@ const COLORS = {
   chart: ['#6366f1', '#22c55e', '#f59e0b', '#ef4444', '#3b82f6', '#8b5cf6', '#ec4899', '#14b8a6'],
 };
 
+// Recharts bar chartlarida default hover cursor och-kulrang to'rtburchak chizadi,
+// qorong'i temada xunuk oq quti bo'lib ko'rinadi. Nozik shaffof variant bilan almashtiramiz.
+const BAR_CURSOR = { fill: 'rgba(148, 163, 184, 0.12)' };
+
 // Valyuta formatlash (qisqa)
 const formatCompactCurrency = (value: number): string => {
   if (value >= 1_000_000_000) {
@@ -504,6 +508,7 @@ export function DashboardPage() {
                   }
                 />
                 <Tooltip
+                  cursor={BAR_CURSOR}
                   formatter={(value: number) => formatCurrency(value)}
                   labelFormatter={(label) => `Mahsulot: ${label}`}
                 />
@@ -530,6 +535,7 @@ export function DashboardPage() {
                 <XAxis dataKey="hourLabel" tick={{ fontSize: 11 }} />
                 <YAxis tick={{ fontSize: 12 }} />
                 <Tooltip
+                  cursor={BAR_CURSOR}
                   formatter={(value: number, name: string) =>
                     name === 'Daromad' ? formatCurrency(value) : value
                   }
@@ -557,6 +563,7 @@ export function DashboardPage() {
                 <XAxis dataKey="day" tick={{ fontSize: 12 }} />
                 <YAxis tick={{ fontSize: 12 }} tickFormatter={(v) => formatCompactCurrency(v)} />
                 <Tooltip
+                  cursor={BAR_CURSOR}
                   formatter={(value: number, name: string) =>
                     name === 'Daromad' ? formatCurrency(value) : value
                   }
