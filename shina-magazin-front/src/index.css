@@ -96,6 +96,24 @@
     @apply inline-flex items-center gap-2 rounded-full border border-base-300 bg-base-100/80 px-3 py-1 text-xs font-medium text-base-content/70;
   }
 
+  /* Recharts default tooltip — inline oq fon o'rniga temaga mos solid fon va
+   * kontrastli matn (qorong'i temada matn ko'rinmay qolish muammosini hal qiladi).
+   * !important kerak, chunki Recharts ranglarni inline style bilan beradi. */
+  .recharts-default-tooltip {
+    @apply !rounded-xl !border !border-base-200 !bg-base-100 !text-base-content shadow-[var(--shadow-strong)];
+  }
+
+  .recharts-tooltip-label {
+    @apply mb-1 !font-semibold !text-base-content;
+  }
+
+  .recharts-tooltip-item,
+  .recharts-tooltip-item-name,
+  .recharts-tooltip-item-separator,
+  .recharts-tooltip-item-value {
+    @apply !text-base-content;
+  }
+
   /* ============================================
    * STANDARDIZED FORM ELEMENTS
    * All form controls should have consistent:
