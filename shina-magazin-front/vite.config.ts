@@ -26,13 +26,15 @@ export default defineConfig({
   },
 
   server: {
-    port: 5245,
-    host: true,
+    port: 5183,
+    host: true, // teldan/LAN'dan kirish uchun shart
+    strictPort: true, // 5183 band bo'lsa boshqa portga o'tib ketmasligi uchun
 
     proxy: {
       // 1) REST API proxy (faqat HTTP)
       '/api': {
-        target: 'http://localhost:8245',
+        target: 'http://localhost:8183',
+        // target: 'http://192.168.1.33:8183',
         changeOrigin: true,
         secure: false,
         ws: false,
@@ -53,7 +55,7 @@ export default defineConfig({
 
       // 2) WS/SockJS proxy (faqat WS): /api/v1/ws -> /v1/ws
       '/api/v1/ws': {
-        target: 'http://localhost:8245',
+        target: 'http://localhost:8183',
         changeOrigin: true,
         secure: false,
         ws: true,

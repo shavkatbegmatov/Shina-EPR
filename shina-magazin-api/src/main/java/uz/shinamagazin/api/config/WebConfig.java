@@ -30,10 +30,10 @@ public class WebConfig implements WebMvcConfigurer {
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration configuration = new CorsConfiguration();
         configuration.setAllowedOrigins(List.of(
-                "http://localhost:5173",
+                "http://localhost:5183",
                 "http://localhost:3000",
-                "http://127.0.0.1:5173",
-                "http://localhost:5245"
+                "http://127.0.0.1:5183",
+                "http://192.168.1.33:5183"
         ));
         configuration.setAllowedMethods(Arrays.asList(
                 "GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"

@@ -27,7 +27,7 @@ spring:
     locations: classpath:db/migration
 
 server:
-  port: 8245
+  port: 8183
   servlet:
     context-path: /api
 

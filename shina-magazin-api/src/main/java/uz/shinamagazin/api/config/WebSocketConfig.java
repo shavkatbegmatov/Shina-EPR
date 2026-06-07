@@ -31,10 +31,10 @@ public class WebSocketConfig implements WebSocketMessageBrokerConfigurer {
         // WebSocket endpoint
         registry.addEndpoint("/v1/ws")
                 .setAllowedOrigins(
-                        "http://localhost:5173",
+                        "http://localhost:5183",
                         "http://localhost:3000",
-                        "http://127.0.0.1:5173",
-                        "http://localhost:5245"
+                        "http://127.0.0.1:5183",
+                        "http://192.168.1.33:5183"
                 )
                 .withSockJS();
     }

@@ -34,5 +34,5 @@ Backend (run in `shina-magazin-api/`):
 - PRs should describe affected areas (frontend/API), include screenshots for UI changes, and call out any DB migration or config updates.
 
 ## Configuration & Security Notes
-- API defaults: `server.port=8080`, context path `/api`, PostgreSQL dev DB in `application-dev.yml`.
+- API defaults: `server.port=8183`, context path `/api`, PostgreSQL dev DB in `application-dev.yml`.
 - Set `JWT_SECRET` for production; the dev default is defined in `application.yml`.

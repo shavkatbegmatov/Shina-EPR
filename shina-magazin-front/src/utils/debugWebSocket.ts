@@ -76,14 +76,14 @@ export function debugWebSocket() {
 
   if (!authState.user) {
     console.log('❌ Not logged in');
-    console.log('   → Login first: http://localhost:5173/login');
+    console.log('   → Login first: http://localhost:5183/login');
   } else if (!token) {
     console.log('❌ No access token');
     console.log('   → Try logging out and logging in again');
   } else if (!webSocketService.isConnected()) {
     console.log('❌ WebSocket not connected');
     console.log('   → Check browser console for connection errors');
-    console.log('   → Verify backend is running: http://localhost:8080');
+    console.log('   → Verify backend is running: http://localhost:8183');
     console.log('   → Try refreshing the page');
     console.log('   → Check Network tab for WebSocket connection');
   } else {
