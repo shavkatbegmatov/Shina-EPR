@@ -36,22 +36,10 @@ import { dashboardApi } from '../../api/dashboard.api';
 import { formatCurrency, formatNumber } from '../../config/constants';
 import type { DashboardStats, ChartData } from '../../types';
 import { useNotificationsStore } from '../../store/notificationsStore';
+import { useChartColors } from '../../ui/charts/useChartColors';
 
-// Brend rang palitrasi (teal/orange/lime) — DaisyUI "shina" temasiga mos.
-// Eslatma: interim. Faza 1'da src/ui/tokens + tema-aware useChartColors() bilan almashtiriladi.
-const COLORS = {
-  primary: '#0f766e',   // teal — brend asosiy
-  success: '#16a34a',
-  warning: '#f59e0b',
-  error: '#dc2626',
-  info: '#0284c7',
-  secondary: '#ea580c', // orange — brend energiya
-  chart: ['#0f766e', '#ea580c', '#84cc16', '#0284c7', '#16a34a', '#7c3aed', '#db2777', '#ca8a04'],
-};
-
-// Recharts bar chartlarida default hover cursor och-kulrang to'rtburchak chizadi,
-// qorong'i temada xunuk oq quti bo'lib ko'rinadi. Nozik shaffof variant bilan almashtiramiz.
-const BAR_CURSOR = { fill: 'rgba(148, 163, 184, 0.12)' };
+// Grafik ranglari tema-aware useChartColors() hooki orqali keladi (src/ui/charts).
+// Brend teal/orange/lime + dark-mode varianti src/index.css dagi --chart-* tokenlaridan.
 
 // Valyuta formatlash (qisqa)
 const formatCompactCurrency = (value: number): string => {
@@ -205,6 +193,8 @@ const CustomTooltip = ({ active, payload, label }: CustomTooltipProps) => {
 };
 
 export function DashboardPage() {
+  const colors = useChartColors();
+  const barCursor = { fill: colors.cursor };
   const [stats, setStats] = useState<DashboardStats | null>(null);
   const [chartData, setChartData] = useState<ChartData | null>(null);
   const [initialLoading, setInitialLoading] = useState(true);
@@ -415,8 +405,8 @@ export function DashboardPage() {
               <AreaChart data={chartData?.salesTrend || []}>
                 <defs>
                   <linearGradient id="colorRevenue" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="5%" stopColor={COLORS.primary} stopOpacity={0.3} />
-                    <stop offset="95%" stopColor={COLORS.primary} stopOpacity={0} />
+                    <stop offset="5%" stopColor={colors.primary} stopOpacity={0.3} />
+                    <stop offset="95%" stopColor={colors.primary} stopOpacity={0} />
                   </linearGradient>
                 </defs>
                 <CartesianGrid strokeDasharray="3 3" stroke="currentColor" opacity={0.1} />
@@ -437,7 +427,7 @@ export function DashboardPage() {
                   type="monotone"
                   dataKey="revenue"
                   name="Daromad"
-                  stroke={COLORS.primary}
+                  stroke={colors.primary}
                   strokeWidth={2}
                   fillOpacity={1}
                   fill="url(#colorRevenue)"
@@ -469,7 +459,7 @@ export function DashboardPage() {
                   {(chartData?.paymentMethods || []).map((_, index) => (
                     <Cell
                       key={`cell-${index}`}
-                      fill={COLORS.chart[index % COLORS.chart.length]}
+                      fill={colors.series[index % colors.series.length]}
                     />
                   ))}
                 </Pie>
@@ -509,11 +499,11 @@ export function DashboardPage() {
                   }
                 />
                 <Tooltip
-                  cursor={BAR_CURSOR}
+                  cursor={barCursor}
                   formatter={(value: number) => formatCurrency(value)}
                   labelFormatter={(label) => `Mahsulot: ${label}`}
                 />
-                <Bar dataKey="revenue" name="Daromad" fill={COLORS.success} radius={[0, 4, 4, 0]} />
+                <Bar dataKey="revenue" name="Daromad" fill={colors.success} radius={[0, 4, 4, 0]} />
               </BarChart>
             </ResponsiveContainer>
           </div>
@@ -536,7 +526,7 @@ export function DashboardPage() {
                 <XAxis dataKey="hourLabel" tick={{ fontSize: 11 }} />
                 <YAxis tick={{ fontSize: 12 }} />
                 <Tooltip
-                  cursor={BAR_CURSOR}
+                  cursor={barCursor}
                   formatter={(value: number, name: string) =>
                     name === 'Daromad' ? formatCurrency(value) : value
                   }
@@ -544,7 +534,7 @@ export function DashboardPage() {
                 <Bar
                   dataKey="salesCount"
                   name="Sotuvlar"
-                  fill={COLORS.info}
+                  fill={colors.info}
                   radius={[4, 4, 0, 0]}
                 />
               </BarChart>
@@ -564,7 +554,7 @@ export function DashboardPage() {
                 <XAxis dataKey="day" tick={{ fontSize: 12 }} />
                 <YAxis tick={{ fontSize: 12 }} tickFormatter={(v) => formatCompactCurrency(v)} />
                 <Tooltip
-                  cursor={BAR_CURSOR}
+                  cursor={barCursor}
                   formatter={(value: number, name: string) =>
                     name === 'Daromad' ? formatCurrency(value) : value
                   }
@@ -573,7 +563,7 @@ export function DashboardPage() {
                   {(chartData?.weekdaySales || []).map((entry, index) => (
                     <Cell
                       key={`cell-${index}`}
-                      fill={entry.dayOfWeek === 0 || entry.dayOfWeek === 6 ? COLORS.warning : COLORS.primary}
+                      fill={entry.dayOfWeek === 0 || entry.dayOfWeek === 6 ? colors.warning : colors.primary}
                     />
                   ))}
                 </Bar>
@@ -602,7 +592,7 @@ export function DashboardPage() {
                     {chartData.categorySales.map((_, index) => (
                       <Cell
                         key={`cell-${index}`}
-                        fill={COLORS.chart[index % COLORS.chart.length]}
+                        fill={colors.series[index % colors.series.length]}
                       />
                     ))}
                   </Pie>

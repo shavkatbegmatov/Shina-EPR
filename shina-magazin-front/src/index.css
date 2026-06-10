@@ -10,6 +10,24 @@
     --font-display: 'Sora', 'Manrope', sans-serif;
     --shadow-soft: 0 16px 40px -28px rgba(15, 23, 42, 0.45);
     --shadow-strong: 0 24px 60px -28px rgba(15, 23, 42, 0.6);
+    --shadow-pop: 0 4px 30px rgba(0, 0, 0, 0.15);
+  }
+
+  /* Grafik token ranglari (tema-aware). useChartColors() shu o'zgaruvchilarni o'qiydi.
+   * <html> elementida e'lon qilinadi (body'da emas) — getComputedStyle(documentElement) uchun. */
+  [data-theme="shina"] {
+    --chart-1: #0f766e; --chart-2: #ea580c; --chart-3: #84cc16; --chart-4: #0284c7;
+    --chart-5: #16a34a; --chart-6: #7c3aed; --chart-7: #db2777; --chart-8: #ca8a04;
+    --chart-primary: #0f766e; --chart-secondary: #ea580c; --chart-success: #16a34a;
+    --chart-warning: #f59e0b; --chart-error: #dc2626; --chart-info: #0284c7;
+    --chart-grid: rgba(15, 23, 42, 0.08); --chart-cursor: rgba(148, 163, 184, 0.12);
+  }
+  [data-theme="shina-dark"] {
+    --chart-1: #2dd4bf; --chart-2: #fb923c; --chart-3: #a3e635; --chart-4: #38bdf8;
+    --chart-5: #4ade80; --chart-6: #a78bfa; --chart-7: #f472b6; --chart-8: #fcd34d;
+    --chart-primary: #2dd4bf; --chart-secondary: #fb923c; --chart-success: #4ade80;
+    --chart-warning: #fbbf24; --chart-error: #f87171; --chart-info: #38bdf8;
+    --chart-grid: rgba(226, 232, 240, 0.10); --chart-cursor: rgba(148, 163, 184, 0.18);
   }
 
   html {
