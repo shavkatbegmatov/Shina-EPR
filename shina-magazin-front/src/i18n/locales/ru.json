@@ -9,7 +9,28 @@
     "back": "Назад",
     "noData": "Данные не найдены",
     "sum": "сум",
-    "all": "Все"
+    "all": "Все",
+    "edit": "Редактировать",
+    "delete": "Удалить",
+    "add": "Добавить",
+    "create": "Создать",
+    "update": "Обновить",
+    "close": "Закрыть",
+    "search": "Поиск",
+    "actions": "Действия",
+    "yes": "Да",
+    "no": "Нет",
+    "view": "Просмотр",
+    "refresh": "Обновить",
+    "export": "Экспорт",
+    "filter": "Фильтр",
+    "clear": "Очистить",
+    "total": "Итого",
+    "name": "Название",
+    "status": "Статус",
+    "amount": "Сумма",
+    "success": "Успешно",
+    "noResults": "Ничего не найдено"
   },
   "auth": {
     "login": "Вход",
@@ -111,5 +132,37 @@
     "paid": "Оплачен",
     "partial": "Частично",
     "unpaid": "Не оплачен"
+  },
+  "erp": {
+    "nav": {
+      "dashboard": "Панель",
+      "products": "Товары",
+      "pos": "Касса (POS)",
+      "sales": "Продажи",
+      "customers": "Клиенты",
+      "debts": "Долги",
+      "warehouse": "Склад",
+      "suppliers": "Поставщики",
+      "purchases": "Закупки",
+      "reports": "Отчёты",
+      "notifications": "Уведомления",
+      "employees": "Сотрудники",
+      "roles": "Роли",
+      "auditLogs": "Журнал аудита",
+      "settings": "Настройки"
+    },
+    "header": {
+      "home": "Главная",
+      "notifications": "Уведомления",
+      "allNotifications": "Посмотреть все",
+      "noNotifications": "Нет уведомлений",
+      "newCount": "{{count}} новых",
+      "help": "Помощь",
+      "profileSettings": "Настройки профиля",
+      "systemSettings": "Настройки системы",
+      "lightMode": "Светлая тема",
+      "darkMode": "Тёмная тема",
+      "logout": "Выход"
+    }
   }
 }

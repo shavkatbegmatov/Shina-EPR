@@ -16,7 +16,9 @@ import {
   Package,
   CreditCard,
   Users,
+  Languages,
 } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 import { useMatches, useNavigate, Link } from 'react-router-dom';
 import clsx from 'clsx';
 import { useAuthStore } from '../../store/authStore';
@@ -91,6 +93,7 @@ type RouteHandle = {
 };
 
 export function Header() {
+  const { i18n } = useTranslation();
   const { user, logout } = useAuthStore();
   const { toggleSidebar } = useUIStore();
   const { mode: themeMode, setMode: setThemeMode } = useThemeStore();
@@ -252,6 +255,20 @@ export function Header() {
           <div className="md:hidden">
             <SearchCommand />
           </div>
+
+          {/* Language toggle */}
+          <Button
+            variant="ghost"
+            size="sm"
+            className="hidden gap-1 sm:flex"
+            onClick={() => i18n.changeLanguage(i18n.language === 'uz' ? 'ru' : 'uz')}
+            title="Til / Язык"
+          >
+            <Languages className="h-4 w-4" />
+            <span className="text-xs font-semibold uppercase">
+              {i18n.language === 'ru' ? 'RU' : 'UZ'}
+            </span>
+          </Button>
 
           {/* Theme toggle */}
           <Button

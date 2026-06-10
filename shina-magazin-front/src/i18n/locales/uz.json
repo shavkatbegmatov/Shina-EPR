@@ -9,7 +9,28 @@
     "back": "Orqaga",
     "noData": "Ma'lumot topilmadi",
     "sum": "so'm",
-    "all": "Hammasi"
+    "all": "Hammasi",
+    "edit": "Tahrirlash",
+    "delete": "O'chirish",
+    "add": "Qo'shish",
+    "create": "Yaratish",
+    "update": "Yangilash",
+    "close": "Yopish",
+    "search": "Qidirish",
+    "actions": "Amallar",
+    "yes": "Ha",
+    "no": "Yo'q",
+    "view": "Ko'rish",
+    "refresh": "Yangilash",
+    "export": "Eksport",
+    "filter": "Filtr",
+    "clear": "Tozalash",
+    "total": "Jami",
+    "name": "Nomi",
+    "status": "Holat",
+    "amount": "Summa",
+    "success": "Muvaffaqiyatli",
+    "noResults": "Natija topilmadi"
   },
   "auth": {
     "login": "Kirish",
@@ -111,5 +132,37 @@
     "paid": "To'langan",
     "partial": "Qisman",
     "unpaid": "To'lanmagan"
+  },
+  "erp": {
+    "nav": {
+      "dashboard": "Dashboard",
+      "products": "Mahsulotlar",
+      "pos": "Kassa (POS)",
+      "sales": "Sotuvlar",
+      "customers": "Mijozlar",
+      "debts": "Qarzlar",
+      "warehouse": "Ombor",
+      "suppliers": "Ta'minotchilar",
+      "purchases": "Xaridlar",
+      "reports": "Hisobotlar",
+      "notifications": "Bildirishnomalar",
+      "employees": "Xodimlar",
+      "roles": "Rollar",
+      "auditLogs": "Audit Loglar",
+      "settings": "Sozlamalar"
+    },
+    "header": {
+      "home": "Bosh sahifa",
+      "notifications": "Bildirishnomalar",
+      "allNotifications": "Barchasini ko'rish",
+      "noNotifications": "Bildirishnomalar yo'q",
+      "newCount": "{{count}} ta yangi",
+      "help": "Yordam",
+      "profileSettings": "Profil sozlamalari",
+      "systemSettings": "Tizim sozlamalari",
+      "lightMode": "Yorug' rejim",
+      "darkMode": "Qorong'i rejim",
+      "logout": "Chiqish"
+    }
   }
 }
