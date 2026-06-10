@@ -36,7 +36,7 @@ import { dashboardApi } from '../../api/dashboard.api';
 import { formatCurrency, formatNumber } from '../../config/constants';
 import type { DashboardStats, ChartData } from '../../types';
 import { useNotificationsStore } from '../../store/notificationsStore';
-import { useChartColors } from '../../ui/charts/useChartColors';
+import { Button, buttonVariants, useChartColors } from '@/ui';
 
 // Grafik ranglari tema-aware useChartColors() hooki orqali keladi (src/ui/charts).
 // Brend teal/orange/lime + dark-mode varianti src/index.css dagi --chart-* tokenlaridan.
@@ -283,20 +283,24 @@ export function DashboardPage() {
         <div className="flex flex-wrap items-center gap-3">
           {/* Period selector */}
           <div className="join">
-            <button
-              className={clsx('join-item btn btn-sm', period === 7 && 'btn-primary')}
+            <Button
+              size="sm"
+              variant={period === 7 ? 'primary' : 'default'}
+              className="join-item"
               onClick={() => setPeriod(7)}
             >
               7 kun
-            </button>
-            <button
-              className={clsx('join-item btn btn-sm', period === 30 && 'btn-primary')}
+            </Button>
+            <Button
+              size="sm"
+              variant={period === 30 ? 'primary' : 'default'}
+              className="join-item"
               onClick={() => setPeriod(30)}
             >
               30 kun
-            </button>
+            </Button>
           </div>
-          <Link to="/pos" className="btn btn-primary">
+          <Link to="/pos" className={buttonVariants({ variant: 'primary' })}>
             <ShoppingCart className="h-4 w-4" />
             Yangi sotuv
           </Link>
@@ -613,19 +617,19 @@ export function DashboardPage() {
       <div className="surface-card p-5">
         <h3 className="mb-4 font-semibold">Tez havolalar</h3>
         <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
-          <Link to="/pos" className="btn btn-primary">
+          <Link to="/pos" className={buttonVariants({ variant: 'primary' })}>
             <ShoppingCart className="h-4 w-4" />
             Kassa
           </Link>
-          <Link to="/products" className="btn btn-outline">
+          <Link to="/products" className={buttonVariants({ variant: 'outline' })}>
             <Package className="h-4 w-4" />
             Mahsulotlar
           </Link>
-          <Link to="/customers" className="btn btn-outline">
+          <Link to="/customers" className={buttonVariants({ variant: 'outline' })}>
             <Users className="h-4 w-4" />
             Mijozlar
           </Link>
-          <Link to="/reports" className="btn btn-outline">
+          <Link to="/reports" className={buttonVariants({ variant: 'outline' })}>
             <BarChart3 className="h-4 w-4" />
             Hisobotlar
           </Link>

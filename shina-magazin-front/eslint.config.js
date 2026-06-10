@@ -29,6 +29,15 @@ export default tseslint.config(
     },
   },
   {
+    // UI primitiv kutubxonasi (src/ui) — komponent + cva variantlari bir faylda
+    // co-located bo'lishi standart (shadcn pattern). Fast-refresh granularligi
+    // dizayn-tizim qatlami uchun muhim emas.
+    files: ['src/ui/**/*.{ts,tsx}'],
+    rules: {
+      'react-refresh/only-export-components': 'off',
+    },
+  },
+  {
     // Layer 4 (app sahifalari) — xom brend-tashqi / FILL-only hex taqiqlanadi.
     // Ranglar src/ui/tokens, DaisyUI semantik tokenlar yoki useChartColors() dan kelishi kerak.
     files: ['src/pages/**/*.{ts,tsx}', 'src/portal/**/*.{ts,tsx}'],

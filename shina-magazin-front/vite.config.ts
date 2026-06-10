@@ -1,9 +1,16 @@
 import { defineConfig, type ProxyOptions } from 'vite'
 import react from '@vitejs/plugin-react-swc'
 import type { IncomingMessage, ClientRequest } from 'node:http'
+import { fileURLToPath, URL } from 'node:url'
 
 export default defineConfig({
   plugins: [react()],
+  // @/* -> src/* (tsconfig paths bilan mos)
+  resolve: {
+    alias: {
+      '@': fileURLToPath(new URL('./src', import.meta.url)),
+    },
+  },
   define: {
     global: 'globalThis',
   },
