@@ -20,6 +20,7 @@ import {
 import { useAuthStore } from '../../store/authStore';
 import { useUIStore } from '../../store/uiStore';
 import { PermissionCode } from '../../hooks/usePermission';
+import { Logo } from '../brand/Logo';
 import clsx from 'clsx';
 
 // Menu items with permission-based visibility
@@ -74,10 +75,10 @@ export function Sidebar() {
           <div className="pointer-events-none absolute inset-0 bg-gradient-to-br from-primary/15 via-transparent to-secondary/10" />
           <div className="relative flex items-center gap-3">
             <div className="grid h-9 w-9 place-items-center rounded-xl bg-primary/15 text-primary shadow-sm">
-              <span className="text-base font-bold">S</span>
+              <Logo variant="mark" tone="erp" className="h-6 w-6" />
             </div>
             <div>
-              <h1 className="text-base font-bold leading-tight">Shina Magazin</h1>
+              <h1 className="text-base font-bold leading-tight">Protektor</h1>
               <p className="text-[11px] text-base-content/60">
                 ERP boshqaruv paneli
               </p>

@@ -4,6 +4,7 @@ import { useTranslation } from 'react-i18next';
 import { useNavigate, Navigate } from 'react-router-dom';
 import { LogIn, Lock, Globe, AlertCircle, Sun, Moon } from 'lucide-react';
 import toast from 'react-hot-toast';
+import Logo from '../../components/brand/Logo';
 import { PhoneInput } from '../../components/ui/PhoneInput';
 import { portalAuthApi } from '../api/portalAuth.api';
 import { usePortalAuthStore } from '../store/portalAuthStore';
@@ -84,7 +85,7 @@ export default function PortalLoginPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-primary to-primary-focus flex flex-col items-center justify-center p-4 max-w-md mx-auto">
+    <div className="min-h-screen bg-gradient-to-br from-primary to-primary-focus flex flex-col items-center justify-center p-4">
       {/* Top Controls */}
       <div className="absolute top-4 right-4 flex items-center gap-2">
         {/* Theme Toggle */}
@@ -110,15 +111,15 @@ export default function PortalLoginPage() {
 
       {/* Logo/Brand */}
       <div className="text-center mb-8">
-        <div className="w-20 h-20 bg-white rounded-full flex items-center justify-center mx-auto mb-4 shadow-lg">
-          <span className="text-3xl">🚗</span>
+        <div className="w-20 h-20 bg-white rounded-full flex items-center justify-center mx-auto mb-4 shadow-lg text-primary">
+          <Logo variant="mark" tone="shop" className="h-12 w-12" />
         </div>
-        <h1 className="text-2xl font-bold text-primary-content">Shina Magazin</h1>
+        <h1 className="text-2xl font-bold text-primary-content">Protektor</h1>
         <p className="text-primary-content/80 mt-1">{t('auth.enterCredentials')}</p>
       </div>
 
       {/* Login Card */}
-      <div className="card bg-base-100 shadow-xl w-full">
+      <div className="card bg-base-100 shadow-xl w-full max-w-md">
         <div className="card-body">
           <h2 className="card-title justify-center text-xl mb-4">
             <LogIn className="w-5 h-5" />
@@ -209,7 +210,7 @@ export default function PortalLoginPage() {
 
       {/* Footer */}
       <p className="text-primary-content/60 text-sm mt-8 text-center">
-        © 2024 Shina Magazin. Barcha huquqlar himoyalangan.
+        © 2026 Protektor. Barcha huquqlar himoyalangan.
       </p>
     </div>
   );

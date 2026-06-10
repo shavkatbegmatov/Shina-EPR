@@ -43,7 +43,7 @@ export function POSPage() {
     try {
       const data = await productsApi.getAll({
         search: search || undefined,
-        size: 50,
+        size: 100, // Faza 3'da paginatsiya/infinite-scroll bilan almashtiriladi
       });
       setProducts(data.content);
     } catch (error) {
@@ -236,7 +236,7 @@ export function POSPage() {
   }, [cart.discount, cart.discountPercent, subtotal]);
 
   return (
-    <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_380px]">
+    <div className="grid gap-4 md:grid-cols-[minmax(0,1fr)_320px] lg:gap-6 lg:grid-cols-[minmax(0,1fr)_380px]">
       {/* Products Grid */}
       <section className="surface-card flex min-h-[60vh] flex-col overflow-hidden">
         <div className="border-b border-base-200 p-4">
@@ -301,8 +301,8 @@ export function POSPage() {
         </div>
       </section>
 
-      {/* Cart */}
-      <aside className="surface-card flex min-h-[60vh] flex-col overflow-hidden">
+      {/* Cart — planshetda (md+) yopishqoq o'ng panel: jami doim ko'rinadi */}
+      <aside className="surface-card flex min-h-[60vh] flex-col overflow-hidden md:sticky md:top-4 md:self-start md:max-h-[calc(100vh-2rem)]">
         <div className="flex items-center justify-between border-b border-base-200 p-4">
           <div>
             <h2 className="flex items-center gap-2 text-lg font-semibold">

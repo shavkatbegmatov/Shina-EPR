@@ -78,7 +78,7 @@ export default function PortalLayout() {
   }
 
   return (
-    <div className="min-h-screen bg-base-200 flex flex-col max-w-md mx-auto">
+    <div className="min-h-screen bg-base-200 flex flex-col w-full max-w-md md:max-w-3xl lg:max-w-5xl mx-auto">
       <main className="flex-1 pb-16 overflow-y-auto" style={{ scrollbarGutter: 'stable' }}>
         <Outlet context={{ setUnreadCount, newNotificationTrigger }} />
       </main>

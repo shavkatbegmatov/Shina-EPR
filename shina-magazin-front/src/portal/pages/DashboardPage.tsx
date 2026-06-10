@@ -7,13 +7,10 @@ import { portalApiClient } from '../api/portal.api';
 import PortalHeader from '../components/layout/PortalHeader';
 import type { CustomerDashboardStats, PortalSale } from '../types/portal.types';
 import { format } from 'date-fns';
+import { formatNumber as formatMoney } from '../../config/constants';
 
 interface OutletContextType {
   newNotificationTrigger: number;
-}
-
-function formatMoney(amount: number): string {
-  return new Intl.NumberFormat('uz-UZ').format(amount);
 }
 
 export default function PortalDashboardPage() {

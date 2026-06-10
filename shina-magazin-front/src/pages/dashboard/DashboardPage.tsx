@@ -37,15 +37,16 @@ import { formatCurrency, formatNumber } from '../../config/constants';
 import type { DashboardStats, ChartData } from '../../types';
 import { useNotificationsStore } from '../../store/notificationsStore';
 
-// Professional rang palitrasi
+// Brend rang palitrasi (teal/orange/lime) — DaisyUI "shina" temasiga mos.
+// Eslatma: interim. Faza 1'da src/ui/tokens + tema-aware useChartColors() bilan almashtiriladi.
 const COLORS = {
-  primary: '#6366f1',
-  success: '#22c55e',
+  primary: '#0f766e',   // teal — brend asosiy
+  success: '#16a34a',
   warning: '#f59e0b',
-  error: '#ef4444',
-  info: '#3b82f6',
-  secondary: '#8b5cf6',
-  chart: ['#6366f1', '#22c55e', '#f59e0b', '#ef4444', '#3b82f6', '#8b5cf6', '#ec4899', '#14b8a6'],
+  error: '#dc2626',
+  info: '#0284c7',
+  secondary: '#ea580c', // orange — brend energiya
+  chart: ['#0f766e', '#ea580c', '#84cc16', '#0284c7', '#16a34a', '#7c3aed', '#db2777', '#ca8a04'],
 };
 
 // Recharts bar chartlarida default hover cursor och-kulrang to'rtburchak chizadi,

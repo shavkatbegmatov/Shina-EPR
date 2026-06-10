@@ -10,6 +10,7 @@ import {
   Sparkles,
 } from 'lucide-react';
 import toast from 'react-hot-toast';
+import { Logo } from '../../components/brand/Logo';
 import { authApi } from '../../api/auth.api';
 import { useAuthStore } from '../../store/authStore';
 import type { LoginRequest } from '../../types';
@@ -78,7 +79,7 @@ export function LoginPage() {
             <div>
               <div className="pill w-fit">ERP Platforma</div>
               <h1 className="mt-4 text-4xl font-semibold leading-tight">
-                Shina Magazin
+                Protektor
                 <span className="block text-base-content/60">
                   Savdo va zaxira nazorati
                 </span>
@@ -111,6 +112,7 @@ export function LoginPage() {
           </div>
 
           <div className="p-8 sm:p-10">
+            <Logo variant="lockup" tone="erp" className="mb-6 lg:hidden" />
             <div className="mb-6">
               <h2 className="text-2xl font-semibold">Kirish</h2>
               <p className="text-sm text-base-content/60">

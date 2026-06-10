@@ -6,10 +6,7 @@ import { portalApiClient } from '../api/portal.api';
 import PortalHeader from '../components/layout/PortalHeader';
 import type { PortalSale } from '../types/portal.types';
 import { format } from 'date-fns';
-
-function formatMoney(amount: number): string {
-  return new Intl.NumberFormat('uz-UZ').format(amount);
-}
+import { formatNumber as formatMoney } from '../../config/constants';
 
 export default function PortalPurchaseDetailPage() {
   const { t } = useTranslation();

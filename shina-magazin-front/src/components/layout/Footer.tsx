@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { Circle, Keyboard, ExternalLink } from 'lucide-react';
+import { Logo } from '../brand/Logo';
 
 export function Footer() {
   const year = new Date().getFullYear();
@@ -23,7 +24,7 @@ export function Footer() {
       <div className="flex items-center justify-between px-4 py-2 lg:hidden">
         <div className="flex items-center gap-2">
           <Circle className="h-1.5 w-1.5 fill-success text-success" />
-          <span className="text-[10px] text-base-content/50">© {year} Shina Magazin</span>
+          <span className="text-[10px] text-base-content/50">© {year} Protektor</span>
         </div>
         <div className="flex items-center gap-2">
           <span className="text-[10px] tabular-nums text-base-content/40">{formatTime(currentTime)}</span>
@@ -37,10 +38,10 @@ export function Footer() {
           {/* Left section - Brand & Copyright */}
           <div className="flex items-center gap-4">
             <div className="flex items-center gap-2">
-              <div className="flex h-5 w-5 items-center justify-center rounded bg-gradient-to-br from-primary to-primary/70">
-                <span className="text-[8px] font-bold text-primary-content">SM</span>
+              <div className="flex h-5 w-5 items-center justify-center rounded bg-gradient-to-br from-primary to-primary/70 text-primary-content">
+                <Logo variant="mark" tone="shop" className="h-3.5 w-3.5" />
               </div>
-              <span className="text-xs font-medium text-base-content/70">Shina Magazin</span>
+              <span className="text-xs font-medium text-base-content/70">Protektor</span>
             </div>
             <div className="h-3 w-px bg-base-300" />
             <span className="text-[11px] text-base-content/50">© {year} Barcha huquqlar himoyalangan</span>

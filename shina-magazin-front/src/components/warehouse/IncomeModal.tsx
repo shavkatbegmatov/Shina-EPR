@@ -2,7 +2,6 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { useNavigate } from 'react-router-dom';
 import { X, Package, Truck, ExternalLink, Check } from 'lucide-react';
-import clsx from 'clsx';
 
 import { Modal } from '../common/Modal';
 import { SearchInput } from '../ui/SearchInput';
