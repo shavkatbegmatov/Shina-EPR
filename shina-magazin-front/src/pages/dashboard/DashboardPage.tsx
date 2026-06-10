@@ -12,8 +12,6 @@ import {
   PieChart,
   Clock,
   Calendar,
-  ArrowUpRight,
-  ArrowDownRight,
 } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import clsx from 'clsx';
@@ -36,7 +34,7 @@ import { dashboardApi } from '../../api/dashboard.api';
 import { formatCurrency, formatNumber } from '../../config/constants';
 import type { DashboardStats, ChartData } from '../../types';
 import { useNotificationsStore } from '../../store/notificationsStore';
-import { Button, buttonVariants, useChartColors } from '@/ui';
+import { Button, buttonVariants, useChartColors, StatCard, Skeleton } from '@/ui';
 
 // Grafik ranglari tema-aware useChartColors() hooki orqali keladi (src/ui/charts).
 // Brend teal/orange/lime + dark-mode varianti src/index.css dagi --chart-* tokenlaridan.
@@ -54,85 +52,6 @@ const formatCompactCurrency = (value: number): string => {
   }
   return value.toString();
 };
-
-// KPI karta komponenti
-function KPICard({
-  title,
-  value,
-  icon: Icon,
-  trend,
-  trendLabel,
-  color = 'primary',
-  className,
-  style,
-}: {
-  title: string;
-  value: string | number;
-  icon: React.ElementType;
-  trend?: number;
-  trendLabel?: string;
-  color?: 'primary' | 'success' | 'warning' | 'error' | 'info' | 'secondary';
-  className?: string;
-  style?: CSSProperties;
-}) {
-  const colorMap = {
-    primary: 'bg-primary/10 text-primary border-primary/20',
-    success: 'bg-success/10 text-success border-success/20',
-    warning: 'bg-warning/10 text-warning border-warning/20',
-    error: 'bg-error/10 text-error border-error/20',
-    info: 'bg-info/10 text-info border-info/20',
-    secondary: 'bg-secondary/10 text-secondary border-secondary/20',
-  };
-
-  const isPositive = trend !== undefined && trend >= 0;
-
-  return (
-    <div
-      className={clsx(
-        'surface-card group relative overflow-hidden transition duration-300 hover:-translate-y-0.5 hover:shadow-lg',
-        className
-      )}
-      style={style}
-    >
-      <div className="p-5">
-        <div className="flex items-start justify-between gap-4">
-          <div className="flex-1">
-            <p className="text-sm font-medium text-base-content/60">{title}</p>
-            <p className="mt-2 text-2xl font-bold tracking-tight lg:text-3xl">{value}</p>
-            {trend !== undefined && (
-              <div className="mt-3 flex items-center gap-1.5">
-                <span
-                  className={clsx(
-                    'inline-flex items-center gap-0.5 rounded-full px-2 py-0.5 text-xs font-semibold',
-                    isPositive ? 'bg-success/10 text-success' : 'bg-error/10 text-error'
-                  )}
-                >
-                  {isPositive ? (
-                    <ArrowUpRight className="h-3 w-3" />
-                  ) : (
-                    <ArrowDownRight className="h-3 w-3" />
-                  )}
-                  {Math.abs(trend).toFixed(1)}%
-                </span>
-                {trendLabel && (
-                  <span className="text-xs text-base-content/50">{trendLabel}</span>
-                )}
-              </div>
-            )}
-          </div>
-          <div
-            className={clsx(
-              'grid h-12 w-12 place-items-center rounded-2xl border',
-              colorMap[color]
-            )}
-          >
-            <Icon className="h-6 w-6" />
-          </div>
-        </div>
-      </div>
-    </div>
-  );
-}
 
 // Chart Card komponenti
 function ChartCard({
@@ -236,25 +155,25 @@ export function DashboardPage() {
       <div className="space-y-6">
         <div className="flex items-center justify-between">
           <div>
-            <div className="skeleton h-8 w-48" />
-            <div className="skeleton mt-2 h-4 w-64" />
+            <Skeleton className="h-8 w-48" />
+            <Skeleton className="mt-2 h-4 w-64" />
           </div>
         </div>
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
           {Array.from({ length: 4 }).map((_, i) => (
             <div key={i} className="surface-card p-5">
-              <div className="skeleton h-4 w-24" />
-              <div className="skeleton mt-3 h-8 w-32" />
-              <div className="skeleton mt-3 h-6 w-20" />
+              <Skeleton className="h-4 w-24" />
+              <Skeleton className="mt-3 h-8 w-32" />
+              <Skeleton className="mt-3 h-6 w-20" />
             </div>
           ))}
         </div>
         <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
           <div className="surface-card p-5">
-            <div className="skeleton h-64 w-full" />
+            <Skeleton className="h-64 w-full" />
           </div>
           <div className="surface-card p-5">
-            <div className="skeleton h-64 w-full" />
+            <Skeleton className="h-64 w-full" />
           </div>
         </div>
       </div>
@@ -309,36 +228,36 @@ export function DashboardPage() {
 
       {/* KPI Cards */}
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
-        <KPICard
+        <StatCard
           title="Bugungi sotuvlar"
           value={stats?.todaySalesCount || 0}
           icon={ShoppingCart}
-          color="primary"
+          tone="primary"
           trend={chartData?.salesGrowthPercent}
           trendLabel="o'tgan haftaga nisbatan"
           style={{ '--i': 0 } as CSSProperties}
         />
-        <KPICard
+        <StatCard
           title="Bugungi daromad"
           value={formatCurrency(stats?.todayRevenue || 0)}
           icon={DollarSign}
-          color="success"
+          tone="success"
           trend={chartData?.revenueGrowthPercent}
           trendLabel="o'tgan haftaga nisbatan"
           style={{ '--i': 1 } as CSSProperties}
         />
-        <KPICard
+        <StatCard
           title="Jami mahsulotlar"
           value={formatNumber(stats?.totalProducts || 0)}
           icon={Package}
-          color="info"
+          tone="info"
           style={{ '--i': 2 } as CSSProperties}
         />
-        <KPICard
+        <StatCard
           title="Mijozlar soni"
           value={formatNumber(stats?.totalCustomers || 0)}
           icon={Users}
-          color="secondary"
+          tone="secondary"
           style={{ '--i': 3 } as CSSProperties}
         />
       </div>

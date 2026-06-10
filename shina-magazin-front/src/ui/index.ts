@@ -2,6 +2,16 @@
 export { cn } from './utils/cn';
 export { Button, buttonVariants } from './primitives/Button';
 export type { ButtonProps } from './primitives/Button';
+export { Card, cardVariants } from './primitives/Card';
+export type { CardProps } from './primitives/Card';
+export { StatCard } from './primitives/StatCard';
+export type { StatCardProps, StatTone } from './primitives/StatCard';
+export { Badge, badgeVariants } from './primitives/Badge';
+export type { BadgeProps } from './primitives/Badge';
+export { Skeleton } from './primitives/Skeleton';
+export type { SkeletonProps } from './primitives/Skeleton';
+export { EmptyState } from './primitives/EmptyState';
+export type { EmptyStateProps } from './primitives/EmptyState';
 
 // Token va grafik qatlami
 export * from './tokens/colors';

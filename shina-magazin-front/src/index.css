@@ -293,6 +293,8 @@
   .animate-fade-in,
   .animate-slide-in,
   .animate-highlight-row,
+  .animate-pulse,
+  .skeleton,
   .stagger-children > * {
     animation: none !important;
   }
