@@ -21,6 +21,7 @@ import { useMatches, useNavigate, Link } from 'react-router-dom';
 import clsx from 'clsx';
 import { useAuthStore } from '../../store/authStore';
 import { useUIStore } from '../../store/uiStore';
+import { useThemeStore } from '../../shared/theme/themeStore';
 import { useNotificationsStore, type Notification } from '../../store/notificationsStore';
 import { rolesApi } from '../../api/roles.api';
 import { authApi } from '../../api/auth.api';
@@ -90,7 +91,8 @@ type RouteHandle = {
 
 export function Header() {
   const { user, logout } = useAuthStore();
-  const { toggleSidebar, themeMode, setThemeMode } = useUIStore();
+  const { toggleSidebar } = useUIStore();
+  const { mode: themeMode, setMode: setThemeMode } = useThemeStore();
   const { notifications, unreadCount, markAsRead, fetchNotifications, connectWebSocket, disconnectWebSocket } = useNotificationsStore();
   const navigate = useNavigate();
   const matches = useMatches();

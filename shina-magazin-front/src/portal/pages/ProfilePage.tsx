@@ -5,7 +5,8 @@ import { useNavigate } from 'react-router-dom';
 import toast from 'react-hot-toast';
 import { portalApiClient } from '../api/portal.api';
 import { portalAuthApi } from '../api/portalAuth.api';
-import { usePortalAuthStore, type ThemeMode } from '../store/portalAuthStore';
+import { usePortalAuthStore } from '../store/portalAuthStore';
+import { useThemeStore, type ThemeMode } from '../../shared/theme/themeStore';
 import PortalHeader from '../components/layout/PortalHeader';
 import type { CustomerPortalProfile } from '../types/portal.types';
 import { format } from 'date-fns';
@@ -13,7 +14,8 @@ import { format } from 'date-fns';
 export default function PortalProfilePage() {
   const { t, i18n } = useTranslation();
   const navigate = useNavigate();
-  const { logout, language, setLanguage, theme, setTheme } = usePortalAuthStore();
+  const { logout, language, setLanguage } = usePortalAuthStore();
+  const { mode: theme, setMode: setTheme } = useThemeStore();
   const [profile, setProfile] = useState<CustomerPortalProfile | null>(null);
   const [loading, setLoading] = useState(true);
 

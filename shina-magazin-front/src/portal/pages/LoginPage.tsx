@@ -1,10 +1,11 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState } from 'react';
 import { useForm, Controller } from 'react-hook-form';
 import { useTranslation } from 'react-i18next';
 import { useNavigate, Navigate } from 'react-router-dom';
 import { LogIn, Lock, Globe, AlertCircle, Sun, Moon } from 'lucide-react';
 import toast from 'react-hot-toast';
 import Logo from '../../components/brand/Logo';
+import { useThemeStore } from '../../shared/theme/themeStore';
 import { PhoneInput } from '../../components/ui/PhoneInput';
 import { portalAuthApi } from '../api/portalAuth.api';
 import { usePortalAuthStore } from '../store/portalAuthStore';
@@ -13,31 +14,10 @@ import type { CustomerLoginRequest } from '../types/portal.types';
 export default function PortalLoginPage() {
   const { t, i18n } = useTranslation();
   const navigate = useNavigate();
-  const { isAuthenticated, setAuth, language, setLanguage, theme, setTheme } = usePortalAuthStore();
+  const { isAuthenticated, setAuth, language, setLanguage } = usePortalAuthStore();
+  const { mode: theme, setMode: setTheme } = useThemeStore();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-
-  // Apply theme on login page
-  const getEffectiveTheme = useCallback(() => {
-    if (theme === 'system') {
-      return window.matchMedia('(prefers-color-scheme: dark)').matches ? 'shina-dark' : 'shina';
-    }
-    return theme === 'dark' ? 'shina-dark' : 'shina';
-  }, [theme]);
-
-  useEffect(() => {
-    const applyTheme = () => {
-      document.documentElement.setAttribute('data-theme', getEffectiveTheme());
-    };
-    applyTheme();
-
-    const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)');
-    const handleChange = () => {
-      if (theme === 'system') applyTheme();
-    };
-    mediaQuery.addEventListener('change', handleChange);
-    return () => mediaQuery.removeEventListener('change', handleChange);
-  }, [theme, getEffectiveTheme]);
 
   const {
     register,

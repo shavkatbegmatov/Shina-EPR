@@ -21,7 +21,7 @@ import { NumberInput } from '../../components/ui/NumberInput';
 import { Select } from '../../components/ui/Select';
 import { ModalPortal } from '../../components/common/Modal';
 import { ExportButtons } from '../../components/common/ExportButtons';
-import { useUIStore } from '../../store/uiStore';
+import { useThemeStore } from '../../shared/theme/themeStore';
 import { PermissionCode } from '../../hooks/usePermission';
 import { PermissionGate } from '../../components/common/PermissionGate';
 import type { Brand, Category } from '../../types';
@@ -45,7 +45,7 @@ const DEFAULT_DEBT_DUE_DAYS = 30;
 
 export function SettingsPage() {
   const [activeTab, setActiveTab] = useState<Tab>('appearance');
-  const { themeMode, setThemeMode } = useUIStore();
+  const { mode: themeMode, setMode: setThemeMode } = useThemeStore();
   // Brands state
   const [brands, setBrands] = useState<Brand[]>([]);
   const [brandsLoading, setBrandsLoading] = useState(true);

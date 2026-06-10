@@ -1,32 +1,28 @@
-import { useEffect, useCallback } from 'react';
+import { useEffect } from 'react';
 import { RouterProvider } from 'react-router-dom';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { Toaster } from 'react-hot-toast';
 import { router } from './router';
-import { useUIStore } from './store/uiStore';
+import { useThemeStore, applyTheme } from './shared/theme/themeStore';
 
-// Global theme hook - applies theme on app load
+// Global tema hook — yuklanishda va tizim temasi o'zgarganda data-theme ni qo'llaydi.
 function useTheme() {
-  const { themeMode, getEffectiveTheme } = useUIStore();
-
-  const applyTheme = useCallback(() => {
-    document.documentElement.setAttribute('data-theme', getEffectiveTheme());
-  }, [getEffectiveTheme]);
+  const mode = useThemeStore((s) => s.mode);
 
   useEffect(() => {
-    applyTheme();
+    applyTheme(mode);
 
-    // Listen for system theme changes
+    // Tizim (system) temasi o'zgarishini kuzatish
     const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)');
     const handleChange = () => {
-      if (themeMode === 'system') {
-        applyTheme();
+      if (mode === 'system') {
+        applyTheme(mode);
       }
     };
 
     mediaQuery.addEventListener('change', handleChange);
     return () => mediaQuery.removeEventListener('change', handleChange);
-  }, [themeMode, applyTheme]);
+  }, [mode]);
 }
 
 const queryClient = new QueryClient({
