@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import {
   Plus,
   ShoppingCart,
@@ -57,6 +58,7 @@ interface CartItem {
 }
 
 export function PurchasesPage() {
+  const { t } = useTranslation();
   const navigate = useNavigate();
   const { notifications } = useNotificationsStore();
   // Purchases state
@@ -366,7 +368,7 @@ export function PurchasesPage() {
   const columns: Column<PurchaseOrder>[] = useMemo(() => [
     {
       key: 'orderNumber',
-      header: 'Raqam',
+      header: t('erp.purchases.colNumber'),
       render: (purchase) => (
         <div className="flex items-center gap-2">
           <Hash className="h-4 w-4 text-base-content/50" />
@@ -376,7 +378,7 @@ export function PurchasesPage() {
     },
     {
       key: 'orderDate',
-      header: 'Sana',
+      header: t('erp.purchases.colDate'),
       render: (purchase) => (
         <div className="flex items-center gap-2">
           <Calendar className="h-4 w-4 text-base-content/50" />
@@ -386,7 +388,7 @@ export function PurchasesPage() {
     },
     {
       key: 'supplierName',
-      header: "Ta'minotchi",
+      header: t('erp.purchases.colSupplier'),
       render: (purchase) => (
         <div className="flex items-center gap-2">
           <Truck className="h-4 w-4 text-base-content/50" />
@@ -396,17 +398,17 @@ export function PurchasesPage() {
     },
     {
       key: 'items',
-      header: 'Mahsulotlar',
+      header: t('erp.purchases.colItems'),
       render: (purchase) => (
         <div className="flex items-center gap-2">
           <Package className="h-4 w-4 text-base-content/50" />
-          <span>{purchase.itemCount} xil, {purchase.totalQuantity} dona</span>
+          <span>{t('erp.purchases.itemsSummary', { types: purchase.itemCount, units: purchase.totalQuantity })}</span>
         </div>
       ),
     },
     {
       key: 'totalAmount',
-      header: 'Summa',
+      header: t('common.amount'),
       getValue: (purchase) => purchase.totalAmount,
       render: (purchase) => (
         <span className="font-semibold">{formatCurrency(purchase.totalAmount)}</span>
@@ -414,7 +416,7 @@ export function PurchasesPage() {
     },
     {
       key: 'paidAmount',
-      header: "To'langan",
+      header: t('erp.purchases.colPaid'),
       getValue: (purchase) => purchase.paidAmount,
       render: (purchase) => (
         <span className="text-success">{formatCurrency(purchase.paidAmount)}</span>
@@ -422,20 +424,20 @@ export function PurchasesPage() {
     },
     {
       key: 'debtAmount',
-      header: 'Qarz',
+      header: t('erp.purchases.colDebt'),
       getValue: (purchase) => purchase.debtAmount,
       render: (purchase) => (
         <span className={clsx(
           'font-medium',
           purchase.debtAmount > 0 ? 'text-error' : 'text-success'
         )}>
-          {purchase.debtAmount > 0 ? formatCurrency(purchase.debtAmount) : "To'langan"}
+          {purchase.debtAmount > 0 ? formatCurrency(purchase.debtAmount) : t('erp.purchases.paidLabel')}
         </span>
       ),
     },
     {
       key: 'paymentStatus',
-      header: "To'lov",
+      header: t('erp.purchases.colPayment'),
       render: (purchase) => (
         <span className={clsx(
           'badge badge-sm',
@@ -443,15 +445,15 @@ export function PurchasesPage() {
           purchase.paymentStatus === 'PARTIAL' && 'badge-warning',
           purchase.paymentStatus === 'UNPAID' && 'badge-error'
         )}>
-          {purchase.paymentStatus === 'PAID' && "To'langan"}
-          {purchase.paymentStatus === 'PARTIAL' && 'Qisman'}
-          {purchase.paymentStatus === 'UNPAID' && "To'lanmagan"}
+          {purchase.paymentStatus === 'PAID' && t('erp.purchases.paymentPaid')}
+          {purchase.paymentStatus === 'PARTIAL' && t('erp.purchases.paymentPartial')}
+          {purchase.paymentStatus === 'UNPAID' && t('erp.purchases.paymentUnpaid')}
         </span>
       ),
     },
     {
       key: 'status',
-      header: 'Status',
+      header: t('common.status'),
       render: (purchase) => (
         <span className={clsx(
           'badge badge-sm',
@@ -459,24 +461,24 @@ export function PurchasesPage() {
           purchase.status === 'DRAFT' && 'badge-warning',
           purchase.status === 'CANCELLED' && 'badge-error'
         )}>
-          {purchase.status === 'RECEIVED' && 'Qabul'}
-          {purchase.status === 'DRAFT' && 'Qoralama'}
-          {purchase.status === 'CANCELLED' && 'Bekor'}
+          {purchase.status === 'RECEIVED' && t('erp.purchases.statusReceived')}
+          {purchase.status === 'DRAFT' && t('erp.purchases.statusDraft')}
+          {purchase.status === 'CANCELLED' && t('erp.purchases.statusCancelled')}
         </span>
       ),
     },
-  ], []);
+  ], [t]);
 
   return (
     <div className="space-y-6">
       {/* Header */}
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <h1 className="section-title">Xaridlar</h1>
-          <p className="section-subtitle">Ta'minotchilardan mahsulot xaridlari</p>
+          <h1 className="section-title">{t('erp.purchases.title')}</h1>
+          <p className="section-subtitle">{t('erp.purchases.subtitle')}</p>
         </div>
         <div className="flex items-center gap-2">
-          <span className="pill">{totalElements} ta xarid</span>
+          <span className="pill">{t('erp.purchases.countPill', { count: totalElements })}</span>
           <ExportButtons
             onExportExcel={() => handleExport('excel')}
             onExportPdf={() => handleExport('pdf')}
@@ -486,7 +488,7 @@ export function PurchasesPage() {
           <PermissionGate permission={PermissionCode.PURCHASES_CREATE}>
             <Button variant="primary" onClick={handleOpenPurchaseModal}>
               <Plus className="h-5 w-5" />
-              Yangi xarid
+              {t('erp.purchases.newPurchase')}
             </Button>
           </PermissionGate>
         </div>
@@ -500,7 +502,7 @@ export function PurchasesPage() {
               <ShoppingCart className="h-5 w-5 text-primary" />
             </div>
             <div>
-              <p className="text-xs text-base-content/60">Jami xaridlar</p>
+              <p className="text-xs text-base-content/60">{t('erp.purchases.statTotalPurchases')}</p>
               <p className="text-xl font-bold">{purchaseStats?.totalPurchases || 0}</p>
             </div>
           </div>
@@ -512,7 +514,7 @@ export function PurchasesPage() {
               <Calendar className="h-5 w-5 text-info" />
             </div>
             <div>
-              <p className="text-xs text-base-content/60">Bugungi</p>
+              <p className="text-xs text-base-content/60">{t('erp.purchases.statToday')}</p>
               <p className="text-xl font-bold">{purchaseStats?.todayPurchases || 0}</p>
             </div>
           </div>
@@ -524,7 +526,7 @@ export function PurchasesPage() {
               <FileText className="h-5 w-5 text-secondary" />
             </div>
             <div>
-              <p className="text-xs text-base-content/60">Oylik</p>
+              <p className="text-xs text-base-content/60">{t('erp.purchases.statMonthly')}</p>
               <p className="text-xl font-bold">{purchaseStats?.monthPurchases || 0}</p>
             </div>
           </div>
@@ -536,7 +538,7 @@ export function PurchasesPage() {
               <TrendingUp className="h-5 w-5 text-success" />
             </div>
             <div>
-              <p className="text-xs text-base-content/60">Jami summa</p>
+              <p className="text-xs text-base-content/60">{t('erp.purchases.statTotalAmount')}</p>
               <p className="text-lg font-bold">{formatCurrency(purchaseStats?.totalAmount || 0)}</p>
             </div>
           </div>
@@ -548,7 +550,7 @@ export function PurchasesPage() {
               <Wallet className="h-5 w-5 text-error" />
             </div>
             <div>
-              <p className="text-xs text-base-content/60">Jami qarz</p>
+              <p className="text-xs text-base-content/60">{t('erp.purchases.statTotalDebt')}</p>
               <p className="text-lg font-bold text-error">{formatCurrency(purchaseStats?.totalDebt || 0)}</p>
             </div>
           </div>
@@ -560,7 +562,7 @@ export function PurchasesPage() {
         <div className="alert alert-warning">
           <RotateCcw className="h-5 w-5" />
           <span>
-            <strong>{purchaseStats.pendingReturns}</strong> ta kutilayotgan qaytarish mavjud
+            <strong>{purchaseStats.pendingReturns}</strong> {t('erp.purchases.pendingReturnsSuffix')}
           </span>
         </div>
       )}
@@ -572,7 +574,7 @@ export function PurchasesPage() {
             {/* Date Range */}
             <div>
               <span className="block mb-1 text-xs font-semibold uppercase tracking-[0.18em] text-base-content/50">
-                Davr
+                {t('erp.purchases.periodLabel')}
               </span>
               <DateRangePicker
                 value={dateRangePreset}
@@ -583,13 +585,13 @@ export function PurchasesPage() {
 
             {/* Supplier Filter */}
             <Select
-              label="Ta'minotchi"
+              label={t('erp.purchases.supplierLabel')}
               value={selectedSupplierId || ''}
               onChange={(value) => {
                 setSelectedSupplierId(value ? Number(value) : undefined);
                 setPage(0);
               }}
-              placeholder="Barchasi"
+              placeholder={t('common.all')}
               options={suppliers.map(supplier => ({
                 value: supplier.id,
                 label: supplier.name,
@@ -599,34 +601,34 @@ export function PurchasesPage() {
 
             {/* Status Filter */}
             <Select
-              label="Status"
+              label={t('common.status')}
               value={selectedStatus}
               onChange={(value) => {
                 setSelectedStatus(value as PurchaseStatus | '');
                 setPage(0);
               }}
-              placeholder="Barchasi"
+              placeholder={t('common.all')}
               options={[
-                { value: 'RECEIVED', label: 'Qabul qilingan' },
-                { value: 'DRAFT', label: 'Qoralama' },
-                { value: 'CANCELLED', label: 'Bekor qilingan' },
+                { value: 'RECEIVED', label: t('erp.purchases.statusReceivedFull') },
+                { value: 'DRAFT', label: t('erp.purchases.statusDraft') },
+                { value: 'CANCELLED', label: t('erp.purchases.statusCancelledFull') },
               ]}
               className="w-36"
             />
 
             {/* Payment Status Filter */}
             <Select
-              label="To'lov"
+              label={t('erp.purchases.colPayment')}
               value={selectedPaymentStatus}
               onChange={(value) => {
                 setSelectedPaymentStatus(value as PaymentStatus | '');
                 setPage(0);
               }}
-              placeholder="Barchasi"
+              placeholder={t('common.all')}
               options={[
-                { value: 'PAID', label: "To'langan" },
-                { value: 'PARTIAL', label: 'Qisman' },
-                { value: 'UNPAID', label: "To'lanmagan" },
+                { value: 'PAID', label: t('erp.purchases.paymentPaid') },
+                { value: 'PARTIAL', label: t('erp.purchases.paymentPartial') },
+                { value: 'UNPAID', label: t('erp.purchases.paymentUnpaid') },
               ]}
               className="w-36"
             />
@@ -640,7 +642,7 @@ export function PurchasesPage() {
                 onClick={handleClearFilters}
               >
                 <X className="h-4 w-4" />
-                Tozalash
+                {t('common.clear')}
               </Button>
             )}
             <Button
@@ -649,7 +651,7 @@ export function PurchasesPage() {
               onClick={() => loadPurchases()}
             >
               <RefreshCw className="h-4 w-4" />
-              Yangilash
+              {t('common.refresh')}
             </Button>
           </div>
         </div>
@@ -661,7 +663,7 @@ export function PurchasesPage() {
           <div className="absolute inset-0 z-10 flex items-center justify-center rounded-xl bg-base-100/60 backdrop-blur-sm">
             <div className="flex flex-col items-center gap-3">
               <span className="loading loading-spinner loading-lg text-primary"></span>
-              <span className="text-sm font-medium text-base-content/70">Yangilanmoqda...</span>
+              <span className="text-sm font-medium text-base-content/70">{t('erp.purchases.refreshing')}</span>
             </div>
           </div>
         )}
@@ -673,8 +675,8 @@ export function PurchasesPage() {
           highlightId={highlightId}
           onHighlightComplete={clearHighlight}
           emptyIcon={<ShoppingCart className="h-12 w-12" />}
-        emptyTitle="Xaridlar topilmadi"
-        emptyDescription="Yangi xarid qo'shish uchun tugmani bosing"
+        emptyTitle={t('erp.purchases.emptyTitle')}
+        emptyDescription={t('erp.purchases.emptyDescription')}
         onRowClick={handleRowClick}
         rowClassName={(purchase) => clsx(
           'cursor-pointer hover:bg-base-200/50',
@@ -706,9 +708,9 @@ export function PurchasesPage() {
                   purchase.status === 'DRAFT' && 'badge-warning',
                   purchase.status === 'CANCELLED' && 'badge-error'
                 )}>
-                  {purchase.status === 'RECEIVED' && 'Qabul'}
-                  {purchase.status === 'DRAFT' && 'Qoralama'}
-                  {purchase.status === 'CANCELLED' && 'Bekor'}
+                  {purchase.status === 'RECEIVED' && t('erp.purchases.statusReceived')}
+                  {purchase.status === 'DRAFT' && t('erp.purchases.statusDraft')}
+                  {purchase.status === 'CANCELLED' && t('erp.purchases.statusCancelled')}
                 </span>
                 <span className={clsx(
                   'badge badge-sm',
@@ -716,23 +718,23 @@ export function PurchasesPage() {
                   purchase.paymentStatus === 'PARTIAL' && 'badge-warning',
                   purchase.paymentStatus === 'UNPAID' && 'badge-error'
                 )}>
-                  {purchase.paymentStatus === 'PAID' && "To'langan"}
-                  {purchase.paymentStatus === 'PARTIAL' && 'Qisman'}
-                  {purchase.paymentStatus === 'UNPAID' && "To'lanmagan"}
+                  {purchase.paymentStatus === 'PAID' && t('erp.purchases.paymentPaid')}
+                  {purchase.paymentStatus === 'PARTIAL' && t('erp.purchases.paymentPartial')}
+                  {purchase.paymentStatus === 'UNPAID' && t('erp.purchases.paymentUnpaid')}
                 </span>
               </div>
             </div>
 
             <div className="flex items-center gap-2 text-sm text-base-content/70">
               <Package className="h-4 w-4" />
-              {purchase.itemCount} xil, {purchase.totalQuantity} dona
+              {t('erp.purchases.itemsSummary', { types: purchase.itemCount, units: purchase.totalQuantity })}
             </div>
 
             <div className="flex items-center justify-between pt-2 border-t border-base-200">
               <div>
                 <p className="text-sm font-semibold">{formatCurrency(purchase.totalAmount)}</p>
                 {purchase.debtAmount > 0 && (
-                  <p className="text-xs text-error">Qarz: {formatCurrency(purchase.debtAmount)}</p>
+                  <p className="text-xs text-error">{t('erp.purchases.colDebt')}: {formatCurrency(purchase.debtAmount)}</p>
                 )}
               </div>
             </div>
@@ -747,9 +749,9 @@ export function PurchasesPage() {
           <div className="p-4 sm:p-6">
             <div className="flex items-start justify-between gap-4">
               <div>
-                <h3 className="text-xl font-semibold">Yangi xarid</h3>
+                <h3 className="text-xl font-semibold">{t('erp.purchases.newPurchase')}</h3>
                 <p className="text-sm text-base-content/60">
-                  Ta'minotchidan mahsulot xarid qilish
+                  {t('erp.purchases.modalSubtitle')}
                 </p>
               </div>
               <Button variant="ghost" size="sm" onClick={handleClosePurchaseModal}>
@@ -761,13 +763,13 @@ export function PurchasesPage() {
               {/* Ta'minotchi va sana */}
               <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                 <Select
-                  label="Ta'minotchi *"
+                  label={t('erp.purchases.supplierRequiredLabel')}
                   value={selectedSupplier?.id || ''}
                   onChange={(value) => {
                     const supplier = suppliers.find(s => s.id === Number(value));
                     setSelectedSupplier(supplier || null);
                   }}
-                  placeholder="Ta'minotchini tanlang"
+                  placeholder={t('erp.purchases.supplierSelectPlaceholder')}
                   options={suppliers.map(supplier => ({
                     value: supplier.id,
                     label: supplier.name,
@@ -775,7 +777,7 @@ export function PurchasesPage() {
                 />
                 <label className="form-control">
                   <span className="label-text mb-1 text-xs font-semibold uppercase tracking-[0.18em] text-base-content/50">
-                    Sana *
+                    {t('erp.purchases.dateRequiredLabel')}
                   </span>
                   <input
                     type="date"
@@ -790,7 +792,7 @@ export function PurchasesPage() {
               <div className="surface-soft rounded-xl p-4">
                 <h4 className="text-sm font-semibold uppercase tracking-[0.15em] text-base-content/60 mb-4 flex items-center gap-2">
                   <Package className="h-4 w-4" />
-                  Mahsulotlar
+                  {t('erp.purchases.colItems')}
                 </h4>
 
                 {/* Product search with Portal-based dropdown */}
@@ -800,7 +802,7 @@ export function PurchasesPage() {
                   onSelect={handleAddToCart}
                   products={productResults}
                   isLoading={productSearchLoading}
-                  placeholder="Mahsulot qidirish..."
+                  placeholder={t('erp.purchases.productSearchPlaceholder')}
                   className="mb-4"
                 />
 
@@ -810,10 +812,10 @@ export function PurchasesPage() {
                     <table className="table table-sm">
                       <thead>
                         <tr>
-                          <th>Mahsulot</th>
-                          <th className="w-28">Miqdor</th>
-                          <th className="w-36">Narx</th>
-                          <th className="w-32 text-right">Summa</th>
+                          <th>{t('erp.purchases.colProduct')}</th>
+                          <th className="w-28">{t('erp.purchases.colQuantity')}</th>
+                          <th className="w-36">{t('erp.purchases.colPrice')}</th>
+                          <th className="w-32 text-right">{t('common.amount')}</th>
                           <th className="w-12"></th>
                         </tr>
                       </thead>
@@ -865,7 +867,7 @@ export function PurchasesPage() {
                 ) : (
                   <div className="text-center py-8 text-base-content/50">
                     <Package className="h-12 w-12 mx-auto mb-2 opacity-50" />
-                    <p>Mahsulot qo'shilmagan</p>
+                    <p>{t('erp.purchases.cartEmpty')}</p>
                   </div>
                 )}
               </div>
@@ -875,17 +877,17 @@ export function PurchasesPage() {
                 <div className="surface-soft rounded-xl p-4">
                   <div className="space-y-3">
                     <div className="flex justify-between text-sm">
-                      <span className="text-base-content/70">Jami mahsulotlar:</span>
-                      <span className="font-medium">{cartTotalQuantity} dona</span>
+                      <span className="text-base-content/70">{t('erp.purchases.summaryTotalItems')}</span>
+                      <span className="font-medium">{t('erp.purchases.unitsCount', { count: cartTotalQuantity })}</span>
                     </div>
                     <div className="flex justify-between text-lg font-semibold">
-                      <span>Jami summa:</span>
+                      <span>{t('erp.purchases.summaryTotalAmount')}</span>
                       <span>{formatCurrency(cartTotal)}</span>
                     </div>
                     <div className="divider my-2"></div>
                     <label className="form-control">
                       <span className="label-text mb-1 text-xs font-semibold uppercase tracking-[0.18em] text-base-content/50">
-                        To'langan summa
+                        {t('erp.purchases.paidAmountLabel')}
                       </span>
                       <input
                         type="number"
@@ -897,7 +899,7 @@ export function PurchasesPage() {
                       />
                     </label>
                     <div className="flex justify-between text-lg">
-                      <span className="text-base-content/70">Qarz:</span>
+                      <span className="text-base-content/70">{t('erp.purchases.colDebt')}:</span>
                       <span className={clsx('font-semibold', debtAmount > 0 ? 'text-error' : 'text-success')}>
                         {formatCurrency(debtAmount)}
                       </span>
@@ -909,21 +911,21 @@ export function PurchasesPage() {
               {/* Notes */}
               <label className="form-control">
                 <span className="label-text mb-1 text-xs font-semibold uppercase tracking-[0.18em] text-base-content/50">
-                  Izoh
+                  {t('erp.purchases.notesLabel')}
                 </span>
                 <textarea
                   className="textarea textarea-bordered w-full"
                   rows={2}
                   value={purchaseNotes}
                   onChange={(e) => setPurchaseNotes(e.target.value)}
-                  placeholder="Qo'shimcha ma'lumot..."
+                  placeholder={t('erp.purchases.notesPlaceholder')}
                 />
               </label>
             </div>
 
             <div className="mt-6 flex justify-end gap-2">
               <Button variant="ghost" onClick={handleClosePurchaseModal} disabled={purchaseSaving}>
-                Bekor qilish
+                {t('common.cancel')}
               </Button>
               <Button
                 variant="primary"
@@ -931,7 +933,7 @@ export function PurchasesPage() {
                 loading={purchaseSaving}
                 disabled={!selectedSupplier || cartItems.length === 0}
               >
-                Saqlash va omborga kirim
+                {t('erp.purchases.saveAndReceive')}
               </Button>
             </div>
           </div>

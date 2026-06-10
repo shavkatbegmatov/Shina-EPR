@@ -17,6 +17,7 @@ import {
   Clock,
 } from 'lucide-react';
 import clsx from 'clsx';
+import { useTranslation } from 'react-i18next';
 import { debtsApi } from '../../api/debts.api';
 import { formatCurrency, formatDate, formatDateTime, DEBT_STATUSES, PAYMENT_METHODS } from '../../config/constants';
 import { CurrencyInput } from '../../components/ui/CurrencyInput';
@@ -48,6 +49,7 @@ interface CustomerDebtSummary {
 }
 
 export function DebtsPage() {
+  const { t } = useTranslation();
   const [activeTab, setActiveTab] = useState<TabType>('all');
   const [debts, setDebts] = useState<Debt[]>([]);
   const [allDebts, setAllDebts] = useState<Debt[]>([]); // For statistics and grouping
@@ -79,17 +81,17 @@ export function DebtsPage() {
   const { highlightId, clearHighlight } = useHighlight();
   // Tabs configuration
   const tabs = [
-    { id: 'all' as TabType, label: 'Umumiy ro\'yxat', icon: List },
-    { id: 'by-customer' as TabType, label: 'Mijozlar kesimida', icon: Users },
-    { id: 'overdue' as TabType, label: 'Muddati o\'tgan', icon: AlertTriangle },
-    { id: 'stats' as TabType, label: 'Statistika', icon: BarChart3 },
+    { id: 'all' as TabType, label: t('erp.debts.tabAll'), icon: List },
+    { id: 'by-customer' as TabType, label: t('erp.debts.tabByCustomer'), icon: Users },
+    { id: 'overdue' as TabType, label: t('erp.debts.tabOverdue'), icon: AlertTriangle },
+    { id: 'stats' as TabType, label: t('erp.debts.tabStats'), icon: BarChart3 },
   ];
 
   // Table columns
   const columns: Column<Debt>[] = useMemo(() => [
     {
       key: 'customerName',
-      header: 'Mijoz',
+      header: t('erp.debts.colCustomer'),
       render: (debt) => (
         <div>
           <div className="font-medium">{debt.customerName}</div>
@@ -102,7 +104,7 @@ export function DebtsPage() {
     },
     {
       key: 'invoiceNumber',
-      header: 'Faktura',
+      header: t('erp.debts.colInvoice'),
       render: (debt) => (
         <span className="font-mono text-sm">
           {debt.invoiceNumber || '-'}
@@ -111,13 +113,13 @@ export function DebtsPage() {
     },
     {
       key: 'originalAmount',
-      header: 'Summa',
+      header: t('erp.debts.colAmount'),
       getValue: (debt) => debt.originalAmount,
       render: (debt) => formatCurrency(debt.originalAmount),
     },
     {
       key: 'remainingAmount',
-      header: 'Qoldiq',
+      header: t('erp.debts.colRemaining'),
       getValue: (debt) => debt.remainingAmount,
       render: (debt) => (
         <span className="font-semibold text-error">
@@ -127,7 +129,7 @@ export function DebtsPage() {
     },
     {
       key: 'status',
-      header: 'Holat',
+      header: t('common.status'),
       render: (debt) => (
         <span
           className={clsx(
@@ -137,7 +139,7 @@ export function DebtsPage() {
             (debt.status === 'OVERDUE' || debt.overdue) && 'badge-error'
           )}
         >
-          {debt.overdue ? "Muddati o'tgan" : DEBT_STATUSES[debt.status]?.label}
+          {debt.overdue ? t('erp.debts.overdueBadge') : DEBT_STATUSES[debt.status]?.label}
         </span>
       ),
     },
@@ -147,11 +149,11 @@ export function DebtsPage() {
       sortable: false,
       render: () => (
         <Button variant="ghost" size="sm">
-          Batafsil
+          {t('erp.debts.detailsButton')}
         </Button>
       ),
     },
-  ], []);
+  ], [t]);
 
   const handlePageSizeChange = (newSize: number) => {
     setPageSize(newSize);
@@ -400,9 +402,9 @@ export function DebtsPage() {
 
   // Helper function to get severity for overdue debts
   const getOverdueSeverity = (daysOverdue: number) => {
-    if (daysOverdue >= 30) return { level: 'critical', label: '30+ kun', color: 'text-error', bg: 'bg-error/10' };
-    if (daysOverdue >= 7) return { level: 'warning', label: '7-30 kun', color: 'text-warning', bg: 'bg-warning/10' };
-    return { level: 'info', label: '1-7 kun', color: 'text-info', bg: 'bg-info/10' };
+    if (daysOverdue >= 30) return { level: 'critical', label: t('erp.debts.severity30Plus'), color: 'text-error', bg: 'bg-error/10' };
+    if (daysOverdue >= 7) return { level: 'warning', label: t('erp.debts.severity7To30'), color: 'text-warning', bg: 'bg-warning/10' };
+    return { level: 'info', label: t('erp.debts.severity1To7'), color: 'text-info', bg: 'bg-info/10' };
   };
 
   // Render the detail panel (shared across tabs)
@@ -414,7 +416,7 @@ export function DebtsPage() {
             <div>
               <h3 className="font-semibold">{selectedDebt.customerName}</h3>
               <p className="text-sm text-base-content/60">
-                {selectedDebt.invoiceNumber || 'Fakturasiz qarz'}
+                {selectedDebt.invoiceNumber || t('erp.debts.noInvoiceDebt')}
               </p>
             </div>
             <Button
@@ -429,15 +431,15 @@ export function DebtsPage() {
 
           <div className="grid grid-cols-2 gap-3">
             <div className="surface-soft rounded-lg p-3">
-              <p className="text-xs text-base-content/60">Asosiy summa</p>
+              <p className="text-xs text-base-content/60">{t('erp.debts.originalAmount')}</p>
               <p className="font-semibold">{formatCurrency(selectedDebt.originalAmount)}</p>
             </div>
             <div className="surface-soft rounded-lg p-3">
-              <p className="text-xs text-base-content/60">To'langan</p>
+              <p className="text-xs text-base-content/60">{t('erp.debts.paidAmount')}</p>
               <p className="font-semibold text-success">{formatCurrency(selectedDebt.paidAmount)}</p>
             </div>
             <div className="surface-soft rounded-lg p-3 col-span-2">
-              <p className="text-xs text-base-content/60">Qoldiq</p>
+              <p className="text-xs text-base-content/60">{t('erp.debts.remainingAmount')}</p>
               <p className="text-xl font-bold text-error">{formatCurrency(selectedDebt.remainingAmount)}</p>
             </div>
           </div>
@@ -445,9 +447,9 @@ export function DebtsPage() {
           {selectedDebt.dueDate && (
             <div className="flex items-center gap-2 text-sm">
               <Calendar className="h-4 w-4 text-base-content/50" />
-              <span>Muddat: {formatDate(selectedDebt.dueDate)}</span>
+              <span>{t('erp.debts.dueDateLabel')}: {formatDate(selectedDebt.dueDate)}</span>
               {selectedDebt.overdue && (
-                <span className="badge badge-error badge-sm">O'tgan</span>
+                <span className="badge badge-error badge-sm">{t('erp.debts.overdueShort')}</span>
               )}
             </div>
           )}
@@ -466,7 +468,7 @@ export function DebtsPage() {
                   onClick={() => handleOpenPaymentModal(false)}
                 >
                   <Wallet className="h-4 w-4" />
-                  Qisman to'lash
+                  {t('erp.debts.partialPayment')}
                 </Button>
               </PermissionGate>
               <PermissionGate permission={PermissionCode.DEBTS_PAY}>
@@ -476,7 +478,7 @@ export function DebtsPage() {
                   onClick={() => handleOpenPaymentModal(true)}
                 >
                   <CheckCircle className="h-4 w-4" />
-                  To'liq to'lash
+                  {t('erp.debts.fullPayment')}
                 </Button>
               </PermissionGate>
             </div>
@@ -484,14 +486,14 @@ export function DebtsPage() {
 
           {/* Payment History */}
           <div className="border-t border-base-200 pt-4">
-            <h4 className="text-sm font-semibold mb-3">To'lovlar tarixi</h4>
+            <h4 className="text-sm font-semibold mb-3">{t('erp.debts.paymentHistory')}</h4>
             {loadingPayments ? (
               <div className="flex justify-center py-4">
                 <span className="loading loading-spinner loading-sm" />
               </div>
             ) : payments.length === 0 ? (
               <p className="text-sm text-base-content/50 text-center py-4">
-                To'lovlar yo'q
+                {t('erp.debts.noPayments')}
               </p>
             ) : (
               <div className="space-y-2 max-h-64 overflow-y-auto">
@@ -525,7 +527,7 @@ export function DebtsPage() {
       ) : (
         <div className="surface-card p-8 text-center text-base-content/50">
           <Wallet className="h-12 w-12 mx-auto mb-3 opacity-50" />
-          <p className="text-sm">Batafsil ko'rish uchun qarzni tanlang</p>
+          <p className="text-sm">{t('erp.debts.selectDebtHint')}</p>
         </div>
       )}
     </div>
@@ -536,18 +538,18 @@ export function DebtsPage() {
       {/* Header */}
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <h1 className="section-title">Qarzlar</h1>
-          <p className="section-subtitle">Qarzlar nazorati va to'lovlar</p>
+          <h1 className="section-title">{t('erp.debts.title')}</h1>
+          <p className="section-subtitle">{t('erp.debts.subtitle')}</p>
         </div>
         <div className="flex flex-wrap items-center gap-2">
-          <span className="pill">{stats.totalDebtsCount} ta faol qarz</span>
+          <span className="pill">{t('erp.debts.activeDebtsCount', { count: stats.totalDebtsCount })}</span>
           {stats.overdueCount > 0 && (
             <span className="pill bg-error/10 text-error">
-              {stats.overdueCount} ta muddati o'tgan
+              {t('erp.debts.overdueCount', { count: stats.overdueCount })}
             </span>
           )}
           <span className="pill bg-error/10 text-error font-semibold">
-            Jami: {formatCurrency(stats.totalActiveDebt)}
+            {t('common.total')}: {formatCurrency(stats.totalActiveDebt)}
           </span>
           <ExportButtons
             onExportExcel={() => handleExport('excel')}
@@ -599,9 +601,9 @@ export function DebtsPage() {
                   <SearchInput
                     value={searchQuery}
                     onValueChange={setSearchQuery}
-                    placeholder="Qidirish..."
+                    placeholder={t('common.search')}
                     hideLabel
-                    ariaLabel="Qidirish"
+                    ariaLabel={t('common.search')}
                     leadingIcon={<Phone className="h-5 w-5" />}
                     className="w-48"
                   />
@@ -612,17 +614,19 @@ export function DebtsPage() {
                       setPage(0);
                     }}
                     options={[
-                      { value: '', label: 'Barcha holatlar' },
+                      { value: '', label: t('erp.debts.allStatuses') },
                       ...Object.entries(DEBT_STATUSES).map(([key, { label }]) => ({
                         value: key,
                         label,
                       })),
                     ]}
-                    placeholder="Barcha holatlar"
+                    placeholder={t('erp.debts.allStatuses')}
                   />
                 </div>
                 <p className="text-sm text-base-content/60">
-                  {searchQuery ? `"${searchQuery}" bo'yicha ${filteredDebts.length} ta natija` : `${totalElements} ta qarz`}
+                  {searchQuery
+                    ? t('erp.debts.searchResults', { query: searchQuery, count: filteredDebts.length })
+                    : t('erp.debts.debtsCount', { count: totalElements })}
                 </p>
               </div>
 
@@ -633,7 +637,7 @@ export function DebtsPage() {
                     <div className="absolute inset-0 z-10 flex items-center justify-center rounded-xl bg-base-100/60 backdrop-blur-sm">
                       <div className="flex flex-col items-center gap-3">
                         <span className="loading loading-spinner loading-lg text-primary"></span>
-                        <span className="text-sm font-medium text-base-content/70">Yangilanmoqda...</span>
+                        <span className="text-sm font-medium text-base-content/70">{t('erp.debts.refreshing')}</span>
                       </div>
                     </div>
                   )}
@@ -645,8 +649,8 @@ export function DebtsPage() {
                     highlightId={highlightId}
                     onHighlightComplete={clearHighlight}
                     emptyIcon={<Wallet className="h-12 w-12" />}
-                    emptyTitle="Qarzlar topilmadi"
-                    emptyDescription="Filtrlarni o'zgartiring"
+                    emptyTitle={t('erp.debts.emptyTitle')}
+                    emptyDescription={t('erp.debts.emptyDescription')}
                     onRowClick={handleSelectDebt}
                     rowClassName={(debt) => clsx(
                       debt.overdue && 'bg-error/5',
@@ -670,7 +674,7 @@ export function DebtsPage() {
                           <div>
                             <p className="font-semibold">{debt.customerName}</p>
                             <p className="text-xs text-base-content/60">
-                              {debt.invoiceNumber || 'Fakturasiz'}
+                              {debt.invoiceNumber || t('erp.debts.noInvoice')}
                             </p>
                           </div>
                           <span
@@ -681,12 +685,12 @@ export function DebtsPage() {
                               (debt.status === 'OVERDUE' || debt.overdue) && 'badge-error'
                             )}
                           >
-                            {debt.overdue ? "Muddati o'tgan" : DEBT_STATUSES[debt.status]?.label}
+                            {debt.overdue ? t('erp.debts.overdueBadge') : DEBT_STATUSES[debt.status]?.label}
                           </span>
                         </div>
                         <div className="flex items-center justify-between">
                           <div className="text-sm text-base-content/70">
-                            Qoldiq: <span className="font-semibold text-error">{formatCurrency(debt.remainingAmount)}</span>
+                            {t('erp.debts.remainingAmount')}: <span className="font-semibold text-error">{formatCurrency(debt.remainingAmount)}</span>
                           </div>
                           <div className="text-sm text-base-content/60">
                             {formatCurrency(debt.originalAmount)}
@@ -708,7 +712,7 @@ export function DebtsPage() {
             <div className="space-y-4">
               <div className="flex items-center justify-between">
                 <p className="text-sm text-base-content/60">
-                  {customerDebtSummaries.length} ta qarzdor mijoz
+                  {t('erp.debts.debtorCustomersCount', { count: customerDebtSummaries.length })}
                 </p>
               </div>
 
@@ -717,7 +721,7 @@ export function DebtsPage() {
                   {customerDebtSummaries.length === 0 ? (
                     <div className="surface-soft rounded-xl p-8 text-center">
                       <Users className="h-12 w-12 mx-auto mb-3 text-base-content/30" />
-                      <p className="text-base-content/60">Qarzdor mijozlar yo'q</p>
+                      <p className="text-base-content/60">{t('erp.debts.noDebtorCustomers')}</p>
                     </div>
                   ) : (
                     customerDebtSummaries.map((customer) => (
@@ -746,10 +750,10 @@ export function DebtsPage() {
                                 {formatCurrency(customer.remainingAmount)}
                               </p>
                               <p className="text-xs text-base-content/60">
-                                {customer.totalDebts} ta qarz
+                                {t('erp.debts.debtsCountShort', { count: customer.totalDebts })}
                                 {customer.overdueCount > 0 && (
                                   <span className="text-error ml-1">
-                                    ({customer.overdueCount} ta o'tgan)
+                                    {t('erp.debts.overdueParenCount', { count: customer.overdueCount })}
                                   </span>
                                 )}
                               </p>
@@ -780,11 +784,11 @@ export function DebtsPage() {
                               >
                                 <div>
                                   <p className="text-sm font-medium">
-                                    {debt.invoiceNumber || 'Fakturasiz'}
+                                    {debt.invoiceNumber || t('erp.debts.noInvoice')}
                                   </p>
                                   {debt.dueDate && (
                                     <p className="text-xs text-base-content/60">
-                                      Muddat: {formatDate(debt.dueDate)}
+                                      {t('erp.debts.dueDateLabel')}: {formatDate(debt.dueDate)}
                                     </p>
                                   )}
                                 </div>
@@ -793,7 +797,7 @@ export function DebtsPage() {
                                     {formatCurrency(debt.remainingAmount)}
                                   </span>
                                   {debt.overdue && (
-                                    <span className="badge badge-error badge-xs">O'tgan</span>
+                                    <span className="badge badge-error badge-xs">{t('erp.debts.overdueShort')}</span>
                                   )}
                                 </div>
                               </button>
@@ -816,20 +820,20 @@ export function DebtsPage() {
             <div className="space-y-4">
               <div className="flex items-center justify-between">
                 <p className="text-sm text-base-content/60">
-                  {overdueDebts.length} ta muddati o'tgan qarz
+                  {t('erp.debts.overdueDebtsCount', { count: overdueDebts.length })}
                 </p>
                 <div className="flex items-center gap-2">
                   <span className="flex items-center gap-1 text-xs">
                     <span className="h-2 w-2 rounded-full bg-info"></span>
-                    1-7 kun
+                    {t('erp.debts.severity1To7')}
                   </span>
                   <span className="flex items-center gap-1 text-xs">
                     <span className="h-2 w-2 rounded-full bg-warning"></span>
-                    7-30 kun
+                    {t('erp.debts.severity7To30')}
                   </span>
                   <span className="flex items-center gap-1 text-xs">
                     <span className="h-2 w-2 rounded-full bg-error"></span>
-                    30+ kun
+                    {t('erp.debts.severity30Plus')}
                   </span>
                 </div>
               </div>
@@ -839,7 +843,7 @@ export function DebtsPage() {
                   {overdueDebts.length === 0 ? (
                     <div className="surface-soft rounded-xl p-8 text-center">
                       <CheckCircle className="h-12 w-12 mx-auto mb-3 text-success" />
-                      <p className="text-base-content/60">Muddati o'tgan qarzlar yo'q</p>
+                      <p className="text-base-content/60">{t('erp.debts.noOverdueDebts')}</p>
                     </div>
                   ) : (
                     overdueDebts.map((debt) => {
@@ -871,13 +875,13 @@ export function DebtsPage() {
                                 severity.level === 'warning' && 'badge-warning',
                                 severity.level === 'info' && 'badge-info'
                               )}>
-                                {debt.daysOverdue} kun
+                                {t('erp.debts.daysCount', { count: debt.daysOverdue })}
                               </span>
                             </div>
                             <div className="flex items-center gap-2 text-xs text-base-content/60">
                               <span>{debt.customerPhone}</span>
                               <span>•</span>
-                              <span>{debt.invoiceNumber || 'Fakturasiz'}</span>
+                              <span>{debt.invoiceNumber || t('erp.debts.noInvoice')}</span>
                             </div>
                           </div>
                           <div className="text-right">
@@ -885,7 +889,7 @@ export function DebtsPage() {
                               {formatCurrency(debt.remainingAmount)}
                             </p>
                             <p className="text-xs text-base-content/60">
-                              Muddat: {debt.dueDate ? formatDate(debt.dueDate) : '-'}
+                              {t('erp.debts.dueDateLabel')}: {debt.dueDate ? formatDate(debt.dueDate) : '-'}
                             </p>
                           </div>
                         </button>
@@ -911,7 +915,7 @@ export function DebtsPage() {
                       <Wallet className="h-5 w-5 text-error" />
                     </div>
                     <div>
-                      <p className="text-xs text-base-content/60">Jami qarz</p>
+                      <p className="text-xs text-base-content/60">{t('erp.debts.statTotalDebt')}</p>
                       <p className="text-lg font-bold text-error">
                         {formatCurrency(stats.totalActiveDebt)}
                       </p>
@@ -925,7 +929,7 @@ export function DebtsPage() {
                       <TrendingUp className="h-5 w-5 text-success" />
                     </div>
                     <div>
-                      <p className="text-xs text-base-content/60">Bugun to'langan</p>
+                      <p className="text-xs text-base-content/60">{t('erp.debts.statPaidToday')}</p>
                       <p className="text-lg font-bold text-success">
                         {formatCurrency(stats.paidToday)}
                       </p>
@@ -939,7 +943,7 @@ export function DebtsPage() {
                       <TrendingUp className="h-5 w-5 text-primary" />
                     </div>
                     <div>
-                      <p className="text-xs text-base-content/60">Bu hafta</p>
+                      <p className="text-xs text-base-content/60">{t('erp.debts.statThisWeek')}</p>
                       <p className="text-lg font-bold">
                         {formatCurrency(stats.paidThisWeek)}
                       </p>
@@ -953,7 +957,7 @@ export function DebtsPage() {
                       <TrendingDown className="h-5 w-5 text-info" />
                     </div>
                     <div>
-                      <p className="text-xs text-base-content/60">Bu oy</p>
+                      <p className="text-xs text-base-content/60">{t('erp.debts.statThisMonth')}</p>
                       <p className="text-lg font-bold">
                         {formatCurrency(stats.paidThisMonth)}
                       </p>
@@ -967,18 +971,18 @@ export function DebtsPage() {
                 <div className="surface-soft rounded-xl p-4">
                   <h3 className="font-semibold mb-4 flex items-center gap-2">
                     <AlertTriangle className="h-5 w-5 text-error" />
-                    Muddati o'tgan qarzlar
+                    {t('erp.debts.overdueDebtsHeading')}
                   </h3>
                   <div className="grid grid-cols-2 gap-4">
                     <div>
                       <p className="text-3xl font-bold text-error">{stats.overdueCount}</p>
-                      <p className="text-sm text-base-content/60">ta qarz</p>
+                      <p className="text-sm text-base-content/60">{t('erp.debts.debtsUnit')}</p>
                     </div>
                     <div>
                       <p className="text-xl font-bold text-error">
                         {formatCurrency(stats.overdueAmount)}
                       </p>
-                      <p className="text-sm text-base-content/60">umumiy summa</p>
+                      <p className="text-sm text-base-content/60">{t('erp.debts.totalSumLabel')}</p>
                     </div>
                   </div>
                 </div>
@@ -987,10 +991,10 @@ export function DebtsPage() {
                 <div className="surface-soft rounded-xl p-4">
                   <h3 className="font-semibold mb-4 flex items-center gap-2">
                     <Users className="h-5 w-5 text-primary" />
-                    Top 5 qarzdor
+                    {t('erp.debts.top5Debtors')}
                   </h3>
                   {stats.topDebtors.length === 0 ? (
-                    <p className="text-sm text-base-content/50">Qarzdorlar yo'q</p>
+                    <p className="text-sm text-base-content/50">{t('erp.debts.noDebtors')}</p>
                   ) : (
                     <div className="space-y-2">
                       {stats.topDebtors.map((customer, index) => (
@@ -1010,7 +1014,7 @@ export function DebtsPage() {
                             </span>
                             <div>
                               <p className="font-medium text-sm">{customer.customerName}</p>
-                              <p className="text-xs text-base-content/60">{customer.totalDebts} ta qarz</p>
+                              <p className="text-xs text-base-content/60">{t('erp.debts.debtsCountShort', { count: customer.totalDebts })}</p>
                             </div>
                           </div>
                           <span className="font-semibold text-error">
@@ -1035,10 +1039,10 @@ export function DebtsPage() {
               <div className="flex items-start justify-between gap-4">
                 <div>
                   <h3 className="text-xl font-semibold">
-                    {isFullPayment ? "To'liq to'lov" : "Qisman to'lov"}
+                    {isFullPayment ? t('erp.debts.fullPaymentTitle') : t('erp.debts.partialPaymentTitle')}
                   </h3>
                   <p className="text-sm text-base-content/60">
-                    {selectedDebt.customerName} - Qoldiq: {formatCurrency(selectedDebt.remainingAmount)}
+                    {selectedDebt.customerName} - {t('erp.debts.remainingAmount')}: {formatCurrency(selectedDebt.remainingAmount)}
                   </p>
                 </div>
                 <Button
@@ -1052,7 +1056,7 @@ export function DebtsPage() {
 
               <div className="mt-6 space-y-4">
                 <CurrencyInput
-                  label="To'lov summasi *"
+                  label={t('erp.debts.paymentAmountLabel')}
                   value={paymentAmount}
                   onChange={setPaymentAmount}
                   disabled={isFullPayment}
@@ -1063,7 +1067,7 @@ export function DebtsPage() {
 
                 <label className="form-control">
                   <span className="label-text mb-1 text-xs font-semibold uppercase tracking-[0.18em] text-base-content/50">
-                    To'lov usuli *
+                    {t('erp.debts.paymentMethodLabel')}
                   </span>
                   <div className="grid grid-cols-3 gap-2">
                     {Object.entries(PAYMENT_METHODS)
@@ -1087,14 +1091,14 @@ export function DebtsPage() {
 
                 <label className="form-control">
                   <span className="label-text mb-1 text-xs font-semibold uppercase tracking-[0.18em] text-base-content/50">
-                    Izoh
+                    {t('erp.debts.notesLabel')}
                   </span>
                   <textarea
                     className="textarea textarea-bordered w-full"
                     rows={2}
                     value={paymentNotes}
                     onChange={(e) => setPaymentNotes(e.target.value)}
-                    placeholder="Qo'shimcha ma'lumot..."
+                    placeholder={t('erp.debts.notesPlaceholder')}
                   />
                 </label>
               </div>
@@ -1105,7 +1109,7 @@ export function DebtsPage() {
                   onClick={handleClosePaymentModal}
                   disabled={submitting}
                 >
-                  Bekor qilish
+                  {t('common.cancel')}
                 </Button>
                 <Button
                   variant="primary"
@@ -1113,7 +1117,7 @@ export function DebtsPage() {
                   disabled={submitting || (!isFullPayment && paymentAmount <= 0)}
                 >
                   {submitting && <span className="loading loading-spinner loading-sm" />}
-                  {isFullPayment ? "To'liq to'lash" : "To'lash"}
+                  {isFullPayment ? t('erp.debts.fullPayment') : t('erp.debts.payButton')}
                 </Button>
               </div>
             </div>

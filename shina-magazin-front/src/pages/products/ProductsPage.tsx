@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Plus, Package, BadgeCheck, AlertTriangle, X } from 'lucide-react';
 import clsx from 'clsx';
 import { productsApi, brandsApi, categoriesApi } from '../../api/products.api';
@@ -24,6 +25,7 @@ const emptyFormData: ProductRequest = {
 };
 
 export function ProductsPage() {
+  const { t } = useTranslation();
   const [products, setProducts] = useState<Product[]>([]);
   const [brands, setBrands] = useState<Brand[]>([]);
   const [categories, setCategories] = useState<Category[]>([]);
@@ -64,7 +66,7 @@ export function ProductsPage() {
     },
     {
       key: 'name',
-      header: 'Nomi',
+      header: t('common.name'),
       render: (product) => (
         <div>
           <div className="font-medium">{product.name}</div>
@@ -74,17 +76,17 @@ export function ProductsPage() {
     },
     {
       key: 'brandName',
-      header: 'Brend',
+      header: t('erp.products.colBrand'),
       render: (product) => product.brandName || '—',
     },
     {
       key: 'sizeString',
-      header: "O'lcham",
+      header: t('erp.products.colSize'),
       render: (product) => product.sizeString || '—',
     },
     {
       key: 'season',
-      header: 'Mavsum',
+      header: t('erp.products.colSeason'),
       render: (product) =>
         product.season ? (
           <span className="badge badge-outline badge-sm">{SEASONS[product.season]?.label}</span>
@@ -92,12 +94,12 @@ export function ProductsPage() {
     },
     {
       key: 'sellingPrice',
-      header: 'Narx',
+      header: t('erp.products.colPrice'),
       render: (product) => <span className="font-medium">{formatCurrency(product.sellingPrice)}</span>,
     },
     {
       key: 'quantity',
-      header: 'Zaxira',
+      header: t('erp.products.colStock'),
       render: (product) => (
         <span className={clsx('badge badge-sm', product.lowStock ? 'badge-error' : 'badge-success')}>
           {product.quantity}
@@ -111,15 +113,15 @@ export function ProductsPage() {
       render: (product) => (
         <div className="space-x-2">
           <Button variant="ghost" size="sm" onClick={(e) => { e.stopPropagation(); setSelectedProduct(product); }}>
-            Tafsilotlar
+            {t('erp.products.details')}
           </Button>
           <PermissionGate permission={PermissionCode.PRODUCTS_UPDATE}>
-            <Button variant="ghost" size="sm" onClick={(e) => { e.stopPropagation(); handleEditProduct(product); }}>Tahrirlash</Button>
+            <Button variant="ghost" size="sm" onClick={(e) => { e.stopPropagation(); handleEditProduct(product); }}>{t('common.edit')}</Button>
           </PermissionGate>
         </div>
       ),
     },
-  ], []);
+  ], [t]);
 
   const loadData = useCallback(async () => {
     try {
@@ -262,14 +264,14 @@ export function ProductsPage() {
     <div className="space-y-6">
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <h1 className="section-title">Mahsulotlar</h1>
-          <p className="section-subtitle">Shina katalogi</p>
+          <h1 className="section-title">{t('erp.products.title')}</h1>
+          <p className="section-subtitle">{t('erp.products.subtitle')}</p>
         </div>
         <div className="flex flex-wrap items-center gap-2">
           {activeFilters > 0 && (
             <Button variant="ghost" size="sm" onClick={handleResetFilters}>
               <X className="h-4 w-4" />
-              Filtrlarni tozalash
+              {t('erp.products.clearFilters')}
             </Button>
           )}
           <ExportButtons
@@ -281,7 +283,7 @@ export function ProductsPage() {
           <PermissionGate permission={PermissionCode.PRODUCTS_CREATE}>
             <Button variant="primary" onClick={handleOpenNewProductModal}>
               <Plus className="h-5 w-5" />
-              Yangi mahsulot
+              {t('erp.products.newProduct')}
             </Button>
           </PermissionGate>
         </div>
@@ -292,14 +294,14 @@ export function ProductsPage() {
         <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
           <div>
             <h2 className="text-sm font-semibold uppercase tracking-[0.2em] text-base-content/50">
-              Filtrlar
+              {t('erp.products.filters')}
             </h2>
             <p className="text-xs text-base-content/60">
-              {activeFilters > 0 ? `${activeFilters} ta filter tanlangan` : "Barcha mahsulotlar ko'rsatilmoqda"}
+              {activeFilters > 0 ? t('erp.products.filtersSelected', { count: activeFilters }) : t('erp.products.allShown')}
             </p>
           </div>
           <div className="flex flex-wrap items-center gap-2 text-xs text-base-content/60">
-            <span className="pill">{totalElements} ta mahsulot</span>
+            <span className="pill">{t('erp.products.productCount', { count: totalElements })}</span>
           </div>
         </div>
         <div className="mt-4 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
@@ -309,31 +311,31 @@ export function ProductsPage() {
               setSearch(value);
               setPage(0);
             }}
-            label="Qidirish"
-            placeholder="SKU, nom yoki o'lcham..."
+            label={t('common.search')}
+            placeholder={t('erp.products.searchPlaceholder')}
           />
 
           <Select
-            label="Brend"
+            label={t('erp.products.colBrand')}
             value={brandFilter}
             onChange={(value) => { setBrandFilter(value ? Number(value) : ''); setPage(0); }}
-            placeholder="Barcha brendlar"
+            placeholder={t('erp.products.allBrands')}
             options={brands.map((brand) => ({ value: brand.id, label: brand.name }))}
           />
 
           <Select
-            label="Kategoriya"
+            label={t('erp.products.category')}
             value={categoryFilter}
             onChange={(value) => { setCategoryFilter(value ? Number(value) : ''); setPage(0); }}
-            placeholder="Barcha kategoriyalar"
+            placeholder={t('erp.products.allCategories')}
             options={categories.map((category) => ({ value: category.id, label: category.name }))}
           />
 
           <Select
-            label="Mavsum"
+            label={t('erp.products.colSeason')}
             value={seasonFilter}
             onChange={(value) => { setSeasonFilter(value as Season | ''); setPage(0); }}
-            placeholder="Barcha mavsumlar"
+            placeholder={t('erp.products.allSeasons')}
             options={Object.entries(SEASONS).map(([key, { label }]) => ({ value: key, label }))}
           />
         </div>
@@ -345,7 +347,7 @@ export function ProductsPage() {
           <div className="absolute inset-0 z-10 flex items-center justify-center rounded-xl bg-base-100/60 backdrop-blur-sm">
             <div className="flex flex-col items-center gap-3">
               <span className="loading loading-spinner loading-lg text-primary"></span>
-              <span className="text-sm font-medium text-base-content/70">Yangilanmoqda...</span>
+              <span className="text-sm font-medium text-base-content/70">{t('erp.products.refreshing')}</span>
             </div>
           </div>
         )}
@@ -357,8 +359,8 @@ export function ProductsPage() {
           highlightId={highlightId}
           onHighlightComplete={clearHighlight}
           emptyIcon={<Package className="h-12 w-12" />}
-          emptyTitle="Mahsulotlar topilmadi"
-          emptyDescription="Filtrlarni o'zgartirib ko'ring"
+          emptyTitle={t('erp.products.emptyTitle')}
+          emptyDescription={t('erp.products.emptyDescription')}
           rowClassName={(product) => (product.lowStock ? 'bg-error/5' : '')}
         currentPage={page}
         totalPages={totalPages}
@@ -372,7 +374,7 @@ export function ProductsPage() {
               <div>
                 <p className="text-sm font-semibold">{product.name}</p>
                 <p className="text-xs text-base-content/60">SKU: {product.sku}</p>
-                <p className="text-xs text-base-content/60">{product.sizeString || "O'lcham ko'rsatilmagan"}</p>
+                <p className="text-xs text-base-content/60">{product.sizeString || t('erp.products.noSize')}</p>
               </div>
               <span className={clsx('badge badge-sm', product.lowStock ? 'badge-error' : 'badge-success')}>
                 {product.quantity}
@@ -387,10 +389,10 @@ export function ProductsPage() {
               <span className="text-sm font-semibold text-primary">{formatCurrency(product.sellingPrice)}</span>
               <div className="flex items-center gap-2">
                 <Button variant="ghost" size="sm" className="min-h-[44px]" onClick={() => setSelectedProduct(product)}>
-                  Tafsilotlar
+                  {t('erp.products.details')}
                 </Button>
                 <PermissionGate permission={PermissionCode.PRODUCTS_UPDATE}>
-                  <Button variant="ghost" size="sm" className="min-h-[44px]" onClick={() => handleEditProduct(product)}>Tahrirlash</Button>
+                  <Button variant="ghost" size="sm" className="min-h-[44px]" onClick={() => handleEditProduct(product)}>{t('common.edit')}</Button>
                 </PermissionGate>
               </div>
             </div>
@@ -411,7 +413,7 @@ export function ProductsPage() {
                 </div>
                 <Button variant="ghost" size="sm" onClick={() => setSelectedProduct(null)}>
                   <X className="h-4 w-4" />
-                  Yopish
+                  {t('common.close')}
                 </Button>
               </div>
 
@@ -432,11 +434,11 @@ export function ProductsPage() {
 
                   <div className="grid grid-cols-2 gap-3 text-sm">
                     <div className="surface-soft rounded-lg p-3">
-                      <p className="text-xs text-base-content/60">Narx</p>
+                      <p className="text-xs text-base-content/60">{t('erp.products.colPrice')}</p>
                       <p className="text-lg font-semibold text-primary">{formatCurrency(selectedProduct.sellingPrice)}</p>
                     </div>
                     <div className="surface-soft rounded-lg p-3">
-                      <p className="text-xs text-base-content/60">Zaxira</p>
+                      <p className="text-xs text-base-content/60">{t('erp.products.colStock')}</p>
                       <div className="flex items-center gap-2">
                         <span className={clsx('badge badge-sm', selectedProduct.lowStock ? 'badge-error' : 'badge-success')}>
                           {selectedProduct.quantity}
@@ -444,12 +446,12 @@ export function ProductsPage() {
                         {selectedProduct.lowStock ? (
                           <span className="flex items-center gap-1 text-xs text-error">
                             <AlertTriangle className="h-4 w-4" />
-                            Kam zaxira
+                            {t('erp.products.lowStock')}
                           </span>
                         ) : (
                           <span className="flex items-center gap-1 text-xs text-success">
                             <BadgeCheck className="h-4 w-4" />
-                            Yetarli
+                            {t('erp.products.inStock')}
                           </span>
                         )}
                       </div>
@@ -458,11 +460,11 @@ export function ProductsPage() {
 
                   <div className="grid grid-cols-2 gap-3 text-sm text-base-content/70">
                     <div>
-                      <p className="text-xs uppercase tracking-[0.2em] text-base-content/40">O'lcham</p>
+                      <p className="text-xs uppercase tracking-[0.2em] text-base-content/40">{t('erp.products.colSize')}</p>
                       <p className="font-medium">{selectedProduct.sizeString || '—'}</p>
                     </div>
                     <div>
-                      <p className="text-xs uppercase tracking-[0.2em] text-base-content/40">Tezlik / Yuk</p>
+                      <p className="text-xs uppercase tracking-[0.2em] text-base-content/40">{t('erp.products.speedLoad')}</p>
                       <p className="font-medium">{selectedProduct.speedRating || '—'} / {selectedProduct.loadIndex || '—'}</p>
                     </div>
                   </div>
@@ -485,8 +487,8 @@ export function ProductsPage() {
           <div className="p-4 sm:p-6">
             <div className="flex items-start justify-between gap-4">
               <div>
-                <h3 className="text-xl font-semibold">{editingProductId ? 'Mahsulotni tahrirlash' : 'Yangi mahsulot'}</h3>
-                <p className="text-sm text-base-content/60">{editingProductId ? 'Mahsulot ma\'lumotlarini yangilash' : 'Yangi shina qo\'shish'}</p>
+                <h3 className="text-xl font-semibold">{editingProductId ? t('erp.products.editTitle') : t('erp.products.newProduct')}</h3>
+                <p className="text-sm text-base-content/60">{editingProductId ? t('erp.products.editSubtitle') : t('erp.products.newSubtitle')}</p>
               </div>
               <Button variant="ghost" size="sm" onClick={handleCloseNewProductModal}>
                 <X className="h-4 w-4" />
@@ -500,42 +502,42 @@ export function ProductsPage() {
                   <input type="text" className="input input-bordered w-full" value={formData.sku} onChange={(e) => handleFormChange('sku', e.target.value)} placeholder="SH-001" />
                 </label>
                 <label className="form-control sm:col-span-2">
-                  <span className="label-text mb-1 text-xs font-semibold uppercase tracking-[0.18em] text-base-content/50">Nomi *</span>
+                  <span className="label-text mb-1 text-xs font-semibold uppercase tracking-[0.18em] text-base-content/50">{t('erp.products.fieldName')}</span>
                   <input type="text" className="input input-bordered w-full" value={formData.name} onChange={(e) => handleFormChange('name', e.target.value)} placeholder="Michelin Pilot Sport 5" />
                 </label>
               </div>
 
               <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                 <Select
-                  label="Brend"
+                  label={t('erp.products.colBrand')}
                   value={formData.brandId || ''}
                   onChange={(value) => handleFormChange('brandId', value ? Number(value) : undefined)}
-                  placeholder="Tanlang..."
+                  placeholder={t('erp.products.selectPlaceholder')}
                   options={brands.map((brand) => ({ value: brand.id, label: brand.name }))}
                 />
                 <Select
-                  label="Kategoriya"
+                  label={t('erp.products.category')}
                   value={formData.categoryId || ''}
                   onChange={(value) => handleFormChange('categoryId', value ? Number(value) : undefined)}
-                  placeholder="Tanlang..."
+                  placeholder={t('erp.products.selectPlaceholder')}
                   options={categories.map((category) => ({ value: category.id, label: category.name }))}
                 />
               </div>
 
               <div className="grid grid-cols-3 gap-4 sm:grid-cols-6">
-                <NumberInput label="Kenglik" value={formData.width ?? ''} onChange={(val) => handleFormChange('width', val === '' ? undefined : Number(val))} placeholder="205" showButtons={false} min={100} max={400} />
-                <NumberInput label="Profil" value={formData.profile ?? ''} onChange={(val) => handleFormChange('profile', val === '' ? undefined : Number(val))} placeholder="55" showButtons={false} min={10} max={100} />
-                <NumberInput label="Diametr" value={formData.diameter ?? ''} onChange={(val) => handleFormChange('diameter', val === '' ? undefined : Number(val))} placeholder="16" showButtons={false} min={10} max={30} />
+                <NumberInput label={t('erp.products.fieldWidth')} value={formData.width ?? ''} onChange={(val) => handleFormChange('width', val === '' ? undefined : Number(val))} placeholder="205" showButtons={false} min={100} max={400} />
+                <NumberInput label={t('erp.products.fieldProfile')} value={formData.profile ?? ''} onChange={(val) => handleFormChange('profile', val === '' ? undefined : Number(val))} placeholder="55" showButtons={false} min={10} max={100} />
+                <NumberInput label={t('erp.products.fieldDiameter')} value={formData.diameter ?? ''} onChange={(val) => handleFormChange('diameter', val === '' ? undefined : Number(val))} placeholder="16" showButtons={false} min={10} max={30} />
                 <label className="form-control">
-                  <span className="label-text mb-1 text-xs font-semibold uppercase tracking-[0.18em] text-base-content/50">Yuk ind.</span>
+                  <span className="label-text mb-1 text-xs font-semibold uppercase tracking-[0.18em] text-base-content/50">{t('erp.products.fieldLoadIndex')}</span>
                   <input type="text" className="input input-bordered w-full" value={formData.loadIndex || ''} onChange={(e) => handleFormChange('loadIndex', e.target.value || undefined)} placeholder="91" />
                 </label>
                 <label className="form-control">
-                  <span className="label-text mb-1 text-xs font-semibold uppercase tracking-[0.18em] text-base-content/50">Tezlik</span>
+                  <span className="label-text mb-1 text-xs font-semibold uppercase tracking-[0.18em] text-base-content/50">{t('erp.products.fieldSpeed')}</span>
                   <input type="text" className="input input-bordered w-full" value={formData.speedRating || ''} onChange={(e) => handleFormChange('speedRating', e.target.value || undefined)} placeholder="V" />
                 </label>
                 <Select
-                  label="Mavsum"
+                  label={t('erp.products.colSeason')}
                   value={formData.season || ''}
                   onChange={(value) => handleFormChange('season', value as Season || undefined)}
                   placeholder="—"
@@ -544,28 +546,28 @@ export function ProductsPage() {
               </div>
 
               <div className="grid grid-cols-2 gap-4 sm:grid-cols-4">
-                <CurrencyInput label="Kelish narxi" value={formData.purchasePrice ?? 0} onChange={(val) => handleFormChange('purchasePrice', val || undefined)} min={0} />
-                <CurrencyInput label="Sotish narxi *" value={formData.sellingPrice ?? 0} onChange={(val) => handleFormChange('sellingPrice', val)} min={0} />
-                <NumberInput label="Miqdor" value={formData.quantity ?? ''} onChange={(val) => handleFormChange('quantity', val === '' ? undefined : Number(val))} placeholder="0" min={0} />
-                <NumberInput label="Min zaxira" value={formData.minStockLevel ?? ''} onChange={(val) => handleFormChange('minStockLevel', val === '' ? undefined : Number(val))} placeholder="5" min={0} />
+                <CurrencyInput label={t('erp.products.fieldPurchasePrice')} value={formData.purchasePrice ?? 0} onChange={(val) => handleFormChange('purchasePrice', val || undefined)} min={0} />
+                <CurrencyInput label={t('erp.products.fieldSellingPrice')} value={formData.sellingPrice ?? 0} onChange={(val) => handleFormChange('sellingPrice', val)} min={0} />
+                <NumberInput label={t('erp.products.fieldQuantity')} value={formData.quantity ?? ''} onChange={(val) => handleFormChange('quantity', val === '' ? undefined : Number(val))} placeholder="0" min={0} />
+                <NumberInput label={t('erp.products.fieldMinStock')} value={formData.minStockLevel ?? ''} onChange={(val) => handleFormChange('minStockLevel', val === '' ? undefined : Number(val))} placeholder="5" min={0} />
               </div>
 
               <label className="form-control">
-                <span className="label-text mb-1 text-xs font-semibold uppercase tracking-[0.18em] text-base-content/50">Tavsif</span>
-                <textarea className="textarea textarea-bordered w-full" rows={2} value={formData.description || ''} onChange={(e) => handleFormChange('description', e.target.value || undefined)} placeholder="Mahsulot haqida qo'shimcha ma'lumot..." />
+                <span className="label-text mb-1 text-xs font-semibold uppercase tracking-[0.18em] text-base-content/50">{t('erp.products.fieldDescription')}</span>
+                <textarea className="textarea textarea-bordered w-full" rows={2} value={formData.description || ''} onChange={(e) => handleFormChange('description', e.target.value || undefined)} placeholder={t('erp.products.descriptionPlaceholder')} />
               </label>
 
               <label className="form-control">
-                <span className="label-text mb-1 text-xs font-semibold uppercase tracking-[0.18em] text-base-content/50">Rasm URL</span>
+                <span className="label-text mb-1 text-xs font-semibold uppercase tracking-[0.18em] text-base-content/50">{t('erp.products.fieldImageUrl')}</span>
                 <input type="text" className="input input-bordered w-full" value={formData.imageUrl || ''} onChange={(e) => handleFormChange('imageUrl', e.target.value || undefined)} placeholder="https://..." />
               </label>
             </div>
 
             <div className="mt-6 flex justify-end gap-2">
-              <Button variant="ghost" onClick={handleCloseNewProductModal} disabled={saving}>Bekor qilish</Button>
+              <Button variant="ghost" onClick={handleCloseNewProductModal} disabled={saving}>{t('common.cancel')}</Button>
               <Button variant="primary" onClick={handleSaveProduct} disabled={saving || !formData.sku.trim() || !formData.name.trim() || formData.sellingPrice <= 0}>
                 {saving && <span className="loading loading-spinner loading-sm" />}
-                Saqlash
+                {t('common.save')}
               </Button>
             </div>
           </div>

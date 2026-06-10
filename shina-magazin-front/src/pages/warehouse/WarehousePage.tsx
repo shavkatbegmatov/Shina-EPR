@@ -12,6 +12,7 @@ import {
   RefreshCw,
 } from 'lucide-react';
 import clsx from 'clsx';
+import { useTranslation } from 'react-i18next';
 import { Button } from '@/ui';
 import { warehouseApi } from '../../api/warehouse.api';
 import { productsApi } from '../../api/products.api';
@@ -39,6 +40,7 @@ import type {
 } from '../../types';
 
 export function WarehousePage() {
+  const { t } = useTranslation();
   const [stats, setStats] = useState<WarehouseStats | null>(null);
   const [movements, setMovements] = useState<StockMovement[]>([]);
   const [lowStockProducts, setLowStockProducts] = useState<Product[]>([]);
@@ -86,7 +88,7 @@ export function WarehousePage() {
   const columns: Column<StockMovement>[] = useMemo(() => [
     {
       key: 'createdAt',
-      header: 'Sana',
+      header: t('erp.warehouse.colDate'),
       getValue: (m) => new Date(m.createdAt).getTime(),
       render: (movement) => (
         <span className="text-sm text-base-content/70">
@@ -96,7 +98,7 @@ export function WarehousePage() {
     },
     {
       key: 'productName',
-      header: 'Mahsulot',
+      header: t('erp.warehouse.colProduct'),
       render: (movement) => (
         <div>
           <div className="font-medium">{movement.productName}</div>
@@ -106,7 +108,7 @@ export function WarehousePage() {
     },
     {
       key: 'movementType',
-      header: 'Turi',
+      header: t('erp.warehouse.colType'),
       render: (movement) => (
         <div className="flex items-center gap-2">
           {getMovementIcon(movement.movementType)}
@@ -118,7 +120,7 @@ export function WarehousePage() {
     },
     {
       key: 'quantity',
-      header: 'Miqdor',
+      header: t('erp.warehouse.colQuantity'),
       getValue: (m) => m.quantity,
       render: (movement) => (
         <span
@@ -134,7 +136,7 @@ export function WarehousePage() {
     },
     {
       key: 'newStock',
-      header: 'Zaxira',
+      header: t('erp.warehouse.colStock'),
       getValue: (m) => m.newStock,
       render: (movement) => (
         <span>
@@ -146,14 +148,14 @@ export function WarehousePage() {
     },
     {
       key: 'referenceType',
-      header: 'Manba',
+      header: t('erp.warehouse.colSource'),
       render: (movement) => (
         <span className="badge badge-ghost badge-sm">
           {REFERENCE_TYPES[movement.referenceType as keyof typeof REFERENCE_TYPES]?.label || movement.referenceType}
         </span>
       ),
     },
-  ], []);
+  ], [t]);
 
   const handlePageSizeChange = (newSize: number) => {
     setPageSize(newSize);
@@ -325,8 +327,8 @@ export function WarehousePage() {
       {/* Header */}
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <h1 className="section-title">Ombor</h1>
-          <p className="section-subtitle">Zaxira nazorati va kirim-chiqim</p>
+          <h1 className="section-title">{t('erp.warehouse.title')}</h1>
+          <p className="section-subtitle">{t('erp.warehouse.subtitle')}</p>
         </div>
         <div className="flex flex-wrap items-center gap-2">
           <ExportButtons
@@ -341,7 +343,7 @@ export function WarehousePage() {
               onClick={() => setShowIncomeModal(true)}
             >
               <Plus className="h-5 w-5" />
-              Kirim
+              {t('erp.warehouse.incomeButton')}
             </Button>
           </PermissionGate>
           <PermissionGate permission={PermissionCode.WAREHOUSE_ADJUST}>
@@ -350,7 +352,7 @@ export function WarehousePage() {
               onClick={() => handleOpenAdjustmentModal('OUT')}
             >
               <Minus className="h-5 w-5" />
-              Chiqim
+              {t('erp.warehouse.outButton')}
             </Button>
           </PermissionGate>
           <PermissionGate permission={PermissionCode.WAREHOUSE_ADJUST}>
@@ -360,7 +362,7 @@ export function WarehousePage() {
               onClick={() => handleOpenAdjustmentModal('ADJUSTMENT')}
             >
               <Settings className="h-5 w-5" />
-              Tuzatish
+              {t('erp.warehouse.adjustButton')}
             </Button>
           </PermissionGate>
         </div>
@@ -375,7 +377,7 @@ export function WarehousePage() {
                 <Package className="h-5 w-5 text-primary" />
               </div>
               <div>
-                <p className="text-xs text-base-content/60">Jami mahsulotlar</p>
+                <p className="text-xs text-base-content/60">{t('erp.warehouse.statTotalProducts')}</p>
                 <p className="text-xl font-bold">{formatNumber(stats.totalProducts)}</p>
               </div>
             </div>
@@ -387,7 +389,7 @@ export function WarehousePage() {
                 <TrendingUp className="h-5 w-5 text-success" />
               </div>
               <div>
-                <p className="text-xs text-base-content/60">Jami zaxira</p>
+                <p className="text-xs text-base-content/60">{t('erp.warehouse.statTotalStock')}</p>
                 <p className="text-xl font-bold">{formatNumber(stats.totalStock)}</p>
               </div>
             </div>
@@ -399,7 +401,7 @@ export function WarehousePage() {
                 <ArrowDownCircle className="h-5 w-5 text-info" />
               </div>
               <div>
-                <p className="text-xs text-base-content/60">Bugungi kirim</p>
+                <p className="text-xs text-base-content/60">{t('erp.warehouse.statTodayIncoming')}</p>
                 <p className="text-xl font-bold text-success">+{formatNumber(stats.todayIncoming)}</p>
               </div>
             </div>
@@ -411,7 +413,7 @@ export function WarehousePage() {
                 <ArrowUpCircle className="h-5 w-5 text-error" />
               </div>
               <div>
-                <p className="text-xs text-base-content/60">Bugungi chiqim</p>
+                <p className="text-xs text-base-content/60">{t('erp.warehouse.statTodayOutgoing')}</p>
                 <p className="text-xl font-bold text-error">-{formatNumber(stats.todayOutgoing)}</p>
               </div>
             </div>
@@ -426,7 +428,7 @@ export function WarehousePage() {
           <div className="surface-card p-4">
             <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
               <h2 className="text-sm font-semibold uppercase tracking-[0.2em] text-base-content/50">
-                Kirim-chiqim tarixi
+                {t('erp.warehouse.historyTitle')}
               </h2>
               <div className="flex flex-wrap items-center gap-2">
                 <Select
@@ -436,13 +438,13 @@ export function WarehousePage() {
                     setPage(0);
                   }}
                   options={[
-                    { value: '', label: 'Barcha turlar' },
+                    { value: '', label: t('erp.warehouse.allTypes') },
                     ...Object.entries(MOVEMENT_TYPES).map(([key, { label }]) => ({
                       value: key,
                       label,
                     })),
                   ]}
-                  placeholder="Barcha turlar"
+                  placeholder={t('erp.warehouse.allTypes')}
                 />
                 <Select
                   value={referenceTypeFilter || undefined}
@@ -451,13 +453,13 @@ export function WarehousePage() {
                     setPage(0);
                   }}
                   options={[
-                    { value: '', label: 'Barcha manbalar' },
+                    { value: '', label: t('erp.warehouse.allSources') },
                     ...Object.entries(REFERENCE_TYPES).map(([key, { label }]) => ({
                       value: key,
                       label,
                     })),
                   ]}
-                  placeholder="Barcha manbalar"
+                  placeholder={t('erp.warehouse.allSources')}
                 />
               </div>
             </div>
@@ -468,7 +470,7 @@ export function WarehousePage() {
               <div className="absolute inset-0 z-10 flex items-center justify-center rounded-xl bg-base-100/60 backdrop-blur-sm">
                 <div className="flex flex-col items-center gap-3">
                   <span className="loading loading-spinner loading-lg text-primary"></span>
-                  <span className="text-sm font-medium text-base-content/70">Yangilanmoqda...</span>
+                  <span className="text-sm font-medium text-base-content/70">{t('erp.warehouse.refreshing')}</span>
                 </div>
               </div>
             )}
@@ -478,8 +480,8 @@ export function WarehousePage() {
               keyExtractor={(movement) => movement.id}
               loading={initialLoadingMovements}
               emptyIcon={<Package className="h-12 w-12" />}
-            emptyTitle="Harakatlar topilmadi"
-            emptyDescription="Kirim yoki chiqim qo'shing"
+            emptyTitle={t('erp.warehouse.emptyTitle')}
+            emptyDescription={t('erp.warehouse.emptyDescription')}
             currentPage={page}
             totalPages={totalPages}
             totalElements={totalElements}
@@ -525,7 +527,7 @@ export function WarehousePage() {
           <div className="surface-card p-4 space-y-4 sticky top-4">
             <div className="flex items-center justify-between">
               <h3 className="text-sm font-semibold uppercase tracking-[0.2em] text-base-content/50">
-                Kam zaxira
+                {t('erp.warehouse.lowStockTitle')}
               </h3>
               {stats && stats.lowStockCount > 0 && (
                 <span className="badge badge-error badge-sm">
@@ -537,7 +539,7 @@ export function WarehousePage() {
             {lowStockProducts.length === 0 ? (
               <div className="text-center py-8 text-base-content/50">
                 <Package className="h-10 w-10 mx-auto mb-2 opacity-50" />
-                <p className="text-sm">Kam zaxiradagi mahsulotlar yo'q</p>
+                <p className="text-sm">{t('erp.warehouse.lowStockEmpty')}</p>
               </div>
             ) : (
               <div className="space-y-2 max-h-96 overflow-y-auto">
@@ -554,7 +556,7 @@ export function WarehousePage() {
                       <div className="text-right">
                         <p className="text-sm font-bold text-error">{product.quantity}</p>
                         <p className="text-xs text-base-content/50">
-                          min: {product.minStockLevel}
+                          {t('erp.warehouse.minLabel', { value: product.minStockLevel })}
                         </p>
                       </div>
                       <AlertTriangle className="h-4 w-4 text-warning" />
@@ -581,12 +583,12 @@ export function WarehousePage() {
             <div className="flex items-start justify-between gap-4">
               <div>
                 <h3 className="text-xl font-semibold">
-                  {adjustmentType === 'OUT' && 'Chiqim qo\'shish'}
-                  {adjustmentType === 'ADJUSTMENT' && 'Zaxirani tuzatish'}
+                  {adjustmentType === 'OUT' && t('erp.warehouse.outModalTitle')}
+                  {adjustmentType === 'ADJUSTMENT' && t('erp.warehouse.adjustModalTitle')}
                 </h3>
                 <p className="text-sm text-base-content/60">
-                  {adjustmentType === 'OUT' && 'Ombordan mahsulot chiqimi'}
-                  {adjustmentType === 'ADJUSTMENT' && "Zaxira miqdorini to'g'rilash"}
+                  {adjustmentType === 'OUT' && t('erp.warehouse.outModalSubtitle')}
+                  {adjustmentType === 'ADJUSTMENT' && t('erp.warehouse.adjustModalSubtitle')}
                 </p>
               </div>
               <Button
@@ -603,13 +605,13 @@ export function WarehousePage() {
               {selectedProduct ? (
                 <div className="form-control">
                   <span className="label-text mb-1 text-xs font-semibold uppercase tracking-[0.18em] text-base-content/50">
-                    Mahsulot *
+                    {t('erp.warehouse.productLabel')}
                   </span>
                   <div className="flex items-center justify-between p-3 bg-base-200 rounded-lg">
                     <div>
                       <p className="font-medium">{selectedProduct.name}</p>
                       <p className="text-sm text-base-content/60">
-                        SKU: {selectedProduct.sku} | Zaxira: {selectedProduct.quantity}
+                        {t('erp.warehouse.skuStockLine', { sku: selectedProduct.sku, stock: selectedProduct.quantity })}
                       </p>
                     </div>
                     <Button
@@ -627,8 +629,8 @@ export function WarehousePage() {
                   <SearchInput
                     value={productSearch}
                     onValueChange={handleSearchProducts}
-                    label="Mahsulot *"
-                    placeholder="Mahsulot qidirish..."
+                    label={t('erp.warehouse.productLabel')}
+                    placeholder={t('erp.warehouse.productSearchPlaceholder')}
                     onClear={() => handleSearchProducts('')}
                   />
                   {searchResults.length > 0 && (
@@ -641,7 +643,7 @@ export function WarehousePage() {
                         >
                           <p className="font-medium">{product.name}</p>
                           <p className="text-sm text-base-content/60">
-                            {product.sku} | Zaxira: {product.quantity}
+                            {t('erp.warehouse.skuStockShort', { sku: product.sku, stock: product.quantity })}
                           </p>
                         </button>
                       ))}
@@ -657,7 +659,7 @@ export function WarehousePage() {
 
               <div className="form-control">
                 <NumberInput
-                  label={adjustmentType === 'ADJUSTMENT' ? 'Yangi zaxira miqdori *' : 'Miqdor *'}
+                  label={adjustmentType === 'ADJUSTMENT' ? t('erp.warehouse.newStockLabel') : t('erp.warehouse.quantityLabel')}
                   value={adjustmentQuantity}
                   onChange={(val) => setAdjustmentQuantity(String(val))}
                   min={1}
@@ -666,26 +668,26 @@ export function WarehousePage() {
                 />
                 {adjustmentType === 'ADJUSTMENT' && selectedProduct && (
                   <span className="label-text-alt mt-1 text-base-content/50">
-                    Hozirgi zaxira: {selectedProduct.quantity}
+                    {t('erp.warehouse.currentStockHint', { stock: selectedProduct.quantity })}
                   </span>
                 )}
                 {adjustmentType === 'OUT' && selectedProduct && (
                   <span className="label-text-alt mt-1 text-base-content/50">
-                    Mavjud zaxira: {selectedProduct.quantity}
+                    {t('erp.warehouse.availableStockHint', { stock: selectedProduct.quantity })}
                   </span>
                 )}
               </div>
 
               <label className="form-control">
                 <span className="label-text mb-1 text-xs font-semibold uppercase tracking-[0.18em] text-base-content/50">
-                  Izoh
+                  {t('erp.warehouse.notesLabel')}
                 </span>
                 <textarea
                   className="textarea textarea-bordered w-full"
                   rows={2}
                   value={adjustmentNotes}
                   onChange={(e) => setAdjustmentNotes(e.target.value)}
-                  placeholder="Sabab yoki qo'shimcha ma'lumot..."
+                  placeholder={t('erp.warehouse.notesPlaceholder')}
                 />
               </label>
             </div>
@@ -696,7 +698,7 @@ export function WarehousePage() {
                 onClick={handleCloseAdjustmentModal}
                 disabled={submitting}
               >
-                Bekor qilish
+                {t('common.cancel')}
               </Button>
               <Button
                 variant={
@@ -715,8 +717,8 @@ export function WarehousePage() {
                 }
               >
                 {submitting && <span className="loading loading-spinner loading-sm" />}
-                {adjustmentType === 'OUT' && 'Chiqim qo\'shish'}
-                {adjustmentType === 'ADJUSTMENT' && 'Tuzatish'}
+                {adjustmentType === 'OUT' && t('erp.warehouse.outModalTitle')}
+                {adjustmentType === 'ADJUSTMENT' && t('erp.warehouse.adjustButton')}
               </Button>
             </div>
           </div>

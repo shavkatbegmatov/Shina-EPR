@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Plus, Users, Phone, X } from 'lucide-react';
 import clsx from 'clsx';
 import toast from 'react-hot-toast';
@@ -29,6 +30,7 @@ const isValidPhone = (phone: string): boolean => {
 };
 
 export function CustomersPage() {
+  const { t } = useTranslation();
   const [customers, setCustomers] = useState<Customer[]>([]);
   const [initialLoading, setInitialLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
@@ -75,7 +77,7 @@ export function CustomersPage() {
   const columns: Column<Customer>[] = useMemo(() => [
     {
       key: 'fullName',
-      header: 'Mijoz',
+      header: t('erp.customers.colCustomer'),
       render: (customer) => (
         <div className="flex items-center gap-3">
           <div className="avatar placeholder">
@@ -94,7 +96,7 @@ export function CustomersPage() {
     },
     {
       key: 'phone',
-      header: 'Telefon',
+      header: t('erp.customers.colPhone'),
       render: (customer) => (
         <div>
           <div className="flex items-center gap-2">
@@ -109,7 +111,7 @@ export function CustomersPage() {
     },
     {
       key: 'customerType',
-      header: 'Turi',
+      header: t('erp.customers.colType'),
       render: (customer) => (
         <span className="badge badge-outline badge-sm">
           {CUSTOMER_TYPES[customer.customerType]?.label}
@@ -118,19 +120,19 @@ export function CustomersPage() {
     },
     {
       key: 'address',
-      header: 'Manzil',
+      header: t('erp.customers.colAddress'),
       className: 'max-w-xs truncate',
       render: (customer) => customer.address || '-',
     },
     {
       key: 'balance',
-      header: 'Balans',
+      header: t('erp.customers.colBalance'),
       render: (customer) => (
         <div>
           <span className={clsx('font-medium', customer.balance < 0 && 'text-error', customer.balance > 0 && 'text-success')}>
             {formatCurrency(customer.balance)}
           </span>
-          {customer.hasDebt && <span className="badge badge-error badge-sm ml-2">Qarz</span>}
+          {customer.hasDebt && <span className="badge badge-error badge-sm ml-2">{t('erp.customers.debtBadge')}</span>}
         </div>
       ),
     },
@@ -141,12 +143,12 @@ export function CustomersPage() {
       render: (customer) => (
         <PermissionGate permission={PermissionCode.CUSTOMERS_UPDATE}>
           <Button variant="ghost" size="sm" onClick={(e) => { e.stopPropagation(); handleOpenEditModal(customer); }}>
-            Tahrirlash
+            {t('common.edit')}
           </Button>
         </PermissionGate>
       ),
     },
-  ], []);
+  ], [t]);
 
   const loadCustomers = useCallback(async (isInitial = false) => {
     if (!isInitial) {
@@ -214,7 +216,7 @@ export function CustomersPage() {
       : PermissionCode.CUSTOMERS_CREATE;
 
     if (!hasPermission(requiredPermission)) {
-      toast.error("Sizda bu amalni bajarish huquqi yo'q", {
+      toast.error(t('erp.customers.noPermission'), {
         icon: '🔒',
       });
       return;
@@ -224,10 +226,10 @@ export function CustomersPage() {
     try {
       if (editingCustomer) {
         await customersApi.update(editingCustomer.id, formData);
-        toast.success('Mijoz muvaffaqiyatli yangilandi');
+        toast.success(t('erp.customers.updatedToast'));
       } else {
         await customersApi.create(formData);
-        toast.success('Yangi mijoz muvaffaqiyatli qo\'shildi');
+        toast.success(t('erp.customers.createdToast'));
       }
       handleCloseModal();
       void loadCustomers();
@@ -235,7 +237,7 @@ export function CustomersPage() {
       const err = error as { response?: { status?: number; data?: { message?: string } } };
       // Skip toast for 403 errors (axios interceptor handles them)
       if (err.response?.status !== 403) {
-        toast.error(err.response?.data?.message || 'Mijozni saqlashda xatolik yuz berdi');
+        toast.error(err.response?.data?.message || t('erp.customers.saveError'));
       }
       console.error('Failed to save customer:', error);
     } finally {
@@ -247,15 +249,15 @@ export function CustomersPage() {
     <div className="space-y-6">
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <h1 className="section-title">Mijozlar</h1>
-          <p className="section-subtitle">Mijozlar bazasi</p>
+          <h1 className="section-title">{t('erp.customers.title')}</h1>
+          <p className="section-subtitle">{t('erp.customers.subtitle')}</p>
         </div>
         <div className="flex items-center gap-2">
-          <span className="pill">{totalElements} ta mijoz</span>
+          <span className="pill">{t('erp.customers.countPill', { count: totalElements })}</span>
           <PermissionGate permission={PermissionCode.CUSTOMERS_CREATE}>
             <Button variant="primary" onClick={handleOpenNewModal}>
               <Plus className="h-5 w-5" />
-              Yangi mijoz
+              {t('erp.customers.newCustomer')}
             </Button>
           </PermissionGate>
         </div>
@@ -265,9 +267,9 @@ export function CustomersPage() {
       <div className="surface-card p-4">
         <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
           <div>
-            <h2 className="text-sm font-semibold uppercase tracking-[0.2em] text-base-content/50">Qidiruv</h2>
+            <h2 className="text-sm font-semibold uppercase tracking-[0.2em] text-base-content/50">{t('common.search')}</h2>
             <p className="text-xs text-base-content/60">
-              {hasSearch ? "Qidiruv natijalari ko'rsatilmoqda" : 'Barcha mijozlar'}
+              {hasSearch ? t('erp.customers.searchResults') : t('erp.customers.allCustomers')}
             </p>
           </div>
         </div>
@@ -284,7 +286,7 @@ export function CustomersPage() {
           <div className="absolute inset-0 z-10 flex items-center justify-center rounded-xl bg-base-100/60 backdrop-blur-sm">
             <div className="flex flex-col items-center gap-3">
               <span className="loading loading-spinner loading-lg text-primary"></span>
-              <span className="text-sm font-medium text-base-content/70">Yangilanmoqda...</span>
+              <span className="text-sm font-medium text-base-content/70">{t('erp.customers.refreshing')}</span>
             </div>
           </div>
         )}
@@ -296,8 +298,8 @@ export function CustomersPage() {
           highlightId={highlightId}
           onHighlightComplete={clearHighlight}
           emptyIcon={<Users className="h-12 w-12" />}
-          emptyTitle="Mijozlar topilmadi"
-          emptyDescription="Qidiruv so'zini o'zgartiring"
+          emptyTitle={t('erp.customers.emptyTitle')}
+          emptyDescription={t('erp.customers.emptyDescription')}
           rowClassName={(customer) => (customer.hasDebt ? 'bg-error/5' : '')}
         currentPage={page}
         totalPages={totalPages}
@@ -310,10 +312,10 @@ export function CustomersPage() {
             <div className="flex items-start justify-between gap-3">
               <div>
                 <p className="text-sm font-semibold">{customer.fullName}</p>
-                <p className="text-xs text-base-content/60">{customer.companyName || 'Jismoniy shaxs'}</p>
+                <p className="text-xs text-base-content/60">{customer.companyName || t('erp.customers.individual')}</p>
               </div>
               <span className={clsx('badge badge-sm', customer.hasDebt ? 'badge-error' : 'badge-success')}>
-                {customer.hasDebt ? 'Qarz' : 'Toza'}
+                {customer.hasDebt ? t('erp.customers.debtBadge') : t('erp.customers.cleanBadge')}
               </span>
             </div>
             <div className="flex items-center gap-2 text-sm text-base-content/70">
@@ -324,7 +326,7 @@ export function CustomersPage() {
             <div className="flex items-center justify-between">
               <span className="text-sm font-semibold">{formatCurrency(customer.balance)}</span>
               <Button variant="ghost" size="sm" className="min-h-[44px]" onClick={() => handleOpenEditModal(customer)}>
-                Tahrirlash
+                {t('common.edit')}
               </Button>
             </div>
           </div>
@@ -338,9 +340,9 @@ export function CustomersPage() {
           <div className="p-4 sm:p-6">
             <div className="flex items-start justify-between gap-4">
               <div>
-                <h3 className="text-xl font-semibold">{editingCustomer ? 'Mijozni tahrirlash' : 'Yangi mijoz'}</h3>
+                <h3 className="text-xl font-semibold">{editingCustomer ? t('erp.customers.editTitle') : t('erp.customers.newCustomer')}</h3>
                 <p className="text-sm text-base-content/60">
-                  {editingCustomer ? "Mijoz ma'lumotlarini o'zgartirish" : "Yangi mijoz qo'shish"}
+                  {editingCustomer ? t('erp.customers.editSubtitle') : t('erp.customers.createSubtitle')}
                 </p>
               </div>
               <Button variant="ghost" size="sm" onClick={handleCloseModal}><X className="h-4 w-4" /></Button>
@@ -349,51 +351,51 @@ export function CustomersPage() {
             <div className="mt-6 space-y-4">
               <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                 <label className="form-control sm:col-span-2">
-                  <span className="label-text mb-1 text-xs font-semibold uppercase tracking-[0.18em] text-base-content/50">To'liq ism *</span>
-                  <input type="text" className="input input-bordered w-full" value={formData.fullName} onChange={(e) => handleFormChange('fullName', e.target.value)} placeholder="Ism Familiya" />
+                  <span className="label-text mb-1 text-xs font-semibold uppercase tracking-[0.18em] text-base-content/50">{t('erp.customers.fullNameLabel')}</span>
+                  <input type="text" className="input input-bordered w-full" value={formData.fullName} onChange={(e) => handleFormChange('fullName', e.target.value)} placeholder={t('erp.customers.fullNamePlaceholder')} />
                 </label>
                 <PhoneInput
-                  label="Telefon"
+                  label={t('erp.customers.colPhone')}
                   value={formData.phone}
                   onChange={(value) => handleFormChange('phone', value)}
                   required
                 />
                 <PhoneInput
-                  label="Qo'shimcha telefon"
+                  label={t('erp.customers.phone2Label')}
                   value={formData.phone2 || ''}
                   onChange={(value) => handleFormChange('phone2', value || undefined)}
                 />
               </div>
               <Select
-                label="Mijoz turi"
+                label={t('erp.customers.customerTypeLabel')}
                 value={formData.customerType || 'INDIVIDUAL'}
                 onChange={(val) => handleFormChange('customerType', val as CustomerType)}
                 options={Object.entries(CUSTOMER_TYPES).map(([key, { label }]) => ({
                   value: key,
                   label,
                 }))}
-                placeholder="Mijoz turini tanlang"
+                placeholder={t('erp.customers.customerTypePlaceholder')}
               />
               {formData.customerType === 'BUSINESS' && (
                 <label className="form-control">
-                  <span className="label-text mb-1 text-xs font-semibold uppercase tracking-[0.18em] text-base-content/50">Kompaniya nomi</span>
-                  <input type="text" className="input input-bordered w-full" value={formData.companyName || ''} onChange={(e) => handleFormChange('companyName', e.target.value || undefined)} placeholder="Kompaniya nomi" />
+                  <span className="label-text mb-1 text-xs font-semibold uppercase tracking-[0.18em] text-base-content/50">{t('erp.customers.companyNameLabel')}</span>
+                  <input type="text" className="input input-bordered w-full" value={formData.companyName || ''} onChange={(e) => handleFormChange('companyName', e.target.value || undefined)} placeholder={t('erp.customers.companyNameLabel')} />
                 </label>
               )}
               <label className="form-control">
-                <span className="label-text mb-1 text-xs font-semibold uppercase tracking-[0.18em] text-base-content/50">Manzil</span>
-                <input type="text" className="input input-bordered w-full" value={formData.address || ''} onChange={(e) => handleFormChange('address', e.target.value || undefined)} placeholder="Shahar, tuman, ko'cha..." />
+                <span className="label-text mb-1 text-xs font-semibold uppercase tracking-[0.18em] text-base-content/50">{t('erp.customers.colAddress')}</span>
+                <input type="text" className="input input-bordered w-full" value={formData.address || ''} onChange={(e) => handleFormChange('address', e.target.value || undefined)} placeholder={t('erp.customers.addressPlaceholder')} />
               </label>
               <label className="form-control">
-                <span className="label-text mb-1 text-xs font-semibold uppercase tracking-[0.18em] text-base-content/50">Izoh</span>
-                <textarea className="textarea textarea-bordered w-full" rows={2} value={formData.notes || ''} onChange={(e) => handleFormChange('notes', e.target.value || undefined)} placeholder="Qo'shimcha ma'lumot..." />
+                <span className="label-text mb-1 text-xs font-semibold uppercase tracking-[0.18em] text-base-content/50">{t('erp.customers.notesLabel')}</span>
+                <textarea className="textarea textarea-bordered w-full" rows={2} value={formData.notes || ''} onChange={(e) => handleFormChange('notes', e.target.value || undefined)} placeholder={t('erp.customers.notesPlaceholder')} />
               </label>
             </div>
 
             <div className="mt-6 flex justify-end gap-2">
-              <Button variant="ghost" onClick={handleCloseModal} disabled={saving}>Bekor qilish</Button>
+              <Button variant="ghost" onClick={handleCloseModal} disabled={saving}>{t('common.cancel')}</Button>
               <Button variant="primary" onClick={handleSaveCustomer} loading={saving} disabled={!formData.fullName.trim() || !isValidPhone(formData.phone)}>
-                {editingCustomer ? 'Yangilash' : 'Saqlash'}
+                {editingCustomer ? t('common.update') : t('common.save')}
               </Button>
             </div>
           </div>

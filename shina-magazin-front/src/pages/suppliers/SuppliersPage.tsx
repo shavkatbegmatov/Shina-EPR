@@ -18,6 +18,7 @@ import {
   Trash2,
 } from 'lucide-react';
 import clsx from 'clsx';
+import { useTranslation } from 'react-i18next';
 import { Button } from '@/ui';
 import { suppliersApi } from '../../api/suppliers.api';
 import { purchasesApi } from '../../api/purchases.api';
@@ -68,6 +69,8 @@ interface CartItem {
 }
 
 export function SuppliersPage() {
+  const { t } = useTranslation();
+
   // Active tab
   const [activeTab, setActiveTab] = useState<TabType>('suppliers');
 
@@ -163,7 +166,7 @@ export function SuppliersPage() {
   const suppliersColumns: Column<Supplier>[] = useMemo(() => [
     {
       key: 'name',
-      header: "Ta'minotchi",
+      header: t('erp.suppliers.colSupplier'),
       render: (supplier) => (
         <div className="flex items-center gap-3">
           <div className="avatar placeholder">
@@ -182,7 +185,7 @@ export function SuppliersPage() {
     },
     {
       key: 'phone',
-      header: "Aloqa",
+      header: t('erp.suppliers.colContact'),
       render: (supplier) => (
         <div className="space-y-1">
           {supplier.phone && (
@@ -205,7 +208,7 @@ export function SuppliersPage() {
     },
     {
       key: 'address',
-      header: 'Manzil',
+      header: t('erp.suppliers.colAddress'),
       className: 'max-w-xs',
       render: (supplier) => (
         supplier.address ? (
@@ -220,7 +223,7 @@ export function SuppliersPage() {
     },
     {
       key: 'balance',
-      header: 'Balans',
+      header: t('erp.suppliers.colBalance'),
       getValue: (supplier) => supplier.balance,
       render: (supplier) => (
         <div>
@@ -234,7 +237,7 @@ export function SuppliersPage() {
             {formatCurrency(supplier.balance)}
           </span>
           {supplier.hasDebt && (
-            <span className="badge badge-error badge-sm ml-2">Qarz</span>
+            <span className="badge badge-error badge-sm ml-2">{t('erp.suppliers.debtBadge')}</span>
           )}
         </div>
       ),
@@ -250,18 +253,18 @@ export function SuppliersPage() {
             size="sm"
             onClick={(e) => { e.stopPropagation(); handleOpenEditModal(supplier); }}
           >
-            Tahrirlash
+            {t('common.edit')}
           </Button>
         </PermissionGate>
       ),
     },
-  ], []);
+  ], [t]);
 
   // Purchases Table columns
   const purchasesColumns: Column<PurchaseOrder>[] = useMemo(() => [
     {
       key: 'orderDate',
-      header: 'Sana',
+      header: t('erp.suppliers.colDate'),
       render: (purchase) => (
         <div className="flex items-center gap-2">
           <Calendar className="h-4 w-4 text-base-content/50" />
@@ -271,7 +274,7 @@ export function SuppliersPage() {
     },
     {
       key: 'supplierName',
-      header: "Ta'minotchi",
+      header: t('erp.suppliers.colSupplier'),
       render: (purchase) => (
         <div className="flex items-center gap-2">
           <Truck className="h-4 w-4 text-base-content/50" />
@@ -281,17 +284,17 @@ export function SuppliersPage() {
     },
     {
       key: 'items',
-      header: 'Mahsulotlar',
+      header: t('erp.suppliers.colProducts'),
       render: (purchase) => (
         <div className="flex items-center gap-2">
           <Package className="h-4 w-4 text-base-content/50" />
-          <span>{purchase.itemCount} xil, {purchase.totalQuantity} dona</span>
+          <span>{t('erp.suppliers.itemsSummary', { types: purchase.itemCount, quantity: purchase.totalQuantity })}</span>
         </div>
       ),
     },
     {
       key: 'totalAmount',
-      header: 'Summa',
+      header: t('common.amount'),
       getValue: (purchase) => purchase.totalAmount,
       render: (purchase) => (
         <span className="font-semibold">{formatCurrency(purchase.totalAmount)}</span>
@@ -299,20 +302,20 @@ export function SuppliersPage() {
     },
     {
       key: 'debtAmount',
-      header: 'Qarz',
+      header: t('erp.suppliers.colDebt'),
       getValue: (purchase) => purchase.debtAmount,
       render: (purchase) => (
         <span className={clsx(
           'font-medium',
           purchase.debtAmount > 0 ? 'text-error' : 'text-success'
         )}>
-          {purchase.debtAmount > 0 ? formatCurrency(purchase.debtAmount) : "To'langan"}
+          {purchase.debtAmount > 0 ? formatCurrency(purchase.debtAmount) : t('erp.suppliers.paid')}
         </span>
       ),
     },
     {
       key: 'status',
-      header: 'Status',
+      header: t('common.status'),
       render: (purchase) => (
         <span className={clsx(
           'badge badge-sm',
@@ -320,13 +323,13 @@ export function SuppliersPage() {
           purchase.status === 'DRAFT' && 'badge-warning',
           purchase.status === 'CANCELLED' && 'badge-error'
         )}>
-          {purchase.status === 'RECEIVED' && 'Qabul qilingan'}
-          {purchase.status === 'DRAFT' && 'Kutilmoqda'}
-          {purchase.status === 'CANCELLED' && 'Bekor qilingan'}
+          {purchase.status === 'RECEIVED' && t('erp.suppliers.statusReceived')}
+          {purchase.status === 'DRAFT' && t('erp.suppliers.statusDraft')}
+          {purchase.status === 'CANCELLED' && t('erp.suppliers.statusCancelled')}
         </span>
       ),
     },
-  ], []);
+  ], [t]);
 
   // Load suppliers
   const loadSuppliers = useCallback(async (isInitial = false) => {
@@ -600,27 +603,27 @@ export function SuppliersPage() {
       {/* Header */}
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <h1 className="section-title">Ta'minotchilar</h1>
-          <p className="section-subtitle">Hamkorlar va yetkazib beruvchilar</p>
+          <h1 className="section-title">{t('erp.suppliers.title')}</h1>
+          <p className="section-subtitle">{t('erp.suppliers.subtitle')}</p>
         </div>
         <div className="flex items-center gap-2">
           {activeTab === 'suppliers' ? (
             <>
-              <span className="pill">{totalElements} ta ta'minotchi</span>
+              <span className="pill">{t('erp.suppliers.supplierCount', { count: totalElements })}</span>
               <PermissionGate permission={PermissionCode.SUPPLIERS_CREATE}>
                 <Button variant="primary" onClick={handleOpenNewModal}>
                   <Plus className="h-5 w-5" />
-                  Yangi ta'minotchi
+                  {t('erp.suppliers.newSupplier')}
                 </Button>
               </PermissionGate>
             </>
           ) : (
             <>
-              <span className="pill">{purchasesTotalElements} ta xarid</span>
+              <span className="pill">{t('erp.suppliers.purchaseCount', { count: purchasesTotalElements })}</span>
               <PermissionGate permission={PermissionCode.PURCHASES_CREATE}>
                 <Button variant="primary" onClick={handleOpenPurchaseModal}>
                   <Plus className="h-5 w-5" />
-                  Yangi xarid
+                  {t('erp.suppliers.newPurchase')}
                 </Button>
               </PermissionGate>
             </>
@@ -635,14 +638,14 @@ export function SuppliersPage() {
           onClick={() => setActiveTab('suppliers')}
         >
           <Truck className="h-4 w-4 mr-2" />
-          Ta'minotchilar
+          {t('erp.suppliers.tabSuppliers')}
         </button>
         <button
           className={clsx('tab', activeTab === 'purchases' && 'tab-active')}
           onClick={() => setActiveTab('purchases')}
         >
           <ShoppingCart className="h-4 w-4 mr-2" />
-          Xaridlar
+          {t('erp.suppliers.tabPurchases')}
         </button>
       </div>
 
@@ -657,7 +660,7 @@ export function SuppliersPage() {
                   <Users className="h-5 w-5 text-primary" />
                 </div>
                 <div>
-                  <p className="text-xs text-base-content/60">Jami ta'minotchilar</p>
+                  <p className="text-xs text-base-content/60">{t('erp.suppliers.statTotalSuppliers')}</p>
                   <p className="text-xl font-bold">{totalElements}</p>
                 </div>
               </div>
@@ -669,7 +672,7 @@ export function SuppliersPage() {
                   <AlertTriangle className="h-5 w-5 text-warning" />
                 </div>
                 <div>
-                  <p className="text-xs text-base-content/60">Qarzli ta'minotchilar</p>
+                  <p className="text-xs text-base-content/60">{t('erp.suppliers.statDebtSuppliers')}</p>
                   <p className="text-xl font-bold">{suppliersWithDebt.length}</p>
                 </div>
               </div>
@@ -681,7 +684,7 @@ export function SuppliersPage() {
                   <Wallet className="h-5 w-5 text-error" />
                 </div>
                 <div>
-                  <p className="text-xs text-base-content/60">Jami qarz</p>
+                  <p className="text-xs text-base-content/60">{t('erp.suppliers.statTotalDebt')}</p>
                   <p className="text-xl font-bold text-error">{formatCurrency(totalDebt)}</p>
                 </div>
               </div>
@@ -693,7 +696,7 @@ export function SuppliersPage() {
                   <CreditCard className="h-5 w-5 text-success" />
                 </div>
                 <div>
-                  <p className="text-xs text-base-content/60">Faol hamkorlar</p>
+                  <p className="text-xs text-base-content/60">{t('erp.suppliers.statActivePartners')}</p>
                   <p className="text-xl font-bold text-success">{totalElements - suppliersWithDebt.length}</p>
                 </div>
               </div>
@@ -705,18 +708,18 @@ export function SuppliersPage() {
             <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
               <div>
                 <h2 className="text-sm font-semibold uppercase tracking-[0.2em] text-base-content/50">
-                  Qidiruv
+                  {t('erp.suppliers.searchHeading')}
                 </h2>
                 <p className="text-xs text-base-content/60">
-                  {hasSearch ? "Qidiruv natijalari ko'rsatilmoqda" : "Barcha ta'minotchilar"}
+                  {hasSearch ? t('erp.suppliers.searchResultsShown') : t('erp.suppliers.allSuppliers')}
                 </p>
               </div>
             </div>
             <SearchInput
               value={search}
               onValueChange={handleSearchChange}
-              label="Nom, telefon yoki email"
-              placeholder="Qidirish..."
+              label={t('erp.suppliers.searchLabel')}
+              placeholder={t('common.search')}
               className="mt-4 max-w-md"
             />
           </div>
@@ -727,7 +730,7 @@ export function SuppliersPage() {
               <div className="absolute inset-0 z-10 flex items-center justify-center rounded-xl bg-base-100/60 backdrop-blur-sm">
                 <div className="flex flex-col items-center gap-3">
                   <span className="loading loading-spinner loading-lg text-primary"></span>
-                  <span className="text-sm font-medium text-base-content/70">Yangilanmoqda...</span>
+                  <span className="text-sm font-medium text-base-content/70">{t('erp.suppliers.refreshing')}</span>
                 </div>
               </div>
             )}
@@ -739,8 +742,8 @@ export function SuppliersPage() {
               highlightId={highlightId}
               onHighlightComplete={clearHighlight}
               emptyIcon={<Truck className="h-12 w-12" />}
-              emptyTitle="Ta'minotchilar topilmadi"
-              emptyDescription="Qidiruv so'zini o'zgartiring"
+              emptyTitle={t('erp.suppliers.emptyTitle')}
+              emptyDescription={t('erp.suppliers.emptyDescription')}
               rowClassName={(supplier) => (supplier.hasDebt ? 'bg-error/5' : '')}
             currentPage={page}
             totalPages={totalPages}
@@ -760,7 +763,7 @@ export function SuppliersPage() {
                     <div>
                       <p className="font-semibold">{supplier.name}</p>
                       <p className="text-xs text-base-content/60">
-                        {supplier.contactPerson || "Mas'ul ko'rsatilmagan"}
+                        {supplier.contactPerson || t('erp.suppliers.contactNotSet')}
                       </p>
                     </div>
                   </div>
@@ -768,7 +771,7 @@ export function SuppliersPage() {
                     'badge badge-sm',
                     supplier.hasDebt ? 'badge-error' : 'badge-success'
                   )}>
-                    {supplier.hasDebt ? 'Qarz' : 'Toza'}
+                    {supplier.hasDebt ? t('erp.suppliers.debtBadge') : t('erp.suppliers.cleanBadge')}
                   </span>
                 </div>
 
@@ -803,7 +806,7 @@ export function SuppliersPage() {
                       className="min-h-[44px]"
                       onClick={() => handleOpenEditModal(supplier)}
                     >
-                      Tahrirlash
+                      {t('common.edit')}
                     </Button>
                   </PermissionGate>
                 </div>
@@ -822,7 +825,7 @@ export function SuppliersPage() {
                   <ShoppingCart className="h-5 w-5 text-primary" />
                 </div>
                 <div>
-                  <p className="text-xs text-base-content/60">Jami xaridlar</p>
+                  <p className="text-xs text-base-content/60">{t('erp.suppliers.statTotalPurchases')}</p>
                   <p className="text-xl font-bold">{purchaseStats?.totalPurchases || 0}</p>
                 </div>
               </div>
@@ -834,7 +837,7 @@ export function SuppliersPage() {
                   <Calendar className="h-5 w-5 text-info" />
                 </div>
                 <div>
-                  <p className="text-xs text-base-content/60">Bugungi xaridlar</p>
+                  <p className="text-xs text-base-content/60">{t('erp.suppliers.statTodayPurchases')}</p>
                   <p className="text-xl font-bold">{purchaseStats?.todayPurchases || 0}</p>
                 </div>
               </div>
@@ -846,7 +849,7 @@ export function SuppliersPage() {
                   <TrendingUp className="h-5 w-5 text-success" />
                 </div>
                 <div>
-                  <p className="text-xs text-base-content/60">Jami summa</p>
+                  <p className="text-xs text-base-content/60">{t('erp.suppliers.statTotalAmount')}</p>
                   <p className="text-xl font-bold">{formatCurrency(purchaseStats?.totalAmount || 0)}</p>
                 </div>
               </div>
@@ -858,7 +861,7 @@ export function SuppliersPage() {
                   <Wallet className="h-5 w-5 text-error" />
                 </div>
                 <div>
-                  <p className="text-xs text-base-content/60">Jami qarz</p>
+                  <p className="text-xs text-base-content/60">{t('erp.suppliers.statTotalDebt')}</p>
                   <p className="text-xl font-bold text-error">{formatCurrency(purchaseStats?.totalDebt || 0)}</p>
                 </div>
               </div>
@@ -871,7 +874,7 @@ export function SuppliersPage() {
               <div className="absolute inset-0 z-10 flex items-center justify-center rounded-xl bg-base-100/60 backdrop-blur-sm">
                 <div className="flex flex-col items-center gap-3">
                   <span className="loading loading-spinner loading-lg text-primary"></span>
-                  <span className="text-sm font-medium text-base-content/70">Yangilanmoqda...</span>
+                  <span className="text-sm font-medium text-base-content/70">{t('erp.suppliers.refreshing')}</span>
                 </div>
               </div>
             )}
@@ -881,8 +884,8 @@ export function SuppliersPage() {
               keyExtractor={(purchase) => purchase.id}
               loading={purchasesInitialLoading}
               emptyIcon={<ShoppingCart className="h-12 w-12" />}
-            emptyTitle="Xaridlar topilmadi"
-            emptyDescription="Yangi xarid qo'shish uchun tugmani bosing"
+            emptyTitle={t('erp.suppliers.purchasesEmptyTitle')}
+            emptyDescription={t('erp.suppliers.purchasesEmptyDescription')}
             currentPage={purchasesPage}
             totalPages={purchasesTotalPages}
             totalElements={purchasesTotalElements}
@@ -904,22 +907,22 @@ export function SuppliersPage() {
                     purchase.status === 'DRAFT' && 'badge-warning',
                     purchase.status === 'CANCELLED' && 'badge-error'
                   )}>
-                    {purchase.status === 'RECEIVED' && 'Qabul'}
-                    {purchase.status === 'DRAFT' && 'Kutish'}
-                    {purchase.status === 'CANCELLED' && 'Bekor'}
+                    {purchase.status === 'RECEIVED' && t('erp.suppliers.statusReceivedShort')}
+                    {purchase.status === 'DRAFT' && t('erp.suppliers.statusDraftShort')}
+                    {purchase.status === 'CANCELLED' && t('erp.suppliers.statusCancelledShort')}
                   </span>
                 </div>
 
                 <div className="flex items-center gap-2 text-sm text-base-content/70">
                   <Package className="h-4 w-4" />
-                  {purchase.itemCount} xil, {purchase.totalQuantity} dona
+                  {t('erp.suppliers.itemsSummary', { types: purchase.itemCount, quantity: purchase.totalQuantity })}
                 </div>
 
                 <div className="flex items-center justify-between pt-2 border-t border-base-200">
                   <div>
                     <p className="text-sm font-semibold">{formatCurrency(purchase.totalAmount)}</p>
                     {purchase.debtAmount > 0 && (
-                      <p className="text-xs text-error">Qarz: {formatCurrency(purchase.debtAmount)}</p>
+                      <p className="text-xs text-error">{t('erp.suppliers.debtLabel', { amount: formatCurrency(purchase.debtAmount) })}</p>
                     )}
                   </div>
                 </div>
@@ -937,10 +940,10 @@ export function SuppliersPage() {
             <div className="flex items-start justify-between gap-4">
               <div>
                 <h3 className="text-xl font-semibold">
-                  {editingSupplier ? "Ta'minotchini tahrirlash" : "Yangi ta'minotchi"}
+                  {editingSupplier ? t('erp.suppliers.editSupplierTitle') : t('erp.suppliers.newSupplier')}
                 </h3>
                 <p className="text-sm text-base-content/60">
-                  {editingSupplier ? "Ta'minotchi ma'lumotlarini o'zgartirish" : "Yangi ta'minotchi qo'shish"}
+                  {editingSupplier ? t('erp.suppliers.editSupplierSubtitle') : t('erp.suppliers.newSupplierSubtitle')}
                 </p>
               </div>
               <Button variant="ghost" size="sm" onClick={handleCloseModal}>
@@ -953,35 +956,35 @@ export function SuppliersPage() {
               <div className="surface-soft rounded-xl p-4">
                 <h4 className="text-sm font-semibold uppercase tracking-[0.15em] text-base-content/60 mb-4 flex items-center gap-2">
                   <Building2 className="h-4 w-4" />
-                  Asosiy ma'lumotlar
+                  {t('erp.suppliers.sectionBasicInfo')}
                 </h4>
                 <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                   <label className="form-control sm:col-span-2">
                     <span className="label-text mb-1 text-xs font-semibold uppercase tracking-[0.18em] text-base-content/50">
-                      Ta'minotchi nomi *
+                      {t('erp.suppliers.fieldSupplierName')}
                     </span>
                     <input
                       type="text"
                       className="input input-bordered w-full"
                       value={formData.name}
                       onChange={(e) => handleFormChange('name', e.target.value)}
-                      placeholder="Kompaniya nomi"
+                      placeholder={t('erp.suppliers.phCompanyName')}
                     />
                   </label>
                   <label className="form-control">
                     <span className="label-text mb-1 text-xs font-semibold uppercase tracking-[0.18em] text-base-content/50">
-                      Mas'ul shaxs
+                      {t('erp.suppliers.fieldContactPerson')}
                     </span>
                     <input
                       type="text"
                       className="input input-bordered w-full"
                       value={formData.contactPerson}
                       onChange={(e) => handleFormChange('contactPerson', e.target.value)}
-                      placeholder="Ism Familiya"
+                      placeholder={t('erp.suppliers.phFullName')}
                     />
                   </label>
                   <PhoneInput
-                    label="Telefon"
+                    label={t('erp.suppliers.fieldPhone')}
                     value={formData.phone || ''}
                     onChange={(value) => handleFormChange('phone', value)}
                   />
@@ -992,12 +995,12 @@ export function SuppliersPage() {
               <div className="surface-soft rounded-xl p-4">
                 <h4 className="text-sm font-semibold uppercase tracking-[0.15em] text-base-content/60 mb-4 flex items-center gap-2">
                   <Mail className="h-4 w-4" />
-                  Aloqa ma'lumotlari
+                  {t('erp.suppliers.sectionContactInfo')}
                 </h4>
                 <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                   <label className="form-control">
                     <span className="label-text mb-1 text-xs font-semibold uppercase tracking-[0.18em] text-base-content/50">
-                      Email
+                      {t('erp.suppliers.fieldEmail')}
                     </span>
                     <input
                       type="email"
@@ -1009,14 +1012,14 @@ export function SuppliersPage() {
                   </label>
                   <label className="form-control">
                     <span className="label-text mb-1 text-xs font-semibold uppercase tracking-[0.18em] text-base-content/50">
-                      Manzil
+                      {t('erp.suppliers.fieldAddress')}
                     </span>
                     <input
                       type="text"
                       className="input input-bordered w-full"
                       value={formData.address}
                       onChange={(e) => handleFormChange('address', e.target.value)}
-                      placeholder="Shahar, tuman, ko'cha..."
+                      placeholder={t('erp.suppliers.phAddress')}
                     />
                   </label>
                 </div>
@@ -1026,31 +1029,31 @@ export function SuppliersPage() {
               <div className="surface-soft rounded-xl p-4">
                 <h4 className="text-sm font-semibold uppercase tracking-[0.15em] text-base-content/60 mb-4 flex items-center gap-2">
                   <CreditCard className="h-4 w-4" />
-                  Qo'shimcha ma'lumotlar
+                  {t('erp.suppliers.sectionAdditionalInfo')}
                 </h4>
                 <div className="space-y-4">
                   <label className="form-control">
                     <span className="label-text mb-1 text-xs font-semibold uppercase tracking-[0.18em] text-base-content/50">
-                      Bank rekvizitlari
+                      {t('erp.suppliers.fieldBankDetails')}
                     </span>
                     <textarea
                       className="textarea textarea-bordered w-full"
                       rows={2}
                       value={formData.bankDetails}
                       onChange={(e) => handleFormChange('bankDetails', e.target.value)}
-                      placeholder="Bank nomi, hisob raqami, MFO..."
+                      placeholder={t('erp.suppliers.phBankDetails')}
                     />
                   </label>
                   <label className="form-control">
                     <span className="label-text mb-1 text-xs font-semibold uppercase tracking-[0.18em] text-base-content/50">
-                      Izoh
+                      {t('erp.suppliers.fieldNotes')}
                     </span>
                     <textarea
                       className="textarea textarea-bordered w-full"
                       rows={2}
                       value={formData.notes}
                       onChange={(e) => handleFormChange('notes', e.target.value)}
-                      placeholder="Qo'shimcha ma'lumot..."
+                      placeholder={t('erp.suppliers.phNotes')}
                     />
                   </label>
                 </div>
@@ -1059,7 +1062,7 @@ export function SuppliersPage() {
 
             <div className="mt-6 flex justify-end gap-2">
               <Button variant="ghost" onClick={handleCloseModal} disabled={saving}>
-                Bekor qilish
+                {t('common.cancel')}
               </Button>
               <Button
                 variant="primary"
@@ -1067,7 +1070,7 @@ export function SuppliersPage() {
                 disabled={saving || !formData.name.trim() || !isValidPhoneOrEmpty(formData.phone || '')}
               >
                 {saving && <span className="loading loading-spinner loading-sm" />}
-                {editingSupplier ? 'Yangilash' : 'Saqlash'}
+                {editingSupplier ? t('common.update') : t('common.save')}
               </Button>
             </div>
           </div>
@@ -1080,9 +1083,9 @@ export function SuppliersPage() {
           <div className="p-4 sm:p-6">
             <div className="flex items-start justify-between gap-4">
               <div>
-                <h3 className="text-xl font-semibold">Yangi xarid</h3>
+                <h3 className="text-xl font-semibold">{t('erp.suppliers.newPurchase')}</h3>
                 <p className="text-sm text-base-content/60">
-                  Ta'minotchidan mahsulot xarid qilish
+                  {t('erp.suppliers.newPurchaseSubtitle')}
                 </p>
               </div>
               <Button variant="ghost" size="sm" onClick={handleClosePurchaseModal}>
@@ -1094,13 +1097,13 @@ export function SuppliersPage() {
               {/* Ta'minotchi va sana */}
               <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                 <Select
-                  label="Ta'minotchi *"
+                  label={t('erp.suppliers.fieldSupplierSelect')}
                   value={selectedSupplier?.id || ''}
                   onChange={(value) => {
                     const supplier = allSuppliers.find(s => s.id === Number(value));
                     setSelectedSupplier(supplier || null);
                   }}
-                  placeholder="Ta'minotchini tanlang"
+                  placeholder={t('erp.suppliers.phSelectSupplier')}
                   options={allSuppliers.map(supplier => ({
                     value: supplier.id,
                     label: supplier.name,
@@ -1108,7 +1111,7 @@ export function SuppliersPage() {
                 />
                 <label className="form-control">
                   <span className="label-text mb-1 text-xs font-semibold uppercase tracking-[0.18em] text-base-content/50">
-                    Sana *
+                    {t('erp.suppliers.fieldDate')}
                   </span>
                   <input
                     type="date"
@@ -1123,7 +1126,7 @@ export function SuppliersPage() {
               <div className="surface-soft rounded-xl p-4">
                 <h4 className="text-sm font-semibold uppercase tracking-[0.15em] text-base-content/60 mb-4 flex items-center gap-2">
                   <Package className="h-4 w-4" />
-                  Mahsulotlar
+                  {t('erp.suppliers.sectionProducts')}
                 </h4>
 
                 {/* Product search */}
@@ -1131,8 +1134,8 @@ export function SuppliersPage() {
                   <SearchInput
                     value={productSearch}
                     onValueChange={setProductSearch}
-                    label="Mahsulot qidirish"
-                    placeholder="Mahsulot qidirish..."
+                    label={t('erp.suppliers.productSearchLabel')}
+                    placeholder={t('erp.suppliers.productSearchPlaceholder')}
                     onClear={() => {
                       setProductSearch('');
                       setProductResults([]);
@@ -1150,7 +1153,7 @@ export function SuppliersPage() {
                           <div>
                             <p className="font-medium">{product.name}</p>
                             <p className="text-xs text-base-content/60">
-                              {product.sku} • Zaxira: {product.quantity}
+                              {product.sku} • {t('erp.suppliers.stockLabel', { quantity: product.quantity })}
                             </p>
                           </div>
                           <span className="text-sm font-semibold">
@@ -1173,10 +1176,10 @@ export function SuppliersPage() {
                     <table className="table table-sm">
                       <thead>
                         <tr>
-                          <th>Mahsulot</th>
-                          <th className="w-28">Miqdor</th>
-                          <th className="w-36">Narx</th>
-                          <th className="w-32 text-right">Summa</th>
+                          <th>{t('erp.suppliers.colProduct')}</th>
+                          <th className="w-28">{t('erp.suppliers.colQuantity')}</th>
+                          <th className="w-36">{t('erp.suppliers.colPrice')}</th>
+                          <th className="w-32 text-right">{t('common.amount')}</th>
                           <th className="w-12"></th>
                         </tr>
                       </thead>
@@ -1229,7 +1232,7 @@ export function SuppliersPage() {
                 ) : (
                   <div className="text-center py-8 text-base-content/50">
                     <Package className="h-12 w-12 mx-auto mb-2 opacity-50" />
-                    <p>Mahsulot qo'shilmagan</p>
+                    <p>{t('erp.suppliers.cartEmpty')}</p>
                   </div>
                 )}
               </div>
@@ -1239,17 +1242,17 @@ export function SuppliersPage() {
                 <div className="surface-soft rounded-xl p-4">
                   <div className="space-y-3">
                     <div className="flex justify-between text-sm">
-                      <span className="text-base-content/70">Jami mahsulotlar:</span>
-                      <span className="font-medium">{cartTotalQuantity} dona</span>
+                      <span className="text-base-content/70">{t('erp.suppliers.summaryTotalProducts')}</span>
+                      <span className="font-medium">{t('erp.suppliers.quantityPcs', { quantity: cartTotalQuantity })}</span>
                     </div>
                     <div className="flex justify-between text-lg font-semibold">
-                      <span>Jami summa:</span>
+                      <span>{t('erp.suppliers.summaryTotalAmount')}</span>
                       <span>{formatCurrency(cartTotal)}</span>
                     </div>
                     <div className="divider my-2"></div>
                     <label className="form-control">
                       <span className="label-text mb-1 text-xs font-semibold uppercase tracking-[0.18em] text-base-content/50">
-                        To'langan summa
+                        {t('erp.suppliers.fieldPaidAmount')}
                       </span>
                       <input
                         type="number"
@@ -1261,7 +1264,7 @@ export function SuppliersPage() {
                       />
                     </label>
                     <div className="flex justify-between text-lg">
-                      <span className="text-base-content/70">Qarz:</span>
+                      <span className="text-base-content/70">{t('erp.suppliers.summaryDebt')}</span>
                       <span className={clsx('font-semibold', debtAmount > 0 ? 'text-error' : 'text-success')}>
                         {formatCurrency(debtAmount)}
                       </span>
@@ -1273,21 +1276,21 @@ export function SuppliersPage() {
               {/* Notes */}
               <label className="form-control">
                 <span className="label-text mb-1 text-xs font-semibold uppercase tracking-[0.18em] text-base-content/50">
-                  Izoh
+                  {t('erp.suppliers.fieldNotes')}
                 </span>
                 <textarea
                   className="textarea textarea-bordered w-full"
                   rows={2}
                   value={purchaseNotes}
                   onChange={(e) => setPurchaseNotes(e.target.value)}
-                  placeholder="Qo'shimcha ma'lumot..."
+                  placeholder={t('erp.suppliers.phNotes')}
                 />
               </label>
             </div>
 
             <div className="mt-6 flex justify-end gap-2">
               <Button variant="ghost" onClick={handleClosePurchaseModal} disabled={purchaseSaving}>
-                Bekor qilish
+                {t('common.cancel')}
               </Button>
               <Button
                 variant="primary"
@@ -1295,7 +1298,7 @@ export function SuppliersPage() {
                 disabled={purchaseSaving || !selectedSupplier || cartItems.length === 0}
               >
                 {purchaseSaving && <span className="loading loading-spinner loading-sm" />}
-                Saqlash va omborga kirim
+                {t('erp.suppliers.savePurchase')}
               </Button>
             </div>
           </div>

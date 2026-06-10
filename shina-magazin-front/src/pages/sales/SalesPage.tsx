@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Link } from 'react-router-dom';
 import { ShoppingCart, Receipt, Eye, XCircle, Calendar, User, X, CreditCard, Banknote, ArrowRightLeft, Layers } from 'lucide-react';
 import clsx from 'clsx';
@@ -36,6 +37,7 @@ const paymentMethodIcons: Record<PaymentMethod, React.ReactNode> = {
 };
 
 export function SalesPage() {
+  const { t } = useTranslation();
   const [sales, setSales] = useState<Sale[]>([]);
   const [initialLoading, setInitialLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
@@ -140,7 +142,7 @@ export function SalesPage() {
         setSelectedSale(fullSale);
       } catch (error) {
         console.error('Failed to load sale details:', error);
-        toast.error('Sotuv tafsilotlarini yuklashda xatolik');
+        toast.error(t('erp.sales.loadDetailsError'));
       } finally {
         setLoadingDetails(false);
       }
@@ -156,7 +158,7 @@ export function SalesPage() {
   const columns: Column<Sale>[] = useMemo(() => [
     {
       key: 'invoiceNumber',
-      header: 'Faktura',
+      header: t('erp.sales.colInvoice'),
       render: (sale) => (
         <div className="flex items-center gap-2">
           <Receipt className="h-4 w-4 text-primary" />
@@ -166,7 +168,7 @@ export function SalesPage() {
     },
     {
       key: 'saleDate',
-      header: 'Sana',
+      header: t('erp.sales.colDate'),
       render: (sale) => (
         <div className="flex items-center gap-2 text-sm">
           <Calendar className="h-4 w-4 text-base-content/50" />
@@ -176,7 +178,7 @@ export function SalesPage() {
     },
     {
       key: 'customerName',
-      header: 'Mijoz',
+      header: t('erp.sales.colCustomer'),
       render: (sale) => sale.customerName ? (
         <div className="flex items-center gap-2">
           <User className="h-4 w-4 text-base-content/50" />
@@ -189,17 +191,17 @@ export function SalesPage() {
     },
     {
       key: 'totalAmount',
-      header: 'Summa',
+      header: t('common.amount'),
       render: (sale) => (
         <div>
           <div className="font-semibold">{formatCurrency(sale.totalAmount)}</div>
-          {sale.debtAmount > 0 && <div className="text-xs text-error">Qarz: {formatCurrency(sale.debtAmount)}</div>}
+          {sale.debtAmount > 0 && <div className="text-xs text-error">{t('erp.sales.debtLabel')}: {formatCurrency(sale.debtAmount)}</div>}
         </div>
       ),
     },
     {
       key: 'paymentMethod',
-      header: "To'lov usuli",
+      header: t('erp.sales.colPaymentMethod'),
       render: (sale) => (
         <div className="flex items-center gap-1.5">
           {paymentMethodIcons[sale.paymentMethod]}
@@ -209,12 +211,12 @@ export function SalesPage() {
     },
     {
       key: 'paymentStatus',
-      header: "To'lov holati",
+      header: t('erp.sales.colPaymentStatus'),
       render: (sale) => getPaymentStatusBadge(sale.paymentStatus),
     },
     {
       key: 'status',
-      header: 'Holat',
+      header: t('common.status'),
       render: (sale) => getSaleStatusBadge(sale.status),
     },
     {
@@ -224,13 +226,13 @@ export function SalesPage() {
       render: (sale) => (
         <div className="flex items-center gap-1">
           <PermissionGate permission={PermissionCode.SALES_VIEW}>
-            <Button variant="ghost" size="sm" onClick={(e) => { e.stopPropagation(); handleViewSale(sale); }} title="Ko'rish">
+            <Button variant="ghost" size="sm" onClick={(e) => { e.stopPropagation(); handleViewSale(sale); }} title={t('common.view')}>
               <Eye className="h-4 w-4" />
             </Button>
           </PermissionGate>
           {sale.status === 'COMPLETED' && (
             <PermissionGate permission={PermissionCode.SALES_UPDATE}>
-              <Button variant="ghost" size="sm" className="text-error" onClick={(e) => { e.stopPropagation(); handleOpenCancelModal(sale); }} title="Bekor qilish">
+              <Button variant="ghost" size="sm" className="text-error" onClick={(e) => { e.stopPropagation(); handleOpenCancelModal(sale); }} title={t('common.cancel')}>
                 <XCircle className="h-4 w-4" />
               </Button>
             </PermissionGate>
@@ -238,7 +240,7 @@ export function SalesPage() {
         </div>
       ),
     },
-  ], []);
+  ], [t]);
 
   const loadSales = useCallback(async (isInitial = false) => {
     if (!isInitial) {
@@ -258,12 +260,12 @@ export function SalesPage() {
       setTotalElements(data.totalElements);
     } catch (error) {
       console.error('Failed to load sales:', error);
-      toast.error('Sotuvlarni yuklashda xatolik');
+      toast.error(t('erp.sales.loadError'));
     } finally {
       setInitialLoading(false);
       setRefreshing(false);
     }
-  }, [page, pageSize, dateRangePreset, getDateRangeValues]);
+  }, [page, pageSize, dateRangePreset, getDateRangeValues, t]);
 
   useEffect(() => {
     loadSales(true);
@@ -306,7 +308,7 @@ export function SalesPage() {
 
     // Check permission before API call
     if (!hasPermission(PermissionCode.SALES_UPDATE)) {
-      toast.error("Sizda bu amalni bajarish huquqi yo'q", {
+      toast.error(t('erp.sales.noPermission'), {
         icon: '🔒',
       });
       return;
@@ -315,7 +317,7 @@ export function SalesPage() {
     setCancelling(true);
     try {
       await salesApi.cancel(selectedSale.id);
-      toast.success('Sotuv bekor qilindi');
+      toast.success(t('erp.sales.cancelSuccess'));
       setShowCancelModal(false);
       setSelectedSale(null);
       void loadSales();
@@ -323,7 +325,7 @@ export function SalesPage() {
       const err = error as { response?: { status?: number; data?: { message?: string } } };
       // Skip toast for 403 errors (axios interceptor handles them)
       if (err.response?.status !== 403) {
-        toast.error(err.response?.data?.message || 'Sotuvni bekor qilishda xatolik');
+        toast.error(err.response?.data?.message || t('erp.sales.cancelError'));
       }
       console.error('Failed to cancel sale:', error);
     } finally {
@@ -336,11 +338,11 @@ export function SalesPage() {
       {/* Header */}
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <h1 className="section-title">Sotuvlar</h1>
-          <p className="section-subtitle">Sotuvlar tarixi</p>
+          <h1 className="section-title">{t('erp.sales.title')}</h1>
+          <p className="section-subtitle">{t('erp.sales.subtitle')}</p>
         </div>
         <div className="flex flex-wrap items-center gap-2">
-          <span className="pill">{totalElements} ta sotuv</span>
+          <span className="pill">{t('erp.sales.countPill', { count: totalElements })}</span>
           <ExportButtons
             onExportExcel={() => handleExport('excel')}
             onExportPdf={() => handleExport('pdf')}
@@ -350,7 +352,7 @@ export function SalesPage() {
           <PermissionGate permission={PermissionCode.SALES_CREATE}>
             <Link to="/pos" className={buttonVariants({ variant: "primary" })}>
               <ShoppingCart className="h-5 w-5" />
-              Kassa (POS)
+              {t('erp.sales.posButton')}
             </Link>
           </PermissionGate>
         </div>
@@ -360,20 +362,20 @@ export function SalesPage() {
       <div className="surface-card p-4">
         <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
           <div>
-            <h2 className="text-sm font-semibold uppercase tracking-[0.2em] text-base-content/50">Filtrlar</h2>
-            <p className="text-xs text-base-content/60">{hasFilters ? "Filtrlangan natijalar ko'rsatilmoqda" : 'Barcha sotuvlar'}</p>
+            <h2 className="text-sm font-semibold uppercase tracking-[0.2em] text-base-content/50">{t('erp.sales.filtersTitle')}</h2>
+            <p className="text-xs text-base-content/60">{hasFilters ? t('erp.sales.filteredResults') : t('erp.sales.allSales')}</p>
           </div>
           {hasFilters && (
             <Button variant="ghost" size="sm" onClick={handleResetFilters}>
               <X className="h-4 w-4" />
-              Tozalash
+              {t('common.clear')}
             </Button>
           )}
         </div>
         <div className="mt-4 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
           <div>
             <span className="block mb-1 text-xs font-semibold uppercase tracking-[0.18em] text-base-content/50">
-              Davr
+              {t('erp.sales.periodLabel')}
             </span>
             <DateRangePicker
               value={dateRangePreset}
@@ -384,34 +386,34 @@ export function SalesPage() {
           <SearchInput
             value={search}
             onValueChange={setSearch}
-            label="Faktura raqami"
-            placeholder="INV... bo'yicha qidirish"
+            label={t('erp.sales.invoiceNumberLabel')}
+            placeholder={t('erp.sales.searchPlaceholder')}
           />
           <Select
-            label="To'lov holati"
+            label={t('erp.sales.paymentStatusLabel')}
             value={paymentStatusFilter || undefined}
             onChange={(val) => setPaymentStatusFilter((val as PaymentStatus | '') || '')}
             options={[
-              { value: '', label: 'Barchasi' },
+              { value: '', label: t('common.all') },
               ...Object.values(PAYMENT_STATUSES).map((status) => ({
                 value: status.value,
                 label: status.label,
               })),
             ]}
-            placeholder="Barchasi"
+            placeholder={t('common.all')}
           />
           <Select
-            label="Sotuv holati"
+            label={t('erp.sales.saleStatusLabel')}
             value={statusFilter || undefined}
             onChange={(val) => setStatusFilter((val as SaleStatus | '') || '')}
             options={[
-              { value: '', label: 'Barchasi' },
+              { value: '', label: t('common.all') },
               ...Object.values(SALE_STATUSES).map((status) => ({
                 value: status.value,
                 label: status.label,
               })),
             ]}
-            placeholder="Barchasi"
+            placeholder={t('common.all')}
           />
         </div>
       </div>
@@ -422,7 +424,7 @@ export function SalesPage() {
           <div className="absolute inset-0 z-10 flex items-center justify-center rounded-xl bg-base-100/60 backdrop-blur-sm">
             <div className="flex flex-col items-center gap-3">
               <span className="loading loading-spinner loading-lg text-primary"></span>
-              <span className="text-sm font-medium text-base-content/70">Yangilanmoqda...</span>
+              <span className="text-sm font-medium text-base-content/70">{t('erp.sales.refreshing')}</span>
             </div>
           </div>
         )}
@@ -434,8 +436,8 @@ export function SalesPage() {
           highlightId={highlightId}
           onHighlightComplete={clearHighlight}
           emptyIcon={<Receipt className="h-12 w-12" />}
-          emptyTitle="Sotuvlar topilmadi"
-          emptyDescription="Filtrlarni o'zgartiring yoki yangi sotuv qiling"
+          emptyTitle={t('erp.sales.emptyTitle')}
+          emptyDescription={t('erp.sales.emptyDescription')}
           rowClassName={(sale) => (sale.status === 'CANCELLED' ? 'opacity-60' : '')}
         currentPage={page}
         totalPages={totalPages}
@@ -467,12 +469,12 @@ export function SalesPage() {
             <div className="flex items-center justify-between border-t border-base-200 pt-3">
               <div>
                 <div className="font-semibold">{formatCurrency(sale.totalAmount)}</div>
-                {sale.debtAmount > 0 && <div className="text-xs text-error">Qarz: {formatCurrency(sale.debtAmount)}</div>}
+                {sale.debtAmount > 0 && <div className="text-xs text-error">{t('erp.sales.debtLabel')}: {formatCurrency(sale.debtAmount)}</div>}
               </div>
               <div className="flex items-center gap-1">
                 <Button variant="ghost" size="sm" onClick={() => handleViewSale(sale)}>
                   <Eye className="h-4 w-4" />
-                  Ko'rish
+                  {t('common.view')}
                 </Button>
                 {sale.status === 'COMPLETED' && (
                   <PermissionGate permission={PermissionCode.SALES_REFUND}>
@@ -496,35 +498,35 @@ export function SalesPage() {
               <Button variant="ghost" size="sm" className="btn-circle absolute right-4 top-4" onClick={() => { setShowDetailModal(false); setSelectedSale(null); }}>
                 <X className="h-5 w-5" />
               </Button>
-              <h3 className="text-lg font-bold">Sotuv tafsilotlari</h3>
-              <p className="text-sm text-base-content/60">Faktura: {selectedSale.invoiceNumber}</p>
+              <h3 className="text-lg font-bold">{t('erp.sales.detailTitle')}</h3>
+              <p className="text-sm text-base-content/60">{t('erp.sales.invoiceLabel')}: {selectedSale.invoiceNumber}</p>
 
               <div className="mt-6 space-y-4">
                 <div className="grid gap-4 sm:grid-cols-2">
                   <div className="surface-soft rounded-lg p-3">
-                    <p className="text-xs font-semibold uppercase tracking-wider text-base-content/50">Sana</p>
+                    <p className="text-xs font-semibold uppercase tracking-wider text-base-content/50">{t('erp.sales.colDate')}</p>
                     <p className="mt-1 font-medium">{formatDateTime(selectedSale.saleDate)}</p>
                   </div>
                   <div className="surface-soft rounded-lg p-3">
-                    <p className="text-xs font-semibold uppercase tracking-wider text-base-content/50">Mijoz</p>
-                    <p className="mt-1 font-medium">{selectedSale.customerName || "Noma'lum mijoz"}</p>
+                    <p className="text-xs font-semibold uppercase tracking-wider text-base-content/50">{t('erp.sales.colCustomer')}</p>
+                    <p className="mt-1 font-medium">{selectedSale.customerName || t('erp.sales.unknownCustomer')}</p>
                     {selectedSale.customerPhone && <p className="text-sm text-base-content/60">{selectedSale.customerPhone}</p>}
                   </div>
                   <div className="surface-soft rounded-lg p-3">
-                    <p className="text-xs font-semibold uppercase tracking-wider text-base-content/50">To'lov usuli</p>
+                    <p className="text-xs font-semibold uppercase tracking-wider text-base-content/50">{t('erp.sales.colPaymentMethod')}</p>
                     <div className="mt-1 flex items-center gap-2">
                       {paymentMethodIcons[selectedSale.paymentMethod]}
                       <span className="font-medium">{PAYMENT_METHODS[selectedSale.paymentMethod]?.label}</span>
                     </div>
                   </div>
                   <div className="surface-soft rounded-lg p-3">
-                    <p className="text-xs font-semibold uppercase tracking-wider text-base-content/50">Sotuvchi</p>
+                    <p className="text-xs font-semibold uppercase tracking-wider text-base-content/50">{t('erp.sales.sellerLabel')}</p>
                     <p className="mt-1 font-medium">{selectedSale.createdByName || '-'}</p>
                   </div>
                 </div>
 
                 <div>
-                  <h4 className="mb-2 text-sm font-semibold uppercase tracking-wider text-base-content/50">Mahsulotlar</h4>
+                  <h4 className="mb-2 text-sm font-semibold uppercase tracking-wider text-base-content/50">{t('erp.sales.productsHeading')}</h4>
                   {loadingDetails ? (
                     <div className="flex items-center justify-center py-8"><span className="loading loading-spinner" /></div>
                   ) : selectedSale.items && selectedSale.items.length > 0 ? (
@@ -532,10 +534,10 @@ export function SalesPage() {
                       <table className="table table-sm">
                         <thead>
                           <tr>
-                            <th>Mahsulot</th>
-                            <th className="text-right">Narx</th>
-                            <th className="text-right">Soni</th>
-                            <th className="text-right">Jami</th>
+                            <th>{t('erp.sales.thProduct')}</th>
+                            <th className="text-right">{t('erp.sales.thPrice')}</th>
+                            <th className="text-right">{t('erp.sales.thQuantity')}</th>
+                            <th className="text-right">{t('common.total')}</th>
                           </tr>
                         </thead>
                         <tbody>
@@ -556,32 +558,32 @@ export function SalesPage() {
                       </table>
                     </div>
                   ) : (
-                    <p className="text-center text-sm text-base-content/50 py-4">Mahsulotlar mavjud emas</p>
+                    <p className="text-center text-sm text-base-content/50 py-4">{t('erp.sales.noProducts')}</p>
                   )}
                 </div>
 
                 <div className="border-t border-base-200 pt-4 space-y-2">
                   <div className="flex justify-between text-sm">
-                    <span className="text-base-content/70">Jami:</span>
+                    <span className="text-base-content/70">{t('erp.sales.subtotalLabel')}:</span>
                     <span>{formatCurrency(selectedSale.subtotal)}</span>
                   </div>
                   {(selectedSale.discountAmount > 0 || selectedSale.discountPercent > 0) && (
                     <div className="flex justify-between text-sm text-error">
-                      <span>Chegirma{selectedSale.discountPercent > 0 && ` (${selectedSale.discountPercent}%)`}:</span>
+                      <span>{t('erp.sales.discountLabel')}{selectedSale.discountPercent > 0 && ` (${selectedSale.discountPercent}%)`}:</span>
                       <span>-{formatCurrency(selectedSale.discountAmount)}</span>
                     </div>
                   )}
                   <div className="flex justify-between text-lg font-bold">
-                    <span>Umumiy:</span>
+                    <span>{t('erp.sales.grandTotalLabel')}:</span>
                     <span>{formatCurrency(selectedSale.totalAmount)}</span>
                   </div>
                   <div className="flex justify-between text-sm">
-                    <span className="text-base-content/70">To'langan:</span>
+                    <span className="text-base-content/70">{t('erp.sales.paidLabel')}:</span>
                     <span className="text-success">{formatCurrency(selectedSale.paidAmount)}</span>
                   </div>
                   {selectedSale.debtAmount > 0 && (
                     <div className="flex justify-between text-sm">
-                      <span className="text-base-content/70">Qarz:</span>
+                      <span className="text-base-content/70">{t('erp.sales.debtLabel')}:</span>
                       <span className="text-error">{formatCurrency(selectedSale.debtAmount)}</span>
                     </div>
                   )}
@@ -594,14 +596,14 @@ export function SalesPage() {
 
                 {selectedSale.notes && (
                   <div className="surface-soft rounded-lg p-3">
-                    <p className="text-xs font-semibold uppercase tracking-wider text-base-content/50">Izoh</p>
+                    <p className="text-xs font-semibold uppercase tracking-wider text-base-content/50">{t('erp.sales.notesLabel')}</p>
                     <p className="mt-1 text-sm">{selectedSale.notes}</p>
                   </div>
                 )}
               </div>
 
               <div className="mt-6 flex justify-end">
-                <Button variant="default" onClick={() => { setShowDetailModal(false); setSelectedSale(null); }}>Yopish</Button>
+                <Button variant="default" onClick={() => { setShowDetailModal(false); setSelectedSale(null); }}>{t('common.close')}</Button>
               </div>
             </div>
           </div>
@@ -622,15 +624,15 @@ export function SalesPage() {
               >
                 <X className="h-5 w-5" />
               </Button>
-              <h3 className="text-lg font-bold text-error">Sotuvni bekor qilish</h3>
+              <h3 className="text-lg font-bold text-error">{t('erp.sales.cancelModalTitle')}</h3>
               <p className="mt-4 text-base-content/70">
-                Haqiqatan ham <span className="font-semibold">{selectedSale.invoiceNumber}</span> raqamli sotuvni bekor qilmoqchimisiz?
+                {t('erp.sales.cancelConfirmPrefix')} <span className="font-semibold">{selectedSale.invoiceNumber}</span> {t('erp.sales.cancelConfirmSuffix')}
               </p>
-              <p className="mt-2 text-sm text-base-content/60">Bu amal mahsulotlar zahirasini qaytaradi va sotuvni bekor qilingan deb belgilaydi.</p>
+              <p className="mt-2 text-sm text-base-content/60">{t('erp.sales.cancelWarning')}</p>
               <div className="mt-6 flex justify-end gap-2">
-                <Button variant="default" onClick={() => { setShowCancelModal(false); setSelectedSale(null); }} disabled={cancelling}>Yo'q, ortga</Button>
+                <Button variant="default" onClick={() => { setShowCancelModal(false); setSelectedSale(null); }} disabled={cancelling}>{t('erp.sales.noBack')}</Button>
                 <Button variant="danger" onClick={handleCancelSale} loading={cancelling}>
-                  Ha, bekor qilish
+                  {t('erp.sales.yesCancel')}
                 </Button>
               </div>
             </div>
