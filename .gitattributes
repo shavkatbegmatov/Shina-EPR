@@ -1,0 +1,7 @@
+# Shell skriptlar va Maven wrapper LF bo'lishi shart (aks holda Linux/CI'da yiqiladi)
+*.sh text eol=lf
+mvnw text eol=lf
+
+# Windows batch wrapperlari CRLF qoladi
+*.cmd text eol=crlf
+*.bat text eol=crlf
