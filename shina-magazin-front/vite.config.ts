@@ -1,4 +1,3 @@
-/// <reference types="vitest/config" />
 import { defineConfig } from 'vitest/config'
 import type { ProxyOptions } from 'vite'
 import react from '@vitejs/plugin-react-swc'
