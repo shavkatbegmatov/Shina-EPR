@@ -198,6 +198,12 @@
   .form-label {
     @apply label-text mb-1 text-xs font-semibold uppercase tracking-[0.18em] text-base-content/50;
   }
+
+  /* Touch target standarti: >=44px (ikonka tugmalar, nav, pagination, qty stepper).
+   * Asosiy CTA'lar h-12 (48px) form standartiga mos. */
+  .touch-target {
+    @apply min-h-[44px] min-w-[44px];
+  }
 }
 
 @layer utilities {

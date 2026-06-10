@@ -9,6 +9,14 @@ export default {
   ],
   theme: {
     extend: {
+      // Responsive breakpointlar: xs + semantik aliaslar (default sm/md/lg/xl/2xl saqlanadi).
+      // tablet=md(768) — ERP "desktop chrome" shu yerda yoqiladi; tablet dead-zone'ni yopadi.
+      screens: {
+        xs: '480px',
+        tablet: '768px',
+        desktop: '1024px',
+        wide: '1280px',
+      },
       // Protektor token shkalalari (faqat yangi, to'qnashmaydigan nomlar)
       borderRadius: RADIUS,
       boxShadow: SHADOW,
