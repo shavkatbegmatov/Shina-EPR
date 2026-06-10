@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { CheckCircle, Copy, AlertTriangle, X } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { Button } from '@/ui';
@@ -11,16 +12,17 @@ interface CredentialsModalProps {
 }
 
 export function CredentialsModal({ credentials, employeeName, onClose }: CredentialsModalProps) {
+  const { t } = useTranslation();
   const [copiedField, setCopiedField] = useState<'username' | 'password' | null>(null);
 
   const copyToClipboard = async (text: string, field: 'username' | 'password') => {
     try {
       await navigator.clipboard.writeText(text);
       setCopiedField(field);
-      toast.success("Nusxa olindi!");
+      toast.success(t("erp.credentialsModal.copied"));
       setTimeout(() => setCopiedField(null), 2000);
     } catch {
-      toast.error("Nusxa olishda xatolik");
+      toast.error(t("erp.credentialsModal.copyError"));
     }
   };
 
@@ -28,9 +30,9 @@ export function CredentialsModal({ credentials, employeeName, onClose }: Credent
     const text = `Username: ${credentials.username}\nParol: ${credentials.temporaryPassword}`;
     try {
       await navigator.clipboard.writeText(text);
-      toast.success("Barcha ma'lumotlar nusxa olindi!");
+      toast.success(t("erp.credentialsModal.allCopied"));
     } catch {
-      toast.error("Nusxa olishda xatolik");
+      toast.error(t("erp.credentialsModal.copyError"));
     }
   };
 
@@ -44,7 +46,7 @@ export function CredentialsModal({ credentials, employeeName, onClose }: Credent
               <CheckCircle className="h-6 w-6" />
             </div>
             <div>
-              <h3 className="text-lg font-bold">Hisob yaratildi!</h3>
+              <h3 className="text-lg font-bold">{t("erp.credentialsModal.accountCreated")}</h3>
               <p className="text-sm text-base-content/60">{employeeName}</p>
             </div>
           </div>
@@ -58,7 +60,7 @@ export function CredentialsModal({ credentials, employeeName, onClose }: Credent
           {/* Username */}
           <div className="surface-soft rounded-lg p-4">
             <label className="text-xs text-base-content/60 uppercase tracking-wider">
-              Foydalanuvchi nomi
+              {t("erp.credentialsModal.username")}
             </label>
             <div className="flex items-center justify-between mt-1">
               <code className="text-lg font-mono font-semibold">{credentials.username}</code>
@@ -80,7 +82,7 @@ export function CredentialsModal({ credentials, employeeName, onClose }: Credent
           {/* Password */}
           <div className="surface-soft rounded-lg p-4">
             <label className="text-xs text-base-content/60 uppercase tracking-wider">
-              Vaqtinchalik parol
+              {t("erp.credentialsModal.temporaryPassword")}
             </label>
             <div className="flex items-center justify-between mt-1">
               <code className="text-lg font-mono font-semibold text-primary">
@@ -106,21 +108,20 @@ export function CredentialsModal({ credentials, employeeName, onClose }: Credent
         <div className="alert alert-warning mt-4">
           <AlertTriangle className="h-5 w-5" />
           <div>
-            <p className="font-medium">Diqqat!</p>
+            <p className="font-medium">{t("erp.credentialsModal.warningTitle")}</p>
             <p className="text-sm">
-              Bu ma'lumotlar faqat bir marta ko'rsatiladi. Xodimga yetkazing va
-              birinchi kirishda parolni o'zgartirishini ayting.
+              {t("erp.credentialsModal.warningText")}
             </p>
           </div>
         </div>
 
         {/* Instructions */}
         <div className="mt-4 text-sm text-base-content/70">
-          <p className="font-medium mb-2">Xodimga aytish kerak:</p>
+          <p className="font-medium mb-2">{t("erp.credentialsModal.instructionsTitle")}</p>
           <ol className="list-decimal list-inside space-y-1 text-base-content/60">
-            <li>Tizimga kirish uchun username va parolni kiriting</li>
-            <li>Birinchi kirishda yangi parol o'rnatiladi</li>
-            <li>Yangi parol kamida 6 belgidan iborat bo'lishi kerak</li>
+            <li>{t("erp.credentialsModal.instruction1")}</li>
+            <li>{t("erp.credentialsModal.instruction2")}</li>
+            <li>{t("erp.credentialsModal.instruction3")}</li>
           </ol>
         </div>
 
@@ -128,10 +129,10 @@ export function CredentialsModal({ credentials, employeeName, onClose }: Credent
         <div className="modal-action">
           <Button variant="ghost" onClick={copyAll}>
             <Copy className="h-4 w-4" />
-            Hammasini nusxalash
+            {t("erp.credentialsModal.copyAll")}
           </Button>
           <Button variant="primary" onClick={onClose}>
-            Tushunarli
+            {t("erp.credentialsModal.understood")}
           </Button>
         </div>
       </div>

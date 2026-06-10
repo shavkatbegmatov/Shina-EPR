@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { ChevronDown, ChevronRight, Eye, Loader2, Calendar } from 'lucide-react';
 import { formatDistanceToNow } from 'date-fns';
 import { uz } from 'date-fns/locale';
@@ -22,6 +23,7 @@ export function AuditLogMobileCard({
   fieldChanges,
   onLoadDetail,
 }: AuditLogMobileCardProps) {
+  const { t } = useTranslation();
   const [loading, setLoading] = useState(false);
   const [showDetailModal, setShowDetailModal] = useState(false);
 
@@ -44,11 +46,11 @@ export function AuditLogMobileCard({
   const translateAction = (action: string): string => {
     switch (action) {
       case 'CREATE':
-        return 'Yaratildi';
+        return t('erp.auditMobile.actionCreate');
       case 'UPDATE':
-        return "O'zgartirildi";
+        return t('erp.auditMobile.actionUpdate');
       case 'DELETE':
-        return "O'chirildi";
+        return t('erp.auditMobile.actionDelete');
       default:
         return action;
     }
@@ -116,7 +118,7 @@ export function AuditLogMobileCard({
             size="sm"
             onClick={() => setShowDetailModal(true)}
             className="flex-shrink-0 btn-circle text-primary"
-            title="Batafsil"
+            title={t('erp.auditMobile.details')}
           >
             <Eye className="h-5 w-5" />
           </Button>
@@ -135,7 +137,7 @@ export function AuditLogMobileCard({
                 {fieldChanges && fieldChanges.length > 0 ? (
                   <div className="space-y-3">
                     <h4 className="font-medium text-sm text-base-content/80">
-                      O'zgarishlar ({fieldChanges.length})
+                      {t('erp.auditMobile.changesCount', { n: fieldChanges.length })}
                     </h4>
                     {fieldChanges.map((change, index) => (
                       <MobileFieldChangeRow key={index} change={change} />
@@ -143,7 +145,7 @@ export function AuditLogMobileCard({
                   </div>
                 ) : (
                   <div className="text-center py-4 text-sm text-base-content/60">
-                    O'zgarishlar ma'lumoti mavjud emas
+                    {t('erp.auditMobile.noChangesData')}
                   </div>
                 )}
 
@@ -157,7 +159,7 @@ export function AuditLogMobileCard({
                   className="w-full min-h-[44px] gap-2"
                 >
                   <Eye className="h-5 w-5" />
-                  Batafsil ko'rish
+                  {t('erp.auditMobile.viewDetails')}
                 </Button>
               </div>
             )}
@@ -175,14 +177,16 @@ export function AuditLogMobileCard({
 
 // Sub-component for individual field change in mobile view
 function MobileFieldChangeRow({ change }: { change: FieldChange }) {
+  const { t } = useTranslation();
+
   const translateChangeType = (changeType: string): string => {
     switch (changeType) {
       case 'ADDED':
-        return "Qo'shildi";
+        return t('erp.auditMobile.changeAdded');
       case 'MODIFIED':
-        return "O'zgartirildi";
+        return t('erp.auditMobile.changeModified');
       case 'REMOVED':
-        return "O'chirildi";
+        return t('erp.auditMobile.changeRemoved');
       default:
         return changeType;
     }
@@ -221,9 +225,9 @@ function MobileFieldChangeRow({ change }: { change: FieldChange }) {
               : ''
           }
         >
-          <span className="text-base-content/60 text-xs">Eski: </span>
+          <span className="text-base-content/60 text-xs">{t('erp.auditMobile.oldLabel')} </span>
           {change.isSensitive ? (
-            <span className="text-base-content/40">****** (Maxfiy)</span>
+            <span className="text-base-content/40">{t('erp.auditMobile.sensitiveValue')}</span>
           ) : (
             <code className="bg-base-200 px-2 py-0.5 rounded text-xs break-all">
               {change.oldValueFormatted || '-'}
@@ -239,9 +243,9 @@ function MobileFieldChangeRow({ change }: { change: FieldChange }) {
               : ''
           }
         >
-          <span className="text-base-content/60 text-xs">Yangi: </span>
+          <span className="text-base-content/60 text-xs">{t('erp.auditMobile.newLabel')} </span>
           {change.isSensitive ? (
-            <span className="text-base-content/40">****** (Maxfiy)</span>
+            <span className="text-base-content/40">{t('erp.auditMobile.sensitiveValue')}</span>
           ) : (
             <code className="bg-base-200 px-2 py-0.5 rounded text-xs break-all">
               {change.newValueFormatted || '-'}

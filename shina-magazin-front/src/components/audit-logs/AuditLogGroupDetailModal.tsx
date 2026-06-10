@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { X, ChevronDown, ChevronRight, ExternalLink, User } from 'lucide-react';
 import { Button, buttonVariants } from '@/ui';
 import type { AuditLogGroupDetail, AuditLog } from '../../types';
@@ -9,16 +10,17 @@ interface AuditLogGroupDetailModalProps {
 }
 
 export function AuditLogGroupDetailModal({ detail, onClose }: AuditLogGroupDetailModalProps) {
+  const { t } = useTranslation();
   const [showTechnicalLogs, setShowTechnicalLogs] = useState(false);
 
   const translateAction = (action: string): string => {
     switch (action) {
       case 'CREATE':
-        return 'Yaratildi';
+        return t('erp.auditGroupDetail.actionCreate');
       case 'UPDATE':
-        return "O'zgartirildi";
+        return t('erp.auditGroupDetail.actionUpdate');
       case 'DELETE':
-        return "O'chirildi";
+        return t('erp.auditGroupDetail.actionDelete');
       default:
         return action;
     }
@@ -40,37 +42,37 @@ export function AuditLogGroupDetailModal({ detail, onClose }: AuditLogGroupDetai
   const getEntityTypeLabel = (entityType: string): string => {
     switch (entityType) {
       case 'Product':
-        return 'Mahsulot';
+        return t('erp.auditGroupDetail.entityProduct');
       case 'Sale':
-        return 'Sotuv';
+        return t('erp.auditGroupDetail.entitySale');
       case 'SaleItem':
-        return 'Sotuv elementi';
+        return t('erp.auditGroupDetail.entitySaleItem');
       case 'Customer':
-        return 'Mijoz';
+        return t('erp.auditGroupDetail.entityCustomer');
       case 'Payment':
-        return "To'lov";
+        return t('erp.auditGroupDetail.entityPayment');
       case 'Debt':
-        return 'Qarz';
+        return t('erp.auditGroupDetail.entityDebt');
       case 'PurchaseOrder':
-        return 'Xarid';
+        return t('erp.auditGroupDetail.entityPurchaseOrder');
       case 'PurchasePayment':
-        return "Xarid to'lovi";
+        return t('erp.auditGroupDetail.entityPurchasePayment');
       case 'PurchaseReturn':
-        return 'Xarid qaytarish';
+        return t('erp.auditGroupDetail.entityPurchaseReturn');
       case 'Supplier':
-        return "Ta'minotchi";
+        return t('erp.auditGroupDetail.entitySupplier');
       case 'Employee':
-        return 'Xodim';
+        return t('erp.auditGroupDetail.entityEmployee');
       case 'User':
-        return 'Foydalanuvchi';
+        return t('erp.auditGroupDetail.entityUser');
       case 'Role':
-        return 'Rol';
+        return t('erp.auditGroupDetail.entityRole');
       case 'Brand':
-        return 'Brend';
+        return t('erp.auditGroupDetail.entityBrand');
       case 'Category':
-        return 'Kategoriya';
+        return t('erp.auditGroupDetail.entityCategory');
       case 'StockMovement':
-        return 'Ombor harakati';
+        return t('erp.auditGroupDetail.entityStockMovement');
       default:
         return entityType;
     }
@@ -114,7 +116,7 @@ export function AuditLogGroupDetailModal({ detail, onClose }: AuditLogGroupDetai
             size="sm"
             onClick={onClose}
             className="btn-circle flex-shrink-0 ml-2 min-h-[44px] min-w-[44px] md:min-h-0 md:min-w-0"
-            aria-label="Yopish"
+            aria-label={t('common.close')}
           >
             <X className="h-5 w-5" />
           </Button>
@@ -164,7 +166,7 @@ export function AuditLogGroupDetailModal({ detail, onClose }: AuditLogGroupDetai
             <div className="flex items-start gap-3 pt-2 border-t border-base-200">
               <span className="text-lg flex-shrink-0 mt-0.5">👨‍💼</span>
               <div className="flex-1 min-w-0">
-                <label className="text-sm text-base-content/60">Operator</label>
+                <label className="text-sm text-base-content/60">{t('erp.auditGroupDetail.operator')}</label>
                 <div className="flex items-center gap-2">
                   <span className="font-medium">{detail.operatorUsername}</span>
                   {detail.operatorLink && (
@@ -192,7 +194,7 @@ export function AuditLogGroupDetailModal({ detail, onClose }: AuditLogGroupDetai
               ) : (
                 <ChevronRight className="h-4 w-4" />
               )}
-              Texnik ma'lumotlar ({detail.logs.length} ta log)
+              {t('erp.auditGroupDetail.technicalLogs', { count: detail.logs.length })}
             </button>
 
             {showTechnicalLogs && (
@@ -206,7 +208,7 @@ export function AuditLogGroupDetailModal({ detail, onClose }: AuditLogGroupDetai
         {/* Footer */}
         <div className="px-4 md:px-6 py-3 md:py-4 border-t border-base-300 flex justify-end flex-shrink-0">
           <Button variant="ghost" onClick={onClose} className="w-full sm:w-auto min-h-[44px]">
-            Yopish
+            {t('common.close')}
           </Button>
         </div>
       </div>

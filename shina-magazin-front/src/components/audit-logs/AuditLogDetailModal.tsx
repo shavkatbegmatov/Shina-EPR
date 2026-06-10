@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { X, Copy, ExternalLink, Loader2, Check, FileEdit, Code, Info, User } from 'lucide-react';
 import { format } from 'date-fns';
 import { uz } from 'date-fns/locale';
@@ -16,6 +17,7 @@ interface AuditLogDetailModalProps {
 type TabType = 'changes' | 'json' | 'meta';
 
 export function AuditLogDetailModal({ logId, onClose }: AuditLogDetailModalProps) {
+  const { t } = useTranslation();
   const [detail, setDetail] = useState<AuditLogDetailResponse | null>(null);
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState<TabType>('changes');
@@ -32,7 +34,7 @@ export function AuditLogDetailModal({ logId, onClose }: AuditLogDetailModalProps
       setDetail(data);
     } catch (error) {
       console.error('Failed to load audit log detail:', error);
-      toast.error('Batafsil ma\'lumotlarni yuklashda xatolik');
+      toast.error(t('erp.auditDetail.loadError'));
     } finally {
       setLoading(false);
     }
@@ -41,11 +43,11 @@ export function AuditLogDetailModal({ logId, onClose }: AuditLogDetailModalProps
   const translateAction = (action: string): string => {
     switch (action) {
       case 'CREATE':
-        return 'Yaratildi';
+        return t('erp.auditDetail.actionCreate');
       case 'UPDATE':
-        return "O'zgartirildi";
+        return t('erp.auditDetail.actionUpdate');
       case 'DELETE':
-        return "O'chirildi";
+        return t('erp.auditDetail.actionDelete');
       default:
         return action;
     }
@@ -67,11 +69,11 @@ export function AuditLogDetailModal({ logId, onClose }: AuditLogDetailModalProps
   const translateChangeType = (changeType: string): string => {
     switch (changeType) {
       case 'ADDED':
-        return "Qo'shildi";
+        return t('erp.auditDetail.changeAdded');
       case 'MODIFIED':
-        return "O'zgartirildi";
+        return t('erp.auditDetail.changeModified');
       case 'REMOVED':
-        return "O'chirildi";
+        return t('erp.auditDetail.changeRemoved');
       default:
         return changeType;
     }
@@ -111,9 +113,9 @@ export function AuditLogDetailModal({ logId, onClose }: AuditLogDetailModalProps
       await navigator.clipboard.writeText(text);
       setCopiedField(fieldName);
       setTimeout(() => setCopiedField(null), 2000);
-      toast.success('Nusxalandi');
+      toast.success(t('erp.auditDetail.copied'));
     } catch {
-      toast.error('Nusxalashda xatolik');
+      toast.error(t('erp.auditDetail.copyError'));
     }
   };
 
@@ -148,7 +150,7 @@ export function AuditLogDetailModal({ logId, onClose }: AuditLogDetailModalProps
         {/* Header */}
         <div className="px-4 md:px-6 py-3 md:py-4 border-b border-base-300 flex items-start justify-between">
           <div className="flex-1 min-w-0">
-            <h2 className="text-lg md:text-xl font-bold">Audit Log Batafsil Ma'lumotlari</h2>
+            <h2 className="text-lg md:text-xl font-bold">{t('erp.auditDetail.title')}</h2>
             <p className="text-xs md:text-sm text-base-content/60 mt-1">
               {detail.entityType} #{detail.entityId} -{' '}
               <span className={`badge badge-sm ${getActionBadgeClass(detail.action)}`}>
@@ -161,7 +163,7 @@ export function AuditLogDetailModal({ logId, onClose }: AuditLogDetailModalProps
             size="sm"
             onClick={onClose}
             className="btn-circle flex-shrink-0 ml-2 min-h-[44px] min-w-[44px] md:min-h-0 md:min-w-0"
-            aria-label="Yopish"
+            aria-label={t('common.close')}
           >
             <X className="h-5 w-5" />
           </Button>
@@ -188,7 +190,7 @@ export function AuditLogDetailModal({ logId, onClose }: AuditLogDetailModalProps
               onClick={() => setActiveTab('changes')}
             >
               <FileEdit className="h-4 w-4 md:h-5 md:w-5 flex-shrink-0" />
-              <span>O'zgarishlar</span>
+              <span>{t('erp.auditDetail.tabChanges')}</span>
               {detail?.fieldChanges && detail.fieldChanges.length > 0 && (
                 <span className={`
                   badge badge-sm ml-1
@@ -219,7 +221,7 @@ export function AuditLogDetailModal({ logId, onClose }: AuditLogDetailModalProps
               onClick={() => setActiveTab('json')}
             >
               <Code className="h-4 w-4 md:h-5 md:w-5 flex-shrink-0" />
-              <span>JSON Ko'rinishi</span>
+              <span>{t('erp.auditDetail.tabJson')}</span>
               {activeTab === 'json' && (
                 <div className="absolute bottom-0 left-0 right-0 h-[3px] bg-primary rounded-t-sm"></div>
               )}
@@ -242,7 +244,7 @@ export function AuditLogDetailModal({ logId, onClose }: AuditLogDetailModalProps
               onClick={() => setActiveTab('meta')}
             >
               <Info className="h-4 w-4 md:h-5 md:w-5 flex-shrink-0" />
-              <span>Texnik Ma'lumotlar</span>
+              <span>{t('erp.auditDetail.tabMeta')}</span>
               {activeTab === 'meta' && (
                 <div className="absolute bottom-0 left-0 right-0 h-[3px] bg-primary rounded-t-sm"></div>
               )}
@@ -258,15 +260,15 @@ export function AuditLogDetailModal({ logId, onClose }: AuditLogDetailModalProps
               {/* Summary Info */}
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4 p-3 sm:p-4 bg-base-200 rounded-lg">
                 <div>
-                  <label className="text-sm font-medium text-base-content/60">Foydalanuvchi</label>
+                  <label className="text-sm font-medium text-base-content/60">{t('erp.auditDetail.user')}</label>
                   <p className="font-medium">{detail.username}</p>
                 </div>
                 <div>
-                  <label className="text-sm font-medium text-base-content/60">Vaqt</label>
+                  <label className="text-sm font-medium text-base-content/60">{t('erp.auditDetail.time')}</label>
                   <p className="font-medium">{formatTimestamp(detail.createdAt)}</p>
                 </div>
                 <div>
-                  <label className="text-sm font-medium text-base-content/60">IP Manzil</label>
+                  <label className="text-sm font-medium text-base-content/60">{t('erp.auditDetail.ipAddress')}</label>
                   <p className="font-medium flex items-center gap-2">
                     {detail.ipAddress}
                     <Button
@@ -274,7 +276,7 @@ export function AuditLogDetailModal({ logId, onClose }: AuditLogDetailModalProps
                       size="sm"
                       onClick={() => copyToClipboard(detail.ipAddress, 'ip')}
                       className="sm:btn-xs min-h-[44px] sm:min-h-0 min-w-[44px] sm:min-w-0"
-                      title="Nusxalash"
+                      title={t('erp.auditDetail.copy')}
                     >
                       {copiedField === 'ip' ? (
                         <Check className="h-5 w-5 sm:h-3 sm:w-3 text-success" />
@@ -285,7 +287,7 @@ export function AuditLogDetailModal({ logId, onClose }: AuditLogDetailModalProps
                   </p>
                 </div>
                 <div>
-                  <label className="text-sm font-medium text-base-content/60">Qurilma</label>
+                  <label className="text-sm font-medium text-base-content/60">{t('erp.auditDetail.device')}</label>
                   <p className="font-medium">
                     {getDeviceEmoji(detail.deviceInfo.deviceType)} {detail.deviceInfo.deviceType}
                   </p>
@@ -300,11 +302,11 @@ export function AuditLogDetailModal({ logId, onClose }: AuditLogDetailModalProps
                     <table className="table w-full">
                       <thead className="bg-base-200">
                         <tr>
-                          <th className="text-left">Maydon</th>
-                          <th className="text-left">Eski qiymat</th>
+                          <th className="text-left">{t('erp.auditDetail.field')}</th>
+                          <th className="text-left">{t('erp.auditDetail.oldValue')}</th>
                           <th className="text-center w-12">→</th>
-                          <th className="text-left">Yangi qiymat</th>
-                          <th className="text-center w-32">Holat</th>
+                          <th className="text-left">{t('erp.auditDetail.newValue')}</th>
+                          <th className="text-center w-32">{t('common.status')}</th>
                         </tr>
                       </thead>
                       <tbody>
@@ -322,7 +324,7 @@ export function AuditLogDetailModal({ logId, onClose }: AuditLogDetailModalProps
                               }
                             >
                               {change.isSensitive ? (
-                                <span className="text-base-content/40">****** (Maxfiy)</span>
+                                <span className="text-base-content/40">{t('erp.auditDetail.sensitiveMasked')}</span>
                               ) : (
                                 <code className="bg-base-200 px-2 py-1 rounded text-xs">
                                   {change.oldValueFormatted || '-'}
@@ -336,7 +338,7 @@ export function AuditLogDetailModal({ logId, onClose }: AuditLogDetailModalProps
                               }
                             >
                               {change.isSensitive ? (
-                                <span className="text-base-content/40">****** (Maxfiy)</span>
+                                <span className="text-base-content/40">{t('erp.auditDetail.sensitiveMasked')}</span>
                               ) : (
                                 <code className="bg-base-200 px-2 py-1 rounded text-xs">
                                   {change.newValueFormatted || '-'}
@@ -379,9 +381,9 @@ export function AuditLogDetailModal({ logId, onClose }: AuditLogDetailModalProps
                                 : ''
                             }
                           >
-                            <span className="text-base-content/60 text-xs">Eski: </span>
+                            <span className="text-base-content/60 text-xs">{t('erp.auditDetail.oldLabel')} </span>
                             {change.isSensitive ? (
-                              <span className="text-base-content/40">****** (Maxfiy)</span>
+                              <span className="text-base-content/40">{t('erp.auditDetail.sensitiveMasked')}</span>
                             ) : (
                               <code className="bg-base-200 px-2 py-0.5 rounded text-xs break-all">
                                 {change.oldValueFormatted || '-'}
@@ -397,9 +399,9 @@ export function AuditLogDetailModal({ logId, onClose }: AuditLogDetailModalProps
                                 : ''
                             }
                           >
-                            <span className="text-base-content/60 text-xs">Yangi: </span>
+                            <span className="text-base-content/60 text-xs">{t('erp.auditDetail.newLabel')} </span>
                             {change.isSensitive ? (
-                              <span className="text-base-content/40">****** (Maxfiy)</span>
+                              <span className="text-base-content/40">{t('erp.auditDetail.sensitiveMasked')}</span>
                             ) : (
                               <code className="bg-base-200 px-2 py-0.5 rounded text-xs break-all">
                                 {change.newValueFormatted || '-'}
@@ -413,7 +415,7 @@ export function AuditLogDetailModal({ logId, onClose }: AuditLogDetailModalProps
                 </>
               ) : (
                 <div className="text-center py-8 text-base-content/60">
-                  O'zgarishlar ma'lumoti mavjud emas
+                  {t('erp.auditDetail.noChanges')}
                 </div>
               )}
 
@@ -440,7 +442,7 @@ export function AuditLogDetailModal({ logId, onClose }: AuditLogDetailModalProps
                       onClick={onClose}
                     >
                       <ExternalLink className="h-5 w-5 sm:h-4 sm:w-4" />
-                      {detail.entityType} sahifasi
+                      {t('erp.auditDetail.entityPage', { entityType: detail.entityType })}
                     </a>
                   )}
                 </div>
@@ -465,22 +467,22 @@ export function AuditLogDetailModal({ logId, onClose }: AuditLogDetailModalProps
               {/* Device Info */}
               <div className="border border-base-300 rounded-lg p-3 sm:p-4 bg-base-100">
                 <h3 className="font-medium mb-3 flex items-center gap-2 text-sm sm:text-base">
-                  🖥️ Qurilma Ma'lumotlari
+                  🖥️ {t('erp.auditDetail.deviceInfo')}
                 </h3>
                 <dl className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
                   <div>
-                    <dt className="text-xs sm:text-sm text-base-content/60">Qurilma turi</dt>
+                    <dt className="text-xs sm:text-sm text-base-content/60">{t('erp.auditDetail.deviceTypeLabel')}</dt>
                     <dd className="font-medium text-sm sm:text-base">{detail.deviceInfo.deviceType}</dd>
                   </div>
                   <div>
-                    <dt className="text-xs sm:text-sm text-base-content/60">Brauzer</dt>
+                    <dt className="text-xs sm:text-sm text-base-content/60">{t('erp.auditDetail.browser')}</dt>
                     <dd className="font-medium text-sm sm:text-base">
                       {detail.deviceInfo.browser}{' '}
                       {detail.deviceInfo.browserVersion && `${detail.deviceInfo.browserVersion}`}
                     </dd>
                   </div>
                   <div>
-                    <dt className="text-xs sm:text-sm text-base-content/60">Operatsion tizim</dt>
+                    <dt className="text-xs sm:text-sm text-base-content/60">{t('erp.auditDetail.os')}</dt>
                     <dd className="font-medium text-sm sm:text-base">
                       {detail.deviceInfo.os}{' '}
                       {detail.deviceInfo.osVersion && `${detail.deviceInfo.osVersion}`}
@@ -510,27 +512,27 @@ export function AuditLogDetailModal({ logId, onClose }: AuditLogDetailModalProps
               {/* General Info */}
               <div className="border border-base-300 rounded-lg p-3 sm:p-4 bg-base-100">
                 <h3 className="font-medium mb-3 flex items-center gap-2 text-sm sm:text-base">
-                  📋 Umumiy Ma'lumotlar
+                  📋 {t('erp.auditDetail.generalInfo')}
                 </h3>
                 <dl className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
                   <div>
-                    <dt className="text-xs sm:text-sm text-base-content/60">Audit Log ID</dt>
+                    <dt className="text-xs sm:text-sm text-base-content/60">{t('erp.auditDetail.auditLogId')}</dt>
                     <dd className="font-medium text-sm sm:text-base">#{detail.id}</dd>
                   </div>
                   <div>
-                    <dt className="text-xs sm:text-sm text-base-content/60">Foydalanuvchi ID</dt>
+                    <dt className="text-xs sm:text-sm text-base-content/60">{t('erp.auditDetail.userId')}</dt>
                     <dd className="font-medium text-sm sm:text-base">#{detail.userId}</dd>
                   </div>
                   <div>
-                    <dt className="text-xs sm:text-sm text-base-content/60">Obyekt turi</dt>
+                    <dt className="text-xs sm:text-sm text-base-content/60">{t('erp.auditDetail.entityTypeLabel')}</dt>
                     <dd className="font-medium text-sm sm:text-base">{detail.entityType}</dd>
                   </div>
                   <div>
-                    <dt className="text-xs sm:text-sm text-base-content/60">Obyekt ID</dt>
+                    <dt className="text-xs sm:text-sm text-base-content/60">{t('erp.auditDetail.entityIdLabel')}</dt>
                     <dd className="font-medium text-sm sm:text-base">#{detail.entityId}</dd>
                   </div>
                   <div>
-                    <dt className="text-xs sm:text-sm text-base-content/60">Amal</dt>
+                    <dt className="text-xs sm:text-sm text-base-content/60">{t('erp.auditDetail.actionLabel')}</dt>
                     <dd>
                       <span className={`badge badge-sm ${getActionBadgeClass(detail.action)}`}>
                         {translateAction(detail.action)}
@@ -538,7 +540,7 @@ export function AuditLogDetailModal({ logId, onClose }: AuditLogDetailModalProps
                     </dd>
                   </div>
                   <div>
-                    <dt className="text-xs sm:text-sm text-base-content/60">Vaqt (aniq)</dt>
+                    <dt className="text-xs sm:text-sm text-base-content/60">{t('erp.auditDetail.exactTime')}</dt>
                     <dd className="font-medium text-xs sm:text-sm">{formatFullTimestamp(detail.createdAt)}</dd>
                   </div>
                 </dl>
@@ -550,7 +552,7 @@ export function AuditLogDetailModal({ logId, onClose }: AuditLogDetailModalProps
         {/* Footer */}
         <div className="px-4 md:px-6 py-3 md:py-4 border-t border-base-300 flex justify-end">
           <Button variant="ghost" onClick={onClose} className="w-full sm:w-auto min-h-[44px]">
-            Yopish
+            {t('common.close')}
           </Button>
         </div>
       </div>

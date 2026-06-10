@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { useNavigate } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import { X, Package, Truck, ExternalLink, Check } from 'lucide-react';
 
 import { Button } from '@/ui';
@@ -22,6 +23,7 @@ interface IncomeModalProps {
 }
 
 export function IncomeModal({ isOpen, onClose, onSuccess }: IncomeModalProps) {
+  const { t } = useTranslation();
   const navigate = useNavigate();
 
   // Form state
@@ -171,12 +173,12 @@ export function IncomeModal({ isOpen, onClose, onSuccess }: IncomeModalProps) {
     const newErrors: { product?: string; quantity?: string } = {};
 
     if (!selectedProduct) {
-      newErrors.product = 'Mahsulot tanlash shart';
+      newErrors.product = t('erp.incomeModal.productRequired');
     }
 
     const qty = typeof quantity === 'number' ? quantity : parseInt(String(quantity));
     if (!qty || qty <= 0) {
-      newErrors.quantity = "Miqdor 0 dan katta bo'lishi kerak";
+      newErrors.quantity = t('erp.incomeModal.quantityMin');
     }
 
     setErrors(newErrors);
@@ -242,14 +244,14 @@ export function IncomeModal({ isOpen, onClose, onSuccess }: IncomeModalProps) {
                 </div>
                 <div className="text-right ml-3">
                   <p className="text-sm font-semibold">{product.quantity}</p>
-                  <p className="text-xs text-base-content/50">zaxira</p>
+                  <p className="text-xs text-base-content/50">{t('erp.incomeModal.stock')}</p>
                 </div>
               </div>
             </button>
           ))
         ) : productSearch.length >= 2 ? (
           <div className="px-4 py-3 text-sm text-base-content/60 text-center">
-            Mahsulot topilmadi
+            {t('erp.incomeModal.productNotFound')}
           </div>
         ) : null}
       </div>
@@ -262,8 +264,8 @@ export function IncomeModal({ isOpen, onClose, onSuccess }: IncomeModalProps) {
     <Modal
       isOpen={isOpen}
       onClose={onClose}
-      title="Kirim qo'shish"
-      subtitle="Omborga yangi mahsulot kirimi"
+      title={t('erp.incomeModal.title')}
+      subtitle={t('erp.incomeModal.subtitle')}
       maxWidth="lg"
     >
       <div className="space-y-5">
@@ -272,7 +274,7 @@ export function IncomeModal({ isOpen, onClose, onSuccess }: IncomeModalProps) {
           <div className="flex items-center gap-2 mb-2">
             <Package className="h-4 w-4 text-primary" />
             <span className="label-text text-xs font-semibold uppercase tracking-[0.18em] text-base-content/50">
-              Mahsulot *
+              {t('erp.incomeModal.productLabel')}
             </span>
           </div>
 
@@ -281,7 +283,7 @@ export function IncomeModal({ isOpen, onClose, onSuccess }: IncomeModalProps) {
               <div className="flex-1 min-w-0">
                 <p className="font-medium">{selectedProduct.name}</p>
                 <p className="text-sm text-base-content/60">
-                  SKU: {selectedProduct.sku} | Hozirgi zaxira:{' '}
+                  SKU: {selectedProduct.sku} | {t('erp.incomeModal.currentStock')}:{' '}
                   <span className="font-semibold">{selectedProduct.quantity}</span>
                 </p>
               </div>
@@ -300,7 +302,7 @@ export function IncomeModal({ isOpen, onClose, onSuccess }: IncomeModalProps) {
               <SearchInput
                 value={productSearch}
                 onValueChange={handleSearchProducts}
-                placeholder="Mahsulot qidirish..."
+                placeholder={t('erp.incomeModal.searchPlaceholder')}
                 onClear={() => handleSearchProducts('')}
                 hideLabel
                 inputProps={{
@@ -322,7 +324,7 @@ export function IncomeModal({ isOpen, onClose, onSuccess }: IncomeModalProps) {
         {/* Quantity */}
         <div>
           <NumberInput
-            label="Miqdor *"
+            label={t('erp.incomeModal.quantityLabel')}
             value={quantity}
             onChange={setQuantity}
             min={1}
@@ -339,7 +341,7 @@ export function IncomeModal({ isOpen, onClose, onSuccess }: IncomeModalProps) {
           <div className="flex items-center gap-2">
             <Truck className="h-4 w-4 text-base-content/60" />
             <span className="text-sm font-semibold uppercase tracking-[0.15em] text-base-content/60">
-              Ta'minotchi (ixtiyoriy)
+              {t('erp.incomeModal.supplierOptional')}
             </span>
           </div>
 
@@ -348,13 +350,13 @@ export function IncomeModal({ isOpen, onClose, onSuccess }: IncomeModalProps) {
               value={selectedSupplierId}
               onChange={(val) => setSelectedSupplierId(val ? Number(val) : undefined)}
               options={[
-                { value: '', label: "Ta'minotchisiz" },
+                { value: '', label: t('erp.incomeModal.noSupplier') },
                 ...suppliers.map((s) => ({
                   value: s.id,
                   label: s.name,
                 })),
               ]}
-              placeholder="Ta'minotchi tanlang"
+              placeholder={t('erp.incomeModal.selectSupplier')}
               className="flex-1"
             />
             <Button
@@ -363,7 +365,7 @@ export function IncomeModal({ isOpen, onClose, onSuccess }: IncomeModalProps) {
               size="sm"
               className="h-12"
               onClick={() => navigate('/suppliers')}
-              title="Yangi ta'minotchi qo'shish"
+              title={t('erp.incomeModal.addSupplier')}
             >
               <ExternalLink className="h-4 w-4" />
             </Button>
@@ -372,7 +374,7 @@ export function IncomeModal({ isOpen, onClose, onSuccess }: IncomeModalProps) {
           {selectedSupplierId && (
             <div className="grid grid-cols-2 gap-4">
               <CurrencyInput
-                label="Birlik narxi"
+                label={t('erp.incomeModal.unitPrice')}
                 value={unitPrice}
                 onChange={setUnitPrice}
                 min={0}
@@ -382,7 +384,7 @@ export function IncomeModal({ isOpen, onClose, onSuccess }: IncomeModalProps) {
 
               <div className="form-control">
                 <span className="label-text mb-1 text-xs font-semibold uppercase tracking-[0.18em] text-base-content/50">
-                  Jami summa
+                  {t('erp.incomeModal.totalAmount')}
                 </span>
                 <div className="h-12 flex items-center px-4 rounded-xl bg-success/10 border border-success/30">
                   <span className="text-lg font-bold text-success">
@@ -397,14 +399,14 @@ export function IncomeModal({ isOpen, onClose, onSuccess }: IncomeModalProps) {
         {/* Notes */}
         <div className="form-control">
           <span className="label-text mb-1 text-xs font-semibold uppercase tracking-[0.18em] text-base-content/50">
-            Izoh
+            {t('erp.incomeModal.notes')}
           </span>
           <textarea
             className="textarea textarea-bordered rounded-xl w-full resize-none"
             rows={2}
             value={notes}
             onChange={(e) => setNotes(e.target.value)}
-            placeholder="Qo'shimcha ma'lumot..."
+            placeholder={t('erp.incomeModal.notesPlaceholder')}
           />
         </div>
 
@@ -416,7 +418,7 @@ export function IncomeModal({ isOpen, onClose, onSuccess }: IncomeModalProps) {
             onClick={onClose}
             disabled={submitting}
           >
-            Bekor qilish
+            {t('common.cancel')}
           </Button>
           <Button
             type="button"
@@ -426,7 +428,7 @@ export function IncomeModal({ isOpen, onClose, onSuccess }: IncomeModalProps) {
             disabled={submitting || !selectedProduct || !numericQuantity}
           >
             <Check className="h-4 w-4" />
-            Qo'shish
+            {t('common.add')}
           </Button>
         </div>
       </div>

@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { createPortal } from 'react-dom';
+import { useTranslation } from 'react-i18next';
 import { ChevronDown, ChevronRight, Eye, Loader2, Plus, Edit, Trash2 } from 'lucide-react';
 import { formatDistanceToNow } from 'date-fns';
 import { uz } from 'date-fns/locale';
@@ -23,6 +24,7 @@ export function AuditLogExpandableRow({
   fieldChanges,
   onLoadDetail,
 }: AuditLogExpandableRowProps) {
+  const { t } = useTranslation();
   const [showDetailModal, setShowDetailModal] = useState(false);
   const [loading, setLoading] = useState(false);
 
@@ -39,11 +41,11 @@ export function AuditLogExpandableRow({
   const translateAction = (action: string): string => {
     switch (action) {
       case 'CREATE':
-        return 'Yaratildi';
+        return t('erp.auditRow.actionCreate');
       case 'UPDATE':
-        return "O'zgartirildi";
+        return t('erp.auditRow.actionUpdate');
       case 'DELETE':
-        return "O'chirildi";
+        return t('erp.auditRow.actionDelete');
       default:
         return action;
     }
@@ -78,11 +80,11 @@ export function AuditLogExpandableRow({
   const translateChangeType = (changeType: string): string => {
     switch (changeType) {
       case 'ADDED':
-        return "Qo'shildi";
+        return t('erp.auditRow.changeAdded');
       case 'MODIFIED':
-        return "O'zgartirildi";
+        return t('erp.auditRow.changeModified');
       case 'REMOVED':
-        return "O'chirildi";
+        return t('erp.auditRow.changeRemoved');
       default:
         return changeType;
     }
@@ -145,10 +147,10 @@ export function AuditLogExpandableRow({
               setShowDetailModal(true);
             }}
             className="h-auto min-h-[2rem] py-1 gap-1.5 text-primary hover:bg-primary/10"
-            title="Batafsil ko'rish"
+            title={t('erp.auditRow.viewDetails')}
           >
             <Eye className="h-4 w-4 flex-shrink-0" />
-            <span className="hidden lg:inline">Batafsil</span>
+            <span className="hidden lg:inline">{t('erp.auditRow.details')}</span>
           </Button>
         </td>
       </tr>
@@ -174,17 +176,17 @@ export function AuditLogExpandableRow({
                     {/* Desktop table */}
                     <div className="hidden md:block bg-base-100 rounded-lg shadow-sm overflow-hidden">
                       <div className="px-4 py-3 bg-base-200/50 border-b border-base-300">
-                        <h4 className="font-medium text-sm">O'zgarishlar</h4>
+                        <h4 className="font-medium text-sm">{t('erp.auditRow.changes')}</h4>
                       </div>
                       <div className="overflow-x-auto">
                         <table className="table table-sm w-full">
                           <thead>
                             <tr className="bg-base-200/30">
-                              <th className="text-left py-2 font-medium">Maydon</th>
-                              <th className="text-left py-2 font-medium">Eski qiymat</th>
+                              <th className="text-left py-2 font-medium">{t('erp.auditRow.field')}</th>
+                              <th className="text-left py-2 font-medium">{t('erp.auditRow.oldValue')}</th>
                               <th className="text-center py-2 w-12">→</th>
-                              <th className="text-left py-2 font-medium">Yangi qiymat</th>
-                              <th className="text-center py-2 font-medium w-32">Holat</th>
+                              <th className="text-left py-2 font-medium">{t('erp.auditRow.newValue')}</th>
+                              <th className="text-center py-2 font-medium w-32">{t('common.status')}</th>
                             </tr>
                           </thead>
                           <tbody>
@@ -199,7 +201,7 @@ export function AuditLogExpandableRow({
                                   }`}
                                 >
                                   {change.isSensitive ? (
-                                    <span className="text-base-content/40">****** (Maxfiy)</span>
+                                    <span className="text-base-content/40">{t('erp.auditRow.sensitiveMasked')}</span>
                                   ) : (
                                     <code className="bg-base-200 px-2 py-0.5 rounded text-xs">
                                       {change.oldValueFormatted || '-'}
@@ -215,7 +217,7 @@ export function AuditLogExpandableRow({
                                   }`}
                                 >
                                   {change.isSensitive ? (
-                                    <span className="text-base-content/40">****** (Maxfiy)</span>
+                                    <span className="text-base-content/40">{t('erp.auditRow.sensitiveMasked')}</span>
                                   ) : (
                                     <code className="bg-base-200 px-2 py-0.5 rounded text-xs">
                                       {change.newValueFormatted || '-'}
@@ -237,7 +239,7 @@ export function AuditLogExpandableRow({
                     {/* Mobile card view */}
                     <div className="md:hidden bg-base-100 rounded-lg shadow-sm overflow-hidden">
                       <div className="px-3 py-2 bg-base-200/50 border-b border-base-300">
-                        <h4 className="font-medium text-sm">O'zgarishlar ({fieldChanges.length})</h4>
+                        <h4 className="font-medium text-sm">{t('erp.auditRow.changesCount', { count: fieldChanges.length })}</h4>
                       </div>
                       <div className="p-3 space-y-3">
                         {fieldChanges.map((change, index) => (
@@ -260,9 +262,9 @@ export function AuditLogExpandableRow({
                                     : ''
                                 }
                               >
-                                <span className="text-base-content/60 text-xs">Eski: </span>
+                                <span className="text-base-content/60 text-xs">{t('erp.auditRow.oldLabel')} </span>
                                 {change.isSensitive ? (
-                                  <span className="text-base-content/40">****** (Maxfiy)</span>
+                                  <span className="text-base-content/40">{t('erp.auditRow.sensitiveMasked')}</span>
                                 ) : (
                                   <code className="bg-base-200 px-2 py-0.5 rounded text-xs break-all">
                                     {change.oldValueFormatted || '-'}
@@ -278,9 +280,9 @@ export function AuditLogExpandableRow({
                                     : ''
                                 }
                               >
-                                <span className="text-base-content/60 text-xs">Yangi: </span>
+                                <span className="text-base-content/60 text-xs">{t('erp.auditRow.newLabel')} </span>
                                 {change.isSensitive ? (
-                                  <span className="text-base-content/40">****** (Maxfiy)</span>
+                                  <span className="text-base-content/40">{t('erp.auditRow.sensitiveMasked')}</span>
                                 ) : (
                                   <code className="bg-base-200 px-2 py-0.5 rounded text-xs break-all">
                                     {change.newValueFormatted || '-'}
@@ -295,7 +297,7 @@ export function AuditLogExpandableRow({
                   </>
                 ) : (
                   <div className="bg-base-100 rounded-lg p-6 text-center text-sm text-base-content/60">
-                    O'zgarishlar ma'lumoti mavjud emas
+                    {t('erp.auditRow.noChangesData')}
                   </div>
                 )}
 
@@ -310,7 +312,7 @@ export function AuditLogExpandableRow({
                     className="w-full sm:w-auto min-h-[44px] sm:min-h-0 gap-2"
                   >
                     <Eye className="h-5 w-5 sm:h-4 sm:w-4" />
-                    Batafsil ko'rish
+                    {t('erp.auditRow.viewDetails')}
                   </Button>
 
                   {/* Entity link placeholder - will be added when we have entity links */}

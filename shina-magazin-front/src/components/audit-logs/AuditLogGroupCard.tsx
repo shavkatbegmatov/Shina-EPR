@@ -12,6 +12,7 @@ import {
   Globe,
   FileSearch,
 } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 import { formatDistanceToNow } from 'date-fns';
 import { uz } from 'date-fns/locale';
 import type { AuditLogGroup, AuditLog } from '../../types';
@@ -25,6 +26,7 @@ interface AuditLogGroupCardProps {
 }
 
 export function AuditLogGroupCard({ group }: AuditLogGroupCardProps) {
+  const { t } = useTranslation();
   const [isExpanded, setIsExpanded] = useState(false);
   const [showDetailModal, setShowDetailModal] = useState(false);
   const [selectedLogId, setSelectedLogId] = useState<number | null>(null);
@@ -40,11 +42,11 @@ export function AuditLogGroupCard({ group }: AuditLogGroupCardProps) {
   const translateAction = (action: string): string => {
     switch (action) {
       case 'CREATE':
-        return 'Yaratildi';
+        return t('erp.auditGroup.actionCreate');
       case 'UPDATE':
-        return "O'zgartirildi";
+        return t('erp.auditGroup.actionUpdate');
       case 'DELETE':
-        return "O'chirildi";
+        return t('erp.auditGroup.actionDelete');
       default:
         return action;
     }
@@ -79,35 +81,35 @@ export function AuditLogGroupCard({ group }: AuditLogGroupCardProps) {
   const getEntityTypeLabel = (entityType: string): string => {
     switch (entityType) {
       case 'Product':
-        return 'Mahsulot';
+        return t('erp.auditGroup.entityProduct');
       case 'Sale':
-        return 'Sotuv';
+        return t('erp.auditGroup.entitySale');
       case 'Customer':
-        return 'Mijoz';
+        return t('erp.auditGroup.entityCustomer');
       case 'Payment':
-        return "To'lov";
+        return t('erp.auditGroup.entityPayment');
       case 'Debt':
-        return 'Qarz';
+        return t('erp.auditGroup.entityDebt');
       case 'PurchaseOrder':
-        return 'Xarid';
+        return t('erp.auditGroup.entityPurchaseOrder');
       case 'PurchasePayment':
-        return "Xarid to'lovi";
+        return t('erp.auditGroup.entityPurchasePayment');
       case 'PurchaseReturn':
-        return 'Xarid qaytarish';
+        return t('erp.auditGroup.entityPurchaseReturn');
       case 'Supplier':
-        return "Ta'minotchi";
+        return t('erp.auditGroup.entitySupplier');
       case 'Employee':
-        return 'Xodim';
+        return t('erp.auditGroup.entityEmployee');
       case 'User':
-        return 'Foydalanuvchi';
+        return t('erp.auditGroup.entityUser');
       case 'Role':
-        return 'Rol';
+        return t('erp.auditGroup.entityRole');
       case 'Brand':
-        return 'Brend';
+        return t('erp.auditGroup.entityBrand');
       case 'Category':
-        return 'Kategoriya';
+        return t('erp.auditGroup.entityCategory');
       case 'StockMovement':
-        return 'Ombor harakati';
+        return t('erp.auditGroup.entityStockMovement');
       default:
         return entityType;
     }
@@ -146,10 +148,10 @@ export function AuditLogGroupCard({ group }: AuditLogGroupCardProps) {
           handleShowDetail(log.id);
         }}
         className="gap-1 text-primary hover:bg-primary/10 flex-shrink-0"
-        title="Batafsil ko'rish"
+        title={t('erp.auditGroup.viewDetail')}
       >
         <Eye className="h-4 w-4" />
-        <span className="hidden sm:inline">Batafsil</span>
+        <span className="hidden sm:inline">{t('erp.auditGroup.detail')}</span>
       </Button>
     </div>
   );
@@ -196,7 +198,7 @@ export function AuditLogGroupCard({ group }: AuditLogGroupCardProps) {
                 )}
                 <span className="flex items-center gap-1">
                   <Layers className="h-3.5 w-3.5" />
-                  {group.logCount} ta log
+                  {t('erp.auditGroup.logCount', { n: group.logCount })}
                 </span>
                 {group.logs[0]?.ipAddress && (
                   <span className="flex items-center gap-1">
@@ -223,10 +225,10 @@ export function AuditLogGroupCard({ group }: AuditLogGroupCardProps) {
                     setShowGroupDetailModal(true);
                   }}
                   className="h-auto min-h-[2rem] py-1 gap-1.5 text-primary hover:bg-primary/10 flex-shrink-0"
-                  title="Guruh batafsil"
+                  title={t('erp.auditGroup.groupDetail')}
                 >
                   <FileSearch className="h-4 w-4 flex-shrink-0" />
-                  Batafsil
+                  {t('erp.auditGroup.detail')}
                 </Button>
               </div>
             </div>
@@ -238,7 +240,7 @@ export function AuditLogGroupCard({ group }: AuditLogGroupCardProps) {
           <div className="border-t border-base-200 bg-base-100/50">
             <div className="px-4 py-2 bg-base-200/50 border-b border-base-200">
               <h4 className="text-sm font-medium text-base-content/70">
-                Guruhdagi loglar ({group.logCount})
+                {t('erp.auditGroup.logsInGroup', { n: group.logCount })}
               </h4>
             </div>
             <div className="divide-y divide-base-200">
@@ -282,6 +284,7 @@ interface AuditLogGroupRowProps {
 }
 
 export function AuditLogGroupRow({ group }: AuditLogGroupRowProps) {
+  const { t } = useTranslation();
   const [isExpanded, setIsExpanded] = useState(false);
   const [showDetailModal, setShowDetailModal] = useState(false);
   const [selectedLogId, setSelectedLogId] = useState<number | null>(null);
@@ -297,11 +300,11 @@ export function AuditLogGroupRow({ group }: AuditLogGroupRowProps) {
   const translateAction = (action: string): string => {
     switch (action) {
       case 'CREATE':
-        return 'Yaratildi';
+        return t('erp.auditGroup.actionCreate');
       case 'UPDATE':
-        return "O'zgartirildi";
+        return t('erp.auditGroup.actionUpdate');
       case 'DELETE':
-        return "O'chirildi";
+        return t('erp.auditGroup.actionDelete');
       default:
         return action;
     }
@@ -336,35 +339,35 @@ export function AuditLogGroupRow({ group }: AuditLogGroupRowProps) {
   const getEntityTypeLabel = (entityType: string): string => {
     switch (entityType) {
       case 'Product':
-        return 'Mahsulot';
+        return t('erp.auditGroup.entityProduct');
       case 'Sale':
-        return 'Sotuv';
+        return t('erp.auditGroup.entitySale');
       case 'Customer':
-        return 'Mijoz';
+        return t('erp.auditGroup.entityCustomer');
       case 'Payment':
-        return "To'lov";
+        return t('erp.auditGroup.entityPayment');
       case 'Debt':
-        return 'Qarz';
+        return t('erp.auditGroup.entityDebt');
       case 'PurchaseOrder':
-        return 'Xarid';
+        return t('erp.auditGroup.entityPurchaseOrder');
       case 'PurchasePayment':
-        return "Xarid to'lovi";
+        return t('erp.auditGroup.entityPurchasePayment');
       case 'PurchaseReturn':
-        return 'Xarid qaytarish';
+        return t('erp.auditGroup.entityPurchaseReturn');
       case 'Supplier':
-        return "Ta'minotchi";
+        return t('erp.auditGroup.entitySupplier');
       case 'Employee':
-        return 'Xodim';
+        return t('erp.auditGroup.entityEmployee');
       case 'User':
-        return 'Foydalanuvchi';
+        return t('erp.auditGroup.entityUser');
       case 'Role':
-        return 'Rol';
+        return t('erp.auditGroup.entityRole');
       case 'Brand':
-        return 'Brend';
+        return t('erp.auditGroup.entityBrand');
       case 'Category':
-        return 'Kategoriya';
+        return t('erp.auditGroup.entityCategory');
       case 'StockMovement':
-        return 'Ombor harakati';
+        return t('erp.auditGroup.entityStockMovement');
       default:
         return entityType;
     }
@@ -408,7 +411,7 @@ export function AuditLogGroupRow({ group }: AuditLogGroupRowProps) {
           </div>
         </td>
         <td className="px-4 py-3">
-          <span className="badge badge-sm badge-primary">{group.logCount} ta log</span>
+          <span className="badge badge-sm badge-primary">{t('erp.auditGroup.logCount', { n: group.logCount })}</span>
         </td>
         <td className="px-4 py-3 text-sm">{formatTimestamp(group.timestamp)}</td>
         <td className="px-4 py-3 text-sm">{group.username || '-'}</td>
@@ -424,10 +427,10 @@ export function AuditLogGroupRow({ group }: AuditLogGroupRowProps) {
               setShowGroupDetailModal(true);
             }}
             className="h-auto min-h-[2rem] py-1 gap-1.5 text-primary hover:bg-primary/10"
-            title="Guruh batafsil"
+            title={t('erp.auditGroup.groupDetail')}
           >
             <FileSearch className="h-4 w-4 flex-shrink-0" />
-            Batafsil
+            {t('erp.auditGroup.detail')}
           </Button>
         </td>
       </tr>
@@ -438,15 +441,15 @@ export function AuditLogGroupRow({ group }: AuditLogGroupRowProps) {
           <td colSpan={8} className="px-4 py-4 bg-base-200/30">
             <div className="bg-base-100 rounded-lg shadow-sm overflow-hidden">
               <div className="px-4 py-2 bg-base-200/50 border-b border-base-300">
-                <h4 className="font-medium text-sm">Guruhdagi loglar ({group.logCount})</h4>
+                <h4 className="font-medium text-sm">{t('erp.auditGroup.logsInGroup', { n: group.logCount })}</h4>
               </div>
               <div className="overflow-x-auto">
                 <table className="table table-sm w-full">
                   <thead>
                     <tr className="bg-base-200/30">
                       <th className="text-left py-2 w-12">#</th>
-                      <th className="text-left py-2">Obyekt</th>
-                      <th className="text-left py-2">Amal</th>
+                      <th className="text-left py-2">{t('erp.auditGroup.colObject')}</th>
+                      <th className="text-left py-2">{t('erp.auditGroup.colAction')}</th>
                       <th className="text-left py-2">ID</th>
                       <th className="text-right py-2 w-28"></th>
                     </tr>
@@ -474,7 +477,7 @@ export function AuditLogGroupRow({ group }: AuditLogGroupRowProps) {
                             className="gap-1 text-primary hover:bg-primary/10"
                           >
                             <Eye className="h-3.5 w-3.5" />
-                            Batafsil
+                            {t('erp.auditGroup.detail')}
                           </Button>
                         </td>
                       </tr>

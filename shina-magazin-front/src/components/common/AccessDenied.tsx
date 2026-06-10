@@ -1,4 +1,5 @@
 import { Link } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import { ShieldX, Home, ArrowLeft } from 'lucide-react';
 import { Button, buttonVariants } from '@/ui';
 
@@ -38,11 +39,14 @@ interface AccessDeniedProps {
  * />
  */
 export function AccessDenied({
-  title = "Kirish taqiqlangan",
-  message = "Bu sahifaga kirish huquqingiz yo'q. Administrator bilan bog'laning.",
+  title,
+  message,
   requiredPermission,
   showBackButton = false,
 }: AccessDeniedProps) {
+  const { t } = useTranslation();
+  const resolvedTitle = title ?? t("erp.accessDenied.title");
+  const resolvedMessage = message ?? t("erp.accessDenied.message");
   return (
     <div className="min-h-[60vh] flex items-center justify-center p-4">
       <div className="text-center max-w-md">
@@ -58,18 +62,18 @@ export function AccessDenied({
 
         {/* Title */}
         <h1 className="text-2xl font-bold mt-8 text-base-content">
-          {title}
+          {resolvedTitle}
         </h1>
 
         {/* Message */}
         <p className="text-base-content/60 mt-3 leading-relaxed">
-          {message}
+          {resolvedMessage}
         </p>
 
         {/* Required Permission Badge */}
         {requiredPermission && (
           <div className="mt-6 inline-flex items-center gap-2 px-4 py-2 bg-base-200 rounded-lg">
-            <span className="text-sm text-base-content/50">Kerakli huquq:</span>
+            <span className="text-sm text-base-content/50">{t("erp.accessDenied.requiredPermissionLabel")}</span>
             <code className="text-sm font-mono text-error font-medium">
               {requiredPermission}
             </code>
@@ -85,18 +89,18 @@ export function AccessDenied({
               className="gap-2"
             >
               <ArrowLeft className="h-4 w-4" />
-              Orqaga qaytish
+              {t("common.back")}
             </Button>
           ) : null}
           <Link to="/" className={buttonVariants({ variant: "primary", className: "gap-2" })}>
             <Home className="h-4 w-4" />
-            Bosh sahifaga
+            {t("erp.accessDenied.goHome")}
           </Link>
         </div>
 
         {/* Help text */}
         <p className="mt-8 text-xs text-base-content/40">
-          Agar bu xato deb hisoblasangiz, tizim administratoriga murojaat qiling.
+          {t("erp.accessDenied.helpText")}
         </p>
       </div>
     </div>
