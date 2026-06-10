@@ -93,7 +93,7 @@ type RouteHandle = {
 };
 
 export function Header() {
-  const { i18n } = useTranslation();
+  const { t, i18n } = useTranslation();
   const { user, logout } = useAuthStore();
   const { toggleSidebar } = useUIStore();
   const { mode: themeMode, setMode: setThemeMode } = useThemeStore();
@@ -234,7 +234,7 @@ export function Header() {
           <div className="flex items-center gap-2">
             <div className="hidden sm:flex items-center gap-2 text-sm text-base-content/50">
               <Link to="/" className="hover:text-primary transition-colors">
-                Bosh sahifa
+                {t('erp.header.home')}
               </Link>
               <span>/</span>
             </div>
@@ -304,7 +304,7 @@ export function Header() {
               size="sm"
               iconOnly
               className="relative"
-              title="Bildirishnomalar"
+              title={t('erp.header.notifications')}
               onClick={() => {
                 setNotifDropdownOpen(!notifDropdownOpen);
                 setUserDropdownOpen(false);
@@ -326,16 +326,16 @@ export function Header() {
               )}
             >
               <div className="flex items-center justify-between border-b border-base-200 px-4 py-3">
-                <span className="font-semibold">Bildirishnomalar</span>
+                <span className="font-semibold">{t('erp.header.notifications')}</span>
                 {unreadCount > 0 && (
-                  <span className="badge badge-error badge-sm">{unreadCount} ta yangi</span>
+                  <span className="badge badge-error badge-sm">{t('erp.header.newCount', { count: unreadCount })}</span>
                 )}
               </div>
               <div className="max-h-72 overflow-y-auto">
                 {notifications.length === 0 ? (
                   <div className="px-4 py-8 text-center text-base-content/50">
                     <Bell className="h-8 w-8 mx-auto mb-2 opacity-50" />
-                    <p className="text-sm">Bildirishnomalar yo'q</p>
+                    <p className="text-sm">{t('erp.header.noNotifications')}</p>
                   </div>
                 ) : (
                   notifications.slice(0, 5).map((notification) => (
@@ -385,7 +385,7 @@ export function Header() {
                     navigate('/notifications');
                   }}
                 >
-                  Barchasini ko'rish
+                  {t('erp.header.allNotifications')}
                 </Button>
               </div>
             </div>
@@ -472,7 +472,7 @@ export function Header() {
                   onClick={() => setUserDropdownOpen(false)}
                 >
                   <UserIcon className="h-4 w-4 text-base-content/60" />
-                  <span>Profil sozlamalari</span>
+                  <span>{t('erp.header.profileSettings')}</span>
                 </Link>
                 <Link
                   to="/settings"
@@ -480,7 +480,7 @@ export function Header() {
                   onClick={() => setUserDropdownOpen(false)}
                 >
                   <Settings className="h-4 w-4 text-base-content/60" />
-                  <span>Tizim sozlamalari</span>
+                  <span>{t('erp.header.systemSettings')}</span>
                 </Link>
                 <button
                   className="flex sm:hidden w-full items-center gap-3 rounded-lg px-3 py-2.5 text-sm transition-colors hover:bg-base-200/70"
@@ -495,7 +495,7 @@ export function Header() {
                     <Sun className="h-4 w-4 text-base-content/60" />
                   )}
                   <span>
-                    {isDark ? "Qorong'i rejim" : "Yorug' rejim"}
+                    {isDark ? t('erp.header.darkMode') : t('erp.header.lightMode')}
                   </span>
                 </button>
               </div>
@@ -510,7 +510,7 @@ export function Header() {
                   }}
                 >
                   <LogOut className="h-4 w-4" />
-                  <span>Chiqish</span>
+                  <span>{t('erp.header.logout')}</span>
                 </button>
               </div>
             </div>
