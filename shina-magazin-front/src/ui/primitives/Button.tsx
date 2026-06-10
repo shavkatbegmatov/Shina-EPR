@@ -20,9 +20,13 @@ export const buttonVariants = cva('btn', {
       ghost: 'btn-ghost',
       outline: 'btn-outline',
       danger: 'btn-error',
+      success: 'btn-success',
+      warning: 'btn-warning',
+      info: 'btn-info',
       link: 'btn-link',
     },
     size: {
+      xs: 'btn-xs',
       sm: 'btn-sm',
       md: '',
       lg: 'btn-lg',
