@@ -263,7 +263,7 @@ export function DataTable<T>({
   if (loading) {
     return (
       <div className={clsx('surface-card', containerClassName)}>
-        <div className={clsx('hidden lg:block', className)}>
+        <div className={clsx('hidden md:block', className)}>
           <table className="table w-full">
             <thead>
               <tr>
@@ -287,7 +287,7 @@ export function DataTable<T>({
             </tbody>
           </table>
         </div>
-        <div className="space-y-3 p-4 lg:hidden">
+        <div className="space-y-3 p-4 md:hidden">
           {Array.from({ length: skeletonRows }).map((_, rowIdx) => (
             <Skeleton key={rowIdx} className="h-20 w-full rounded-xl" />
           ))}
@@ -337,7 +337,7 @@ export function DataTable<T>({
   return (
     <div ref={tableRef} className={clsx('surface-card', containerClassName)}>
       {/* Desktop Table */}
-      <div className={clsx('hidden lg:block', className)}>
+      <div className={clsx('hidden md:block', className)}>
         <table className="table table-zebra w-full">
           <thead className="sticky -top-6 z-20 bg-base-100">
             <tr className="shadow-[0_1px_3px_-1px_rgba(0,0,0,0.1)]">
@@ -393,7 +393,7 @@ export function DataTable<T>({
 
       {/* Mobile Cards */}
       {renderMobileCard && (
-        <div className="space-y-3 p-4 lg:hidden">
+        <div className="space-y-3 p-4 md:hidden">
           {sortedData.map((item, index) => {
             const itemId = keyExtractor(item);
             const isHighlighted = activeHighlight === itemId;

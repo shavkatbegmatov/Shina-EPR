@@ -57,7 +57,7 @@ export function Sidebar() {
       {/* Mobile overlay */}
       {sidebarOpen && (
         <div
-          className="fixed inset-0 z-40 bg-black/50 lg:hidden"
+          className="fixed inset-0 z-40 bg-black/50 md:hidden"
           onClick={() => setSidebarOpen(false)}
           role="button"
           aria-label="Menyuni yopish"
@@ -67,7 +67,7 @@ export function Sidebar() {
       {/* Sidebar */}
       <aside
         className={clsx(
-          'fixed left-0 top-0 z-50 flex h-screen w-72 flex-col bg-base-100/95 backdrop-blur transition-transform lg:sticky lg:translate-x-0',
+          'fixed left-0 top-0 z-50 flex h-screen w-72 flex-col bg-base-100/95 backdrop-blur transition-transform md:sticky md:translate-x-0',
           'border-r border-base-200 shadow-[var(--shadow-soft)]',
           sidebarOpen ? 'translate-x-0' : '-translate-x-full'
         )}
@@ -88,7 +88,7 @@ export function Sidebar() {
           <Button
             variant="ghost"
             size="sm"
-            className="relative lg:hidden"
+            className="relative md:hidden"
             onClick={() => setSidebarOpen(false)}
             aria-label="Yopish"
           >

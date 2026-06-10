@@ -220,7 +220,7 @@ export function Header() {
             variant="ghost"
             size="sm"
             iconOnly
-            className="lg:hidden"
+            className="md:hidden"
             onClick={toggleSidebar}
             aria-label="Menyu"
           >
@@ -397,14 +397,14 @@ export function Header() {
                   <span className="text-sm font-semibold">{userInitial}</span>
                 </div>
               </div>
-              <div className="hidden lg:block text-left max-w-[120px]">
+              <div className="hidden md:block text-left max-w-[120px]">
                 <div className="text-sm font-medium truncate">{user?.fullName}</div>
                 <div className="text-[10px] text-base-content/50 uppercase tracking-wider">
                   {user?.role && getRoleLabel(user.role)}
                 </div>
               </div>
               <ChevronDown className={clsx(
-                "h-3.5 w-3.5 text-base-content/50 hidden lg:block transition-transform duration-200",
+                "h-3.5 w-3.5 text-base-content/50 hidden md:block transition-transform duration-200",
                 userDropdownOpen && "rotate-180"
               )} />
             </button>
