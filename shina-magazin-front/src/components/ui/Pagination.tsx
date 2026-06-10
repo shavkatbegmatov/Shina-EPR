@@ -1,5 +1,6 @@
 import { ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight } from 'lucide-react';
 import clsx from 'clsx';
+import { Button } from '@/ui';
 import { Select } from './Select';
 
 interface PaginationProps {
@@ -107,9 +108,12 @@ export function Pagination({
       {totalPages > 1 && (
         <div className="flex items-center gap-1">
           {/* First page */}
-          <button
+          <Button
+            variant="ghost"
+            size="sm"
+            iconOnly
             className={clsx(
-              'btn btn-ghost btn-sm btn-square transition-all',
+              'transition-all',
               currentPage === 0 && 'btn-disabled opacity-40'
             )}
             onClick={() => onPageChange(0)}
@@ -117,12 +121,15 @@ export function Pagination({
             title="Birinchi sahifa"
           >
             <ChevronsLeft className="h-4 w-4" />
-          </button>
+          </Button>
 
           {/* Previous page */}
-          <button
+          <Button
+            variant="ghost"
+            size="sm"
+            iconOnly
             className={clsx(
-              'btn btn-ghost btn-sm btn-square transition-all',
+              'transition-all',
               currentPage === 0 && 'btn-disabled opacity-40'
             )}
             onClick={() => onPageChange(currentPage - 1)}
@@ -130,7 +137,7 @@ export function Pagination({
             title="Oldingi sahifa"
           >
             <ChevronLeft className="h-4 w-4" />
-          </button>
+          </Button>
 
           {/* Page numbers */}
           <div className="flex items-center gap-0.5 mx-1">
@@ -143,26 +150,29 @@ export function Pagination({
                   •••
                 </span>
               ) : (
-                <button
+                <Button
                   key={page}
+                  variant={currentPage === page ? 'primary' : 'ghost'}
+                  size="sm"
                   className={clsx(
-                    'btn btn-sm min-w-[2.25rem] transition-all',
-                    currentPage === page
-                      ? 'btn-primary'
-                      : 'btn-ghost hover:bg-base-200'
+                    'min-w-[2.25rem] transition-all',
+                    currentPage !== page && 'hover:bg-base-200'
                   )}
                   onClick={() => onPageChange(page)}
                 >
                   {page + 1}
-                </button>
+                </Button>
               )
             ))}
           </div>
 
           {/* Next page */}
-          <button
+          <Button
+            variant="ghost"
+            size="sm"
+            iconOnly
             className={clsx(
-              'btn btn-ghost btn-sm btn-square transition-all',
+              'transition-all',
               currentPage >= totalPages - 1 && 'btn-disabled opacity-40'
             )}
             onClick={() => onPageChange(currentPage + 1)}
@@ -170,12 +180,15 @@ export function Pagination({
             title="Keyingi sahifa"
           >
             <ChevronRight className="h-4 w-4" />
-          </button>
+          </Button>
 
           {/* Last page */}
-          <button
+          <Button
+            variant="ghost"
+            size="sm"
+            iconOnly
             className={clsx(
-              'btn btn-ghost btn-sm btn-square transition-all',
+              'transition-all',
               currentPage >= totalPages - 1 && 'btn-disabled opacity-40'
             )}
             onClick={() => onPageChange(totalPages - 1)}
@@ -183,7 +196,7 @@ export function Pagination({
             title="Oxirgi sahifa"
           >
             <ChevronsRight className="h-4 w-4" />
-          </button>
+          </Button>
         </div>
       )}
     </div>

@@ -24,6 +24,7 @@ import { ExportButtons } from '../../components/common/ExportButtons';
 import { useThemeStore } from '../../shared/theme/themeStore';
 import { PermissionCode } from '../../hooks/usePermission';
 import { PermissionGate } from '../../components/common/PermissionGate';
+import { Button } from '@/ui';
 import type { Brand, Category } from '../../types';
 
 type Tab = 'appearance' | 'brands' | 'categories' | 'debts';
@@ -406,10 +407,10 @@ export function SettingsPage() {
                 disabled={brands.length === 0}
                 loading={brandsLoading}
               />
-              <button className="btn btn-primary" onClick={() => handleOpenBrandModal()}>
+              <Button variant="primary" onClick={() => handleOpenBrandModal()}>
                 <Plus className="h-5 w-5" />
                 Yangi brend
-              </button>
+              </Button>
             </div>
           </div>
 
@@ -444,20 +445,23 @@ export function SettingsPage() {
                           <td className="font-medium">{brand.name}</td>
                           <td>{brand.country || '—'}</td>
                           <td className="text-right space-x-2">
-                            <button
-                              className="btn btn-ghost btn-sm"
+                            <Button
+                              variant="ghost"
+                              size="sm"
                               onClick={() => handleOpenBrandModal(brand)}
                             >
                               <Pencil className="h-4 w-4" />
                               Tahrirlash
-                            </button>
-                            <button
-                              className="btn btn-ghost btn-sm text-error"
+                            </Button>
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              className="text-error"
                               onClick={() => setDeletingBrand(brand)}
                             >
                               <Trash2 className="h-4 w-4" />
                               O'chirish
-                            </button>
+                            </Button>
                           </td>
                         </tr>
                       ))}
@@ -479,18 +483,21 @@ export function SettingsPage() {
                         </p>
                       </div>
                       <div className="flex items-center gap-2">
-                        <button
-                          className="btn btn-ghost btn-sm"
+                        <Button
+                          variant="ghost"
+                          size="sm"
                           onClick={() => handleOpenBrandModal(brand)}
                         >
                           <Pencil className="h-4 w-4" />
-                        </button>
-                        <button
-                          className="btn btn-ghost btn-sm text-error"
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          className="text-error"
                           onClick={() => setDeletingBrand(brand)}
                         >
                           <Trash2 className="h-4 w-4" />
-                        </button>
+                        </Button>
                       </div>
                     </div>
                   ))}
@@ -518,10 +525,10 @@ export function SettingsPage() {
                 disabled={categories.length === 0}
                 loading={categoriesLoading}
               />
-              <button className="btn btn-primary" onClick={() => handleOpenCategoryModal()}>
+              <Button variant="primary" onClick={() => handleOpenCategoryModal()}>
                 <Plus className="h-5 w-5" />
                 Yangi kategoriya
-              </button>
+              </Button>
             </div>
           </div>
 
@@ -560,20 +567,23 @@ export function SettingsPage() {
                           </td>
                           <td>{category.parentName || '—'}</td>
                           <td className="text-right space-x-2">
-                            <button
-                              className="btn btn-ghost btn-sm"
+                            <Button
+                              variant="ghost"
+                              size="sm"
                               onClick={() => handleOpenCategoryModal(category)}
                             >
                               <Pencil className="h-4 w-4" />
                               Tahrirlash
-                            </button>
-                            <button
-                              className="btn btn-ghost btn-sm text-error"
+                            </Button>
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              className="text-error"
                               onClick={() => setDeletingCategory(category)}
                             >
                               <Trash2 className="h-4 w-4" />
                               O'chirish
-                            </button>
+                            </Button>
                           </td>
                         </tr>
                       ))}
@@ -602,18 +612,21 @@ export function SettingsPage() {
                         )}
                       </div>
                       <div className="flex items-center gap-2">
-                        <button
-                          className="btn btn-ghost btn-sm"
+                        <Button
+                          variant="ghost"
+                          size="sm"
                           onClick={() => handleOpenCategoryModal(category)}
                         >
                           <Pencil className="h-4 w-4" />
-                        </button>
-                        <button
-                          className="btn btn-ghost btn-sm text-error"
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          className="text-error"
                           onClick={() => setDeletingCategory(category)}
                         >
                           <Trash2 className="h-4 w-4" />
-                        </button>
+                        </Button>
                       </div>
                     </div>
                   ))}
@@ -643,14 +656,14 @@ export function SettingsPage() {
                   loading={settingsLoading}
                 />
                 <PermissionGate permission={PermissionCode.SETTINGS_UPDATE}>
-                  <button
-                    className="btn btn-primary"
+                  <Button
+                    variant="primary"
                     onClick={handleSaveSettings}
                     disabled={settingsSaving || settingsLoading}
                   >
                     {settingsSaving && <span className="loading loading-spinner loading-sm" />}
                     Saqlash
-                  </button>
+                  </Button>
                 </PermissionGate>
               </div>
             </div>
@@ -693,9 +706,9 @@ export function SettingsPage() {
                     : 'Yangi brend qo\'shing'}
                 </p>
               </div>
-              <button className="btn btn-ghost btn-sm" onClick={handleCloseBrandModal}>
+              <Button variant="ghost" size="sm" onClick={handleCloseBrandModal}>
                 <X className="h-4 w-4" />
-              </button>
+              </Button>
             </div>
 
             <div className="mt-6 space-y-4">
@@ -727,21 +740,21 @@ export function SettingsPage() {
             </div>
 
             <div className="mt-6 flex justify-end gap-2">
-              <button
-                className="btn btn-ghost"
+              <Button
+                variant="ghost"
                 onClick={handleCloseBrandModal}
                 disabled={brandSaving}
               >
                 Bekor qilish
-              </button>
-              <button
-                className="btn btn-primary"
+              </Button>
+              <Button
+                variant="primary"
                 onClick={handleSaveBrand}
                 disabled={brandSaving || !brandForm.name.trim()}
               >
                 {brandSaving && <span className="loading loading-spinner loading-sm" />}
                 Saqlash
-              </button>
+              </Button>
             </div>
           </div>
         </div>
@@ -762,9 +775,9 @@ export function SettingsPage() {
                     : 'Yangi kategoriya qo\'shing'}
                 </p>
               </div>
-              <button className="btn btn-ghost btn-sm" onClick={handleCloseCategoryModal}>
+              <Button variant="ghost" size="sm" onClick={handleCloseCategoryModal}>
                 <X className="h-4 w-4" />
-              </button>
+              </Button>
             </div>
 
             <div className="mt-6 space-y-4">
@@ -821,21 +834,21 @@ export function SettingsPage() {
             </div>
 
             <div className="mt-6 flex justify-end gap-2">
-              <button
-                className="btn btn-ghost"
+              <Button
+                variant="ghost"
                 onClick={handleCloseCategoryModal}
                 disabled={categorySaving}
               >
                 Bekor qilish
-              </button>
-              <button
-                className="btn btn-primary"
+              </Button>
+              <Button
+                variant="primary"
                 onClick={handleSaveCategory}
                 disabled={categorySaving || !categoryForm.name.trim()}
               >
                 {categorySaving && <span className="loading loading-spinner loading-sm" />}
                 Saqlash
-              </button>
+              </Button>
             </div>
           </div>
         </div>
@@ -845,13 +858,15 @@ export function SettingsPage() {
       <ModalPortal isOpen={!!deletingBrand} onClose={() => setDeletingBrand(null)}>
         <div className="w-full max-w-sm bg-base-100 rounded-2xl shadow-2xl relative">
           <div className="p-4 sm:p-6">
-            <button
-              className="btn btn-circle btn-ghost btn-sm absolute right-3 top-3"
+            <Button
+              variant="ghost"
+              size="sm"
+              className="btn-circle absolute right-3 top-3"
               onClick={() => setDeletingBrand(null)}
               disabled={brandDeleting}
             >
               <X className="h-5 w-5" />
-            </button>
+            </Button>
             <div className="flex flex-col items-center gap-4 text-center">
               <div className="flex h-12 w-12 items-center justify-center rounded-full bg-error/10">
                 <AlertTriangle className="h-6 w-6 text-error" />
@@ -864,21 +879,21 @@ export function SettingsPage() {
               </div>
             </div>
             <div className="mt-6 flex justify-center gap-2">
-              <button
-                className="btn btn-ghost"
+              <Button
+                variant="ghost"
                 onClick={() => setDeletingBrand(null)}
                 disabled={brandDeleting}
               >
                 Bekor qilish
-              </button>
-              <button
-                className="btn btn-error"
+              </Button>
+              <Button
+                variant="danger"
                 onClick={handleDeleteBrand}
                 disabled={brandDeleting}
               >
                 {brandDeleting && <span className="loading loading-spinner loading-sm" />}
                 O'chirish
-              </button>
+              </Button>
             </div>
           </div>
         </div>
@@ -888,13 +903,15 @@ export function SettingsPage() {
       <ModalPortal isOpen={!!deletingCategory} onClose={() => setDeletingCategory(null)}>
         <div className="w-full max-w-sm bg-base-100 rounded-2xl shadow-2xl relative">
           <div className="p-4 sm:p-6">
-            <button
-              className="btn btn-circle btn-ghost btn-sm absolute right-3 top-3"
+            <Button
+              variant="ghost"
+              size="sm"
+              className="btn-circle absolute right-3 top-3"
               onClick={() => setDeletingCategory(null)}
               disabled={categoryDeleting}
             >
               <X className="h-5 w-5" />
-            </button>
+            </Button>
             <div className="flex flex-col items-center gap-4 text-center">
               <div className="flex h-12 w-12 items-center justify-center rounded-full bg-error/10">
                 <AlertTriangle className="h-6 w-6 text-error" />
@@ -907,21 +924,21 @@ export function SettingsPage() {
               </div>
             </div>
             <div className="mt-6 flex justify-center gap-2">
-              <button
-                className="btn btn-ghost"
+              <Button
+                variant="ghost"
                 onClick={() => setDeletingCategory(null)}
                 disabled={categoryDeleting}
               >
                 Bekor qilish
-              </button>
-              <button
-                className="btn btn-error"
+              </Button>
+              <Button
+                variant="danger"
                 onClick={handleDeleteCategory}
                 disabled={categoryDeleting}
               >
                 {categoryDeleting && <span className="loading loading-spinner loading-sm" />}
                 O'chirish
-              </button>
+              </Button>
             </div>
           </div>
         </div>

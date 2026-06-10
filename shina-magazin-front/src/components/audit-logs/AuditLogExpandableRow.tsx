@@ -6,6 +6,7 @@ import { uz } from 'date-fns/locale';
 import type { AuditLog } from '../../api/audit-logs.api';
 import type { FieldChange } from '../../types';
 import { AuditLogDetailModal } from './AuditLogDetailModal';
+import { Button } from '@/ui';
 
 interface AuditLogExpandableRowProps {
   log: AuditLog;
@@ -136,17 +137,19 @@ export function AuditLogExpandableRow({
         <td className="px-4 py-3 text-sm">{log.username || '-'}</td>
         <td className="px-4 py-3 text-xs text-base-content/60">{log.ipAddress || '-'}</td>
         <td className="px-4 py-3">
-          <button
+          <Button
+            variant="ghost"
+            size="sm"
             onClick={(e) => {
               e.stopPropagation();
               setShowDetailModal(true);
             }}
-            className="btn btn-ghost btn-sm h-auto min-h-[2rem] py-1 gap-1.5 text-primary hover:bg-primary/10"
+            className="h-auto min-h-[2rem] py-1 gap-1.5 text-primary hover:bg-primary/10"
             title="Batafsil ko'rish"
           >
             <Eye className="h-4 w-4 flex-shrink-0" />
             <span className="hidden lg:inline">Batafsil</span>
-          </button>
+          </Button>
         </td>
       </tr>
 
@@ -298,16 +301,17 @@ export function AuditLogExpandableRow({
 
                 {/* Action buttons */}
                 <div className="flex gap-2">
-                  <button
+                  <Button
+                    variant="primary"
                     onClick={(e) => {
                       e.stopPropagation();
                       setShowDetailModal(true);
                     }}
-                    className="btn btn-primary w-full sm:w-auto min-h-[44px] sm:min-h-0 gap-2"
+                    className="w-full sm:w-auto min-h-[44px] sm:min-h-0 gap-2"
                   >
                     <Eye className="h-5 w-5 sm:h-4 sm:w-4" />
                     Batafsil ko'rish
-                  </button>
+                  </Button>
 
                   {/* Entity link placeholder - will be added when we have entity links */}
                 </div>

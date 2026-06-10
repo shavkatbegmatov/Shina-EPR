@@ -22,6 +22,7 @@ import {
   Check,
 } from 'lucide-react';
 import clsx from 'clsx';
+import { Button } from '@/ui';
 import { reportsApi } from '../../api/reports.api';
 import {
   formatCurrency,
@@ -212,11 +213,10 @@ export function ReportsPage() {
             onChange={handleDateRangeChange}
           />
 
-          <button
-            className={clsx(
-              'btn btn-sm gap-2 transition-all',
-              refreshSuccess ? 'btn-success' : 'btn-outline'
-            )}
+          <Button
+            variant={refreshSuccess ? 'success' : 'outline'}
+            size="sm"
+            className="gap-2 transition-all"
             onClick={() => loadReports(true)}
             disabled={initialLoading || refreshing}
           >
@@ -231,20 +231,20 @@ export function ReportsPage() {
                 {refreshing ? 'Yangilanmoqda...' : 'Yangilash'}
               </>
             )}
-          </button>
+          </Button>
 
           <div className="flex items-center gap-2">
             <PermissionGate permission={PermissionCode.REPORTS_EXPORT}>
-              <button className="btn btn-success btn-sm" onClick={handleExportExcel}>
+              <Button variant="success" size="sm" onClick={handleExportExcel}>
                 <FileSpreadsheet className="h-4 w-4" />
                 Excel
-              </button>
+              </Button>
             </PermissionGate>
             <PermissionGate permission={PermissionCode.REPORTS_EXPORT}>
-              <button className="btn btn-error btn-sm" onClick={handleExportPDF}>
+              <Button variant="danger" size="sm" onClick={handleExportPDF}>
                 <FileDown className="h-4 w-4" />
                 PDF
-              </button>
+              </Button>
             </PermissionGate>
           </div>
         </div>

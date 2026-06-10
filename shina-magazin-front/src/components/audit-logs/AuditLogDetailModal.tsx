@@ -6,6 +6,7 @@ import toast from 'react-hot-toast';
 import { auditLogsApi } from '../../api/audit-logs.api';
 import type { AuditLogDetailResponse } from '../../types';
 import { JsonDiffViewer } from './JsonDiffViewer';
+import { Button, buttonVariants } from '@/ui';
 
 interface AuditLogDetailModalProps {
   logId: number;
@@ -155,13 +156,15 @@ export function AuditLogDetailModal({ logId, onClose }: AuditLogDetailModalProps
               </span>
             </p>
           </div>
-          <button
+          <Button
+            variant="ghost"
+            size="sm"
             onClick={onClose}
-            className="btn btn-sm btn-ghost btn-circle flex-shrink-0 ml-2 min-h-[44px] min-w-[44px] md:min-h-0 md:min-w-0"
+            className="btn-circle flex-shrink-0 ml-2 min-h-[44px] min-w-[44px] md:min-h-0 md:min-w-0"
             aria-label="Yopish"
           >
             <X className="h-5 w-5" />
-          </button>
+          </Button>
         </div>
 
         {/* Tabs */}
@@ -266,9 +269,11 @@ export function AuditLogDetailModal({ logId, onClose }: AuditLogDetailModalProps
                   <label className="text-sm font-medium text-base-content/60">IP Manzil</label>
                   <p className="font-medium flex items-center gap-2">
                     {detail.ipAddress}
-                    <button
+                    <Button
+                      variant="ghost"
+                      size="sm"
                       onClick={() => copyToClipboard(detail.ipAddress, 'ip')}
-                      className="btn btn-ghost btn-sm sm:btn-xs min-h-[44px] sm:min-h-0 min-w-[44px] sm:min-w-0"
+                      className="sm:btn-xs min-h-[44px] sm:min-h-0 min-w-[44px] sm:min-w-0"
                       title="Nusxalash"
                     >
                       {copiedField === 'ip' ? (
@@ -276,7 +281,7 @@ export function AuditLogDetailModal({ logId, onClose }: AuditLogDetailModalProps
                       ) : (
                         <Copy className="h-5 w-5 sm:h-3 sm:w-3" />
                       )}
-                    </button>
+                    </Button>
                   </p>
                 </div>
                 <div>
@@ -419,7 +424,7 @@ export function AuditLogDetailModal({ logId, onClose }: AuditLogDetailModalProps
                   {detail.operatorLink && (
                     <a
                       href={detail.operatorLink}
-                      className="btn btn-outline w-full sm:w-auto min-h-[44px] sm:min-h-0 gap-2"
+                      className={buttonVariants({ variant: 'outline', className: 'w-full sm:w-auto min-h-[44px] sm:min-h-0 gap-2' })}
                       onClick={onClose}
                     >
                       <User className="h-5 w-5 sm:h-4 sm:w-4" />
@@ -431,7 +436,7 @@ export function AuditLogDetailModal({ logId, onClose }: AuditLogDetailModalProps
                   {detail.entityLink && (
                     <a
                       href={detail.entityLink}
-                      className="btn btn-primary w-full sm:w-auto min-h-[44px] sm:min-h-0 gap-2"
+                      className={buttonVariants({ variant: 'primary', className: 'w-full sm:w-auto min-h-[44px] sm:min-h-0 gap-2' })}
                       onClick={onClose}
                     >
                       <ExternalLink className="h-5 w-5 sm:h-4 sm:w-4" />
@@ -485,16 +490,18 @@ export function AuditLogDetailModal({ logId, onClose }: AuditLogDetailModalProps
                     <dt className="text-xs sm:text-sm text-base-content/60 mb-1">User-Agent (Raw)</dt>
                     <dd className="font-mono text-xs bg-base-200 p-2 rounded break-all">
                       {detail.deviceInfo.userAgent}
-                      <button
+                      <Button
+                        variant="ghost"
+                        size="sm"
                         onClick={() => copyToClipboard(detail.deviceInfo.userAgent, 'useragent')}
-                        className="btn btn-ghost btn-sm sm:btn-xs ml-2 min-h-[44px] sm:min-h-0 min-w-[44px] sm:min-w-0"
+                        className="sm:btn-xs ml-2 min-h-[44px] sm:min-h-0 min-w-[44px] sm:min-w-0"
                       >
                         {copiedField === 'useragent' ? (
                           <Check className="h-5 w-5 sm:h-3 sm:w-3 text-success" />
                         ) : (
                           <Copy className="h-5 w-5 sm:h-3 sm:w-3" />
                         )}
-                      </button>
+                      </Button>
                     </dd>
                   </div>
                 </dl>
@@ -542,9 +549,9 @@ export function AuditLogDetailModal({ logId, onClose }: AuditLogDetailModalProps
 
         {/* Footer */}
         <div className="px-4 md:px-6 py-3 md:py-4 border-t border-base-300 flex justify-end">
-          <button onClick={onClose} className="btn btn-ghost w-full sm:w-auto min-h-[44px]">
+          <Button variant="ghost" onClick={onClose} className="w-full sm:w-auto min-h-[44px]">
             Yopish
-          </button>
+          </Button>
         </div>
       </div>
     </div>

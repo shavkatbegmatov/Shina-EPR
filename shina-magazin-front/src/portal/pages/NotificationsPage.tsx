@@ -9,6 +9,7 @@ import type { PortalNotification, NotificationType, PagedResponse } from '../typ
 import { formatDistanceToNow } from 'date-fns';
 import { uz, ru } from 'date-fns/locale';
 import { usePortalAuthStore } from '../store/portalAuthStore';
+import { Button } from '@/ui';
 
 interface OutletContextType {
   setUnreadCount: (count: number) => void;
@@ -130,20 +131,16 @@ export default function PortalNotificationsPage() {
       <div className="p-4 space-y-4">
         {/* Mark all read button */}
         {unreadCount > 0 && (
-          <button
-            className="btn btn-ghost btn-sm w-full"
+          <Button
+            variant="ghost"
+            size="sm"
+            className="w-full"
             onClick={handleMarkAllRead}
-            disabled={markingAllRead}
+            loading={markingAllRead}
           >
-            {markingAllRead ? (
-              <span className="loading loading-spinner loading-sm"></span>
-            ) : (
-              <>
-                <CheckCheck size={16} />
-                {t('notifications.markAllRead')} ({unreadCount})
-              </>
-            )}
-          </button>
+            <CheckCheck size={16} />
+            {t('notifications.markAllRead')} ({unreadCount})
+          </Button>
         )}
 
         {notifications.length === 0 ? (
@@ -184,17 +181,14 @@ export default function PortalNotificationsPage() {
             ))}
 
             {hasMore && (
-              <button
-                className="btn btn-ghost w-full"
+              <Button
+                variant="ghost"
+                className="w-full"
                 onClick={loadMore}
-                disabled={loadingMore}
+                loading={loadingMore}
               >
-                {loadingMore ? (
-                  <span className="loading loading-spinner loading-sm"></span>
-                ) : (
-                  t('dashboard.viewAll')
-                )}
-              </button>
+                {t('dashboard.viewAll')}
+              </Button>
             )}
           </div>
         )}

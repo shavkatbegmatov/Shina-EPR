@@ -18,6 +18,7 @@ import { LoadingOverlay } from '../../components/common/LoadingOverlay';
 import { AuditLogExpandableRow } from '../../components/audit-logs/AuditLogExpandableRow';
 import { AuditLogMobileCard } from '../../components/audit-logs/AuditLogMobileCard';
 import { AuditLogGroupCard, AuditLogGroupRow } from '../../components/audit-logs/AuditLogGroupCard';
+import { Button } from '@/ui';
 
 type ViewMode = 'grouped' | 'simple';
 
@@ -178,26 +179,26 @@ export function AuditLogsPage() {
         <div className="flex flex-wrap gap-2 w-full sm:w-auto">
           {/* View mode toggle */}
           <div className="join">
-            <button
-              className={`join-item btn btn-sm min-h-[36px] gap-1.5 ${
-                viewMode === 'grouped' ? 'btn-primary' : 'btn-ghost'
-              }`}
+            <Button
+              variant={viewMode === 'grouped' ? 'primary' : 'ghost'}
+              size="sm"
+              className="join-item min-h-[36px] gap-1.5"
               onClick={() => handleViewModeChange('grouped')}
               title="Guruhlangan ko'rinish"
             >
               <Layers className="h-4 w-4" />
               <span className="hidden sm:inline">Guruhlangan</span>
-            </button>
-            <button
-              className={`join-item btn btn-sm min-h-[36px] gap-1.5 ${
-                viewMode === 'simple' ? 'btn-primary' : 'btn-ghost'
-              }`}
+            </Button>
+            <Button
+              variant={viewMode === 'simple' ? 'primary' : 'ghost'}
+              size="sm"
+              className="join-item min-h-[36px] gap-1.5"
               onClick={() => handleViewModeChange('simple')}
               title="Oddiy ko'rinish"
             >
               <List className="h-4 w-4" />
               <span className="hidden sm:inline">Oddiy</span>
-            </button>
+            </Button>
           </div>
 
           <RefreshButton
@@ -239,14 +240,15 @@ export function AuditLogsPage() {
               </button>
             )}
           </div>
-          <button
-            className="btn btn-primary w-full sm:w-auto min-h-[44px] gap-2"
+          <Button
+            variant="primary"
+            className="w-full sm:w-auto min-h-[44px] gap-2"
             onClick={handleSearch}
             disabled={refreshing}
           >
             <Search className="h-5 w-5 sm:h-4 sm:w-4" />
             <span>Qidirish</span>
-          </button>
+          </Button>
         </div>
 
         {/* Filters */}
@@ -293,9 +295,9 @@ export function AuditLogsPage() {
             </select>
 
             {(entityTypeFilter || actionFilter || searchQuery) && (
-              <button className="btn btn-ghost" onClick={resetFilters}>
+              <Button variant="ghost" onClick={resetFilters}>
                 Tozalash
-              </button>
+              </Button>
             )}
           </div>
         </div>
@@ -420,23 +422,27 @@ export function AuditLogsPage() {
       {totalPages > 1 && (
         <div className="flex flex-col items-center gap-2">
           <div className="flex justify-center items-center gap-3 sm:gap-4">
-            <button
-              className="btn btn-md sm:btn-sm min-h-[44px] sm:min-h-0"
+            <Button
+              variant="default"
+              size="md"
+              className="sm:btn-sm min-h-[44px] sm:min-h-0"
               onClick={() => setCurrentPage((prev) => Math.max(0, prev - 1))}
               disabled={currentPage === 0 || refreshing}
             >
               Oldingi
-            </button>
+            </Button>
             <span className="flex items-center px-3 sm:px-4 text-base sm:text-sm font-medium">
               {currentPage + 1} / {totalPages}
             </span>
-            <button
-              className="btn btn-md sm:btn-sm min-h-[44px] sm:min-h-0"
+            <Button
+              variant="default"
+              size="md"
+              className="sm:btn-sm min-h-[44px] sm:min-h-0"
               onClick={() => setCurrentPage((prev) => Math.min(totalPages - 1, prev + 1))}
               disabled={currentPage >= totalPages - 1 || refreshing}
             >
               Keyingi
-            </button>
+            </Button>
           </div>
           <span className="text-xs text-base-content/50">
             {viewMode === 'grouped'

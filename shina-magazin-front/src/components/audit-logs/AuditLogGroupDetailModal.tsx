@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { X, ChevronDown, ChevronRight, ExternalLink, User } from 'lucide-react';
+import { Button, buttonVariants } from '@/ui';
 import type { AuditLogGroupDetail, AuditLog } from '../../types';
 
 interface AuditLogGroupDetailModalProps {
@@ -108,13 +109,15 @@ export function AuditLogGroupDetailModal({ detail, onClose }: AuditLogGroupDetai
               <span>📅 {detail.timestamp}</span>
             </p>
           </div>
-          <button
+          <Button
+            variant="ghost"
+            size="sm"
             onClick={onClose}
-            className="btn btn-sm btn-ghost btn-circle flex-shrink-0 ml-2 min-h-[44px] min-w-[44px] md:min-h-0 md:min-w-0"
+            className="btn-circle flex-shrink-0 ml-2 min-h-[44px] min-w-[44px] md:min-h-0 md:min-w-0"
             aria-label="Yopish"
           >
             <X className="h-5 w-5" />
-          </button>
+          </Button>
         </div>
 
         {/* Content */}
@@ -147,7 +150,7 @@ export function AuditLogGroupDetailModal({ detail, onClose }: AuditLogGroupDetai
                       <a
                         href={item.link}
                         onClick={onClose}
-                        className="btn btn-ghost btn-xs gap-1 text-primary hover:bg-primary/10"
+                        className={buttonVariants({ variant: 'ghost', size: 'xs', className: 'gap-1 text-primary hover:bg-primary/10' })}
                       >
                         <ExternalLink className="h-3 w-3" />
                       </a>
@@ -168,7 +171,7 @@ export function AuditLogGroupDetailModal({ detail, onClose }: AuditLogGroupDetai
                     <a
                       href={detail.operatorLink}
                       onClick={onClose}
-                      className="btn btn-ghost btn-xs gap-1 text-primary hover:bg-primary/10"
+                      className={buttonVariants({ variant: 'ghost', size: 'xs', className: 'gap-1 text-primary hover:bg-primary/10' })}
                     >
                       <User className="h-3 w-3" />
                     </a>
@@ -202,9 +205,9 @@ export function AuditLogGroupDetailModal({ detail, onClose }: AuditLogGroupDetai
 
         {/* Footer */}
         <div className="px-4 md:px-6 py-3 md:py-4 border-t border-base-300 flex justify-end flex-shrink-0">
-          <button onClick={onClose} className="btn btn-ghost w-full sm:w-auto min-h-[44px]">
+          <Button variant="ghost" onClick={onClose} className="w-full sm:w-auto min-h-[44px]">
             Yopish
-          </button>
+          </Button>
         </div>
       </div>
     </div>

@@ -11,6 +11,7 @@ import { ExportButtons } from '../../components/common/ExportButtons';
 import { LoadingOverlay } from '../../components/common/LoadingOverlay';
 import { AuditLogExpandableRow } from '../../components/audit-logs/AuditLogExpandableRow';
 import { AuditLogMobileCard } from '../../components/audit-logs/AuditLogMobileCard';
+import { Button } from '@/ui';
 
 export function ActivityHistoryTab() {
   const [activities, setActivities] = useState<UserActivity[]>([]);
@@ -197,9 +198,9 @@ export function ActivityHistoryTab() {
           </select>
 
           {(entityTypeFilter || actionFilter) && (
-            <button className="btn btn-ghost btn-sm" onClick={resetFilters}>
+            <Button variant="ghost" size="sm" onClick={resetFilters}>
               Tozalash
-            </button>
+            </Button>
           )}
         </div>
       </div>
@@ -267,23 +268,25 @@ export function ActivityHistoryTab() {
       {/* Pagination */}
       {totalPages > 1 && (
         <div className="flex justify-center items-center gap-3 sm:gap-4">
-          <button
-            className="btn btn-md sm:btn-sm min-h-[44px] sm:min-h-0"
+          <Button
+            variant="default"
+            className="btn-md sm:btn-sm min-h-[44px] sm:min-h-0"
             onClick={() => setCurrentPage((prev) => Math.max(0, prev - 1))}
             disabled={currentPage === 0 || refreshing}
           >
             Oldingi
-          </button>
+          </Button>
           <span className="flex items-center px-3 sm:px-4 text-base sm:text-sm font-medium">
             {currentPage + 1} / {totalPages}
           </span>
-          <button
-            className="btn btn-md sm:btn-sm min-h-[44px] sm:min-h-0"
+          <Button
+            variant="default"
+            className="btn-md sm:btn-sm min-h-[44px] sm:min-h-0"
             onClick={() => setCurrentPage((prev) => Math.min(totalPages - 1, prev + 1))}
             disabled={currentPage >= totalPages - 1 || refreshing}
           >
             Keyingi
-          </button>
+          </Button>
         </div>
       )}
     </div>

@@ -15,6 +15,7 @@ import { DataTable, Column } from '../../components/ui/DataTable';
 import { ModalPortal } from '../../components/common/Modal';
 import { SearchInput } from '../../components/ui/SearchInput';
 import { CustomerSearchCombobox } from '../../components/common/NamePhoneSearchCombobox';
+import { Button } from '@/ui';
 import type { Product, PaymentMethod, Customer } from '../../types';
 
 export function POSPage() {
@@ -314,12 +315,14 @@ export function POSPage() {
             </p>
           </div>
           {cart.items.length > 0 && (
-            <button
-              className="btn btn-ghost btn-sm text-error"
+            <Button
+              variant="ghost"
+              size="sm"
+              className="text-error"
               onClick={() => cart.clear()}
             >
               Tozalash
-            </button>
+            </Button>
           )}
         </div>
 
@@ -336,12 +339,14 @@ export function POSPage() {
                   <p className="text-xs text-base-content/60">{cart.customer.phone}</p>
                 </div>
               </div>
-              <button
-                className="btn btn-ghost btn-sm btn-circle"
+              <Button
+                variant="ghost"
+                size="sm"
+                className="btn-circle"
                 onClick={handleClearCustomer}
               >
                 <X className="h-4 w-4" />
-              </button>
+              </Button>
             </div>
           ) : (
             <div className="flex items-center gap-2">
@@ -371,14 +376,16 @@ export function POSPage() {
                   }
                 />
               </div>
-              <button
-                className="btn btn-primary btn-sm h-12"
+              <Button
+                variant="primary"
+                size="sm"
+                className="h-12"
                 onClick={handleOpenModal}
                 title="Barcha mijozlarni ko'rish"
               >
                 <Users className="h-5 w-5" />
                 <span className="hidden sm:inline ml-1">Ko'rish</span>
-              </button>
+              </Button>
             </div>
           )}
         </div>
@@ -410,8 +417,10 @@ export function POSPage() {
                     )}
                   </div>
                   <div className="flex items-center gap-2">
-                    <button
-                      className="btn btn-ghost btn-sm btn-circle h-11 w-11"
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className="btn-circle h-11 w-11"
                       onClick={() =>
                         cart.updateQuantity(
                           item.product.id,
@@ -421,12 +430,14 @@ export function POSPage() {
                       disabled={item.quantity <= 1}
                     >
                       <Minus className="h-4 w-4" />
-                    </button>
+                    </Button>
                     <span className="w-8 text-center text-sm">
                       {item.quantity}
                     </span>
-                    <button
-                      className="btn btn-ghost btn-sm btn-circle h-11 w-11"
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className="btn-circle h-11 w-11"
                       onClick={() =>
                         cart.updateQuantity(
                           item.product.id,
@@ -436,13 +447,15 @@ export function POSPage() {
                       disabled={item.quantity >= item.product.quantity}
                     >
                       <Plus className="h-4 w-4" />
-                    </button>
-                    <button
-                      className="btn btn-ghost btn-sm btn-circle h-11 w-11 text-error"
+                    </Button>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className="btn-circle h-11 w-11 text-error"
                       onClick={() => cart.removeItem(item.product.id)}
                     >
                       <Trash2 className="h-4 w-4" />
-                    </button>
+                    </Button>
                   </div>
                 </div>
               ))}
@@ -491,8 +504,9 @@ export function POSPage() {
             <span>Jami:</span>
             <span className="font-bold">{formatCurrency(total)}</span>
           </div>
-          <button
-            className="btn btn-primary btn-block"
+          <Button
+            variant="primary"
+            block
             disabled={cart.items.length === 0}
             onClick={() => {
               setPaidAmount(total);
@@ -500,7 +514,7 @@ export function POSPage() {
             }}
           >
             To'lovga o'tish
-          </button>
+          </Button>
         </div>
       </aside>
 
@@ -508,12 +522,14 @@ export function POSPage() {
       <ModalPortal isOpen={showPayment} onClose={() => setShowPayment(false)}>
         <div className="w-full max-w-lg bg-base-100 rounded-2xl shadow-2xl relative">
           <div className="p-4 sm:p-6">
-            <button
-              className="btn btn-circle btn-ghost btn-sm absolute right-4 top-4"
+            <Button
+              variant="ghost"
+              size="sm"
+              className="btn-circle absolute right-4 top-4"
               onClick={() => setShowPayment(false)}
             >
               <X className="h-5 w-5" />
-            </button>
+            </Button>
             <h3 className="text-lg font-semibold">To'lov</h3>
             <p className="text-sm text-base-content/60">
               {itemCount} ta mahsulot · {formatCurrency(total)}
@@ -568,23 +584,19 @@ export function POSPage() {
             </div>
 
             <div className="mt-6 flex justify-end gap-2">
-              <button
-                className="btn btn-ghost"
+              <Button
+                variant="ghost"
                 onClick={() => setShowPayment(false)}
               >
                 Bekor qilish
-              </button>
-              <button
-                className="btn btn-primary"
+              </Button>
+              <Button
+                variant="primary"
                 onClick={handleCompleteSale}
-                disabled={loading}
+                loading={loading}
               >
-                {loading ? (
-                  <span className="loading loading-spinner" />
-                ) : (
-                  'Tasdiqlash'
-                )}
-              </button>
+                Tasdiqlash
+              </Button>
             </div>
           </div>
         </div>
@@ -605,12 +617,13 @@ export function POSPage() {
                   Jami {modalTotalElements} ta mijoz
                 </p>
               </div>
-              <button
-                className="btn btn-ghost btn-sm"
+              <Button
+                variant="ghost"
+                size="sm"
                 onClick={() => setShowCustomerModal(false)}
               >
                 <X className="h-4 w-4" />
-              </button>
+              </Button>
             </div>
 
             {/* Search */}

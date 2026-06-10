@@ -10,6 +10,7 @@ import { useThemeStore, type ThemeMode } from '../../shared/theme/themeStore';
 import PortalHeader from '../components/layout/PortalHeader';
 import type { CustomerPortalProfile } from '../types/portal.types';
 import { format } from 'date-fns';
+import { Button } from '@/ui';
 
 export default function PortalProfilePage() {
   const { t, i18n } = useTranslation();
@@ -149,18 +150,22 @@ export default function PortalProfilePage() {
               {t('profile.language')}
             </h3>
             <div className="flex gap-2">
-              <button
-                className={`btn btn-sm flex-1 ${language === 'uz' ? 'btn-primary' : 'btn-ghost'}`}
+              <Button
+                size="sm"
+                variant={language === 'uz' ? 'primary' : 'ghost'}
+                className="flex-1"
                 onClick={() => handleLanguageChange('uz')}
               >
                 O'zbekcha
-              </button>
-              <button
-                className={`btn btn-sm flex-1 ${language === 'ru' ? 'btn-primary' : 'btn-ghost'}`}
+              </Button>
+              <Button
+                size="sm"
+                variant={language === 'ru' ? 'primary' : 'ghost'}
+                className="flex-1"
                 onClick={() => handleLanguageChange('ru')}
               >
                 Русский
-              </button>
+              </Button>
             </div>
           </div>
         </div>
@@ -173,39 +178,46 @@ export default function PortalProfilePage() {
               {t('profile.theme')}
             </h3>
             <div className="flex gap-2">
-              <button
-                className={`btn btn-sm flex-1 gap-1 ${theme === 'light' ? 'btn-primary' : 'btn-ghost'}`}
+              <Button
+                size="sm"
+                variant={theme === 'light' ? 'primary' : 'ghost'}
+                className="flex-1 gap-1"
                 onClick={() => handleThemeChange('light')}
               >
                 <Sun size={16} />
                 {t('profile.themeLight')}
-              </button>
-              <button
-                className={`btn btn-sm flex-1 gap-1 ${theme === 'dark' ? 'btn-primary' : 'btn-ghost'}`}
+              </Button>
+              <Button
+                size="sm"
+                variant={theme === 'dark' ? 'primary' : 'ghost'}
+                className="flex-1 gap-1"
                 onClick={() => handleThemeChange('dark')}
               >
                 <Moon size={16} />
                 {t('profile.themeDark')}
-              </button>
-              <button
-                className={`btn btn-sm flex-1 gap-1 ${theme === 'system' ? 'btn-primary' : 'btn-ghost'}`}
+              </Button>
+              <Button
+                size="sm"
+                variant={theme === 'system' ? 'primary' : 'ghost'}
+                className="flex-1 gap-1"
                 onClick={() => handleThemeChange('system')}
               >
                 <Monitor size={16} />
                 {t('profile.themeSystem')}
-              </button>
+              </Button>
             </div>
           </div>
         </div>
 
         {/* Logout */}
-        <button
-          className="btn btn-error btn-outline w-full"
+        <Button
+          variant="danger"
+          className="btn-outline w-full"
           onClick={handleLogout}
         >
           <LogOut size={18} />
           {t('auth.logout')}
-        </button>
+        </Button>
       </div>
     </div>
   );

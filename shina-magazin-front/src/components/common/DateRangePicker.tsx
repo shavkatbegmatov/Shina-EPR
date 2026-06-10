@@ -9,6 +9,7 @@ import {
   CalendarDays,
 } from 'lucide-react';
 import clsx from 'clsx';
+import { Button } from '@/ui';
 import { getTashkentToday, getDateDaysAgo, formatDateForApi, getTashkentNow } from '../../config/constants';
 
 export type DateRangePreset = 'all' | 'today' | 'week' | 'month' | 'quarter' | 'year' | 'custom';
@@ -371,25 +372,29 @@ export function DateRangePicker({
 
           {/* Action Buttons */}
           <div className="mt-4 flex gap-2">
-            <button
+            <Button
+              variant="ghost"
+              size="sm"
               onClick={() => {
                 setShowCalendar(false);
                 setTempStart(customRange.start);
                 setTempEnd(customRange.end);
               }}
-              className="btn btn-ghost btn-sm flex-1"
+              className="flex-1"
             >
               <X className="h-4 w-4" />
               Bekor
-            </button>
-            <button
+            </Button>
+            <Button
+              variant="primary"
+              size="sm"
               onClick={handleApplyCustomRange}
               disabled={!tempStart || !tempEnd}
-              className="btn btn-primary btn-sm flex-1"
+              className="flex-1"
             >
               <Check className="h-4 w-4" />
               Qo'llash
-            </button>
+            </Button>
           </div>
         </div>
       )}

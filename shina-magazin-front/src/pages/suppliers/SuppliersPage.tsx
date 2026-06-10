@@ -18,6 +18,7 @@ import {
   Trash2,
 } from 'lucide-react';
 import clsx from 'clsx';
+import { Button } from '@/ui';
 import { suppliersApi } from '../../api/suppliers.api';
 import { purchasesApi } from '../../api/purchases.api';
 import { productsApi } from '../../api/products.api';
@@ -244,12 +245,13 @@ export function SuppliersPage() {
       sortable: false,
       render: (supplier) => (
         <PermissionGate permission={PermissionCode.SUPPLIERS_UPDATE}>
-          <button
-            className="btn btn-ghost btn-sm"
+          <Button
+            variant="ghost"
+            size="sm"
             onClick={(e) => { e.stopPropagation(); handleOpenEditModal(supplier); }}
           >
             Tahrirlash
-          </button>
+          </Button>
         </PermissionGate>
       ),
     },
@@ -606,20 +608,20 @@ export function SuppliersPage() {
             <>
               <span className="pill">{totalElements} ta ta'minotchi</span>
               <PermissionGate permission={PermissionCode.SUPPLIERS_CREATE}>
-                <button className="btn btn-primary" onClick={handleOpenNewModal}>
+                <Button variant="primary" onClick={handleOpenNewModal}>
                   <Plus className="h-5 w-5" />
                   Yangi ta'minotchi
-                </button>
+                </Button>
               </PermissionGate>
             </>
           ) : (
             <>
               <span className="pill">{purchasesTotalElements} ta xarid</span>
               <PermissionGate permission={PermissionCode.PURCHASES_CREATE}>
-                <button className="btn btn-primary" onClick={handleOpenPurchaseModal}>
+                <Button variant="primary" onClick={handleOpenPurchaseModal}>
                   <Plus className="h-5 w-5" />
                   Yangi xarid
-                </button>
+                </Button>
               </PermissionGate>
             </>
           )}
@@ -795,12 +797,14 @@ export function SuppliersPage() {
                     {formatCurrency(supplier.balance)}
                   </span>
                   <PermissionGate permission={PermissionCode.SUPPLIERS_UPDATE}>
-                    <button
-                      className="btn btn-ghost btn-sm min-h-[44px]"
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className="min-h-[44px]"
                       onClick={() => handleOpenEditModal(supplier)}
                     >
                       Tahrirlash
-                    </button>
+                    </Button>
                   </PermissionGate>
                 </div>
               </div>
@@ -939,9 +943,9 @@ export function SuppliersPage() {
                   {editingSupplier ? "Ta'minotchi ma'lumotlarini o'zgartirish" : "Yangi ta'minotchi qo'shish"}
                 </p>
               </div>
-              <button className="btn btn-ghost btn-sm" onClick={handleCloseModal}>
+              <Button variant="ghost" size="sm" onClick={handleCloseModal}>
                 <X className="h-4 w-4" />
-              </button>
+              </Button>
             </div>
 
             <div className="mt-6 space-y-5">
@@ -1054,17 +1058,17 @@ export function SuppliersPage() {
             </div>
 
             <div className="mt-6 flex justify-end gap-2">
-              <button className="btn btn-ghost" onClick={handleCloseModal} disabled={saving}>
+              <Button variant="ghost" onClick={handleCloseModal} disabled={saving}>
                 Bekor qilish
-              </button>
-              <button
-                className="btn btn-primary"
+              </Button>
+              <Button
+                variant="primary"
                 onClick={handleSaveSupplier}
                 disabled={saving || !formData.name.trim() || !isValidPhoneOrEmpty(formData.phone || '')}
               >
                 {saving && <span className="loading loading-spinner loading-sm" />}
                 {editingSupplier ? 'Yangilash' : 'Saqlash'}
-              </button>
+              </Button>
             </div>
           </div>
         </div>
@@ -1081,9 +1085,9 @@ export function SuppliersPage() {
                   Ta'minotchidan mahsulot xarid qilish
                 </p>
               </div>
-              <button className="btn btn-ghost btn-sm" onClick={handleClosePurchaseModal}>
+              <Button variant="ghost" size="sm" onClick={handleClosePurchaseModal}>
                 <X className="h-4 w-4" />
-              </button>
+              </Button>
             </div>
 
             <div className="mt-6 space-y-5">
@@ -1207,12 +1211,15 @@ export function SuppliersPage() {
                               {formatCurrency(item.quantity * item.unitPrice)}
                             </td>
                             <td>
-                              <button
-                                className="btn btn-ghost btn-sm btn-square text-error"
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                iconOnly
+                                className="text-error"
                                 onClick={() => handleRemoveFromCart(item.product.id)}
                               >
                                 <Trash2 className="h-4 w-4" />
-                              </button>
+                              </Button>
                             </td>
                           </tr>
                         ))}
@@ -1279,17 +1286,17 @@ export function SuppliersPage() {
             </div>
 
             <div className="mt-6 flex justify-end gap-2">
-              <button className="btn btn-ghost" onClick={handleClosePurchaseModal} disabled={purchaseSaving}>
+              <Button variant="ghost" onClick={handleClosePurchaseModal} disabled={purchaseSaving}>
                 Bekor qilish
-              </button>
-              <button
-                className="btn btn-primary"
+              </Button>
+              <Button
+                variant="primary"
                 onClick={handleSavePurchase}
                 disabled={purchaseSaving || !selectedSupplier || cartItems.length === 0}
               >
                 {purchaseSaving && <span className="loading loading-spinner loading-sm" />}
                 Saqlash va omborga kirim
-              </button>
+              </Button>
             </div>
           </div>
         </div>

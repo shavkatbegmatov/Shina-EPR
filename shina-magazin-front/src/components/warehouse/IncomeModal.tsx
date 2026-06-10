@@ -3,6 +3,7 @@ import { createPortal } from 'react-dom';
 import { useNavigate } from 'react-router-dom';
 import { X, Package, Truck, ExternalLink, Check } from 'lucide-react';
 
+import { Button } from '@/ui';
 import { Modal } from '../common/Modal';
 import { SearchInput } from '../ui/SearchInput';
 import { NumberInput } from '../ui/NumberInput';
@@ -284,13 +285,15 @@ export function IncomeModal({ isOpen, onClose, onSuccess }: IncomeModalProps) {
                   <span className="font-semibold">{selectedProduct.quantity}</span>
                 </p>
               </div>
-              <button
+              <Button
                 type="button"
-                className="btn btn-ghost btn-sm btn-circle ml-2"
+                variant="ghost"
+                size="sm"
+                className="btn-circle ml-2"
                 onClick={handleClearProduct}
               >
                 <X className="h-4 w-4" />
-              </button>
+              </Button>
             </div>
           ) : (
             <div ref={searchContainerRef}>
@@ -354,14 +357,16 @@ export function IncomeModal({ isOpen, onClose, onSuccess }: IncomeModalProps) {
               placeholder="Ta'minotchi tanlang"
               className="flex-1"
             />
-            <button
+            <Button
               type="button"
-              className="btn btn-outline btn-sm h-12"
+              variant="outline"
+              size="sm"
+              className="h-12"
               onClick={() => navigate('/suppliers')}
               title="Yangi ta'minotchi qo'shish"
             >
               <ExternalLink className="h-4 w-4" />
-            </button>
+            </Button>
           </div>
 
           {selectedSupplierId && (
@@ -405,24 +410,24 @@ export function IncomeModal({ isOpen, onClose, onSuccess }: IncomeModalProps) {
 
         {/* Footer Actions */}
         <div className="flex justify-end gap-3 pt-2 border-t border-base-200">
-          <button
+          <Button
             type="button"
-            className="btn btn-ghost"
+            variant="ghost"
             onClick={onClose}
             disabled={submitting}
           >
             Bekor qilish
-          </button>
-          <button
+          </Button>
+          <Button
             type="button"
-            className="btn btn-success"
+            variant="success"
             onClick={handleSubmit}
+            loading={submitting}
             disabled={submitting || !selectedProduct || !numericQuantity}
           >
-            {submitting && <span className="loading loading-spinner loading-sm" />}
             <Check className="h-4 w-4" />
             Qo'shish
-          </button>
+          </Button>
         </div>
       </div>
     </Modal>

@@ -6,6 +6,7 @@ import toast from 'react-hot-toast';
 import { authApi } from '../../api/auth.api';
 import { useAuthStore } from '../../store/authStore';
 import type { ChangePasswordRequest } from '../../types';
+import { Button } from '@/ui';
 
 interface FormData {
   currentPassword: string;
@@ -218,9 +219,10 @@ export function ChangePasswordPage() {
               )}
             </label>
 
-            <button
+            <Button
               type="submit"
-              className="btn btn-primary w-full"
+              variant="primary"
+              className="w-full"
               disabled={loading || passwordStrength < 3}
             >
               {loading ? (
@@ -231,7 +233,7 @@ export function ChangePasswordPage() {
                   Parolni o'zgartirish
                 </>
               )}
-            </button>
+            </Button>
           </form>
 
           <div className="mt-6 text-center text-xs text-base-content/50">

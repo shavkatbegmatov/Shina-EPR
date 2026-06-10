@@ -1,5 +1,6 @@
 import { Link } from 'react-router-dom';
 import { ShieldX, Home, ArrowLeft } from 'lucide-react';
+import { Button, buttonVariants } from '@/ui';
 
 interface AccessDeniedProps {
   /**
@@ -78,15 +79,16 @@ export function AccessDenied({
         {/* Action Buttons */}
         <div className="mt-8 flex flex-col sm:flex-row items-center justify-center gap-3">
           {showBackButton ? (
-            <button
+            <Button
+              variant="ghost"
               onClick={() => window.history.back()}
-              className="btn btn-ghost gap-2"
+              className="gap-2"
             >
               <ArrowLeft className="h-4 w-4" />
               Orqaga qaytish
-            </button>
+            </Button>
           ) : null}
-          <Link to="/" className="btn btn-primary gap-2">
+          <Link to="/" className={buttonVariants({ variant: "primary", className: "gap-2" })}>
             <Home className="h-4 w-4" />
             Bosh sahifaga
           </Link>

@@ -27,6 +27,7 @@ import { rolesApi } from '../../api/roles.api';
 import { authApi } from '../../api/auth.api';
 import { ROLES } from '../../config/constants';
 import { SearchCommand } from '../common/SearchCommand';
+import { Button } from '@/ui';
 import type { Role } from '../../types';
 
 const getNotificationIcon = (type: Notification['type']) => {
@@ -215,13 +216,16 @@ export function Header() {
       <div className="flex h-16 w-full items-center gap-3 px-4 lg:px-6">
         {/* Left section - Menu & Title */}
         <div className="flex items-center gap-3">
-          <button
-            className="btn btn-square btn-ghost btn-sm lg:hidden"
+          <Button
+            variant="ghost"
+            size="sm"
+            iconOnly
+            className="lg:hidden"
             onClick={toggleSidebar}
             aria-label="Menyu"
           >
             <Menu className="h-5 w-5" />
-          </button>
+          </Button>
 
           {/* Page title with breadcrumb style */}
           <div className="flex items-center gap-2">
@@ -250,8 +254,11 @@ export function Header() {
           </div>
 
           {/* Theme toggle */}
-          <button
-            className="btn btn-ghost btn-sm btn-square hidden sm:flex"
+          <Button
+            variant="ghost"
+            size="sm"
+            iconOnly
+            className="hidden sm:flex"
             onClick={toggleTheme}
             title={isDark ? "Yorug' rejimga o'tish" : "Qorong'i rejimga o'tish"}
           >
@@ -260,20 +267,26 @@ export function Header() {
             ) : (
               <Sun className="h-4 w-4" />
             )}
-          </button>
+          </Button>
 
           {/* Help */}
-          <button
-            className="btn btn-ghost btn-sm btn-square hidden lg:flex"
+          <Button
+            variant="ghost"
+            size="sm"
+            iconOnly
+            className="hidden lg:flex"
             title="Yordam"
           >
             <HelpCircle className="h-4 w-4" />
-          </button>
+          </Button>
 
           {/* Notifications */}
           <div className="relative" ref={notifDropdownRef}>
-            <button
-              className="btn btn-ghost btn-sm btn-square relative"
+            <Button
+              variant="ghost"
+              size="sm"
+              iconOnly
+              className="relative"
               title="Bildirishnomalar"
               onClick={() => {
                 setNotifDropdownOpen(!notifDropdownOpen);
@@ -286,7 +299,7 @@ export function Header() {
                   {unreadCount > 9 ? '9+' : unreadCount}
                 </span>
               )}
-            </button>
+            </Button>
             <div
               className={clsx(
                 "absolute right-0 z-50 mt-3 w-80 rounded-xl bg-base-100 p-0 shadow-xl border border-base-200 transition-all duration-200 origin-top-right",
@@ -346,15 +359,17 @@ export function Header() {
                 )}
               </div>
               <div className="border-t border-base-200 p-2">
-                <button
-                  className="btn btn-ghost btn-sm w-full"
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="w-full"
                   onClick={() => {
                     setNotifDropdownOpen(false);
                     navigate('/notifications');
                   }}
                 >
                   Barchasini ko'rish
-                </button>
+                </Button>
               </div>
             </div>
           </div>

@@ -7,6 +7,7 @@ import PortalHeader from '../components/layout/PortalHeader';
 import type { PortalSale, PagedResponse } from '../types/portal.types';
 import { format } from 'date-fns';
 import { formatNumber as formatMoney } from '../../config/constants';
+import { Button } from '@/ui';
 
 interface OutletContextType {
   newNotificationTrigger: number;
@@ -145,8 +146,9 @@ export default function PortalPurchasesPage() {
             ))}
 
             {hasMore && (
-              <button
-                className="btn btn-ghost w-full"
+              <Button
+                variant="ghost"
+                className="w-full"
                 onClick={loadMore}
                 disabled={loadingMore}
               >
@@ -155,7 +157,7 @@ export default function PortalPurchasesPage() {
                 ) : (
                   t('dashboard.viewAll')
                 )}
-              </button>
+              </Button>
             )}
           </div>
         )}

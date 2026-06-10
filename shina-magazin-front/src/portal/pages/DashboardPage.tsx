@@ -8,6 +8,7 @@ import PortalHeader from '../components/layout/PortalHeader';
 import type { CustomerDashboardStats, PortalSale } from '../types/portal.types';
 import { format } from 'date-fns';
 import { formatNumber as formatMoney } from '../../config/constants';
+import { buttonVariants } from '@/ui';
 
 interface OutletContextType {
   newNotificationTrigger: number;
@@ -109,7 +110,7 @@ export default function PortalDashboardPage() {
                 <p className="text-xl font-bold">{stats?.totalPurchases || 0}</p>
               </div>
               {stats?.hasDebt && (
-                <Link to="/kabinet/qarzlar" className="btn btn-error btn-sm">
+                <Link to="/kabinet/qarzlar" className={buttonVariants({ variant: "danger", size: "sm" })}>
                   {t('dashboard.hasDebt')}
                 </Link>
               )}

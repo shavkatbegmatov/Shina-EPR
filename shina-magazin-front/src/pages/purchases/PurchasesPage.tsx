@@ -34,6 +34,7 @@ import { DateRangePicker, type DateRangePreset, type DateRange } from '../../com
 import { ProductSearchCombobox } from '../../components/common/ProductSearchCombobox';
 import { CurrencyInput } from '../../components/ui/CurrencyInput';
 import { Select } from '../../components/ui/Select';
+import { Button } from '@/ui';
 import { useNotificationsStore } from '../../store/notificationsStore';
 import { useHighlight } from '../../hooks/useHighlight';
 import { PermissionCode } from '../../hooks/usePermission';
@@ -483,10 +484,10 @@ export function PurchasesPage() {
             loading={refreshing}
           />
           <PermissionGate permission={PermissionCode.PURCHASES_CREATE}>
-            <button className="btn btn-primary" onClick={handleOpenPurchaseModal}>
+            <Button variant="primary" onClick={handleOpenPurchaseModal}>
               <Plus className="h-5 w-5" />
               Yangi xarid
-            </button>
+            </Button>
           </PermissionGate>
         </div>
       </div>
@@ -633,21 +634,23 @@ export function PurchasesPage() {
 
           <div className="flex items-center gap-2">
             {hasActiveFilters && (
-              <button
-                className="btn btn-ghost btn-sm"
+              <Button
+                variant="ghost"
+                size="sm"
                 onClick={handleClearFilters}
               >
                 <X className="h-4 w-4" />
                 Tozalash
-              </button>
+              </Button>
             )}
-            <button
-              className="btn btn-ghost btn-sm"
+            <Button
+              variant="ghost"
+              size="sm"
               onClick={() => loadPurchases()}
             >
               <RefreshCw className="h-4 w-4" />
               Yangilash
-            </button>
+            </Button>
           </div>
         </div>
       </div>
@@ -749,9 +752,9 @@ export function PurchasesPage() {
                   Ta'minotchidan mahsulot xarid qilish
                 </p>
               </div>
-              <button className="btn btn-ghost btn-sm" onClick={handleClosePurchaseModal}>
+              <Button variant="ghost" size="sm" onClick={handleClosePurchaseModal}>
                 <X className="h-4 w-4" />
-              </button>
+              </Button>
             </div>
 
             <div className="mt-6 space-y-5">
@@ -844,12 +847,15 @@ export function PurchasesPage() {
                               {formatCurrency(item.quantity * item.unitPrice)}
                             </td>
                             <td>
-                              <button
-                                className="btn btn-ghost btn-sm btn-square text-error"
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                iconOnly
+                                className="text-error"
                                 onClick={() => handleRemoveFromCart(item.product.id)}
                               >
                                 <Trash2 className="h-4 w-4" />
-                              </button>
+                              </Button>
                             </td>
                           </tr>
                         ))}
@@ -916,17 +922,17 @@ export function PurchasesPage() {
             </div>
 
             <div className="mt-6 flex justify-end gap-2">
-              <button className="btn btn-ghost" onClick={handleClosePurchaseModal} disabled={purchaseSaving}>
+              <Button variant="ghost" onClick={handleClosePurchaseModal} disabled={purchaseSaving}>
                 Bekor qilish
-              </button>
-              <button
-                className="btn btn-primary"
+              </Button>
+              <Button
+                variant="primary"
                 onClick={handleSavePurchase}
-                disabled={purchaseSaving || !selectedSupplier || cartItems.length === 0}
+                loading={purchaseSaving}
+                disabled={!selectedSupplier || cartItems.length === 0}
               >
-                {purchaseSaving && <span className="loading loading-spinner loading-sm" />}
                 Saqlash va omborga kirim
-              </button>
+              </Button>
             </div>
           </div>
         </div>

@@ -9,6 +9,7 @@ import { useDataRefresh } from '../../hooks/useDataRefresh';
 import { RefreshButton } from '../../components/common/RefreshButton';
 import { ExportButtons } from '../../components/common/ExportButtons';
 import { LoadingOverlay } from '../../components/common/LoadingOverlay';
+import { Button, buttonVariants } from '@/ui';
 
 export function LoginActivityTab() {
   const [attempts, setAttempts] = useState<LoginAttempt[]>([]);
@@ -173,23 +174,25 @@ export function LoginActivityTab() {
       {/* Pagination */}
       {totalPages > 1 && (
         <div className="flex justify-center gap-2">
-          <button
-            className="btn btn-sm"
+          <Button
+            variant="default"
+            size="sm"
             onClick={() => setCurrentPage(prev => Math.max(0, prev - 1))}
             disabled={currentPage === 0 || refreshing}
           >
             Oldingi
-          </button>
-          <span className="btn btn-sm btn-ghost">
+          </Button>
+          <span className={buttonVariants({ variant: 'ghost', size: 'sm' })}>
             {currentPage + 1} / {totalPages}
           </span>
-          <button
-            className="btn btn-sm"
+          <Button
+            variant="default"
+            size="sm"
             onClick={() => setCurrentPage(prev => Math.min(totalPages - 1, prev + 1))}
             disabled={currentPage === totalPages - 1 || refreshing}
           >
             Keyingi
-          </button>
+          </Button>
         </div>
       )}
 

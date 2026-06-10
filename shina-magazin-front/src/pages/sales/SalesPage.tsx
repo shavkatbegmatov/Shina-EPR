@@ -26,6 +26,7 @@ import { PermissionGate } from '../../components/common/PermissionGate';
 import { usePermission, PermissionCode } from '../../hooks/usePermission';
 import type { Sale, PaymentStatus, SaleStatus, PaymentMethod } from '../../types';
 import { useNotificationsStore } from '../../store/notificationsStore';
+import { Button, buttonVariants } from '@/ui';
 
 const paymentMethodIcons: Record<PaymentMethod, React.ReactNode> = {
   CASH: <Banknote className="h-4 w-4" />,
@@ -223,15 +224,15 @@ export function SalesPage() {
       render: (sale) => (
         <div className="flex items-center gap-1">
           <PermissionGate permission={PermissionCode.SALES_VIEW}>
-            <button className="btn btn-ghost btn-sm" onClick={(e) => { e.stopPropagation(); handleViewSale(sale); }} title="Ko'rish">
+            <Button variant="ghost" size="sm" onClick={(e) => { e.stopPropagation(); handleViewSale(sale); }} title="Ko'rish">
               <Eye className="h-4 w-4" />
-            </button>
+            </Button>
           </PermissionGate>
           {sale.status === 'COMPLETED' && (
             <PermissionGate permission={PermissionCode.SALES_UPDATE}>
-              <button className="btn btn-ghost btn-sm text-error" onClick={(e) => { e.stopPropagation(); handleOpenCancelModal(sale); }} title="Bekor qilish">
+              <Button variant="ghost" size="sm" className="text-error" onClick={(e) => { e.stopPropagation(); handleOpenCancelModal(sale); }} title="Bekor qilish">
                 <XCircle className="h-4 w-4" />
-              </button>
+              </Button>
             </PermissionGate>
           )}
         </div>
@@ -347,7 +348,7 @@ export function SalesPage() {
             loading={refreshing}
           />
           <PermissionGate permission={PermissionCode.SALES_CREATE}>
-            <Link to="/pos" className="btn btn-primary">
+            <Link to="/pos" className={buttonVariants({ variant: "primary" })}>
               <ShoppingCart className="h-5 w-5" />
               Kassa (POS)
             </Link>
@@ -363,10 +364,10 @@ export function SalesPage() {
             <p className="text-xs text-base-content/60">{hasFilters ? "Filtrlangan natijalar ko'rsatilmoqda" : 'Barcha sotuvlar'}</p>
           </div>
           {hasFilters && (
-            <button className="btn btn-ghost btn-sm" onClick={handleResetFilters}>
+            <Button variant="ghost" size="sm" onClick={handleResetFilters}>
               <X className="h-4 w-4" />
               Tozalash
-            </button>
+            </Button>
           )}
         </div>
         <div className="mt-4 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
@@ -469,15 +470,15 @@ export function SalesPage() {
                 {sale.debtAmount > 0 && <div className="text-xs text-error">Qarz: {formatCurrency(sale.debtAmount)}</div>}
               </div>
               <div className="flex items-center gap-1">
-                <button className="btn btn-ghost btn-sm" onClick={() => handleViewSale(sale)}>
+                <Button variant="ghost" size="sm" onClick={() => handleViewSale(sale)}>
                   <Eye className="h-4 w-4" />
                   Ko'rish
-                </button>
+                </Button>
                 {sale.status === 'COMPLETED' && (
                   <PermissionGate permission={PermissionCode.SALES_REFUND}>
-                    <button className="btn btn-ghost btn-sm text-error" onClick={() => handleOpenCancelModal(sale)}>
+                    <Button variant="ghost" size="sm" className="text-error" onClick={() => handleOpenCancelModal(sale)}>
                       <XCircle className="h-4 w-4" />
-                    </button>
+                    </Button>
                   </PermissionGate>
                 )}
               </div>
@@ -492,9 +493,9 @@ export function SalesPage() {
         {selectedSale && (
           <div className="w-full max-w-2xl bg-base-100 rounded-2xl shadow-2xl max-h-[90vh] overflow-y-auto">
             <div className="p-4 sm:p-6">
-              <button className="btn btn-circle btn-ghost btn-sm absolute right-4 top-4" onClick={() => { setShowDetailModal(false); setSelectedSale(null); }}>
+              <Button variant="ghost" size="sm" className="btn-circle absolute right-4 top-4" onClick={() => { setShowDetailModal(false); setSelectedSale(null); }}>
                 <X className="h-5 w-5" />
-              </button>
+              </Button>
               <h3 className="text-lg font-bold">Sotuv tafsilotlari</h3>
               <p className="text-sm text-base-content/60">Faktura: {selectedSale.invoiceNumber}</p>
 
@@ -600,7 +601,7 @@ export function SalesPage() {
               </div>
 
               <div className="mt-6 flex justify-end">
-                <button className="btn" onClick={() => { setShowDetailModal(false); setSelectedSale(null); }}>Yopish</button>
+                <Button variant="default" onClick={() => { setShowDetailModal(false); setSelectedSale(null); }}>Yopish</Button>
               </div>
             </div>
           </div>
@@ -612,24 +613,25 @@ export function SalesPage() {
         {selectedSale && (
           <div className="w-full max-w-md bg-base-100 rounded-2xl shadow-2xl relative">
             <div className="p-4 sm:p-6">
-              <button
-                className="btn btn-circle btn-ghost btn-sm absolute right-4 top-4"
+              <Button
+                variant="ghost"
+                size="sm"
+                className="btn-circle absolute right-4 top-4"
                 onClick={() => { setShowCancelModal(false); setSelectedSale(null); }}
                 disabled={cancelling}
               >
                 <X className="h-5 w-5" />
-              </button>
+              </Button>
               <h3 className="text-lg font-bold text-error">Sotuvni bekor qilish</h3>
               <p className="mt-4 text-base-content/70">
                 Haqiqatan ham <span className="font-semibold">{selectedSale.invoiceNumber}</span> raqamli sotuvni bekor qilmoqchimisiz?
               </p>
               <p className="mt-2 text-sm text-base-content/60">Bu amal mahsulotlar zahirasini qaytaradi va sotuvni bekor qilingan deb belgilaydi.</p>
               <div className="mt-6 flex justify-end gap-2">
-                <button className="btn" onClick={() => { setShowCancelModal(false); setSelectedSale(null); }} disabled={cancelling}>Yo'q, ortga</button>
-                <button className="btn btn-error" onClick={handleCancelSale} disabled={cancelling}>
-                  {cancelling && <span className="loading loading-spinner loading-sm" />}
+                <Button variant="default" onClick={() => { setShowCancelModal(false); setSelectedSale(null); }} disabled={cancelling}>Yo'q, ortga</Button>
+                <Button variant="danger" onClick={handleCancelSale} loading={cancelling}>
                   Ha, bekor qilish
-                </button>
+                </Button>
               </div>
             </div>
           </div>

@@ -5,6 +5,7 @@ import { uz } from 'date-fns/locale';
 import type { AuditLog } from '../../api/audit-logs.api';
 import type { FieldChange } from '../../types';
 import { AuditLogDetailModal } from './AuditLogDetailModal';
+import { Button } from '@/ui';
 
 interface AuditLogMobileCardProps {
   log: AuditLog;
@@ -110,13 +111,15 @@ export function AuditLogMobileCard({
           </button>
 
           {/* Direct detail button */}
-          <button
+          <Button
+            variant="ghost"
+            size="sm"
             onClick={() => setShowDetailModal(true)}
-            className="flex-shrink-0 btn btn-ghost btn-sm btn-circle text-primary"
+            className="flex-shrink-0 btn-circle text-primary"
             title="Batafsil"
           >
             <Eye className="h-5 w-5" />
-          </button>
+          </Button>
         </div>
 
         {/* Expanded content */}
@@ -145,16 +148,17 @@ export function AuditLogMobileCard({
                 )}
 
                 {/* Action button - full width on mobile, touch-friendly */}
-                <button
+                <Button
+                  variant="primary"
                   onClick={(e) => {
                     e.stopPropagation();
                     setShowDetailModal(true);
                   }}
-                  className="btn btn-primary w-full min-h-[44px] gap-2"
+                  className="w-full min-h-[44px] gap-2"
                 >
                   <Eye className="h-5 w-5" />
                   Batafsil ko'rish
-                </button>
+                </Button>
               </div>
             )}
           </div>

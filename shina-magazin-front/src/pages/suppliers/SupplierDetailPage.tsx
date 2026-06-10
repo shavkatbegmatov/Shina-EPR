@@ -14,6 +14,7 @@ import {
   CreditCard,
 } from 'lucide-react';
 import clsx from 'clsx';
+import { Button } from '@/ui';
 import { suppliersApi } from '../../api/suppliers.api';
 import { formatCurrency, formatDate } from '../../config/constants';
 import type { Supplier } from '../../types';
@@ -56,9 +57,9 @@ export function SupplierDetailPage() {
       <div className="text-center py-12">
         <AlertCircle className="h-12 w-12 mx-auto text-error mb-4" />
         <h2 className="text-xl font-semibold">Ta'minotchi topilmadi</h2>
-        <button className="btn btn-primary mt-4" onClick={() => navigate('/suppliers')}>
+        <Button variant="primary" className="mt-4" onClick={() => navigate('/suppliers')}>
           Orqaga qaytish
-        </button>
+        </Button>
       </div>
     );
   }
@@ -68,12 +69,13 @@ export function SupplierDetailPage() {
       {/* Header */}
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div className="flex items-center gap-4">
-          <button
-            className="btn btn-ghost btn-sm"
+          <Button
+            variant="ghost"
+            size="sm"
             onClick={() => navigate('/suppliers')}
           >
             <ArrowLeft className="h-5 w-5" />
-          </button>
+          </Button>
           <div>
             <h1 className="section-title flex items-center gap-2">
               <Truck className="h-6 w-6" />
@@ -298,10 +300,10 @@ export function SupplierDetailPage() {
 
       {/* Back Button */}
       <div className="flex justify-start">
-        <button className="btn btn-ghost" onClick={() => navigate('/suppliers')}>
+        <Button variant="ghost" onClick={() => navigate('/suppliers')}>
           <ArrowLeft className="h-4 w-4" />
           Ta'minotchilar ro'yxatiga qaytish
-        </button>
+        </Button>
       </div>
     </div>
   );

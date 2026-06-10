@@ -5,6 +5,7 @@ import { UserPlus } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { PhoneInput } from '../../components/ui/PhoneInput';
 import { Select } from '../../components/ui/Select';
+import { Button } from '@/ui';
 
 type RegisterRequest = {
   fullName: string;
@@ -119,7 +120,7 @@ export function RegisterPage() {
               />
             </label>
 
-            <button type="submit" className="btn btn-primary w-full" disabled={loading}>
+            <Button type="submit" variant="primary" className="w-full" disabled={loading}>
               {loading ? (
                 <span className="loading loading-spinner" />
               ) : (
@@ -128,7 +129,7 @@ export function RegisterPage() {
                   So'rov yuborish
                 </>
               )}
-            </button>
+            </Button>
           </form>
 
           <div className="mt-6 text-center text-xs text-base-content/60">

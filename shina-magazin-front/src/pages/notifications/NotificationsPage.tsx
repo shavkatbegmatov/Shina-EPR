@@ -16,6 +16,7 @@ import clsx from 'clsx';
 import { useNotificationsStore, type Notification } from '../../store/notificationsStore';
 import { PermissionCode } from '../../hooks/usePermission';
 import { PermissionGate } from '../../components/common/PermissionGate';
+import { Button } from '@/ui';
 
 type NotificationType = Notification['type'];
 
@@ -115,21 +116,23 @@ export function NotificationsPage() {
           </p>
         </div>
         <div className="flex items-center gap-2">
-          <button
-            className="btn btn-ghost btn-sm"
+          <Button
+            variant="ghost"
+            size="sm"
             onClick={handleRefresh}
             disabled={loading}
           >
             <RefreshCw className={clsx("h-4 w-4", loading && "animate-spin")} />
-          </button>
+          </Button>
           {unreadCount > 0 && (
-            <button
-              className="btn btn-ghost btn-sm"
+            <Button
+              variant="ghost"
+              size="sm"
               onClick={() => markAllAsRead()}
             >
               <CheckCheck className="h-4 w-4" />
               <span className="hidden sm:inline">Barchasini o'qilgan qilish</span>
-            </button>
+            </Button>
           )}
         </div>
       </div>
@@ -145,19 +148,17 @@ export function NotificationsPage() {
             { key: 'order', label: 'Buyurtmalar' },
             { key: 'payment', label: "To'lovlar" },
           ].map((item) => (
-            <button
+            <Button
               key={item.key}
-              className={clsx(
-                'btn btn-xs',
-                filter === item.key ? 'btn-primary' : 'btn-ghost'
-              )}
+              variant={filter === item.key ? 'primary' : 'ghost'}
+              size="xs"
               onClick={() => setFilter(item.key as FilterType)}
             >
               {item.label}
               {item.key === 'unread' && unreadCount > 0 && (
                 <span className="badge badge-error badge-xs ml-1">{unreadCount}</span>
               )}
-            </button>
+            </Button>
           ))}
         </div>
       </div>
@@ -221,23 +222,26 @@ export function NotificationsPage() {
                     <div className="flex items-center gap-1 flex-shrink-0">
                       <PermissionGate permission={PermissionCode.NOTIFICATIONS_MANAGE}>
                         {!notification.isRead && (
-                          <button
-                            className="btn btn-ghost btn-xs"
+                          <Button
+                            variant="ghost"
+                            size="xs"
                             onClick={() => markAsRead(notification.id)}
                             title="O'qilgan qilish"
                           >
                             <CheckCircle className="h-4 w-4" />
-                          </button>
+                          </Button>
                         )}
                       </PermissionGate>
                       <PermissionGate permission={PermissionCode.NOTIFICATIONS_MANAGE}>
-                        <button
-                          className="btn btn-ghost btn-xs text-error"
+                        <Button
+                          variant="ghost"
+                          size="xs"
+                          className="text-error"
                           onClick={() => deleteNotification(notification.id)}
                           title="O'chirish"
                         >
                           <Trash2 className="h-4 w-4" />
-                        </button>
+                        </Button>
                       </PermissionGate>
                     </div>
                   </div>

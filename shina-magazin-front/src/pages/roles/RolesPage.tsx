@@ -18,6 +18,7 @@ import { ModalPortal } from '../../components/common/Modal';
 import { ExportButtons } from '../../components/common/ExportButtons';
 import { usePermission, PermissionCode } from '../../hooks/usePermission';
 import { PermissionGate } from '../../components/common/PermissionGate';
+import { Button } from '@/ui';
 import type { Role, RoleRequest } from '../../types';
 
 export function RolesPage() {
@@ -260,10 +261,10 @@ export function RolesPage() {
             loading={isLoading}
           />
           <PermissionGate permission={PermissionCode.ROLES_CREATE}>
-            <button className="btn btn-primary" onClick={() => openModal()}>
+            <Button variant="primary" onClick={() => openModal()}>
               <Plus className="h-5 w-5" />
               Yangi rol
-            </button>
+            </Button>
           </PermissionGate>
         </div>
       </div>
@@ -329,25 +330,29 @@ export function RolesPage() {
 
                 <div className="card-actions mt-3 justify-end">
                   <PermissionGate permission={PermissionCode.ROLES_VIEW}>
-                    <button
-                      className="btn btn-ghost btn-sm"
+                    <Button
+                      variant="ghost"
+                      size="sm"
                       onClick={() => openViewModal(role)}
                       title="Ko'rish"
                     >
                       <Eye className="h-4 w-4" />
-                    </button>
+                    </Button>
                   </PermissionGate>
                   <PermissionGate permission={PermissionCode.ROLES_UPDATE}>
-                    <button
-                      className="btn btn-ghost btn-sm"
+                    <Button
+                      variant="ghost"
+                      size="sm"
                       onClick={() => openModal(role)}
                     >
                       <Edit2 className="h-4 w-4" />
-                    </button>
+                    </Button>
                   </PermissionGate>
                   <PermissionGate permission={PermissionCode.ROLES_DELETE}>
-                    <button
-                      className="btn btn-ghost btn-sm text-error"
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className="text-error"
                       onClick={() => handleDelete(role)}
                       disabled={role.isSystem || deleteMutation.isPending}
                     >
@@ -356,7 +361,7 @@ export function RolesPage() {
                       ) : (
                         <Trash2 className="h-4 w-4" />
                       )}
-                    </button>
+                    </Button>
                   </PermissionGate>
                 </div>
               </div>
@@ -378,9 +383,9 @@ export function RolesPage() {
                   {selectedRole ? "Rol ma'lumotlari va huquqlarini o'zgartirish" : "Yangi rol va huquqlarni belgilash"}
                 </p>
               </div>
-              <button className="btn btn-ghost btn-sm" onClick={closeModal}>
+              <Button variant="ghost" size="sm" onClick={closeModal}>
                 <X className="h-4 w-4" />
-              </button>
+              </Button>
             </div>
 
             <div className="mt-6 space-y-4">
@@ -437,20 +442,22 @@ export function RolesPage() {
                   {selectedPermissions.size} ta huquq tanlangan
                 </span>
                 <div className="flex gap-2">
-                  <button
+                  <Button
                     type="button"
-                    className="btn btn-ghost btn-xs"
+                    variant="ghost"
+                    size="xs"
                     onClick={selectAllPermissions}
                   >
                     Hammasini tanlash
-                  </button>
-                  <button
+                  </Button>
+                  <Button
                     type="button"
-                    className="btn btn-ghost btn-xs"
+                    variant="ghost"
+                    size="xs"
                     onClick={clearAllPermissions}
                   >
                     Tozalash
-                  </button>
+                  </Button>
                 </div>
               </div>
 
@@ -494,11 +501,11 @@ export function RolesPage() {
             </div>
 
             <div className="mt-6 flex justify-end gap-2">
-              <button className="btn btn-ghost" onClick={closeModal}>
+              <Button variant="ghost" onClick={closeModal}>
                 Bekor qilish
-              </button>
-              <button
-                className="btn btn-primary"
+              </Button>
+              <Button
+                variant="primary"
                 onClick={handleSubmit}
                 disabled={
                   !formData.name ||
@@ -511,7 +518,7 @@ export function RolesPage() {
                   <span className="loading loading-spinner loading-sm" />
                 )}
                 {selectedRole ? 'Saqlash' : 'Yaratish'}
-              </button>
+              </Button>
             </div>
           </div>
         </div>
@@ -536,13 +543,14 @@ export function RolesPage() {
                   <p className="text-sm text-base-content/60">Rol tafsilotlari</p>
                 </div>
               </div>
-              <button
-                className="btn btn-ghost btn-sm"
+              <Button
+                variant="ghost"
+                size="sm"
                 onClick={closeViewModal}
                 aria-label="Yopish"
               >
                 <X className="h-4 w-4" />
-              </button>
+              </Button>
             </div>
 
             {/* System role badge */}
@@ -653,12 +661,13 @@ export function RolesPage() {
                       <div className="p-3">
                         <div className="flex items-center justify-between mb-3 pb-2 border-b border-base-300">
                           <h5 className="font-semibold text-sm">Biriktirilgan foydalanuvchilar</h5>
-                          <button
-                            className="btn btn-ghost btn-xs"
+                          <Button
+                            variant="ghost"
+                            size="xs"
                             onClick={() => setShowUsersPopover(false)}
                           >
                             <X className="h-3 w-3" />
-                          </button>
+                          </Button>
                         </div>
                         <div className="space-y-2">
                           {fullRoleDetails.users.map((user) => (
@@ -720,18 +729,20 @@ export function RolesPage() {
 
                   {/* Toggle between assigned only and all permissions */}
                   <div className="flex items-center gap-2">
-                    <button
+                    <Button
                       onClick={() => setShowAllPermissions(false)}
-                      className={`btn btn-xs ${!showAllPermissions ? 'btn-primary' : 'btn-ghost'}`}
+                      size="xs"
+                      variant={!showAllPermissions ? 'primary' : 'ghost'}
                     >
                       Faqat biriktirilganlar
-                    </button>
-                    <button
+                    </Button>
+                    <Button
                       onClick={() => setShowAllPermissions(true)}
-                      className={`btn btn-xs ${showAllPermissions ? 'btn-primary' : 'btn-ghost'}`}
+                      size="xs"
+                      variant={showAllPermissions ? 'primary' : 'ghost'}
                     >
                       Barchasi
-                    </button>
+                    </Button>
                   </div>
                 </div>
 
@@ -832,14 +843,14 @@ export function RolesPage() {
 
             {/* Footer Actions */}
             <div className="mt-6 flex justify-end gap-2">
-              <button className="btn btn-ghost" onClick={closeViewModal}>
+              <Button variant="ghost" onClick={closeViewModal}>
                 Yopish
-              </button>
+              </Button>
 
               {/* Quick Edit button if user has permission */}
               <PermissionGate permission={PermissionCode.ROLES_UPDATE}>
-                <button
-                  className="btn btn-primary"
+                <Button
+                  variant="primary"
                   onClick={() => {
                     closeViewModal();
                     if (fullRoleDetails) {
@@ -850,7 +861,7 @@ export function RolesPage() {
                 >
                   <Edit2 className="h-4 w-4" />
                   Tahrirlash
-                </button>
+                </Button>
               </PermissionGate>
             </div>
           </div>

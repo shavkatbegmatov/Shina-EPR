@@ -15,6 +15,7 @@ import {
 import { formatDistanceToNow } from 'date-fns';
 import { uz } from 'date-fns/locale';
 import type { AuditLogGroup, AuditLog } from '../../types';
+import { Button } from '@/ui';
 import { AuditLogDetailModal } from './AuditLogDetailModal';
 import { AuditLogGroupDetailModal } from './AuditLogGroupDetailModal';
 import { extractGroupDetail } from '../../utils/audit-log-extractors';
@@ -137,17 +138,19 @@ export function AuditLogGroupCard({ group }: AuditLogGroupCardProps) {
           </div>
         </div>
       </div>
-      <button
+      <Button
+        variant="ghost"
+        size="sm"
         onClick={(e) => {
           e.stopPropagation();
           handleShowDetail(log.id);
         }}
-        className="btn btn-ghost btn-sm gap-1 text-primary hover:bg-primary/10 flex-shrink-0"
+        className="gap-1 text-primary hover:bg-primary/10 flex-shrink-0"
         title="Batafsil ko'rish"
       >
         <Eye className="h-4 w-4" />
         <span className="hidden sm:inline">Batafsil</span>
-      </button>
+      </Button>
     </div>
   );
 
@@ -212,17 +215,19 @@ export function AuditLogGroupCard({ group }: AuditLogGroupCardProps) {
                     </span>
                   ))}
                 </div>
-                <button
+                <Button
+                  variant="ghost"
+                  size="sm"
                   onClick={(e) => {
                     e.stopPropagation();
                     setShowGroupDetailModal(true);
                   }}
-                  className="btn btn-ghost btn-sm h-auto min-h-[2rem] py-1 gap-1.5 text-primary hover:bg-primary/10 flex-shrink-0"
+                  className="h-auto min-h-[2rem] py-1 gap-1.5 text-primary hover:bg-primary/10 flex-shrink-0"
                   title="Guruh batafsil"
                 >
                   <FileSearch className="h-4 w-4 flex-shrink-0" />
                   Batafsil
-                </button>
+                </Button>
               </div>
             </div>
           </div>
@@ -411,17 +416,19 @@ export function AuditLogGroupRow({ group }: AuditLogGroupRowProps) {
           {group.logs[0]?.ipAddress || '-'}
         </td>
         <td className="px-4 py-3 text-right">
-          <button
+          <Button
+            variant="ghost"
+            size="sm"
             onClick={(e) => {
               e.stopPropagation();
               setShowGroupDetailModal(true);
             }}
-            className="btn btn-ghost btn-sm h-auto min-h-[2rem] py-1 gap-1.5 text-primary hover:bg-primary/10"
+            className="h-auto min-h-[2rem] py-1 gap-1.5 text-primary hover:bg-primary/10"
             title="Guruh batafsil"
           >
             <FileSearch className="h-4 w-4 flex-shrink-0" />
             Batafsil
-          </button>
+          </Button>
         </td>
       </tr>
 
@@ -457,16 +464,18 @@ export function AuditLogGroupRow({ group }: AuditLogGroupRowProps) {
                         </td>
                         <td className="py-2 text-xs text-base-content/60">{log.entityId}</td>
                         <td className="py-2 text-right">
-                          <button
+                          <Button
+                            variant="ghost"
+                            size="xs"
                             onClick={(e) => {
                               e.stopPropagation();
                               handleShowDetail(log.id);
                             }}
-                            className="btn btn-ghost btn-xs gap-1 text-primary hover:bg-primary/10"
+                            className="gap-1 text-primary hover:bg-primary/10"
                           >
                             <Eye className="h-3.5 w-3.5" />
                             Batafsil
-                          </button>
+                          </Button>
                         </td>
                       </tr>
                     ))}

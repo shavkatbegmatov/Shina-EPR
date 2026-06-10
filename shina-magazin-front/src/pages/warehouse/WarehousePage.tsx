@@ -12,6 +12,7 @@ import {
   RefreshCw,
 } from 'lucide-react';
 import clsx from 'clsx';
+import { Button } from '@/ui';
 import { warehouseApi } from '../../api/warehouse.api';
 import { productsApi } from '../../api/products.api';
 import { NumberInput } from '../../components/ui/NumberInput';
@@ -335,31 +336,32 @@ export function WarehousePage() {
             loading={refreshingMovements}
           />
           <PermissionGate permission={PermissionCode.WAREHOUSE_ADJUST}>
-            <button
-              className="btn btn-success"
+            <Button
+              variant="success"
               onClick={() => setShowIncomeModal(true)}
             >
               <Plus className="h-5 w-5" />
               Kirim
-            </button>
+            </Button>
           </PermissionGate>
           <PermissionGate permission={PermissionCode.WAREHOUSE_ADJUST}>
-            <button
-              className="btn btn-error"
+            <Button
+              variant="danger"
               onClick={() => handleOpenAdjustmentModal('OUT')}
             >
               <Minus className="h-5 w-5" />
               Chiqim
-            </button>
+            </Button>
           </PermissionGate>
           <PermissionGate permission={PermissionCode.WAREHOUSE_ADJUST}>
-            <button
-              className="btn btn-info btn-outline"
+            <Button
+              variant="info"
+              className="btn-outline"
               onClick={() => handleOpenAdjustmentModal('ADJUSTMENT')}
             >
               <Settings className="h-5 w-5" />
               Tuzatish
-            </button>
+            </Button>
           </PermissionGate>
         </div>
       </div>
@@ -587,12 +589,13 @@ export function WarehousePage() {
                   {adjustmentType === 'ADJUSTMENT' && "Zaxira miqdorini to'g'rilash"}
                 </p>
               </div>
-              <button
-                className="btn btn-ghost btn-sm"
+              <Button
+                variant="ghost"
+                size="sm"
                 onClick={handleCloseAdjustmentModal}
               >
                 <X className="h-4 w-4" />
-              </button>
+              </Button>
             </div>
 
             <div className="mt-6 space-y-4">
@@ -609,12 +612,14 @@ export function WarehousePage() {
                         SKU: {selectedProduct.sku} | Zaxira: {selectedProduct.quantity}
                       </p>
                     </div>
-                    <button
-                      className="btn btn-ghost btn-sm btn-circle"
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className="btn-circle"
                       onClick={() => setSelectedProduct(null)}
                     >
                       <X className="h-4 w-4" />
-                    </button>
+                    </Button>
                   </div>
                 </div>
               ) : (
@@ -686,19 +691,21 @@ export function WarehousePage() {
             </div>
 
             <div className="mt-6 flex justify-end gap-2">
-              <button
-                className="btn btn-ghost"
+              <Button
+                variant="ghost"
                 onClick={handleCloseAdjustmentModal}
                 disabled={submitting}
               >
                 Bekor qilish
-              </button>
-              <button
-                className={clsx(
-                  'btn',
-                  adjustmentType === 'OUT' && 'btn-error',
-                  adjustmentType === 'ADJUSTMENT' && 'btn-info'
-                )}
+              </Button>
+              <Button
+                variant={
+                  adjustmentType === 'OUT'
+                    ? 'danger'
+                    : adjustmentType === 'ADJUSTMENT'
+                      ? 'info'
+                      : 'default'
+                }
                 onClick={handleSubmitAdjustment}
                 disabled={
                   submitting ||
@@ -710,7 +717,7 @@ export function WarehousePage() {
                 {submitting && <span className="loading loading-spinner loading-sm" />}
                 {adjustmentType === 'OUT' && 'Chiqim qo\'shish'}
                 {adjustmentType === 'ADJUSTMENT' && 'Tuzatish'}
-              </button>
+              </Button>
             </div>
           </div>
         </div>

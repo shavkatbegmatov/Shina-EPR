@@ -11,6 +11,7 @@ import {
 } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { Logo } from '../../components/brand/Logo';
+import { Button } from '@/ui';
 import { authApi } from '../../api/auth.api';
 import { useAuthStore } from '../../store/authStore';
 import type { LoginRequest } from '../../types';
@@ -177,20 +178,23 @@ export function LoginPage() {
                   <input type="checkbox" className="checkbox checkbox-xs" />
                   Eslab qolish
                 </label>
-                <button
+                <Button
                   type="button"
-                  className="btn btn-ghost btn-sm min-h-[44px]"
+                  variant="ghost"
+                  size="sm"
+                  className="min-h-[44px]"
                   onClick={() =>
                     toast('Parolni tiklash uchun administratorga murojaat qiling.')
                   }
                 >
                   Parolni unutdingizmi?
-                </button>
+                </Button>
               </div>
 
-              <button
+              <Button
                 type="submit"
-                className="btn btn-primary w-full"
+                variant="primary"
+                className="w-full"
                 disabled={loading}
               >
                 {loading ? (
@@ -201,7 +205,7 @@ export function LoginPage() {
                     Kirish
                   </>
                 )}
-              </button>
+              </Button>
             </form>
 
             <div className="mt-6 surface-soft rounded-xl p-4 text-sm text-base-content/70">

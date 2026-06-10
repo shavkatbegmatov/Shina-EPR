@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { CheckCircle, Copy, AlertTriangle, X } from 'lucide-react';
 import toast from 'react-hot-toast';
+import { Button } from '@/ui';
 import type { CredentialsInfo } from '../../../types';
 
 interface CredentialsModalProps {
@@ -47,9 +48,9 @@ export function CredentialsModal({ credentials, employeeName, onClose }: Credent
               <p className="text-sm text-base-content/60">{employeeName}</p>
             </div>
           </div>
-          <button className="btn btn-ghost btn-sm btn-circle" onClick={onClose}>
+          <Button variant="ghost" size="sm" className="btn-circle" onClick={onClose}>
             <X className="h-5 w-5" />
-          </button>
+          </Button>
         </div>
 
         {/* Credentials */}
@@ -61,8 +62,10 @@ export function CredentialsModal({ credentials, employeeName, onClose }: Credent
             </label>
             <div className="flex items-center justify-between mt-1">
               <code className="text-lg font-mono font-semibold">{credentials.username}</code>
-              <button
-                className={`btn btn-ghost btn-sm ${copiedField === 'username' ? 'text-success' : ''}`}
+              <Button
+                variant="ghost"
+                size="sm"
+                className={copiedField === 'username' ? 'text-success' : ''}
                 onClick={() => copyToClipboard(credentials.username, 'username')}
               >
                 {copiedField === 'username' ? (
@@ -70,7 +73,7 @@ export function CredentialsModal({ credentials, employeeName, onClose }: Credent
                 ) : (
                   <Copy className="h-4 w-4" />
                 )}
-              </button>
+              </Button>
             </div>
           </div>
 
@@ -83,8 +86,10 @@ export function CredentialsModal({ credentials, employeeName, onClose }: Credent
               <code className="text-lg font-mono font-semibold text-primary">
                 {credentials.temporaryPassword}
               </code>
-              <button
-                className={`btn btn-ghost btn-sm ${copiedField === 'password' ? 'text-success' : ''}`}
+              <Button
+                variant="ghost"
+                size="sm"
+                className={copiedField === 'password' ? 'text-success' : ''}
                 onClick={() => copyToClipboard(credentials.temporaryPassword, 'password')}
               >
                 {copiedField === 'password' ? (
@@ -92,7 +97,7 @@ export function CredentialsModal({ credentials, employeeName, onClose }: Credent
                 ) : (
                   <Copy className="h-4 w-4" />
                 )}
-              </button>
+              </Button>
             </div>
           </div>
         </div>
@@ -121,13 +126,13 @@ export function CredentialsModal({ credentials, employeeName, onClose }: Credent
 
         {/* Actions */}
         <div className="modal-action">
-          <button className="btn btn-ghost" onClick={copyAll}>
+          <Button variant="ghost" onClick={copyAll}>
             <Copy className="h-4 w-4" />
             Hammasini nusxalash
-          </button>
-          <button className="btn btn-primary" onClick={onClose}>
+          </Button>
+          <Button variant="primary" onClick={onClose}>
             Tushunarli
-          </button>
+          </Button>
         </div>
       </div>
       <div className="modal-backdrop" onClick={onClose} />

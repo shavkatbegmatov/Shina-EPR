@@ -25,6 +25,7 @@ import { rolesApi } from '../../api/roles.api';
 import { useAuthStore } from '../../store/authStore';
 import { ROLES } from '../../config/constants';
 import type { ChangePasswordRequest, User as UserType, Role } from '../../types';
+import { Button } from '@/ui';
 import { SessionsTab } from './SessionsTab';
 import { LoginActivityTab } from './LoginActivityTab';
 import { ActivityHistoryTab } from './ActivityHistoryTab';
@@ -469,9 +470,10 @@ export function ProfilePage() {
               </div>
 
               <div className="pt-2 sm:pt-3">
-                <button
+                <Button
                   type="submit"
-                  className="btn btn-primary w-full sm:w-auto"
+                  variant="primary"
+                  className="w-full sm:w-auto"
                   disabled={changingPassword || passwordStrength < 3}
                 >
                   {changingPassword ? (
@@ -485,7 +487,7 @@ export function ProfilePage() {
                       Parolni o'zgartirish
                     </>
                   )}
-                </button>
+                </Button>
               </div>
 
               <p className="text-xs text-base-content/50">

@@ -14,6 +14,7 @@ import {
   FileText,
 } from 'lucide-react';
 import clsx from 'clsx';
+import { Button } from '@/ui';
 import { productsApi } from '../../api/products.api';
 import { formatCurrency } from '../../config/constants';
 import type { Product } from '../../types';
@@ -84,9 +85,9 @@ export function ProductDetailPage() {
       <div className="text-center py-12">
         <AlertCircle className="h-12 w-12 mx-auto text-error mb-4" />
         <h2 className="text-xl font-semibold">Mahsulot topilmadi</h2>
-        <button className="btn btn-primary mt-4" onClick={() => navigate('/products')}>
+        <Button variant="primary" className="mt-4" onClick={() => navigate('/products')}>
           Orqaga qaytish
-        </button>
+        </Button>
       </div>
     );
   }
@@ -96,12 +97,13 @@ export function ProductDetailPage() {
       {/* Header */}
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div className="flex items-center gap-4">
-          <button
-            className="btn btn-ghost btn-sm"
+          <Button
+            variant="ghost"
+            size="sm"
             onClick={() => navigate('/products')}
           >
             <ArrowLeft className="h-5 w-5" />
-          </button>
+          </Button>
           <div>
             <h1 className="section-title flex items-center gap-2">
               <Package className="h-6 w-6" />
@@ -340,10 +342,10 @@ export function ProductDetailPage() {
 
       {/* Back Button */}
       <div className="flex justify-start">
-        <button className="btn btn-ghost" onClick={() => navigate('/products')}>
+        <Button variant="ghost" onClick={() => navigate('/products')}>
           <ArrowLeft className="h-4 w-4" />
           Mahsulotlar ro'yxatiga qaytish
-        </button>
+        </Button>
       </div>
     </div>
   );

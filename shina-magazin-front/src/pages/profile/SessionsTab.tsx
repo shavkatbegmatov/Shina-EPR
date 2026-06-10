@@ -18,6 +18,7 @@ import { useAuthStore } from '../../store/authStore';
 import { formatDistanceToNow } from 'date-fns';
 import { uz } from 'date-fns/locale';
 import type { SessionUpdateMessage } from '../../services/websocket';
+import { Button } from '@/ui';
 
 export function SessionsTab() {
   const [sessions, setSessions] = useState<Session[]>([]);
@@ -216,18 +217,22 @@ export function SessionsTab() {
           </p>
         </div>
         <div className="flex flex-wrap items-center gap-2 w-full sm:w-auto">
-          <button
-            className="btn btn-ghost btn-sm flex-1 sm:flex-initial"
+          <Button
+            variant="ghost"
+            size="sm"
+            className="flex-1 sm:flex-initial"
             onClick={fetchSessions}
             disabled={loading}
             title="Yangilash"
           >
             <RefreshCw className={`h-4 w-4 ${loading ? 'animate-spin' : ''}`} />
             Yangilash
-          </button>
+          </Button>
           {otherSessions.length > 0 && (
-            <button
-              className="btn btn-error btn-sm w-full sm:w-auto whitespace-nowrap"
+            <Button
+              variant="danger"
+              size="sm"
+              className="w-full sm:w-auto whitespace-nowrap"
               onClick={handleRevokeAllOthers}
               disabled={revokingAll}
             >
@@ -242,7 +247,7 @@ export function SessionsTab() {
                   Hammadan chiq
                 </>
               )}
-            </button>
+            </Button>
           )}
         </div>
       </div>
@@ -324,8 +329,10 @@ export function SessionsTab() {
                     </div>
                   </div>
                 </div>
-                <button
-                  className="btn btn-ghost btn-sm text-error w-full sm:w-auto mt-3 sm:mt-0 whitespace-nowrap"
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="text-error w-full sm:w-auto mt-3 sm:mt-0 whitespace-nowrap"
                   onClick={() => handleRevokeSession(session.id)}
                   disabled={revokingId === session.id}
                 >
@@ -337,7 +344,7 @@ export function SessionsTab() {
                       Chiqish
                     </>
                   )}
-                </button>
+                </Button>
               </div>
             </div>
           ))}

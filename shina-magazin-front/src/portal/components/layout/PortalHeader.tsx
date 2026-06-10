@@ -4,6 +4,7 @@ import { useNavigate } from 'react-router-dom';
 import { usePortalAuthStore } from '../../store/portalAuthStore';
 import { useThemeStore } from '../../../shared/theme/themeStore';
 import { portalApiClient } from '../../api/portal.api';
+import { Button } from '@/ui';
 
 interface PortalHeaderProps {
   title: string;
@@ -57,12 +58,14 @@ export default function PortalHeader({
     <header className="navbar bg-primary text-primary-content sticky top-0 z-40 px-2">
       <div className="navbar-start">
         {showBack && (
-          <button
-            className="btn btn-ghost btn-circle btn-sm"
+          <Button
+            variant="ghost"
+            size="sm"
+            className="btn-circle"
             onClick={() => navigate(-1)}
           >
             <ArrowLeft size={20} />
-          </button>
+          </Button>
         )}
       </div>
       <div className="navbar-center">
@@ -70,17 +73,21 @@ export default function PortalHeader({
       </div>
       <div className="navbar-end gap-1">
         {showTheme && (
-          <button
-            className="btn btn-ghost btn-circle btn-sm"
+          <Button
+            variant="ghost"
+            size="sm"
+            className="btn-circle"
             onClick={toggleTheme}
             title={t('profile.changeTheme')}
           >
             {getThemeIcon()}
-          </button>
+          </Button>
         )}
         {showLanguage && (
-          <button
-            className="btn btn-ghost btn-circle btn-sm"
+          <Button
+            variant="ghost"
+            size="sm"
+            className="btn-circle"
             onClick={toggleLanguage}
             title={t('profile.changeLanguage')}
           >
@@ -88,7 +95,7 @@ export default function PortalHeader({
               <Globe size={18} />
               <span className="text-xs uppercase font-semibold">{language}</span>
             </div>
-          </button>
+          </Button>
         )}
       </div>
     </header>

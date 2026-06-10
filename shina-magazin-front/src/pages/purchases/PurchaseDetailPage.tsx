@@ -23,6 +23,7 @@ import { ModalPortal } from '../../components/common/Modal';
 import { Select } from '../../components/ui/Select';
 import { CurrencyInput } from '../../components/ui/CurrencyInput';
 import { useNotificationsStore } from '../../store/notificationsStore';
+import { Button } from '@/ui';
 import type {
   PurchaseOrder,
   PurchasePayment,
@@ -284,9 +285,9 @@ export function PurchaseDetailPage() {
       <div className="text-center py-12">
         <AlertCircle className="h-12 w-12 mx-auto text-error mb-4" />
         <h2 className="text-xl font-semibold">Xarid topilmadi</h2>
-        <button className="btn btn-primary mt-4" onClick={() => navigate('/purchases')}>
+        <Button variant="primary" className="mt-4" onClick={() => navigate('/purchases')}>
           Orqaga qaytish
-        </button>
+        </Button>
       </div>
     );
   }
@@ -304,12 +305,13 @@ export function PurchaseDetailPage() {
       {/* Header */}
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div className="flex items-center gap-4">
-          <button
-            className="btn btn-ghost btn-sm"
+          <Button
+            variant="ghost"
+            size="sm"
             onClick={() => navigate('/purchases')}
           >
             <ArrowLeft className="h-5 w-5" />
-          </button>
+          </Button>
           <div>
             <h1 className="section-title flex items-center gap-2">
               <Hash className="h-6 w-6" />
@@ -401,19 +403,19 @@ export function PurchaseDetailPage() {
       {/* Action Buttons */}
       <div className="flex flex-wrap gap-2">
         {purchase.debtAmount > 0 && (
-          <button className="btn btn-primary btn-sm" onClick={handleOpenPaymentModal}>
+          <Button variant="primary" size="sm" onClick={handleOpenPaymentModal}>
             <Plus className="h-4 w-4" />
             To'lov qo'shish
-          </button>
+          </Button>
         )}
-        <button className="btn btn-secondary btn-sm" onClick={handleOpenReturnModal}>
+        <Button variant="secondary" size="sm" onClick={handleOpenReturnModal}>
           <RotateCcw className="h-4 w-4" />
           Qaytarish yaratish
-        </button>
-        <button className="btn btn-ghost btn-sm">
+        </Button>
+        <Button variant="ghost" size="sm">
           <Printer className="h-4 w-4" />
           Chop etish
-        </button>
+        </Button>
       </div>
 
       {/* Tabs */}
@@ -530,10 +532,10 @@ export function PurchaseDetailPage() {
                 <CreditCard className="h-12 w-12 mx-auto mb-2 opacity-50" />
                 <p>To'lovlar mavjud emas</p>
                 {purchase.debtAmount > 0 && (
-                  <button className="btn btn-primary btn-sm mt-4" onClick={handleOpenPaymentModal}>
+                  <Button variant="primary" size="sm" className="mt-4" onClick={handleOpenPaymentModal}>
                     <Plus className="h-4 w-4" />
                     To'lov qo'shish
-                  </button>
+                  </Button>
                 )}
               </div>
             )}
@@ -613,30 +615,33 @@ export function PurchaseDetailPage() {
                     <div className="mt-4 flex justify-end gap-2">
                       {returnItem.status === 'PENDING' && (
                         <>
-                          <button
-                            className="btn btn-success btn-sm"
+                          <Button
+                            variant="success"
+                            size="sm"
                             onClick={() => handleApproveReturn(returnItem.id)}
                           >
                             <Check className="h-4 w-4" />
                             Tasdiqlash
-                          </button>
-                          <button
-                            className="btn btn-error btn-sm"
+                          </Button>
+                          <Button
+                            variant="danger"
+                            size="sm"
                             onClick={() => handleDeleteReturn(returnItem.id)}
                           >
                             <Trash2 className="h-4 w-4" />
                             O'chirish
-                          </button>
+                          </Button>
                         </>
                       )}
                       {returnItem.status === 'APPROVED' && (
-                        <button
-                          className="btn btn-primary btn-sm"
+                        <Button
+                          variant="primary"
+                          size="sm"
                           onClick={() => handleCompleteReturn(returnItem.id)}
                         >
                           <CheckCircle className="h-4 w-4" />
                           Yakunlash
-                        </button>
+                        </Button>
                       )}
                     </div>
                   </div>
@@ -646,10 +651,10 @@ export function PurchaseDetailPage() {
               <div className="text-center py-12 text-base-content/50">
                 <RotateCcw className="h-12 w-12 mx-auto mb-2 opacity-50" />
                 <p>Qaytarishlar mavjud emas</p>
-                <button className="btn btn-secondary btn-sm mt-4" onClick={handleOpenReturnModal}>
+                <Button variant="secondary" size="sm" className="mt-4" onClick={handleOpenReturnModal}>
                   <Plus className="h-4 w-4" />
                   Qaytarish yaratish
-                </button>
+                </Button>
               </div>
             )}
           </div>
@@ -677,9 +682,9 @@ export function PurchaseDetailPage() {
                   Qarz: {formatCurrency(purchase.debtAmount)}
                 </p>
               </div>
-              <button className="btn btn-ghost btn-sm" onClick={handleClosePaymentModal}>
+              <Button variant="ghost" size="sm" onClick={handleClosePaymentModal}>
                 <X className="h-4 w-4" />
-              </button>
+              </Button>
             </div>
 
             <div className="mt-6 space-y-4">
@@ -745,17 +750,17 @@ export function PurchaseDetailPage() {
             </div>
 
             <div className="mt-6 flex justify-end gap-2">
-              <button className="btn btn-ghost" onClick={handleClosePaymentModal} disabled={paymentSaving}>
+              <Button variant="ghost" onClick={handleClosePaymentModal} disabled={paymentSaving}>
                 Bekor qilish
-              </button>
-              <button
-                className="btn btn-primary"
+              </Button>
+              <Button
+                variant="primary"
                 onClick={handleSavePayment}
                 disabled={paymentSaving || paymentAmount <= 0}
               >
                 {paymentSaving && <span className="loading loading-spinner loading-sm" />}
                 Saqlash
-              </button>
+              </Button>
             </div>
           </div>
         </div>
@@ -772,9 +777,9 @@ export function PurchaseDetailPage() {
                   Mahsulotlarni ta'minotchiga qaytarish
                 </p>
               </div>
-              <button className="btn btn-ghost btn-sm" onClick={handleCloseReturnModal}>
+              <Button variant="ghost" size="sm" onClick={handleCloseReturnModal}>
                 <X className="h-4 w-4" />
-              </button>
+              </Button>
             </div>
 
             <div className="mt-6 space-y-4">
@@ -865,17 +870,17 @@ export function PurchaseDetailPage() {
             </div>
 
             <div className="mt-6 flex justify-end gap-2">
-              <button className="btn btn-ghost" onClick={handleCloseReturnModal} disabled={returnSaving}>
+              <Button variant="ghost" onClick={handleCloseReturnModal} disabled={returnSaving}>
                 Bekor qilish
-              </button>
-              <button
-                className="btn btn-primary"
+              </Button>
+              <Button
+                variant="primary"
                 onClick={handleSaveReturn}
                 disabled={returnSaving || selectedReturnItemsCount === 0 || !returnReason.trim()}
               >
                 {returnSaving && <span className="loading loading-spinner loading-sm" />}
                 Qaytarishni yaratish
-              </button>
+              </Button>
             </div>
           </div>
         </div>

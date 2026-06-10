@@ -15,6 +15,7 @@ import { PermissionCode } from '../../hooks/usePermission';
 import { PermissionGate } from '../../components/common/PermissionGate';
 import { useHighlight } from '../../hooks/useHighlight';
 import type { Product, Brand, Category, Season, ProductRequest } from '../../types';
+import { Button } from '@/ui';
 
 const emptyFormData: ProductRequest = {
   sku: '',
@@ -109,11 +110,11 @@ export function ProductsPage() {
       sortable: false,
       render: (product) => (
         <div className="space-x-2">
-          <button className="btn btn-ghost btn-sm" onClick={(e) => { e.stopPropagation(); setSelectedProduct(product); }}>
+          <Button variant="ghost" size="sm" onClick={(e) => { e.stopPropagation(); setSelectedProduct(product); }}>
             Tafsilotlar
-          </button>
+          </Button>
           <PermissionGate permission={PermissionCode.PRODUCTS_UPDATE}>
-            <button className="btn btn-ghost btn-sm" onClick={(e) => { e.stopPropagation(); handleEditProduct(product); }}>Tahrirlash</button>
+            <Button variant="ghost" size="sm" onClick={(e) => { e.stopPropagation(); handleEditProduct(product); }}>Tahrirlash</Button>
           </PermissionGate>
         </div>
       ),
@@ -266,10 +267,10 @@ export function ProductsPage() {
         </div>
         <div className="flex flex-wrap items-center gap-2">
           {activeFilters > 0 && (
-            <button className="btn btn-ghost btn-sm" onClick={handleResetFilters}>
+            <Button variant="ghost" size="sm" onClick={handleResetFilters}>
               <X className="h-4 w-4" />
               Filtrlarni tozalash
-            </button>
+            </Button>
           )}
           <ExportButtons
             onExportExcel={() => handleExport('excel')}
@@ -278,10 +279,10 @@ export function ProductsPage() {
             loading={refreshing}
           />
           <PermissionGate permission={PermissionCode.PRODUCTS_CREATE}>
-            <button className="btn btn-primary" onClick={handleOpenNewProductModal}>
+            <Button variant="primary" onClick={handleOpenNewProductModal}>
               <Plus className="h-5 w-5" />
               Yangi mahsulot
-            </button>
+            </Button>
           </PermissionGate>
         </div>
       </div>
@@ -385,11 +386,11 @@ export function ProductsPage() {
             <div className="flex items-center justify-between">
               <span className="text-sm font-semibold text-primary">{formatCurrency(product.sellingPrice)}</span>
               <div className="flex items-center gap-2">
-                <button className="btn btn-ghost btn-sm min-h-[44px]" onClick={() => setSelectedProduct(product)}>
+                <Button variant="ghost" size="sm" className="min-h-[44px]" onClick={() => setSelectedProduct(product)}>
                   Tafsilotlar
-                </button>
+                </Button>
                 <PermissionGate permission={PermissionCode.PRODUCTS_UPDATE}>
-                  <button className="btn btn-ghost btn-sm min-h-[44px]" onClick={() => handleEditProduct(product)}>Tahrirlash</button>
+                  <Button variant="ghost" size="sm" className="min-h-[44px]" onClick={() => handleEditProduct(product)}>Tahrirlash</Button>
                 </PermissionGate>
               </div>
             </div>
@@ -408,10 +409,10 @@ export function ProductsPage() {
                   <h3 className="text-xl font-semibold">{selectedProduct.name}</h3>
                   <p className="text-sm text-base-content/60">SKU: {selectedProduct.sku}</p>
                 </div>
-                <button className="btn btn-ghost btn-sm" onClick={() => setSelectedProduct(null)}>
+                <Button variant="ghost" size="sm" onClick={() => setSelectedProduct(null)}>
                   <X className="h-4 w-4" />
                   Yopish
-                </button>
+                </Button>
               </div>
 
               <div className="mt-6 grid gap-6 lg:grid-cols-[240px_1fr]">
@@ -487,9 +488,9 @@ export function ProductsPage() {
                 <h3 className="text-xl font-semibold">{editingProductId ? 'Mahsulotni tahrirlash' : 'Yangi mahsulot'}</h3>
                 <p className="text-sm text-base-content/60">{editingProductId ? 'Mahsulot ma\'lumotlarini yangilash' : 'Yangi shina qo\'shish'}</p>
               </div>
-              <button className="btn btn-ghost btn-sm" onClick={handleCloseNewProductModal}>
+              <Button variant="ghost" size="sm" onClick={handleCloseNewProductModal}>
                 <X className="h-4 w-4" />
-              </button>
+              </Button>
             </div>
 
             <div className="mt-6 space-y-4">
@@ -561,11 +562,11 @@ export function ProductsPage() {
             </div>
 
             <div className="mt-6 flex justify-end gap-2">
-              <button className="btn btn-ghost" onClick={handleCloseNewProductModal} disabled={saving}>Bekor qilish</button>
-              <button className="btn btn-primary" onClick={handleSaveProduct} disabled={saving || !formData.sku.trim() || !formData.name.trim() || formData.sellingPrice <= 0}>
+              <Button variant="ghost" onClick={handleCloseNewProductModal} disabled={saving}>Bekor qilish</Button>
+              <Button variant="primary" onClick={handleSaveProduct} disabled={saving || !formData.sku.trim() || !formData.name.trim() || formData.sellingPrice <= 0}>
                 {saving && <span className="loading loading-spinner loading-sm" />}
                 Saqlash
-              </button>
+              </Button>
             </div>
           </div>
         </div>

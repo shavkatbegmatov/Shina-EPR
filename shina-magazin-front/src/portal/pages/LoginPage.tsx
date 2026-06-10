@@ -9,6 +9,7 @@ import { useThemeStore } from '../../shared/theme/themeStore';
 import { PhoneInput } from '../../components/ui/PhoneInput';
 import { portalAuthApi } from '../api/portalAuth.api';
 import { usePortalAuthStore } from '../store/portalAuthStore';
+import { Button } from '@/ui';
 import type { CustomerLoginRequest } from '../types/portal.types';
 
 export default function PortalLoginPage() {
@@ -69,24 +70,26 @@ export default function PortalLoginPage() {
       {/* Top Controls */}
       <div className="absolute top-4 right-4 flex items-center gap-2">
         {/* Theme Toggle */}
-        <button
+        <Button
           type="button"
-          className="btn btn-ghost btn-circle text-primary-content"
+          variant="ghost"
+          className="btn-circle text-primary-content"
           onClick={toggleTheme}
         >
           {theme === 'dark' ? <Moon size={20} /> : <Sun size={20} />}
-        </button>
+        </Button>
         {/* Language Toggle */}
-        <button
+        <Button
           type="button"
-          className="btn btn-ghost btn-circle text-primary-content"
+          variant="ghost"
+          className="btn-circle text-primary-content"
           onClick={toggleLanguage}
         >
           <div className="flex items-center gap-1">
             <Globe size={20} />
             <span className="text-sm uppercase font-semibold">{language}</span>
           </div>
-        </button>
+        </Button>
       </div>
 
       {/* Logo/Brand */}
@@ -170,9 +173,10 @@ export default function PortalLoginPage() {
             </div>
 
             {/* Submit Button */}
-            <button
+            <Button
               type="submit"
-              className="btn btn-primary w-full mt-6"
+              variant="primary"
+              className="w-full mt-6"
               disabled={loading}
             >
               {loading ? (
@@ -183,7 +187,7 @@ export default function PortalLoginPage() {
                   {t('auth.loginButton')}
                 </>
               )}
-            </button>
+            </Button>
           </form>
         </div>
       </div>

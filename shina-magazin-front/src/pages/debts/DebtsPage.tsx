@@ -30,6 +30,7 @@ import { useNotificationsStore } from '../../store/notificationsStore';
 import { useHighlight } from '../../hooks/useHighlight';
 import { PermissionCode } from '../../hooks/usePermission';
 import { PermissionGate } from '../../components/common/PermissionGate';
+import { Button } from '@/ui';
 
 type TabType = 'all' | 'by-customer' | 'overdue' | 'stats';
 
@@ -145,9 +146,9 @@ export function DebtsPage() {
       header: '',
       sortable: false,
       render: () => (
-        <button className="btn btn-ghost btn-sm">
+        <Button variant="ghost" size="sm">
           Batafsil
-        </button>
+        </Button>
       ),
     },
   ], []);
@@ -416,12 +417,14 @@ export function DebtsPage() {
                 {selectedDebt.invoiceNumber || 'Fakturasiz qarz'}
               </p>
             </div>
-            <button
-              className="btn btn-ghost btn-sm btn-circle"
+            <Button
+              variant="ghost"
+              size="sm"
+              className="btn-circle"
               onClick={handleCloseDetail}
             >
               <X className="h-4 w-4" />
-            </button>
+            </Button>
           </div>
 
           <div className="grid grid-cols-2 gap-3">
@@ -457,22 +460,24 @@ export function DebtsPage() {
           {selectedDebt.status !== 'PAID' && (
             <div className="flex gap-2">
               <PermissionGate permission={PermissionCode.DEBTS_PAY}>
-                <button
-                  className="btn btn-primary flex-1"
+                <Button
+                  variant="primary"
+                  className="flex-1"
                   onClick={() => handleOpenPaymentModal(false)}
                 >
                   <Wallet className="h-4 w-4" />
                   Qisman to'lash
-                </button>
+                </Button>
               </PermissionGate>
               <PermissionGate permission={PermissionCode.DEBTS_PAY}>
-                <button
-                  className="btn btn-success flex-1"
+                <Button
+                  variant="success"
+                  className="flex-1"
                   onClick={() => handleOpenPaymentModal(true)}
                 >
                   <CheckCircle className="h-4 w-4" />
                   To'liq to'lash
-                </button>
+                </Button>
               </PermissionGate>
             </div>
           )}
@@ -1036,12 +1041,13 @@ export function DebtsPage() {
                     {selectedDebt.customerName} - Qoldiq: {formatCurrency(selectedDebt.remainingAmount)}
                   </p>
                 </div>
-                <button
-                  className="btn btn-ghost btn-sm"
+                <Button
+                  variant="ghost"
+                  size="sm"
                   onClick={handleClosePaymentModal}
                 >
                   <X className="h-4 w-4" />
-                </button>
+                </Button>
               </div>
 
               <div className="mt-6 space-y-4">
@@ -1063,20 +1069,18 @@ export function DebtsPage() {
                     {Object.entries(PAYMENT_METHODS)
                       .filter(([key]) => key !== 'MIXED')
                       .map(([key, { label }]) => (
-                        <button
+                        <Button
                           key={key}
                           type="button"
-                          className={clsx(
-                            'btn btn-sm',
-                            paymentMethod === key ? 'btn-primary' : 'btn-outline'
-                          )}
+                          size="sm"
+                          variant={paymentMethod === key ? 'primary' : 'outline'}
                           onClick={() => setPaymentMethod(key as PaymentMethod)}
                         >
                           {key === 'CASH' && <Banknote className="h-4 w-4" />}
                           {key === 'CARD' && <CreditCard className="h-4 w-4" />}
                           {key === 'TRANSFER' && <Building className="h-4 w-4" />}
                           {label}
-                        </button>
+                        </Button>
                       ))}
                   </div>
                 </label>
@@ -1096,21 +1100,21 @@ export function DebtsPage() {
               </div>
 
               <div className="mt-6 flex justify-end gap-2">
-                <button
-                  className="btn btn-ghost"
+                <Button
+                  variant="ghost"
                   onClick={handleClosePaymentModal}
                   disabled={submitting}
                 >
                   Bekor qilish
-                </button>
-                <button
-                  className="btn btn-primary"
+                </Button>
+                <Button
+                  variant="primary"
                   onClick={handleSubmitPayment}
                   disabled={submitting || (!isFullPayment && paymentAmount <= 0)}
                 >
                   {submitting && <span className="loading loading-spinner loading-sm" />}
                   {isFullPayment ? "To'liq to'lash" : "To'lash"}
-                </button>
+                </Button>
               </div>
             </div>
           </div>

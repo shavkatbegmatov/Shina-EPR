@@ -1,5 +1,6 @@
 import { RefreshCw, Check } from 'lucide-react';
 import clsx from 'clsx';
+import { Button } from '@/ui';
 
 interface RefreshButtonProps {
   onClick: () => void;
@@ -34,12 +35,10 @@ export function RefreshButton({
   className,
 }: RefreshButtonProps) {
   return (
-    <button
-      className={clsx(
-        'btn btn-sm gap-2 transition-all',
-        success ? 'btn-success' : 'btn-ghost',
-        className
-      )}
+    <Button
+      size="sm"
+      variant={success ? 'success' : 'ghost'}
+      className={clsx('gap-2 transition-all', className)}
       onClick={onClick}
       disabled={disabled || loading}
       title={success ? 'Yangilandi' : 'Yangilash'}
@@ -55,6 +54,6 @@ export function RefreshButton({
           {loading ? 'Yangilanmoqda...' : 'Yangilash'}
         </>
       )}
-    </button>
+    </Button>
   );
 }

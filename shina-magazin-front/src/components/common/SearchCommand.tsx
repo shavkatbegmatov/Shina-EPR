@@ -22,6 +22,7 @@ import {
   type LucideIcon,
 } from 'lucide-react';
 import clsx from 'clsx';
+import { Button } from '@/ui';
 import { productsApi } from '../../api/products.api';
 import { customersApi } from '../../api/customers.api';
 import { salesApi } from '../../api/sales.api';
@@ -401,13 +402,16 @@ export function SearchCommand() {
       </button>
 
       {/* Mobile trigger */}
-      <button
+      <Button
+        variant="ghost"
+        size="sm"
+        iconOnly
         onClick={() => setOpen(true)}
-        className="btn btn-ghost btn-sm btn-square md:hidden"
+        className="md:hidden"
         title="Qidirish"
       >
         <Search className="h-4 w-4" />
-      </button>
+      </Button>
 
       {/* Dropdown via Portal */}
       {open && createPortal(
@@ -444,12 +448,14 @@ export function SearchCommand() {
                   placeholder="Mahsulot, mijoz yoki sahifa qidiring..."
                   className="flex-1 bg-transparent py-3 text-base outline-none placeholder:text-base-content/40"
                 />
-                <button
+                <Button
+                  variant="ghost"
+                  size="sm"
                   onClick={() => setOpen(false)}
-                  className="btn btn-ghost btn-sm btn-circle"
+                  className="btn-circle"
                 >
                   <X className="h-4 w-4" />
-                </button>
+                </Button>
               </div>
 
               {/* Results */}

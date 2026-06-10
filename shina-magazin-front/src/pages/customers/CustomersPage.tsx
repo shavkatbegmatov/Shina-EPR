@@ -13,6 +13,7 @@ import { useNotificationsStore } from '../../store/notificationsStore';
 import { useHighlight } from '../../hooks/useHighlight';
 import { PermissionGate } from '../../components/common/PermissionGate';
 import { usePermission, PermissionCode } from '../../hooks/usePermission';
+import { Button } from '@/ui';
 import type { Customer, CustomerRequest, CustomerType } from '../../types';
 
 const emptyFormData: CustomerRequest = {
@@ -139,9 +140,9 @@ export function CustomersPage() {
       sortable: false,
       render: (customer) => (
         <PermissionGate permission={PermissionCode.CUSTOMERS_UPDATE}>
-          <button className="btn btn-ghost btn-sm" onClick={(e) => { e.stopPropagation(); handleOpenEditModal(customer); }}>
+          <Button variant="ghost" size="sm" onClick={(e) => { e.stopPropagation(); handleOpenEditModal(customer); }}>
             Tahrirlash
-          </button>
+          </Button>
         </PermissionGate>
       ),
     },
@@ -252,10 +253,10 @@ export function CustomersPage() {
         <div className="flex items-center gap-2">
           <span className="pill">{totalElements} ta mijoz</span>
           <PermissionGate permission={PermissionCode.CUSTOMERS_CREATE}>
-            <button className="btn btn-primary" onClick={handleOpenNewModal}>
+            <Button variant="primary" onClick={handleOpenNewModal}>
               <Plus className="h-5 w-5" />
               Yangi mijoz
-            </button>
+            </Button>
           </PermissionGate>
         </div>
       </div>
@@ -322,9 +323,9 @@ export function CustomersPage() {
             {customer.address && <p className="text-xs text-base-content/60">{customer.address}</p>}
             <div className="flex items-center justify-between">
               <span className="text-sm font-semibold">{formatCurrency(customer.balance)}</span>
-              <button className="btn btn-ghost btn-sm min-h-[44px]" onClick={() => handleOpenEditModal(customer)}>
+              <Button variant="ghost" size="sm" className="min-h-[44px]" onClick={() => handleOpenEditModal(customer)}>
                 Tahrirlash
-              </button>
+              </Button>
             </div>
           </div>
         )}
@@ -342,7 +343,7 @@ export function CustomersPage() {
                   {editingCustomer ? "Mijoz ma'lumotlarini o'zgartirish" : "Yangi mijoz qo'shish"}
                 </p>
               </div>
-              <button className="btn btn-ghost btn-sm" onClick={handleCloseModal}><X className="h-4 w-4" /></button>
+              <Button variant="ghost" size="sm" onClick={handleCloseModal}><X className="h-4 w-4" /></Button>
             </div>
 
             <div className="mt-6 space-y-4">
@@ -390,11 +391,10 @@ export function CustomersPage() {
             </div>
 
             <div className="mt-6 flex justify-end gap-2">
-              <button className="btn btn-ghost" onClick={handleCloseModal} disabled={saving}>Bekor qilish</button>
-              <button className="btn btn-primary" onClick={handleSaveCustomer} disabled={saving || !formData.fullName.trim() || !isValidPhone(formData.phone)}>
-                {saving && <span className="loading loading-spinner loading-sm" />}
+              <Button variant="ghost" onClick={handleCloseModal} disabled={saving}>Bekor qilish</Button>
+              <Button variant="primary" onClick={handleSaveCustomer} loading={saving} disabled={!formData.fullName.trim() || !isValidPhone(formData.phone)}>
                 {editingCustomer ? 'Yangilash' : 'Saqlash'}
-              </button>
+              </Button>
             </div>
           </div>
         </div>

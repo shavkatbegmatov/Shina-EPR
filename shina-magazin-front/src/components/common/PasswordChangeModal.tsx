@@ -12,6 +12,7 @@ import {
 } from 'lucide-react';
 import toast from 'react-hot-toast';
 import clsx from 'clsx';
+import { Button } from '@/ui';
 import { authApi } from '../../api/auth.api';
 import { useAuthStore } from '../../store/authStore';
 import { useNavigate } from 'react-router-dom';
@@ -130,14 +131,16 @@ export function PasswordChangeModal({ isOpen, onClose }: PasswordChangeModalProp
               </p>
             </div>
           </div>
-          <button
+          <Button
             type="button"
-            className="btn btn-ghost btn-sm btn-square"
+            variant="ghost"
+            size="sm"
+            iconOnly
             onClick={handleSkip}
             disabled={changingPassword}
           >
             <XCircle className="h-5 w-5" />
-          </button>
+          </Button>
         </div>
 
         {/* Form */}
@@ -271,9 +274,10 @@ export function PasswordChangeModal({ isOpen, onClose }: PasswordChangeModalProp
 
           {/* Actions */}
           <div className="flex gap-3 pt-4">
-            <button
+            <Button
               type="submit"
-              className="btn btn-primary flex-1"
+              variant="primary"
+              className="flex-1"
               disabled={changingPassword || passwordStrength < 3}
             >
               {changingPassword ? (
@@ -287,15 +291,15 @@ export function PasswordChangeModal({ isOpen, onClose }: PasswordChangeModalProp
                   Parolni o'zgartirish
                 </>
               )}
-            </button>
-            <button
+            </Button>
+            <Button
               type="button"
-              className="btn btn-ghost"
+              variant="ghost"
               onClick={handleSkip}
               disabled={changingPassword}
             >
               Keyinroq
-            </button>
+            </Button>
           </div>
 
           <p className="text-xs text-base-content/50">

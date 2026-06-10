@@ -1,6 +1,7 @@
 import { useState, useEffect, useMemo } from 'react';
 import { Copy, Check, Maximize2, Minimize2, Download } from 'lucide-react';
 import toast from 'react-hot-toast';
+import { Button } from '@/ui';
 
 interface JsonDiffViewerProps {
   oldValue: Record<string, unknown> | null;
@@ -138,9 +139,11 @@ function CopyButton({ text }: { text: string }) {
   };
 
   return (
-    <button
+    <Button
+      variant="ghost"
+      size="xs"
       onClick={handleCopy}
-      className="btn btn-ghost btn-xs gap-1 opacity-70 hover:opacity-100"
+      className="gap-1 opacity-70 hover:opacity-100"
       title="Nusxalash"
     >
       {copied ? (
@@ -148,7 +151,7 @@ function CopyButton({ text }: { text: string }) {
       ) : (
         <Copy className="h-3 w-3" />
       )}
-    </button>
+    </Button>
   );
 }
 
@@ -172,13 +175,15 @@ function DownloadButton({ json, filename }: { json: string; filename: string }) 
   };
 
   return (
-    <button
+    <Button
+      variant="ghost"
+      size="xs"
       onClick={handleDownload}
-      className="btn btn-ghost btn-xs opacity-70 hover:opacity-100"
+      className="opacity-70 hover:opacity-100"
       title="Yuklab olish"
     >
       <Download className="h-3 w-3" />
-    </button>
+    </Button>
   );
 }
 
@@ -236,9 +241,11 @@ function JsonPanel({
           {!isEmpty && <CopyButton text={json} />}
           {!isEmpty && <DownloadButton json={json} filename={filename} />}
           {!isEmpty && canExpand && (
-            <button
+            <Button
+              variant="ghost"
+              size="xs"
               onClick={onToggleExpand}
-              className="btn btn-ghost btn-xs opacity-70 hover:opacity-100"
+              className="opacity-70 hover:opacity-100"
               title={isExpanded ? 'Kichraytirish' : 'Kengaytirish'}
             >
               {isExpanded ? (
@@ -246,7 +253,7 @@ function JsonPanel({
               ) : (
                 <Maximize2 className="h-3 w-3" />
               )}
-            </button>
+            </Button>
           )}
         </div>
       </div>

@@ -21,6 +21,7 @@ import { useAuthStore } from '../../store/authStore';
 import { useUIStore } from '../../store/uiStore';
 import { PermissionCode } from '../../hooks/usePermission';
 import { Logo } from '../brand/Logo';
+import { Button } from '@/ui';
 import clsx from 'clsx';
 
 // Menu items with permission-based visibility
@@ -84,13 +85,15 @@ export function Sidebar() {
               </p>
             </div>
           </div>
-          <button
-            className="btn btn-ghost btn-sm relative lg:hidden"
+          <Button
+            variant="ghost"
+            size="sm"
+            className="relative lg:hidden"
             onClick={() => setSidebarOpen(false)}
             aria-label="Yopish"
           >
             <X className="h-5 w-5" />
-          </button>
+          </Button>
         </div>
 
         <nav className="flex-1 overflow-y-auto p-4 scrollbar-thin" aria-label="Asosiy navigatsiya">

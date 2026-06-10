@@ -1,4 +1,5 @@
 import { FileSpreadsheet, FileDown } from 'lucide-react';
+import { Button } from '@/ui';
 
 interface ExportButtonsProps {
   onExportExcel: () => void;
@@ -34,24 +35,28 @@ export function ExportButtons({
 
   return (
     <>
-      <button
-        className="btn btn-success btn-sm flex-1 sm:flex-none"
+      <Button
+        variant="success"
+        size="sm"
+        className="flex-1 sm:flex-none"
         onClick={onExportExcel}
         disabled={isDisabled}
         title="Excel formatida eksport"
       >
         <FileSpreadsheet className="h-4 w-4" />
         Excel
-      </button>
-      <button
-        className="btn btn-error btn-sm flex-1 sm:flex-none"
+      </Button>
+      <Button
+        variant="danger"
+        size="sm"
+        className="flex-1 sm:flex-none"
         onClick={onExportPdf}
         disabled={isDisabled}
         title="PDF formatida eksport"
       >
         <FileDown className="h-4 w-4" />
         PDF
-      </button>
+      </Button>
     </>
   );
 }
