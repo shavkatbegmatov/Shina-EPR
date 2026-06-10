@@ -22,6 +22,7 @@ import {
 } from 'lucide-react';
 import clsx from 'clsx';
 import toast from 'react-hot-toast';
+import { useTranslation } from 'react-i18next';
 import { employeesApi } from '../../api/employees.api';
 import { rolesApi } from '../../api/roles.api';
 import { formatCurrency, formatDate, EMPLOYEE_STATUSES, ROLES, getTashkentToday } from '../../config/constants';
@@ -67,6 +68,7 @@ const isValidPhone = (phone: string): boolean => {
 };
 
 export function EmployeesPage() {
+  const { t } = useTranslation();
   const [employees, setEmployees] = useState<Employee[]>([]);
   const [loadError, setLoadError] = useState<string | null>(null);
   const [initialLoading, setInitialLoading] = useState(true);
@@ -153,7 +155,7 @@ export function EmployeesPage() {
   const columns: Column<Employee>[] = useMemo(() => [
     {
       key: 'fullName',
-      header: 'Xodim',
+      header: t('erp.employees.colEmployee'),
       render: (employee) => (
         <div className="flex items-center gap-3">
           <div className="avatar placeholder">
@@ -170,7 +172,7 @@ export function EmployeesPage() {
     },
     {
       key: 'contact',
-      header: 'Aloqa',
+      header: t('erp.employees.colContact'),
       render: (employee) => (
         <div className="space-y-1">
           <div className="flex items-center gap-2">
@@ -188,7 +190,7 @@ export function EmployeesPage() {
     },
     {
       key: 'department',
-      header: "Bo'lim",
+      header: t('erp.employees.colDepartment'),
       render: (employee) => (
         <div className="flex items-center gap-2">
           <Briefcase className="h-4 w-4 text-base-content/50" />
@@ -198,7 +200,7 @@ export function EmployeesPage() {
     },
     {
       key: 'hireDate',
-      header: 'Ishga qabul',
+      header: t('erp.employees.colHireDate'),
       render: (employee) => (
         <div className="flex items-center gap-2">
           <Calendar className="h-4 w-4 text-base-content/50" />
@@ -208,7 +210,7 @@ export function EmployeesPage() {
     },
     {
       key: 'salary',
-      header: 'Maosh',
+      header: t('erp.employees.colSalary'),
       getValue: (employee) => employee.salary || 0,
       render: (employee) => (
         <span className="font-medium">
@@ -218,7 +220,7 @@ export function EmployeesPage() {
     },
     {
       key: 'status',
-      header: 'Status',
+      header: t('common.status'),
       render: (employee) => (
         <span className={clsx('badge badge-sm', EMPLOYEE_STATUSES[employee.status]?.color)}>
           {EMPLOYEE_STATUSES[employee.status]?.label}
@@ -227,7 +229,7 @@ export function EmployeesPage() {
     },
     {
       key: 'userAccount',
-      header: 'Tizim',
+      header: t('erp.employees.colSystem'),
       render: (employee) => (
         employee.hasUserAccount ? (
           <div className="flex items-center gap-2">
@@ -249,12 +251,12 @@ export function EmployeesPage() {
             className="btn btn-ghost btn-sm"
             onClick={(e) => { e.stopPropagation(); handleOpenEditModal(employee); }}
           >
-            Tahrirlash
+            {t('common.edit')}
           </button>
         </PermissionGate>
       ),
     },
-  ], []);
+  ], [t]);
 
   const loadEmployees = useCallback(async (isInitial = false) => {
     if (!isInitial) {
@@ -272,12 +274,12 @@ export function EmployeesPage() {
       setLoadError(null);
     } catch (error) {
       console.error('Failed to load employees:', error);
-      setLoadError("Xodimlar ro'yxatini yuklab bo'lmadi. Iltimos, qayta urinib ko'ring.");
+      setLoadError(t('erp.employees.loadError'));
     } finally {
       setInitialLoading(false);
       setRefreshing(false);
     }
-  }, [page, pageSize, search]);
+  }, [page, pageSize, search, t]);
 
   const loadStats = useCallback(async () => {
     try {
@@ -357,7 +359,7 @@ export function EmployeesPage() {
       : PermissionCode.EMPLOYEES_CREATE;
 
     if (!hasPermission(requiredPermission)) {
-      toast.error("Sizda bu amalni bajarish huquqi yo'q", {
+      toast.error(t('erp.employees.noPermission'), {
         icon: '🔒',
       });
       return;
@@ -381,10 +383,10 @@ export function EmployeesPage() {
       let result;
       if (editingEmployee) {
         result = await employeesApi.update(editingEmployee.id, dataToSend);
-        toast.success('Xodim muvaffaqiyatli yangilandi');
+        toast.success(t('erp.employees.updatedToast'));
       } else {
         result = await employeesApi.create(dataToSend);
-        toast.success('Yangi xodim muvaffaqiyatli qo\'shildi');
+        toast.success(t('erp.employees.createdToast'));
       }
 
       // Check if credentials were returned (new user created)
@@ -406,9 +408,9 @@ export function EmployeesPage() {
         // Check if it's a validation error with field-specific messages
         const validationErrors = err.response.data.data;
         const errorMessages = Object.values(validationErrors).join('\n');
-        toast.error(errorMessages || 'Validatsiya xatosi', { duration: 5000 });
+        toast.error(errorMessages || t('erp.employees.validationError'), { duration: 5000 });
       } else {
-        toast.error(err.response?.data?.message || 'Xodimni saqlashda xatolik yuz berdi');
+        toast.error(err.response?.data?.message || t('erp.employees.saveError'));
         console.error('Failed to save employee:', error);
       }
     } finally {
@@ -421,7 +423,7 @@ export function EmployeesPage() {
 
     // Check permission before opening the confirm dialog
     if (!hasPermission(PermissionCode.EMPLOYEES_DELETE)) {
-      toast.error("Sizda bu amalni bajarish huquqi yo'q", {
+      toast.error(t('erp.employees.noPermission'), {
         icon: '🔒',
       });
       return;
@@ -436,7 +438,7 @@ export function EmployeesPage() {
     setSaving(true);
     try {
       await employeesApi.delete(editingEmployee.id);
-      toast.success('Xodim muvaffaqiyatli o\'chirildi');
+      toast.success(t('erp.employees.deletedToast'));
       setConfirmDeleteOpen(false);
       handleCloseModal();
       void loadEmployees();
@@ -445,7 +447,7 @@ export function EmployeesPage() {
       const err = error as { response?: { status?: number; data?: { message?: string } } };
       // Skip toast for 403 errors (axios interceptor handles them)
       if (err.response?.status !== 403) {
-        toast.error(err.response?.data?.message || 'Xodimni o\'chirishda xatolik yuz berdi');
+        toast.error(err.response?.data?.message || t('erp.employees.deleteError'));
       }
       console.error('Failed to delete employee:', error);
     } finally {
@@ -459,7 +461,7 @@ export function EmployeesPage() {
 
     // Check permission before API call
     if (!hasPermission(PermissionCode.EMPLOYEES_CHANGE_ROLE)) {
-      toast.error("Sizda bu amalni bajarish huquqi yo'q", {
+      toast.error(t('erp.employees.noPermission'), {
         icon: '🔒',
       });
       return;
@@ -473,7 +475,7 @@ export function EmployeesPage() {
       // Use dedicated employee role change endpoint
       await employeesApi.changeRole(editingEmployee.id, selectedNewRoleCode);
 
-      toast.success(`Rol "${newRole?.name || selectedNewRoleCode}" ga o'zgartirildi`);
+      toast.success(t('erp.employees.roleChangedToast', { role: newRole?.name || selectedNewRoleCode }));
       setIsEditingRole(false);
       setSelectedNewRoleCode('');
       // Reload to get updated data
@@ -484,7 +486,7 @@ export function EmployeesPage() {
       const err = error as { response?: { status?: number; data?: { message?: string } } };
       // Skip toast for 403 errors (axios interceptor handles them)
       if (err.response?.status !== 403) {
-        toast.error(err.response?.data?.message || 'Rolni o\'zgartirishda xatolik yuz berdi');
+        toast.error(err.response?.data?.message || t('erp.employees.roleChangeError'));
       }
       console.error('Failed to change role:', error);
     } finally {
@@ -509,15 +511,15 @@ export function EmployeesPage() {
       {/* Header */}
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <h1 className="section-title">Xodimlar</h1>
-          <p className="section-subtitle">Xodimlar boshqaruvi</p>
+          <h1 className="section-title">{t('erp.employees.title')}</h1>
+          <p className="section-subtitle">{t('erp.employees.subtitle')}</p>
         </div>
         <div className="flex items-center gap-2">
-          <span className="pill">{totalElements} ta xodim</span>
+          <span className="pill">{t('erp.employees.employeeCount', { count: totalElements })}</span>
           <PermissionGate permission={PermissionCode.EMPLOYEES_CREATE}>
             <button className="btn btn-primary" onClick={handleOpenNewModal}>
               <Plus className="h-5 w-5" />
-              Yangi xodim
+              {t('erp.employees.addButton')}
             </button>
           </PermissionGate>
         </div>
@@ -531,7 +533,7 @@ export function EmployeesPage() {
               <Users className="h-5 w-5 text-primary" />
             </div>
             <div>
-              <p className="text-xs text-base-content/60">Jami xodimlar</p>
+              <p className="text-xs text-base-content/60">{t('erp.employees.statTotal')}</p>
               <p className="text-xl font-bold">{totalElements}</p>
             </div>
           </div>
@@ -543,7 +545,7 @@ export function EmployeesPage() {
               <UserCheck className="h-5 w-5 text-success" />
             </div>
             <div>
-              <p className="text-xs text-base-content/60">Faol</p>
+              <p className="text-xs text-base-content/60">{t('erp.employees.statActive')}</p>
               <p className="text-xl font-bold text-success">{activeCount}</p>
             </div>
           </div>
@@ -555,7 +557,7 @@ export function EmployeesPage() {
               <Clock className="h-5 w-5 text-warning" />
             </div>
             <div>
-              <p className="text-xs text-base-content/60">Ta'tilda</p>
+              <p className="text-xs text-base-content/60">{t('erp.employees.statOnLeave')}</p>
               <p className="text-xl font-bold text-warning">{onLeaveCount}</p>
             </div>
           </div>
@@ -567,7 +569,7 @@ export function EmployeesPage() {
               <Shield className="h-5 w-5 text-info" />
             </div>
             <div>
-              <p className="text-xs text-base-content/60">Tizim foydalanuvchilari</p>
+              <p className="text-xs text-base-content/60">{t('erp.employees.statSystemUsers')}</p>
               <p className="text-xl font-bold text-info">
                 {employees.filter(e => e.hasUserAccount).length}
               </p>
@@ -581,10 +583,10 @@ export function EmployeesPage() {
         <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
           <div>
             <h2 className="text-sm font-semibold uppercase tracking-[0.2em] text-base-content/50">
-              Qidiruv
+              {t('erp.employees.searchHeading')}
             </h2>
             <p className="text-xs text-base-content/60">
-              {hasSearch ? "Qidiruv natijalari ko'rsatilmoqda" : 'Barcha xodimlar'}
+              {hasSearch ? t('erp.employees.searchResults') : t('erp.employees.allEmployees')}
             </p>
           </div>
         </div>
@@ -594,8 +596,8 @@ export function EmployeesPage() {
             setSearch(value);
             setPage(0);
           }}
-          label="Ism, telefon yoki lavozim"
-          placeholder="Qidirish..."
+          label={t('erp.employees.searchLabel')}
+          placeholder={t('common.search')}
           className="mt-4 max-w-md"
         />
       </div>
@@ -606,7 +608,7 @@ export function EmployeesPage() {
           <div className="absolute inset-0 z-10 flex items-center justify-center rounded-xl bg-base-100/60 backdrop-blur-sm">
             <div className="flex flex-col items-center gap-3">
               <span className="loading loading-spinner loading-lg text-primary"></span>
-              <span className="text-sm font-medium text-base-content/70">Yangilanmoqda...</span>
+              <span className="text-sm font-medium text-base-content/70">{t('erp.employees.refreshing')}</span>
             </div>
           </div>
         )}
@@ -620,8 +622,8 @@ export function EmployeesPage() {
           highlightId={highlightId}
           onHighlightComplete={clearHighlight}
           emptyIcon={<UserCog className="h-12 w-12" />}
-          emptyTitle="Xodimlar topilmadi"
-          emptyDescription="Yangi xodim qo'shish uchun tugmani bosing"
+          emptyTitle={t('erp.employees.emptyTitle')}
+          emptyDescription={t('erp.employees.emptyDescription')}
           rowClassName={(employee) => (employee.status === 'ON_LEAVE' ? 'bg-warning/5' : '')}
           currentPage={page}
           totalPages={totalPages}
@@ -669,7 +671,7 @@ export function EmployeesPage() {
                   className="btn btn-ghost btn-sm min-h-[44px]"
                   onClick={() => handleOpenEditModal(employee)}
                 >
-                  Tahrirlash
+                  {t('common.edit')}
                 </button>
               </div>
             </div>
@@ -695,10 +697,10 @@ export function EmployeesPage() {
               <div className="flex items-start justify-between gap-4">
                 <div>
                   <h3 className="text-xl font-semibold">
-                    {editingEmployee ? 'Xodimni tahrirlash' : 'Yangi xodim'}
+                    {editingEmployee ? t('erp.employees.editTitle') : t('erp.employees.newTitle')}
                   </h3>
                   <p className="text-sm text-base-content/60">
-                    {editingEmployee ? "Xodim ma'lumotlarini o'zgartirish" : "Yangi xodim qo'shish"}
+                    {editingEmployee ? t('erp.employees.editSubtitle') : t('erp.employees.newSubtitle')}
                   </p>
                 </div>
                 <button className="btn btn-ghost btn-sm" onClick={handleCloseModal}>
@@ -717,12 +719,12 @@ export function EmployeesPage() {
                 {modalTab === 'extended' ? (
                   <>
                     <X className="h-4 w-4" />
-                    Qo'shimcha yopish
+                    {t('erp.employees.closeExtra')}
                   </>
                 ) : (
                   <>
                     <Plus className="h-4 w-4" />
-                    Qo'shimcha ma'lumotlar
+                    {t('erp.employees.extraInfo')}
                   </>
                 )}
               </button>
@@ -733,30 +735,30 @@ export function EmployeesPage() {
                   <div className="surface-soft rounded-xl p-4">
                     <h4 className="text-sm font-semibold uppercase tracking-[0.15em] text-base-content/60 mb-4 flex items-center gap-2">
                       <UserCog className="h-4 w-4" />
-                      Shaxsiy ma'lumotlar
+                      {t('erp.employees.personalInfo')}
                     </h4>
                     <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                       <label className="form-control sm:col-span-2">
                         <span className="label-text mb-1 text-xs font-semibold uppercase tracking-[0.18em] text-base-content/50">
-                          To'liq ism *
+                          {t('erp.employees.fullNameLabel')}
                         </span>
                         <input
                           type="text"
                           className="input input-bordered w-full"
                           value={formData.fullName}
                           onChange={(e) => handleFormChange('fullName', e.target.value)}
-                          placeholder="Ism Familiya"
+                          placeholder={t('erp.employees.fullNamePlaceholder')}
                         />
                       </label>
                       <PhoneInput
-                        label="Telefon"
+                        label={t('erp.employees.phoneLabel')}
                         value={formData.phone}
                         onChange={(value) => handleFormChange('phone', value)}
                         required
                       />
                       <label className="form-control">
                         <span className="label-text mb-1 text-xs font-semibold uppercase tracking-[0.18em] text-base-content/50">
-                          Email
+                          {t('erp.employees.emailLabel')}
                         </span>
                         <input
                           type="email"
@@ -773,36 +775,36 @@ export function EmployeesPage() {
                   <div className="surface-soft rounded-xl p-4">
                     <h4 className="text-sm font-semibold uppercase tracking-[0.15em] text-base-content/60 mb-4 flex items-center gap-2">
                       <Briefcase className="h-4 w-4" />
-                      Ish ma'lumotlari
+                      {t('erp.employees.workInfo')}
                     </h4>
                     <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                       <label className="form-control">
                         <span className="label-text mb-1 text-xs font-semibold uppercase tracking-[0.18em] text-base-content/50">
-                          Lavozim *
+                          {t('erp.employees.positionLabel')}
                         </span>
                         <input
                           type="text"
                           className="input input-bordered w-full"
                           value={formData.position}
                           onChange={(e) => handleFormChange('position', e.target.value)}
-                          placeholder="Sotuvchi, Kassir..."
+                          placeholder={t('erp.employees.positionPlaceholder')}
                         />
                       </label>
                       <label className="form-control">
                         <span className="label-text mb-1 text-xs font-semibold uppercase tracking-[0.18em] text-base-content/50">
-                          Bo'lim
+                          {t('erp.employees.departmentLabel')}
                         </span>
                         <input
                           type="text"
                           className="input input-bordered w-full"
                           value={formData.department}
                           onChange={(e) => handleFormChange('department', e.target.value)}
-                          placeholder="Savdo, Ombor..."
+                          placeholder={t('erp.employees.departmentPlaceholder')}
                         />
                       </label>
                       <label className="form-control">
                         <span className="label-text mb-1 text-xs font-semibold uppercase tracking-[0.18em] text-base-content/50">
-                          Ishga qabul sanasi *
+                          {t('erp.employees.hireDateLabel')}
                         </span>
                         <input
                           type="date"
@@ -813,7 +815,7 @@ export function EmployeesPage() {
                       </label>
                       <label className="form-control">
                         <span className="label-text mb-1 text-xs font-semibold uppercase tracking-[0.18em] text-base-content/50">
-                          Maosh
+                          {t('erp.employees.salaryLabel')}
                         </span>
                         <CurrencyInput
                           value={formData.salary || 0}
@@ -822,7 +824,7 @@ export function EmployeesPage() {
                         />
                       </label>
                       <Select
-                        label="Status"
+                        label={t('common.status')}
                         value={formData.status || 'ACTIVE'}
                         onChange={(value) => handleFormChange('status', value as EmployeeStatus)}
                         options={Object.entries(EMPLOYEE_STATUSES).map(([key, { label }]) => ({
@@ -839,7 +841,7 @@ export function EmployeesPage() {
                       <div className="p-1.5 rounded-lg bg-primary/10">
                         <Shield className="h-4 w-4" />
                       </div>
-                      Tizim kirish huquqi
+                      {t('erp.employees.systemAccess')}
                     </h4>
 
                     {/* Show existing user if already linked */}
@@ -851,9 +853,9 @@ export function EmployeesPage() {
                             <UserCheck className="h-5 w-5" />
                           </div>
                           <div className="flex-1 min-w-0">
-                            <p className="font-semibold text-success">Akkount faol</p>
+                            <p className="font-semibold text-success">{t('erp.employees.accountActive')}</p>
                             <p className="text-sm text-success/70">
-                              Login: <code className="font-mono">{editingEmployee.username}</code>
+                              {t('erp.employees.loginLabel')} <code className="font-mono">{editingEmployee.username}</code>
                             </p>
                           </div>
                         </div>
@@ -863,7 +865,7 @@ export function EmployeesPage() {
                           <div className="flex items-center justify-between mb-3">
                             <div className="flex items-center gap-2">
                               <Key className="h-4 w-4 text-base-content/50" />
-                              <span className="text-sm font-semibold text-base-content/70">Foydalanuvchi roli</span>
+                              <span className="text-sm font-semibold text-base-content/70">{t('erp.employees.userRoleLabel')}</span>
                             </div>
                             {!isEditingRole && (
                               <PermissionGate permission={PermissionCode.EMPLOYEES_CHANGE_ROLE}>
@@ -873,7 +875,7 @@ export function EmployeesPage() {
                                   onClick={handleStartRoleEdit}
                                 >
                                   <Edit3 className="h-3.5 w-3.5" />
-                                  O'zgartirish
+                                  {t('erp.employees.changeButton')}
                                 </button>
                               </PermissionGate>
                             )}
@@ -885,11 +887,11 @@ export function EmployeesPage() {
                                 label=""
                                 value={selectedNewRoleCode}
                                 onChange={(value) => setSelectedNewRoleCode(value as string)}
-                                placeholder="Yangi rol tanlang..."
+                                placeholder={t('erp.employees.selectNewRolePlaceholder')}
                                 options={roles.map((role) => ({
                                   value: role.code,
                                   label: role.name,
-                                  description: role.description || `${role.permissionCount || 0} ta huquq`,
+                                  description: role.description || t('erp.employees.permissionCount', { count: role.permissionCount || 0 }),
                                 }))}
                               />
 
@@ -898,7 +900,7 @@ export function EmployeesPage() {
                                 <div className="flex items-center gap-2 p-2 rounded-lg bg-warning/10 border border-warning/20 text-sm">
                                   <AlertCircle className="h-4 w-4 text-warning shrink-0" />
                                   <span className="text-warning">
-                                    Rol o'zgartirilganda foydalanuvchi huquqlari yangilanadi
+                                    {t('erp.employees.roleChangeWarning')}
                                   </span>
                                 </div>
                               )}
@@ -910,7 +912,7 @@ export function EmployeesPage() {
                                   onClick={handleCancelRoleEdit}
                                   disabled={changingRole}
                                 >
-                                  Bekor qilish
+                                  {t('common.cancel')}
                                 </button>
                                 <PermissionGate permission={PermissionCode.EMPLOYEES_CHANGE_ROLE}>
                                   <button
@@ -924,7 +926,7 @@ export function EmployeesPage() {
                                     ) : (
                                       <Check className="h-4 w-4" />
                                     )}
-                                  Saqlash
+                                  {t('common.save')}
                                 </button>
                                 </PermissionGate>
                               </div>
@@ -937,12 +939,12 @@ export function EmployeesPage() {
                                   {roles.find(r => r.code === editingEmployee.userRole)?.name ||
                                    ROLES[editingEmployee.userRole as keyof typeof ROLES]?.label ||
                                    editingEmployee.userRole ||
-                                   'Noma\'lum rol'}
+                                   t('erp.employees.unknownRole')}
                                 </span>
                               </div>
                               {roles.find(r => r.code === editingEmployee.userRole)?.permissionCount !== undefined && (
                                 <span className="text-sm text-base-content/50">
-                                  {roles.find(r => r.code === editingEmployee.userRole)?.permissionCount} ta huquq
+                                  {t('erp.employees.permissionCount', { count: roles.find(r => r.code === editingEmployee.userRole)?.permissionCount ?? 0 })}
                                 </span>
                               )}
                             </div>
@@ -975,10 +977,10 @@ export function EmployeesPage() {
                           <div className="flex-1">
                             <div className="flex items-center gap-2">
                               <UserX className="h-4 w-4 text-base-content/50" />
-                              <p className="font-medium text-base-content">Tizimga kirish kerak emas</p>
+                              <p className="font-medium text-base-content">{t('erp.employees.accessNoneTitle')}</p>
                             </div>
                             <p className="text-sm text-base-content/50 mt-1">
-                              Xodim faqat HR ma'lumotlar bazasida saqlanadi
+                              {t('erp.employees.accessNoneDesc')}
                             </p>
                           </div>
                         </label>
@@ -1006,10 +1008,10 @@ export function EmployeesPage() {
                           <div className="flex-1">
                             <div className="flex items-center gap-2">
                               <UserPlus className="h-4 w-4 text-primary" />
-                              <p className="font-medium text-base-content">Yangi akkount yaratish</p>
+                              <p className="font-medium text-base-content">{t('erp.employees.accessCreateTitle')}</p>
                             </div>
                             <p className="text-sm text-base-content/50 mt-1">
-                              Avtomatik login va vaqtinchalik parol generatsiya qilinadi
+                              {t('erp.employees.accessCreateDesc')}
                             </p>
                           </div>
                         </label>
@@ -1018,10 +1020,10 @@ export function EmployeesPage() {
                         {accessType === 'create' && (
                           <div className="ml-7 pl-4 border-l-2 border-primary/30">
                             <Select
-                              label="Tizim roli"
+                              label={t('erp.employees.systemRoleLabel')}
                               value={formData.roleCode || ''}
                               onChange={(value) => handleFormChange('roleCode', value as string)}
-                              placeholder="Rol tanlang..."
+                              placeholder={t('erp.employees.selectRolePlaceholder')}
                               options={roles.map((role) => ({
                                 value: role.code,
                                 label: role.name,
@@ -1055,10 +1057,10 @@ export function EmployeesPage() {
                               <div className="flex-1">
                                 <div className="flex items-center gap-2">
                                   <Link2 className="h-4 w-4 text-secondary" />
-                                  <p className="font-medium text-base-content">Mavjud akkountni bog'lash</p>
+                                  <p className="font-medium text-base-content">{t('erp.employees.accessLinkTitle')}</p>
                                 </div>
                                 <p className="text-sm text-base-content/50 mt-1">
-                                  {availableUsers.length} ta bo'sh akkount mavjud
+                                  {t('erp.employees.accessLinkDesc', { count: availableUsers.length })}
                                 </p>
                               </div>
                             </label>
@@ -1067,10 +1069,10 @@ export function EmployeesPage() {
                             {accessType === 'link' && (
                               <div className="ml-7 pl-4 border-l-2 border-secondary/30">
                                 <Select
-                                  label="Foydalanuvchi"
+                                  label={t('erp.employees.userSelectLabel')}
                                   value={formData.userId || ''}
                                   onChange={(value) => handleFormChange('userId', value ? Number(value) : undefined)}
-                                  placeholder="Akkount tanlang..."
+                                  placeholder={t('erp.employees.selectAccountPlaceholder')}
                                   options={availableUsers.map(user => ({
                                     value: user.id,
                                     label: user.fullName || user.username,
@@ -1096,14 +1098,14 @@ export function EmployeesPage() {
                         disabled={saving}
                       >
                         <UserX className="h-4 w-4" />
-                        O'chirish
+                        {t('common.delete')}
                       </button>
                     </PermissionGate>
                   )}
                 </div>
                 <div className="flex gap-2">
                   <button className="btn btn-ghost" onClick={handleCloseModal} disabled={saving}>
-                    Bekor qilish
+                    {t('common.cancel')}
                   </button>
                   <button
                     className="btn btn-primary"
@@ -1111,7 +1113,7 @@ export function EmployeesPage() {
                     disabled={saving || !formData.fullName.trim() || !isValidPhone(formData.phone) || !formData.position.trim()}
                   >
                     {saving && <span className="loading loading-spinner loading-sm" />}
-                    {editingEmployee ? 'Yangilash' : 'Saqlash'}
+                    {editingEmployee ? t('common.update') : t('common.save')}
                   </button>
                 </div>
               </div>
@@ -1130,7 +1132,7 @@ export function EmployeesPage() {
             {modalTab === 'extended' && (
               <div className="p-4 sm:p-6 min-w-[380px]">
                 <div className="flex items-center justify-between mb-6">
-                  <h4 className="text-lg font-semibold">Qo'shimcha</h4>
+                  <h4 className="text-lg font-semibold">{t('erp.employees.extraTitle')}</h4>
                   <button
                     className="btn btn-ghost btn-sm btn-circle"
                     onClick={() => setModalTab('basic')}
@@ -1144,12 +1146,12 @@ export function EmployeesPage() {
                   <div className="surface-soft rounded-xl p-4">
                     <h4 className="text-sm font-semibold uppercase tracking-[0.15em] text-base-content/60 mb-4 flex items-center gap-2">
                       <CreditCard className="h-4 w-4" />
-                      Shaxsiy hujjatlar
+                      {t('erp.employees.personalDocs')}
                     </h4>
                     <div className="grid grid-cols-1 gap-4">
                       <label className="form-control">
                         <span className="label-text mb-1 text-xs font-semibold uppercase tracking-[0.18em] text-base-content/50">
-                          Tug'ilgan sana
+                          {t('erp.employees.birthDateLabel')}
                         </span>
                         <input
                           type="date"
@@ -1160,7 +1162,7 @@ export function EmployeesPage() {
                       </label>
                       <label className="form-control">
                         <span className="label-text mb-1 text-xs font-semibold uppercase tracking-[0.18em] text-base-content/50">
-                          Pasport raqami
+                          {t('erp.employees.passportLabel')}
                         </span>
                         <input
                           type="text"
@@ -1172,19 +1174,19 @@ export function EmployeesPage() {
                       </label>
                       <label className="form-control">
                         <span className="label-text mb-1 text-xs font-semibold uppercase tracking-[0.18em] text-base-content/50">
-                          Manzil
+                          {t('erp.employees.addressLabel')}
                         </span>
                         <input
                           type="text"
                           className="input input-bordered w-full"
                           value={formData.address}
                           onChange={(e) => handleFormChange('address', e.target.value)}
-                          placeholder="Shahar, tuman, ko'cha..."
+                          placeholder={t('erp.employees.addressPlaceholder')}
                         />
                       </label>
                       <label className="form-control">
                         <span className="label-text mb-1 text-xs font-semibold uppercase tracking-[0.18em] text-base-content/50">
-                          Bank hisob raqami
+                          {t('erp.employees.bankAccountLabel')}
                         </span>
                         <input
                           type="text"
@@ -1201,23 +1203,23 @@ export function EmployeesPage() {
                   <div className="surface-soft rounded-xl p-4">
                     <h4 className="text-sm font-semibold uppercase tracking-[0.15em] text-base-content/60 mb-4 flex items-center gap-2">
                       <AlertCircle className="h-4 w-4" />
-                      Favqulodda aloqa
+                      {t('erp.employees.emergencyContact')}
                     </h4>
                     <div className="grid grid-cols-1 gap-4">
                       <label className="form-control">
                         <span className="label-text mb-1 text-xs font-semibold uppercase tracking-[0.18em] text-base-content/50">
-                          Ism
+                          {t('common.name')}
                         </span>
                         <input
                           type="text"
                           className="input input-bordered w-full"
                           value={formData.emergencyContactName}
                           onChange={(e) => handleFormChange('emergencyContactName', e.target.value)}
-                          placeholder="Yaqin qarindosh ismi"
+                          placeholder={t('erp.employees.emergencyNamePlaceholder')}
                         />
                       </label>
                       <PhoneInput
-                        label="Telefon"
+                        label={t('erp.employees.phoneLabel')}
                         value={formData.emergencyContactPhone || ''}
                         onChange={(value) => handleFormChange('emergencyContactPhone', value)}
                       />
@@ -1234,9 +1236,9 @@ export function EmployeesPage() {
         open={confirmDeleteOpen}
         onClose={() => setConfirmDeleteOpen(false)}
         onConfirm={confirmDeleteEmployee}
-        title="Xodimni o'chirish"
-        description={`"${editingEmployee?.fullName ?? ''}" xodimini o'chirmoqchimisiz? Bu amalni qaytarib bo'lmaydi.`}
-        confirmText="O'chirish"
+        title={t('erp.employees.deleteTitle')}
+        description={t('erp.employees.deleteConfirm', { name: editingEmployee?.fullName ?? '' })}
+        confirmText={t('common.delete')}
         danger
         loading={saving}
       />

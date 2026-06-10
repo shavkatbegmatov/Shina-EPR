@@ -13,6 +13,7 @@ import {
   Eye,
 } from 'lucide-react';
 import toast from 'react-hot-toast';
+import { useTranslation } from 'react-i18next';
 import { rolesApi, permissionsApi } from '../../api/roles.api';
 import { ModalPortal } from '../../components/common/Modal';
 import { ExportButtons } from '../../components/common/ExportButtons';
@@ -22,6 +23,7 @@ import { Button } from '@/ui';
 import type { Role, RoleRequest } from '../../types';
 
 export function RolesPage() {
+  const { t } = useTranslation();
   const { hasPermission } = usePermission();
   const [search, setSearch] = useState('');
   const [showModal, setShowModal] = useState(false);
@@ -59,13 +61,13 @@ export function RolesPage() {
     mutationFn: rolesApi.create,
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['roles'] });
-      toast.success('Rol yaratildi');
+      toast.success(t('erp.roles.createdToast'));
       closeModal();
     },
     onError: (error: { response?: { status?: number; data?: { message?: string } } }) => {
       // Skip toast for 403 errors (axios interceptor handles them)
       if (error.response?.status !== 403) {
-        toast.error(error.response?.data?.message || 'Xato yuz berdi');
+        toast.error(error.response?.data?.message || t('erp.roles.errorToast'));
       }
     },
   });
@@ -76,13 +78,13 @@ export function RolesPage() {
       rolesApi.update(id, data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['roles'] });
-      toast.success('Rol yangilandi');
+      toast.success(t('erp.roles.updatedToast'));
       closeModal();
     },
     onError: (error: { response?: { status?: number; data?: { message?: string } } }) => {
       // Skip toast for 403 errors (axios interceptor handles them)
       if (error.response?.status !== 403) {
-        toast.error(error.response?.data?.message || 'Xato yuz berdi');
+        toast.error(error.response?.data?.message || t('erp.roles.errorToast'));
       }
     },
   });
@@ -92,12 +94,12 @@ export function RolesPage() {
     mutationFn: rolesApi.delete,
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['roles'] });
-      toast.success("Rol o'chirildi");
+      toast.success(t('erp.roles.deletedToast'));
     },
     onError: (error: { response?: { status?: number; data?: { message?: string } } }) => {
       // Skip toast for 403 errors (axios interceptor handles them)
       if (error.response?.status !== 403) {
-        toast.error(error.response?.data?.message || 'Xato yuz berdi');
+        toast.error(error.response?.data?.message || t('erp.roles.errorToast'));
       }
     },
   });
@@ -156,7 +158,7 @@ export function RolesPage() {
       : PermissionCode.ROLES_CREATE;
 
     if (!hasPermission(requiredPermission)) {
-      toast.error("Sizda bu amalni bajarish huquqi yo'q", {
+      toast.error(t('erp.roles.noPermissionToast'), {
         icon: '🔒',
       });
       return;
@@ -176,19 +178,19 @@ export function RolesPage() {
 
   const handleDelete = (role: Role) => {
     if (role.isSystem) {
-      toast.error("Tizim rollarini o'chirish mumkin emas");
+      toast.error(t('erp.roles.systemRoleDeleteError'));
       return;
     }
 
     // Check permission before API call
     if (!hasPermission(PermissionCode.ROLES_DELETE)) {
-      toast.error("Sizda bu amalni bajarish huquqi yo'q", {
+      toast.error(t('erp.roles.noPermissionToast'), {
         icon: '🔒',
       });
       return;
     }
 
-    if (confirm(`"${role.name}" rolini o'chirishni tasdiqlaysizmi?`)) {
+    if (confirm(t('erp.roles.deleteConfirm', { name: role.name }))) {
       deleteMutation.mutate(role.id);
     }
   };
@@ -248,9 +250,9 @@ export function RolesPage() {
       {/* Header */}
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <h1 className="text-2xl font-bold">Rollar boshqaruvi</h1>
+          <h1 className="text-2xl font-bold">{t('erp.roles.title')}</h1>
           <p className="text-sm text-base-content/60">
-            Foydalanuvchi rollari va huquqlarini boshqarish
+            {t('erp.roles.subtitle')}
           </p>
         </div>
         <div className="flex flex-wrap items-center gap-2">
@@ -263,7 +265,7 @@ export function RolesPage() {
           <PermissionGate permission={PermissionCode.ROLES_CREATE}>
             <Button variant="primary" onClick={() => openModal()}>
               <Plus className="h-5 w-5" />
-              Yangi rol
+              {t('erp.roles.addButton')}
             </Button>
           </PermissionGate>
         </div>
@@ -274,7 +276,7 @@ export function RolesPage() {
         <Search className="absolute left-3 top-1/2 h-5 w-5 -translate-y-1/2 text-base-content/40" />
         <input
           type="text"
-          placeholder="Rol nomi yoki kodi..."
+          placeholder={t('erp.roles.searchPlaceholder')}
           className="input input-bordered w-full pl-10"
           value={search}
           onChange={(e) => setSearch(e.target.value)}
@@ -307,7 +309,7 @@ export function RolesPage() {
                     </div>
                   </div>
                   {role.isSystem && (
-                    <span className="badge badge-primary badge-sm">Tizim</span>
+                    <span className="badge badge-primary badge-sm">{t('erp.roles.systemBadge')}</span>
                   )}
                 </div>
 
@@ -320,11 +322,11 @@ export function RolesPage() {
                 <div className="mt-3 flex gap-4 text-sm text-base-content/60">
                   <div className="flex items-center gap-1">
                     <Key className="h-4 w-4" />
-                    <span>{role.permissionCount || 0} huquq</span>
+                    <span>{t('erp.roles.permissionCount', { count: role.permissionCount || 0 })}</span>
                   </div>
                   <div className="flex items-center gap-1">
                     <Users className="h-4 w-4" />
-                    <span>{role.userCount || 0} foydalanuvchi</span>
+                    <span>{t('erp.roles.userCount', { count: role.userCount || 0 })}</span>
                   </div>
                 </div>
 
@@ -334,7 +336,7 @@ export function RolesPage() {
                       variant="ghost"
                       size="sm"
                       onClick={() => openViewModal(role)}
-                      title="Ko'rish"
+                      title={t('common.view')}
                     >
                       <Eye className="h-4 w-4" />
                     </Button>
@@ -377,10 +379,10 @@ export function RolesPage() {
             <div className="flex items-start justify-between gap-4">
               <div>
                 <h3 className="text-xl font-semibold">
-                  {selectedRole ? 'Rolni tahrirlash' : 'Yangi rol yaratish'}
+                  {selectedRole ? t('erp.roles.editTitle') : t('erp.roles.createTitle')}
                 </h3>
                 <p className="text-sm text-base-content/60">
-                  {selectedRole ? "Rol ma'lumotlari va huquqlarini o'zgartirish" : "Yangi rol va huquqlarni belgilash"}
+                  {selectedRole ? t('erp.roles.editSubtitle') : t('erp.roles.createSubtitle')}
                 </p>
               </div>
               <Button variant="ghost" size="sm" onClick={closeModal}>
@@ -393,53 +395,53 @@ export function RolesPage() {
               {selectedRole?.isSystem && (
                 <div className="alert alert-warning">
                   <Lock className="h-4 w-4" />
-                  <span>Bu tizim roli. Faqat huquqlarni o'zgartirish mumkin.</span>
+                  <span>{t('erp.roles.systemRoleEditWarning')}</span>
                 </div>
               )}
 
               <div className="grid gap-4 sm:grid-cols-2">
                 <label className="form-control">
-                  <span className="label-text">Rol nomi *</span>
+                  <span className="label-text">{t('erp.roles.nameLabel')}</span>
                   <input
                     type="text"
                     className="input input-bordered"
                     value={formData.name}
                     onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                    placeholder="Masalan: Katta sotuvchi"
+                    placeholder={t('erp.roles.namePlaceholder')}
                     disabled={selectedRole?.isSystem}
                   />
                 </label>
                 <label className="form-control">
-                  <span className="label-text">Rol kodi *</span>
+                  <span className="label-text">{t('erp.roles.codeLabel')}</span>
                   <input
                     type="text"
                     className="input input-bordered uppercase"
                     value={formData.code}
                     onChange={(e) => setFormData({ ...formData, code: e.target.value.toUpperCase().replace(/[^A-Z0-9_]/g, '') })}
-                    placeholder="Masalan: SENIOR_SELLER"
+                    placeholder={t('erp.roles.codePlaceholder')}
                     disabled={!!selectedRole}
                   />
                 </label>
               </div>
 
               <label className="form-control">
-                <span className="label-text">Tavsif</span>
+                <span className="label-text">{t('erp.roles.descriptionLabel')}</span>
                 <textarea
                   className="textarea textarea-bordered"
                   rows={2}
                   value={formData.description}
                   onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-                  placeholder="Rol haqida qisqacha ma'lumot..."
+                  placeholder={t('erp.roles.descriptionPlaceholder')}
                   disabled={selectedRole?.isSystem}
                 />
               </label>
 
               {/* Permissions section */}
-              <div className="divider">Huquqlar</div>
+              <div className="divider">{t('erp.roles.permissionsTitle')}</div>
 
               <div className="flex justify-between items-center">
                 <span className="text-sm text-base-content/60">
-                  {selectedPermissions.size} ta huquq tanlangan
+                  {t('erp.roles.selectedCount', { count: selectedPermissions.size })}
                 </span>
                 <div className="flex gap-2">
                   <Button
@@ -448,7 +450,7 @@ export function RolesPage() {
                     size="xs"
                     onClick={selectAllPermissions}
                   >
-                    Hammasini tanlash
+                    {t('erp.roles.selectAll')}
                   </Button>
                   <Button
                     type="button"
@@ -456,7 +458,7 @@ export function RolesPage() {
                     size="xs"
                     onClick={clearAllPermissions}
                   >
-                    Tozalash
+                    {t('common.clear')}
                   </Button>
                 </div>
               </div>
@@ -502,7 +504,7 @@ export function RolesPage() {
 
             <div className="mt-6 flex justify-end gap-2">
               <Button variant="ghost" onClick={closeModal}>
-                Bekor qilish
+                {t('common.cancel')}
               </Button>
               <Button
                 variant="primary"
@@ -517,7 +519,7 @@ export function RolesPage() {
                 {(createMutation.isPending || updateMutation.isPending) && (
                   <span className="loading loading-spinner loading-sm" />
                 )}
-                {selectedRole ? 'Saqlash' : 'Yaratish'}
+                {selectedRole ? t('common.save') : t('erp.roles.createButton')}
               </Button>
             </div>
           </div>
@@ -540,14 +542,14 @@ export function RolesPage() {
                 </div>
                 <div>
                   <h3 className="text-xl font-semibold">{viewingRole?.name}</h3>
-                  <p className="text-sm text-base-content/60">Rol tafsilotlari</p>
+                  <p className="text-sm text-base-content/60">{t('erp.roles.detailsSubtitle')}</p>
                 </div>
               </div>
               <Button
                 variant="ghost"
                 size="sm"
                 onClick={closeViewModal}
-                aria-label="Yopish"
+                aria-label={t('common.close')}
               >
                 <X className="h-4 w-4" />
               </Button>
@@ -557,7 +559,7 @@ export function RolesPage() {
             {viewingRole?.isSystem && (
               <div className="alert alert-info mb-6">
                 <Lock className="h-4 w-4" />
-                <span>Bu tizim roli va o'zgartirib bo'lmaydi</span>
+                <span>{t('erp.roles.systemRoleInfo')}</span>
               </div>
             )}
 
@@ -567,13 +569,13 @@ export function RolesPage() {
               <div className="space-y-4">
                 <h4 className="font-semibold text-base-content/80 flex items-center gap-2">
                   <Shield className="h-4 w-4" />
-                  Asosiy ma'lumotlar
+                  {t('erp.roles.basicInfo')}
                 </h4>
 
                 <div className="grid gap-4 sm:grid-cols-2">
                   <div>
                     <label className="text-sm font-medium text-base-content/60 mb-1 block">
-                      Rol nomi
+                      {t('erp.roles.nameField')}
                     </label>
                     <div className="px-4 py-2 bg-base-200 rounded-lg">
                       {fullRoleDetails?.name || viewingRole?.name}
@@ -582,7 +584,7 @@ export function RolesPage() {
 
                   <div>
                     <label className="text-sm font-medium text-base-content/60 mb-1 block">
-                      Rol kodi
+                      {t('erp.roles.codeField')}
                     </label>
                     <div className="px-4 py-2 bg-base-200 rounded-lg font-mono text-sm">
                       {fullRoleDetails?.code || viewingRole?.code}
@@ -593,7 +595,7 @@ export function RolesPage() {
                 {(fullRoleDetails?.description || viewingRole?.description) && (
                   <div>
                     <label className="text-sm font-medium text-base-content/60 mb-1 block">
-                      Tavsif
+                      {t('erp.roles.descriptionField')}
                     </label>
                     <div className="px-4 py-2 bg-base-200 rounded-lg">
                       {fullRoleDetails?.description || viewingRole?.description}
@@ -611,7 +613,7 @@ export function RolesPage() {
                     <Key className="h-5 w-5" />
                   </div>
                   <div>
-                    <p className="text-sm text-base-content/60">Huquqlar soni</p>
+                    <p className="text-sm text-base-content/60">{t('erp.roles.permissionsCountLabel')}</p>
                     <p className="text-2xl font-semibold">
                       {fullRoleDetails?.permissions?.length || viewingRole?.permissionCount || 0}
                     </p>
@@ -636,7 +638,7 @@ export function RolesPage() {
                       <Users className="h-5 w-5" />
                     </div>
                     <div className="flex-1">
-                      <p className="text-sm text-base-content/60">Foydalanuvchilar</p>
+                      <p className="text-sm text-base-content/60">{t('erp.roles.usersLabel')}</p>
                       <p className="text-2xl font-semibold">
                         {fullRoleDetails?.userCount || viewingRole?.userCount || 0}
                       </p>
@@ -660,7 +662,7 @@ export function RolesPage() {
                     <div className="absolute top-full left-0 right-0 mt-2 z-10 bg-base-100 rounded-lg shadow-xl border border-base-300 max-h-80 overflow-y-auto">
                       <div className="p-3">
                         <div className="flex items-center justify-between mb-3 pb-2 border-b border-base-300">
-                          <h5 className="font-semibold text-sm">Biriktirilgan foydalanuvchilar</h5>
+                          <h5 className="font-semibold text-sm">{t('erp.roles.assignedUsers')}</h5>
                           <Button
                             variant="ghost"
                             size="xs"
@@ -695,7 +697,7 @@ export function RolesPage() {
                                   </p>
                                   {!user.active && (
                                     <span className="badge badge-xs badge-ghost">
-                                      Faol emas
+                                      {t('erp.roles.inactive')}
                                     </span>
                                   )}
                                 </div>
@@ -724,7 +726,7 @@ export function RolesPage() {
                 <div className="flex items-center justify-between">
                   <h4 className="font-semibold text-base-content/80 flex items-center gap-2">
                     <Key className="h-4 w-4" />
-                    Huquqlar
+                    {t('erp.roles.permissionsTitle')}
                   </h4>
 
                   {/* Toggle between assigned only and all permissions */}
@@ -734,14 +736,14 @@ export function RolesPage() {
                       size="xs"
                       variant={!showAllPermissions ? 'primary' : 'ghost'}
                     >
-                      Faqat biriktirilganlar
+                      {t('erp.roles.assignedOnly')}
                     </Button>
                     <Button
                       onClick={() => setShowAllPermissions(true)}
                       size="xs"
                       variant={showAllPermissions ? 'primary' : 'ghost'}
                     >
-                      Barchasi
+                      {t('common.all')}
                     </Button>
                   </div>
                 </div>
@@ -833,7 +835,7 @@ export function RolesPage() {
                     {fullRoleDetails && (!fullRoleDetails.permissions || fullRoleDetails.permissions.length === 0) && !showAllPermissions && (
                       <div className="text-center py-8 text-base-content/60">
                         <Key className="h-12 w-12 mx-auto mb-2 opacity-50" />
-                        <p>Hech qanday huquq biriktirilmagan</p>
+                        <p>{t('erp.roles.noPermissionsAssigned')}</p>
                       </div>
                     )}
                   </div>
@@ -844,7 +846,7 @@ export function RolesPage() {
             {/* Footer Actions */}
             <div className="mt-6 flex justify-end gap-2">
               <Button variant="ghost" onClick={closeViewModal}>
-                Yopish
+                {t('common.close')}
               </Button>
 
               {/* Quick Edit button if user has permission */}
@@ -860,7 +862,7 @@ export function RolesPage() {
                   disabled={(viewingRole?.isSystem && !hasPermission(PermissionCode.ROLES_UPDATE)) || !fullRoleDetails}
                 >
                   <Edit2 className="h-4 w-4" />
-                  Tahrirlash
+                  {t('common.edit')}
                 </Button>
               </PermissionGate>
             </div>

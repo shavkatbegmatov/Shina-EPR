@@ -15,6 +15,7 @@ import {
 } from 'lucide-react';
 import clsx from 'clsx';
 import toast from 'react-hot-toast';
+import { useTranslation } from 'react-i18next';
 import { brandsApi, categoriesApi } from '../../api/products.api';
 import { settingsApi } from '../../api/settings.api';
 import { NumberInput } from '../../components/ui/NumberInput';
@@ -45,6 +46,7 @@ const emptyCategoryForm: CategoryFormData = { name: '', description: '', parentI
 const DEFAULT_DEBT_DUE_DAYS = 30;
 
 export function SettingsPage() {
+  const { t } = useTranslation();
   const [activeTab, setActiveTab] = useState<Tab>('appearance');
   const { mode: themeMode, setMode: setThemeMode } = useThemeStore();
   // Brands state
@@ -247,10 +249,10 @@ export function SettingsPage() {
     try {
       const data = await settingsApi.update({ debtDueDays });
       setDebtDueDays(data.debtDueDays);
-      toast.success('Sozlamalar yangilandi');
+      toast.success(t('erp.settings.settingsSavedToast'));
     } catch (error) {
       console.error('Failed to save settings:', error);
-      toast.error('Sozlamalarni saqlashda xatolik');
+      toast.error(t('erp.settings.settingsSaveError'));
     } finally {
       setSettingsSaving(false);
     }
@@ -274,8 +276,8 @@ export function SettingsPage() {
     <div className="space-y-6">
       {/* Header */}
       <div>
-        <h1 className="section-title">Sozlamalar</h1>
-        <p className="section-subtitle">Tizim ma'lumotlarini boshqarish</p>
+        <h1 className="section-title">{t('erp.settings.title')}</h1>
+        <p className="section-subtitle">{t('erp.settings.subtitle')}</p>
       </div>
 
       {/* Tabs */}
@@ -285,28 +287,28 @@ export function SettingsPage() {
           onClick={() => setActiveTab('appearance')}
         >
           <Palette className="h-4 w-4" />
-          Ko'rinish
+          {t('erp.settings.tabAppearance')}
         </button>
         <button
           className={clsx('tab gap-2', activeTab === 'brands' && 'tab-active')}
           onClick={() => setActiveTab('brands')}
         >
           <Tag className="h-4 w-4" />
-          Brendlar
+          {t('erp.settings.tabBrands')}
         </button>
         <button
           className={clsx('tab gap-2', activeTab === 'categories' && 'tab-active')}
           onClick={() => setActiveTab('categories')}
         >
           <FolderTree className="h-4 w-4" />
-          Kategoriyalar
+          {t('erp.settings.tabCategories')}
         </button>
         <button
           className={clsx('tab gap-2', activeTab === 'debts' && 'tab-active')}
           onClick={() => setActiveTab('debts')}
         >
           <Clock className="h-4 w-4" />
-          Qarzlar
+          {t('erp.settings.tabDebts')}
         </button>
       </div>
 
@@ -315,9 +317,9 @@ export function SettingsPage() {
         <div className="space-y-6">
           {/* Theme Settings */}
           <div className="surface-card p-6">
-            <h2 className="text-lg font-semibold mb-4">Mavzu</h2>
+            <h2 className="text-lg font-semibold mb-4">{t('erp.settings.themeTitle')}</h2>
             <p className="text-sm text-base-content/60 mb-6">
-              Interfeys ranglarini tanlang. Tizim rejimi qurilmangiz sozlamalariga mos keladi.
+              {t('erp.settings.themeSubtitle')}
             </p>
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
               {/* Light Theme */}
@@ -334,11 +336,11 @@ export function SettingsPage() {
                   <Sun className="h-8 w-8 text-amber-600" />
                 </div>
                 <div className="text-center">
-                  <p className="font-semibold">Yorug'</p>
-                  <p className="text-xs text-base-content/50">Kunduzgi rejim</p>
+                  <p className="font-semibold">{t('erp.settings.themeLight')}</p>
+                  <p className="text-xs text-base-content/50">{t('erp.settings.themeLightDesc')}</p>
                 </div>
                 {themeMode === 'light' && (
-                  <span className="badge badge-primary badge-sm">Tanlangan</span>
+                  <span className="badge badge-primary badge-sm">{t('erp.settings.themeSelected')}</span>
                 )}
               </button>
 
@@ -356,11 +358,11 @@ export function SettingsPage() {
                   <Moon className="h-8 w-8 text-slate-300" />
                 </div>
                 <div className="text-center">
-                  <p className="font-semibold">Qorong'i</p>
-                  <p className="text-xs text-base-content/50">Tungi rejim</p>
+                  <p className="font-semibold">{t('erp.settings.themeDark')}</p>
+                  <p className="text-xs text-base-content/50">{t('erp.settings.themeDarkDesc')}</p>
                 </div>
                 {themeMode === 'dark' && (
-                  <span className="badge badge-primary badge-sm">Tanlangan</span>
+                  <span className="badge badge-primary badge-sm">{t('erp.settings.themeSelected')}</span>
                 )}
               </button>
 
@@ -378,11 +380,11 @@ export function SettingsPage() {
                   <Monitor className="h-8 w-8 text-blue-600" />
                 </div>
                 <div className="text-center">
-                  <p className="font-semibold">Tizim</p>
-                  <p className="text-xs text-base-content/50">Avtomatik</p>
+                  <p className="font-semibold">{t('erp.settings.themeSystem')}</p>
+                  <p className="text-xs text-base-content/50">{t('erp.settings.themeSystemDesc')}</p>
                 </div>
                 {themeMode === 'system' && (
-                  <span className="badge badge-primary badge-sm">Tanlangan</span>
+                  <span className="badge badge-primary badge-sm">{t('erp.settings.themeSelected')}</span>
                 )}
               </button>
             </div>
@@ -395,9 +397,9 @@ export function SettingsPage() {
         <div className="space-y-4">
           <div className="flex items-center justify-between">
             <div>
-              <h2 className="text-lg font-semibold">Brendlar</h2>
+              <h2 className="text-lg font-semibold">{t('erp.settings.brandsTitle')}</h2>
               <p className="text-sm text-base-content/60">
-                {brands.length} ta brend mavjud
+                {t('erp.settings.brandsCount', { count: brands.length })}
               </p>
             </div>
             <div className="flex items-center gap-2">
@@ -409,7 +411,7 @@ export function SettingsPage() {
               />
               <Button variant="primary" onClick={() => handleOpenBrandModal()}>
                 <Plus className="h-5 w-5" />
-                Yangi brend
+                {t('erp.settings.newBrand')}
               </Button>
             </div>
           </div>
@@ -423,8 +425,8 @@ export function SettingsPage() {
               <div className="flex flex-col items-center justify-center gap-2 p-10 text-center text-base-content/50">
                 <Tag className="h-12 w-12" />
                 <div>
-                  <p className="text-base font-medium">Brendlar topilmadi</p>
-                  <p className="text-sm">Yangi brend qo'shing</p>
+                  <p className="text-base font-medium">{t('erp.settings.brandsEmptyTitle')}</p>
+                  <p className="text-sm">{t('erp.settings.brandsEmptyDesc')}</p>
                 </div>
               </div>
             ) : (
@@ -434,8 +436,8 @@ export function SettingsPage() {
                   <table className="table table-zebra">
                     <thead>
                       <tr>
-                        <th>Nomi</th>
-                        <th>Mamlakat</th>
+                        <th>{t('erp.settings.colName')}</th>
+                        <th>{t('erp.settings.colCountry')}</th>
                         <th></th>
                       </tr>
                     </thead>
@@ -451,7 +453,7 @@ export function SettingsPage() {
                               onClick={() => handleOpenBrandModal(brand)}
                             >
                               <Pencil className="h-4 w-4" />
-                              Tahrirlash
+                              {t('common.edit')}
                             </Button>
                             <Button
                               variant="ghost"
@@ -460,7 +462,7 @@ export function SettingsPage() {
                               onClick={() => setDeletingBrand(brand)}
                             >
                               <Trash2 className="h-4 w-4" />
-                              O'chirish
+                              {t('common.delete')}
                             </Button>
                           </td>
                         </tr>
@@ -479,7 +481,7 @@ export function SettingsPage() {
                       <div>
                         <p className="font-semibold">{brand.name}</p>
                         <p className="text-sm text-base-content/60">
-                          {brand.country || 'Mamlakat ko\'rsatilmagan'}
+                          {brand.country || t('erp.settings.countryNotSpecified')}
                         </p>
                       </div>
                       <div className="flex items-center gap-2">
@@ -513,9 +515,9 @@ export function SettingsPage() {
         <div className="space-y-4">
           <div className="flex items-center justify-between">
             <div>
-              <h2 className="text-lg font-semibold">Kategoriyalar</h2>
+              <h2 className="text-lg font-semibold">{t('erp.settings.categoriesTitle')}</h2>
               <p className="text-sm text-base-content/60">
-                {categories.length} ta kategoriya mavjud
+                {t('erp.settings.categoriesCount', { count: categories.length })}
               </p>
             </div>
             <div className="flex items-center gap-2">
@@ -527,7 +529,7 @@ export function SettingsPage() {
               />
               <Button variant="primary" onClick={() => handleOpenCategoryModal()}>
                 <Plus className="h-5 w-5" />
-                Yangi kategoriya
+                {t('erp.settings.newCategory')}
               </Button>
             </div>
           </div>
@@ -541,8 +543,8 @@ export function SettingsPage() {
               <div className="flex flex-col items-center justify-center gap-2 p-10 text-center text-base-content/50">
                 <FolderTree className="h-12 w-12" />
                 <div>
-                  <p className="text-base font-medium">Kategoriyalar topilmadi</p>
-                  <p className="text-sm">Yangi kategoriya qo'shing</p>
+                  <p className="text-base font-medium">{t('erp.settings.categoriesEmptyTitle')}</p>
+                  <p className="text-sm">{t('erp.settings.categoriesEmptyDesc')}</p>
                 </div>
               </div>
             ) : (
@@ -552,9 +554,9 @@ export function SettingsPage() {
                   <table className="table table-zebra">
                     <thead>
                       <tr>
-                        <th>Nomi</th>
-                        <th>Tavsif</th>
-                        <th>Asosiy kategoriya</th>
+                        <th>{t('erp.settings.colName')}</th>
+                        <th>{t('erp.settings.colDescription')}</th>
+                        <th>{t('erp.settings.colParentCategory')}</th>
                         <th></th>
                       </tr>
                     </thead>
@@ -573,7 +575,7 @@ export function SettingsPage() {
                               onClick={() => handleOpenCategoryModal(category)}
                             >
                               <Pencil className="h-4 w-4" />
-                              Tahrirlash
+                              {t('common.edit')}
                             </Button>
                             <Button
                               variant="ghost"
@@ -582,7 +584,7 @@ export function SettingsPage() {
                               onClick={() => setDeletingCategory(category)}
                             >
                               <Trash2 className="h-4 w-4" />
-                              O'chirish
+                              {t('common.delete')}
                             </Button>
                           </td>
                         </tr>
@@ -602,8 +604,8 @@ export function SettingsPage() {
                         <p className="font-semibold">{category.name}</p>
                         <p className="text-sm text-base-content/60">
                           {category.parentName
-                            ? `Asosiy: ${category.parentName}`
-                            : 'Asosiy kategoriya'}
+                            ? t('erp.settings.parentLabel', { name: category.parentName })
+                            : t('erp.settings.rootCategory')}
                         </p>
                         {category.description && (
                           <p className="mt-1 text-xs text-base-content/50 line-clamp-1">
@@ -643,9 +645,9 @@ export function SettingsPage() {
           <div className="surface-card p-6">
             <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
               <div>
-                <h2 className="text-lg font-semibold">Qarz sozlamalari</h2>
+                <h2 className="text-lg font-semibold">{t('erp.settings.debtSettingsTitle')}</h2>
                 <p className="text-sm text-base-content/60">
-                  Yangi qarzlar uchun standart muddatni belgilang
+                  {t('erp.settings.debtSettingsSubtitle')}
                 </p>
               </div>
               <div className="flex items-center gap-2">
@@ -662,7 +664,7 @@ export function SettingsPage() {
                     disabled={settingsSaving || settingsLoading}
                   >
                     {settingsSaving && <span className="loading loading-spinner loading-sm" />}
-                    Saqlash
+                    {t('common.save')}
                   </Button>
                 </PermissionGate>
               </div>
@@ -675,7 +677,7 @@ export function SettingsPage() {
             ) : (
               <div className="mt-6 max-w-sm">
                 <NumberInput
-                  label="Qarz muddati (kun)"
+                  label={t('erp.settings.debtDueDaysLabel')}
                   value={debtDueDays}
                   onChange={handleDebtDueDaysChange}
                   min={1}
@@ -683,7 +685,7 @@ export function SettingsPage() {
                   allowEmpty={false}
                 />
                 <p className="mt-2 text-xs text-base-content/60">
-                  Masalan: 30 kun. Bu qiymat faqat yangi qarzlar uchun ishlaydi.
+                  {t('erp.settings.debtDueDaysHint')}
                 </p>
               </div>
             )}
@@ -698,12 +700,12 @@ export function SettingsPage() {
             <div className="flex items-start justify-between gap-4">
               <div>
                 <h3 className="text-xl font-semibold">
-                  {editingBrand ? 'Brendni tahrirlash' : 'Yangi brend'}
+                  {editingBrand ? t('erp.settings.editBrandTitle') : t('erp.settings.newBrand')}
                 </h3>
                 <p className="text-sm text-base-content/60">
                   {editingBrand
-                    ? 'Brend ma\'lumotlarini yangilang'
-                    : 'Yangi brend qo\'shing'}
+                    ? t('erp.settings.editBrandSubtitle')
+                    : t('erp.settings.newBrandSubtitle')}
                 </p>
               </div>
               <Button variant="ghost" size="sm" onClick={handleCloseBrandModal}>
@@ -714,27 +716,27 @@ export function SettingsPage() {
             <div className="mt-6 space-y-4">
               <label className="form-control">
                 <span className="label-text mb-1 text-xs font-semibold uppercase tracking-[0.18em] text-base-content/50">
-                  Nomi *
+                  {t('erp.settings.nameRequired')}
                 </span>
                 <input
                   type="text"
                   className="input input-bordered w-full"
                   value={brandForm.name}
                   onChange={(e) => setBrandForm((prev) => ({ ...prev, name: e.target.value }))}
-                  placeholder="Michelin, Bridgestone..."
+                  placeholder={t('erp.settings.brandNamePlaceholder')}
                 />
               </label>
 
               <label className="form-control">
                 <span className="label-text mb-1 text-xs font-semibold uppercase tracking-[0.18em] text-base-content/50">
-                  Mamlakat
+                  {t('erp.settings.colCountry')}
                 </span>
                 <input
                   type="text"
                   className="input input-bordered w-full"
                   value={brandForm.country}
                   onChange={(e) => setBrandForm((prev) => ({ ...prev, country: e.target.value }))}
-                  placeholder="Fransiya, Yaponiya..."
+                  placeholder={t('erp.settings.countryPlaceholder')}
                 />
               </label>
             </div>
@@ -745,7 +747,7 @@ export function SettingsPage() {
                 onClick={handleCloseBrandModal}
                 disabled={brandSaving}
               >
-                Bekor qilish
+                {t('common.cancel')}
               </Button>
               <Button
                 variant="primary"
@@ -753,7 +755,7 @@ export function SettingsPage() {
                 disabled={brandSaving || !brandForm.name.trim()}
               >
                 {brandSaving && <span className="loading loading-spinner loading-sm" />}
-                Saqlash
+                {t('common.save')}
               </Button>
             </div>
           </div>
@@ -767,12 +769,12 @@ export function SettingsPage() {
             <div className="flex items-start justify-between gap-4">
               <div>
                 <h3 className="text-xl font-semibold">
-                  {editingCategory ? 'Kategoriyani tahrirlash' : 'Yangi kategoriya'}
+                  {editingCategory ? t('erp.settings.editCategoryTitle') : t('erp.settings.newCategory')}
                 </h3>
                 <p className="text-sm text-base-content/60">
                   {editingCategory
-                    ? 'Kategoriya ma\'lumotlarini yangilang'
-                    : 'Yangi kategoriya qo\'shing'}
+                    ? t('erp.settings.editCategorySubtitle')
+                    : t('erp.settings.newCategorySubtitle')}
                 </p>
               </div>
               <Button variant="ghost" size="sm" onClick={handleCloseCategoryModal}>
@@ -783,7 +785,7 @@ export function SettingsPage() {
             <div className="mt-6 space-y-4">
               <label className="form-control">
                 <span className="label-text mb-1 text-xs font-semibold uppercase tracking-[0.18em] text-base-content/50">
-                  Nomi *
+                  {t('erp.settings.nameRequired')}
                 </span>
                 <input
                   type="text"
@@ -792,13 +794,13 @@ export function SettingsPage() {
                   onChange={(e) =>
                     setCategoryForm((prev) => ({ ...prev, name: e.target.value }))
                   }
-                  placeholder="Yengil avtomobil, Yuk mashinasi..."
+                  placeholder={t('erp.settings.categoryNamePlaceholder')}
                 />
               </label>
 
               <label className="form-control">
                 <span className="label-text mb-1 text-xs font-semibold uppercase tracking-[0.18em] text-base-content/50">
-                  Tavsif
+                  {t('erp.settings.colDescription')}
                 </span>
                 <textarea
                   className="textarea textarea-bordered w-full"
@@ -807,12 +809,12 @@ export function SettingsPage() {
                   onChange={(e) =>
                     setCategoryForm((prev) => ({ ...prev, description: e.target.value }))
                   }
-                  placeholder="Kategoriya haqida qisqacha..."
+                  placeholder={t('erp.settings.categoryDescPlaceholder')}
                 />
               </label>
 
               <Select
-                label="Asosiy kategoriya"
+                label={t('erp.settings.colParentCategory')}
                 value={categoryForm.parentId || undefined}
                 onChange={(val) =>
                   setCategoryForm((prev) => ({
@@ -821,7 +823,7 @@ export function SettingsPage() {
                   }))
                 }
                 options={[
-                  { value: '', label: "Yo'q (asosiy kategoriya)" },
+                  { value: '', label: t('erp.settings.noneParentOption') },
                   ...categories
                     .filter((c) => c.id !== editingCategory?.id)
                     .map((category) => ({
@@ -829,7 +831,7 @@ export function SettingsPage() {
                       label: category.name,
                     })),
                 ]}
-                placeholder="Asosiy kategoriyani tanlang"
+                placeholder={t('erp.settings.selectParentPlaceholder')}
               />
             </div>
 
@@ -839,7 +841,7 @@ export function SettingsPage() {
                 onClick={handleCloseCategoryModal}
                 disabled={categorySaving}
               >
-                Bekor qilish
+                {t('common.cancel')}
               </Button>
               <Button
                 variant="primary"
@@ -847,7 +849,7 @@ export function SettingsPage() {
                 disabled={categorySaving || !categoryForm.name.trim()}
               >
                 {categorySaving && <span className="loading loading-spinner loading-sm" />}
-                Saqlash
+                {t('common.save')}
               </Button>
             </div>
           </div>
@@ -872,9 +874,9 @@ export function SettingsPage() {
                 <AlertTriangle className="h-6 w-6 text-error" />
               </div>
               <div>
-                <h3 className="text-lg font-semibold">O'chirishni tasdiqlang</h3>
+                <h3 className="text-lg font-semibold">{t('erp.settings.deleteConfirmTitle')}</h3>
                 <p className="mt-1 text-sm text-base-content/60">
-                  "{deletingBrand?.name}" brendini o'chirmoqchimisiz?
+                  {t('erp.settings.deleteBrandConfirm', { name: deletingBrand?.name })}
                 </p>
               </div>
             </div>
@@ -884,7 +886,7 @@ export function SettingsPage() {
                 onClick={() => setDeletingBrand(null)}
                 disabled={brandDeleting}
               >
-                Bekor qilish
+                {t('common.cancel')}
               </Button>
               <Button
                 variant="danger"
@@ -892,7 +894,7 @@ export function SettingsPage() {
                 disabled={brandDeleting}
               >
                 {brandDeleting && <span className="loading loading-spinner loading-sm" />}
-                O'chirish
+                {t('common.delete')}
               </Button>
             </div>
           </div>
@@ -917,9 +919,9 @@ export function SettingsPage() {
                 <AlertTriangle className="h-6 w-6 text-error" />
               </div>
               <div>
-                <h3 className="text-lg font-semibold">O'chirishni tasdiqlang</h3>
+                <h3 className="text-lg font-semibold">{t('erp.settings.deleteConfirmTitle')}</h3>
                 <p className="mt-1 text-sm text-base-content/60">
-                  "{deletingCategory?.name}" kategoriyasini o'chirmoqchimisiz?
+                  {t('erp.settings.deleteCategoryConfirm', { name: deletingCategory?.name })}
                 </p>
               </div>
             </div>
@@ -929,7 +931,7 @@ export function SettingsPage() {
                 onClick={() => setDeletingCategory(null)}
                 disabled={categoryDeleting}
               >
-                Bekor qilish
+                {t('common.cancel')}
               </Button>
               <Button
                 variant="danger"
@@ -937,7 +939,7 @@ export function SettingsPage() {
                 disabled={categoryDeleting}
               >
                 {categoryDeleting && <span className="loading loading-spinner loading-sm" />}
-                O'chirish
+                {t('common.delete')}
               </Button>
             </div>
           </div>

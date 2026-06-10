@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Plus, Minus, Trash2, ShoppingCart, User, X, Users, ArrowRight, Phone } from 'lucide-react';
 import toast from 'react-hot-toast';
 import clsx from 'clsx';
@@ -19,6 +20,7 @@ import { Button } from '@/ui';
 import type { Product, PaymentMethod, Customer } from '../../types';
 
 export function POSPage() {
+  const { t } = useTranslation();
   const [products, setProducts] = useState<Product[]>([]);
   const [search, setSearch] = useState('');
   const [loading, setLoading] = useState(false);
@@ -85,7 +87,7 @@ export function POSPage() {
       setModalTotalElements(data.totalElements);
     } catch (error) {
       console.error('Failed to load customers:', error);
-      toast.error('Mijozlarni yuklashda xatolik');
+      toast.error(t('erp.pos.loadCustomersError'));
     } finally {
       setModalLoading(false);
     }
@@ -116,7 +118,7 @@ export function POSPage() {
   const columns: Column<Customer>[] = useMemo(() => [
     {
       key: 'fullName',
-      header: 'Mijoz',
+      header: t('erp.pos.colCustomer'),
       render: (customer) => (
         <div className="flex items-center gap-3">
           <div className="avatar placeholder">
@@ -137,7 +139,7 @@ export function POSPage() {
     },
     {
       key: 'phone',
-      header: 'Telefon',
+      header: t('erp.pos.colPhone'),
       render: (customer) => (
         <div>
           <div className="flex items-center gap-2">
@@ -152,7 +154,7 @@ export function POSPage() {
     },
     {
       key: 'customerType',
-      header: 'Turi',
+      header: t('erp.pos.colType'),
       render: (customer) => (
         <span className="badge badge-outline badge-sm">
           {CUSTOMER_TYPES[customer.customerType]?.label}
@@ -161,7 +163,7 @@ export function POSPage() {
     },
     {
       key: 'balance',
-      header: 'Balans',
+      header: t('erp.pos.colBalance'),
       render: (customer) => (
         <div>
           <span
@@ -174,16 +176,16 @@ export function POSPage() {
             {formatCurrency(customer.balance)}
           </span>
           {customer.hasDebt && (
-            <span className="badge badge-error badge-sm ml-2">Qarz</span>
+            <span className="badge badge-error badge-sm ml-2">{t('erp.pos.debtBadge')}</span>
           )}
         </div>
       ),
     },
-  ], []);
+  ], [t]);
 
   const handleCompleteSale = async () => {
     if (cart.items.length === 0) {
-      toast.error('Savat bo\'sh');
+      toast.error(t('erp.pos.cartEmpty'));
       return;
     }
 
@@ -202,14 +204,14 @@ export function POSPage() {
         paymentMethod,
       });
 
-      toast.success('Sotuv muvaffaqiyatli yakunlandi!');
+      toast.success(t('erp.pos.saleCompleted'));
       cart.clear();
       setShowPayment(false);
       setPaidAmount(0);
       void loadProducts();
     } catch (error: unknown) {
       const err = error as { response?: { data?: { message?: string } } };
-      toast.error(err.response?.data?.message || 'Xatolik yuz berdi');
+      toast.error(err.response?.data?.message || t('common.error'));
     } finally {
       setLoading(false);
     }
@@ -243,16 +245,16 @@ export function POSPage() {
         <div className="border-b border-base-200 p-4">
           <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
             <div>
-              <h2 className="text-lg font-semibold">Mahsulotlar</h2>
+              <h2 className="text-lg font-semibold">{t('erp.pos.productsTitle')}</h2>
               <p className="text-xs text-base-content/60">
-                {products.length} ta mahsulot topildi
+                {t('erp.pos.productsFound', { count: products.length })}
               </p>
             </div>
             <SearchInput
               value={search}
               onValueChange={setSearch}
-              label="Mahsulot qidirish"
-              placeholder="Mahsulot qidirish..."
+              label={t('erp.pos.productSearchLabel')}
+              placeholder={t('erp.pos.productSearchPlaceholder')}
               hideLabel
               className="w-full md:max-w-sm"
             />
@@ -276,7 +278,7 @@ export function POSPage() {
                     {product.name}
                   </h3>
                   <p className="mt-1 text-xs text-base-content/60">
-                    {product.sizeString || "O'lcham ko'rsatilmagan"}
+                    {product.sizeString || t('erp.pos.noSize')}
                   </p>
                 </div>
                 <div className="mt-3 flex items-center justify-between">
@@ -308,10 +310,10 @@ export function POSPage() {
           <div>
             <h2 className="flex items-center gap-2 text-lg font-semibold">
               <ShoppingCart className="h-5 w-5" />
-              Savat
+              {t('erp.pos.cartTitle')}
             </h2>
             <p className="text-xs text-base-content/60">
-              {itemCount} ta mahsulot
+              {t('erp.pos.itemCount', { count: itemCount })}
             </p>
           </div>
           {cart.items.length > 0 && (
@@ -321,7 +323,7 @@ export function POSPage() {
               className="text-error"
               onClick={() => cart.clear()}
             >
-              Tozalash
+              {t('common.clear')}
             </Button>
           )}
         </div>
@@ -355,11 +357,11 @@ export function POSPage() {
                   value={customerSearch}
                   onChange={setCustomerSearch}
                   onSelect={handleSelectCustomer}
-                  placeholder="Mijozni qidirish..."
+                  placeholder={t('erp.pos.customerSearchPlaceholder')}
                   getSubtitle={(customer) => {
                     const parts = [];
                     if (customer.companyName) parts.push(customer.companyName);
-                    if (customer.hasDebt) parts.push('Qarz bor');
+                    if (customer.hasDebt) parts.push(t('erp.pos.hasDebt'));
                     return parts.join(' • ') || undefined;
                   }}
                   dropdownFooter={
@@ -369,7 +371,7 @@ export function POSPage() {
                     >
                       <div className="flex items-center gap-2">
                         <Users className="h-4 w-4" />
-                        <span>Barchasini ko'rish</span>
+                        <span>{t('erp.pos.viewAll')}</span>
                       </div>
                       <ArrowRight className="h-4 w-4" />
                     </button>
@@ -381,10 +383,10 @@ export function POSPage() {
                 size="sm"
                 className="h-12"
                 onClick={handleOpenModal}
-                title="Barcha mijozlarni ko'rish"
+                title={t('erp.pos.viewAllCustomersTitle')}
               >
                 <Users className="h-5 w-5" />
-                <span className="hidden sm:inline ml-1">Ko'rish</span>
+                <span className="hidden sm:inline ml-1">{t('common.view')}</span>
               </Button>
             </div>
           )}
@@ -395,7 +397,7 @@ export function POSPage() {
           {cart.items.length === 0 ? (
             <div className="flex h-full flex-col items-center justify-center text-base-content/50">
               <ShoppingCart className="mb-2 h-12 w-12" />
-              <p>Savat bo'sh</p>
+              <p>{t('erp.pos.cartEmpty')}</p>
             </div>
           ) : (
             <div className="space-y-3">
@@ -412,7 +414,7 @@ export function POSPage() {
                     </p>
                     {item.discount > 0 && (
                       <p className="text-xs text-success">
-                        Chegirma: {formatCurrency(item.discount)}
+                        {t('erp.pos.discountLabel', { amount: formatCurrency(item.discount) })}
                       </p>
                     )}
                   </div>
@@ -467,12 +469,12 @@ export function POSPage() {
         <div className="border-t border-base-200 p-4">
           <div className="surface-soft space-y-3 rounded-xl p-3">
             <div className="flex items-center justify-between text-sm">
-              <span>Sub-jami</span>
+              <span>{t('erp.pos.subtotal')}</span>
               <span className="font-medium">{formatCurrency(subtotal)}</span>
             </div>
             <div className="grid grid-cols-2 gap-2">
               <CurrencyInput
-                label="Chegirma (so'm)"
+                label={t('erp.pos.discountSum')}
                 value={cart.discount}
                 onChange={(val) => cart.setDiscount(Math.min(subtotal, Math.max(0, val)))}
                 min={0}
@@ -480,7 +482,7 @@ export function POSPage() {
                 size="sm"
               />
               <PercentInput
-                label="Chegirma (%)"
+                label={t('erp.pos.discountPercent')}
                 value={cart.discountPercent}
                 onChange={(val) => cart.setDiscountPercent(val)}
                 min={0}
@@ -492,7 +494,7 @@ export function POSPage() {
               'flex items-center justify-between text-sm transition-opacity duration-200',
               discountSummary ? 'opacity-100' : 'opacity-0'
             )}>
-              <span className="text-base-content/60">Chegirma:</span>
+              <span className="text-base-content/60">{t('erp.pos.discountSummaryLabel')}</span>
               <span className="font-semibold text-success">{discountSummary || '-'}</span>
             </div>
           </div>
@@ -501,7 +503,7 @@ export function POSPage() {
         {/* Cart Total */}
         <div className="border-t border-base-200 p-4 space-y-3">
           <div className="flex items-center justify-between text-lg">
-            <span>Jami:</span>
+            <span>{t('erp.pos.totalLabel')}</span>
             <span className="font-bold">{formatCurrency(total)}</span>
           </div>
           <Button
@@ -513,7 +515,7 @@ export function POSPage() {
               setShowPayment(true);
             }}
           >
-            To'lovga o'tish
+            {t('erp.pos.proceedToPayment')}
           </Button>
         </div>
       </aside>
@@ -530,25 +532,25 @@ export function POSPage() {
             >
               <X className="h-5 w-5" />
             </Button>
-            <h3 className="text-lg font-semibold">To'lov</h3>
+            <h3 className="text-lg font-semibold">{t('erp.pos.paymentTitle')}</h3>
             <p className="text-sm text-base-content/60">
-              {itemCount} ta mahsulot · {formatCurrency(total)}
+              {t('erp.pos.paymentSummary', { count: itemCount, total: formatCurrency(total) })}
             </p>
 
             <div className="mt-6 space-y-4">
               <Select
-                label="To'lov usuli"
+                label={t('erp.pos.paymentMethodLabel')}
                 value={paymentMethod}
                 onChange={(val) => setPaymentMethod(val as PaymentMethod)}
                 options={Object.entries(PAYMENT_METHODS).map(([key, { label }]) => ({
                   value: key,
                   label,
                 }))}
-                placeholder="To'lov usulini tanlang"
+                placeholder={t('erp.pos.paymentMethodPlaceholder')}
               />
 
               <CurrencyInput
-                label="To'langan summa"
+                label={t('erp.pos.paidAmountLabel')}
                 value={paidAmount}
                 onChange={(val) => setPaidAmount(Math.max(0, val))}
                 min={0}
@@ -557,20 +559,20 @@ export function POSPage() {
 
               <div className="surface-soft rounded-xl p-4">
                 <div className="flex justify-between text-sm">
-                  <span>Sub-jami:</span>
+                  <span>{t('erp.pos.summarySubtotal')}</span>
                   <span>{formatCurrency(subtotal)}</span>
                 </div>
                 <div className="mt-2 flex justify-between text-sm">
-                  <span>Chegirma:</span>
+                  <span>{t('erp.pos.summaryDiscount')}</span>
                   <span>{discountAmount ? formatCurrency(discountAmount) : '—'}</span>
                 </div>
                 <div className="divider my-3"></div>
                 <div className="flex justify-between text-lg">
-                  <span>Jami:</span>
+                  <span>{t('erp.pos.summaryTotal')}</span>
                   <span className="font-bold">{formatCurrency(total)}</span>
                 </div>
                 <div className="mt-3 flex justify-between text-sm">
-                  <span>{isDebt ? 'Qarz:' : 'Qaytim:'}</span>
+                  <span>{isDebt ? t('erp.pos.debtAmount') : t('erp.pos.changeAmount')}</span>
                   <span
                     className={clsx(
                       'font-semibold',
@@ -588,14 +590,14 @@ export function POSPage() {
                 variant="ghost"
                 onClick={() => setShowPayment(false)}
               >
-                Bekor qilish
+                {t('common.cancel')}
               </Button>
               <Button
                 variant="primary"
                 onClick={handleCompleteSale}
                 loading={loading}
               >
-                Tasdiqlash
+                {t('common.confirm')}
               </Button>
             </div>
           </div>
@@ -612,9 +614,9 @@ export function POSPage() {
           <div className="p-4 sm:p-6 border-b border-base-200">
             <div className="flex items-start justify-between gap-4">
               <div>
-                <h3 className="text-xl font-semibold">Mijozlarni tanlash</h3>
+                <h3 className="text-xl font-semibold">{t('erp.pos.selectCustomerTitle')}</h3>
                 <p className="text-sm text-base-content/60 mt-1">
-                  Jami {modalTotalElements} ta mijoz
+                  {t('erp.pos.totalCustomers', { count: modalTotalElements })}
                 </p>
               </div>
               <Button
@@ -634,7 +636,7 @@ export function POSPage() {
                   setCustomerSearch(value);
                   setModalPage(0);
                 }}
-                placeholder="Ism, telefon yoki kompaniya nomi bo'yicha qidirish..."
+                placeholder={t('erp.pos.customerModalSearchPlaceholder')}
                 hideLabel
               />
             </div>
@@ -661,8 +663,8 @@ export function POSPage() {
               onPageChange={setModalPage}
               onPageSizeChange={handleModalPageSizeChange}
               emptyIcon={<Users className="h-12 w-12" />}
-              emptyTitle="Mijozlar topilmadi"
-              emptyDescription="Qidiruv so'zini o'zgartiring yoki yangi mijoz qo'shing"
+              emptyTitle={t('erp.pos.emptyTitle')}
+              emptyDescription={t('erp.pos.emptyDescription')}
               renderMobileCard={(customer) => (
                 <div
                   className="p-4 border border-base-200 rounded-lg bg-base-100 cursor-pointer hover:bg-base-200 transition"
@@ -683,7 +685,7 @@ export function POSPage() {
                       )}
                     </div>
                     {customer.hasDebt && (
-                      <span className="badge badge-error badge-sm">Qarz</span>
+                      <span className="badge badge-error badge-sm">{t('erp.pos.debtBadge')}</span>
                     )}
                   </div>
                   <div className="flex items-center gap-4 text-sm">

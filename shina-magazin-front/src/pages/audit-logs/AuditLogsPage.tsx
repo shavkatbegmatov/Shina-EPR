@@ -9,6 +9,7 @@ import {
   List,
 } from 'lucide-react';
 import toast from 'react-hot-toast';
+import { useTranslation } from 'react-i18next';
 import { auditLogsApi, type AuditLog } from '../../api/audit-logs.api';
 import type { FieldChange, AuditLogGroup } from '../../types';
 import { useDataRefresh } from '../../hooks/useDataRefresh';
@@ -23,6 +24,8 @@ import { Button } from '@/ui';
 type ViewMode = 'grouped' | 'simple';
 
 export function AuditLogsPage() {
+  const { t } = useTranslation();
+
   // View mode state - default to grouped
   const [viewMode, setViewMode] = useState<ViewMode>('grouped');
 
@@ -77,7 +80,7 @@ export function AuditLogsPage() {
         return data;
       }
     },
-    onError: () => toast.error('Audit loglarni yuklashda xatolik'),
+    onError: () => toast.error(t('erp.auditLogs.loadError')),
   });
 
   useEffect(() => {
@@ -120,9 +123,9 @@ export function AuditLogsPage() {
         action: actionFilter || undefined,
         search: searchQuery || undefined,
       });
-      toast.success(`${format === 'excel' ? 'Excel' : 'PDF'} fayli yuklab olindi`);
+      toast.success(t('erp.auditLogs.exportSuccess', { format: format === 'excel' ? 'Excel' : 'PDF' }));
     } catch {
-      toast.error('Eksport qilishda xatolik');
+      toast.error(t('erp.auditLogs.exportError'));
     }
   };
 
@@ -150,7 +153,7 @@ export function AuditLogsPage() {
       });
     } catch (err) {
       console.error('Failed to load field changes:', err);
-      toast.error('Batafsil ma\'lumotlarni yuklashda xatolik');
+      toast.error(t('erp.auditLogs.detailError'));
     }
   };
 
@@ -169,10 +172,10 @@ export function AuditLogsPage() {
         <div>
           <h1 className="text-2xl sm:text-3xl font-bold flex items-center gap-2">
             <Shield className="h-7 w-7" />
-            Audit Loglar
+            {t('erp.auditLogs.title')}
           </h1>
           <p className="text-sm text-base-content/60 mt-1">
-            Tizimdagi barcha o'zgarishlar tarixi
+            {t('erp.auditLogs.subtitle')}
           </p>
         </div>
 
@@ -184,20 +187,20 @@ export function AuditLogsPage() {
               size="sm"
               className="join-item min-h-[36px] gap-1.5"
               onClick={() => handleViewModeChange('grouped')}
-              title="Guruhlangan ko'rinish"
+              title={t('erp.auditLogs.groupedViewTitle')}
             >
               <Layers className="h-4 w-4" />
-              <span className="hidden sm:inline">Guruhlangan</span>
+              <span className="hidden sm:inline">{t('erp.auditLogs.groupedView')}</span>
             </Button>
             <Button
               variant={viewMode === 'simple' ? 'primary' : 'ghost'}
               size="sm"
               className="join-item min-h-[36px] gap-1.5"
               onClick={() => handleViewModeChange('simple')}
-              title="Oddiy ko'rinish"
+              title={t('erp.auditLogs.simpleViewTitle')}
             >
               <List className="h-4 w-4" />
-              <span className="hidden sm:inline">Oddiy</span>
+              <span className="hidden sm:inline">{t('erp.auditLogs.simpleView')}</span>
             </Button>
           </div>
 
@@ -226,7 +229,7 @@ export function AuditLogsPage() {
             <input
               type="text"
               className="input input-bordered w-full pl-10 pr-10"
-              placeholder="Username yoki IP manzil bo'yicha qidirish..."
+              placeholder={t('erp.auditLogs.searchPlaceholder')}
               value={searchInput}
               onChange={(e) => setSearchInput(e.target.value)}
               onKeyDown={(e) => e.key === 'Enter' && handleSearch()}
@@ -247,7 +250,7 @@ export function AuditLogsPage() {
             disabled={refreshing}
           >
             <Search className="h-5 w-5 sm:h-4 sm:w-4" />
-            <span>Qidirish</span>
+            <span>{t('common.search')}</span>
           </Button>
         </div>
 
@@ -255,7 +258,7 @@ export function AuditLogsPage() {
         <div>
           <div className="flex items-center gap-2 mb-3">
             <Filter className="h-4 w-4 text-base-content/60" />
-            <span className="text-sm font-medium">Filtrlar</span>
+            <span className="text-sm font-medium">{t('common.filter')}</span>
           </div>
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
             <select
@@ -266,18 +269,18 @@ export function AuditLogsPage() {
                 setCurrentPage(0);
               }}
             >
-              <option value="">Barcha obyektlar</option>
-              <option value="Product">Mahsulotlar</option>
-              <option value="Sale">Sotuvlar</option>
-              <option value="Customer">Mijozlar</option>
-              <option value="PurchaseOrder">Xaridlar</option>
-              <option value="Payment">To'lovlar</option>
-              <option value="User">Foydalanuvchilar</option>
-              <option value="Employee">Xodimlar</option>
-              <option value="Role">Rollar</option>
-              <option value="Supplier">Ta'minotchilar</option>
-              <option value="Brand">Brendlar</option>
-              <option value="Category">Kategoriyalar</option>
+              <option value="">{t('erp.auditLogs.allEntities')}</option>
+              <option value="Product">{t('erp.auditLogs.entityProduct')}</option>
+              <option value="Sale">{t('erp.auditLogs.entitySale')}</option>
+              <option value="Customer">{t('erp.auditLogs.entityCustomer')}</option>
+              <option value="PurchaseOrder">{t('erp.auditLogs.entityPurchaseOrder')}</option>
+              <option value="Payment">{t('erp.auditLogs.entityPayment')}</option>
+              <option value="User">{t('erp.auditLogs.entityUser')}</option>
+              <option value="Employee">{t('erp.auditLogs.entityEmployee')}</option>
+              <option value="Role">{t('erp.auditLogs.entityRole')}</option>
+              <option value="Supplier">{t('erp.auditLogs.entitySupplier')}</option>
+              <option value="Brand">{t('erp.auditLogs.entityBrand')}</option>
+              <option value="Category">{t('erp.auditLogs.entityCategory')}</option>
             </select>
 
             <select
@@ -288,15 +291,15 @@ export function AuditLogsPage() {
                 setCurrentPage(0);
               }}
             >
-              <option value="">Barcha harakatlar</option>
-              <option value="CREATE">Yaratildi</option>
-              <option value="UPDATE">O'zgartirildi</option>
-              <option value="DELETE">O'chirildi</option>
+              <option value="">{t('erp.auditLogs.allActions')}</option>
+              <option value="CREATE">{t('erp.auditLogs.actionCreate')}</option>
+              <option value="UPDATE">{t('erp.auditLogs.actionUpdate')}</option>
+              <option value="DELETE">{t('erp.auditLogs.actionDelete')}</option>
             </select>
 
             {(entityTypeFilter || actionFilter || searchQuery) && (
               <Button variant="ghost" onClick={resetFilters}>
-                Tozalash
+                {t('common.clear')}
               </Button>
             )}
           </div>
@@ -305,7 +308,7 @@ export function AuditLogsPage() {
 
       {/* Audit Logs Content */}
       <div className="relative">
-        <LoadingOverlay show={refreshing} message="Audit loglar yangilanmoqda..." />
+        <LoadingOverlay show={refreshing} message={t('erp.auditLogs.refreshing')} />
 
         {/* Grouped View */}
         {viewMode === 'grouped' && (
@@ -318,12 +321,12 @@ export function AuditLogsPage() {
                     <thead className="bg-base-200">
                       <tr>
                         <th className="w-12"></th>
-                        <th className="text-left max-w-[280px]">Operatsiya</th>
-                        <th className="text-left">Obyektlar</th>
-                        <th className="text-left">Loglar</th>
-                        <th className="text-left">Vaqt</th>
-                        <th className="text-left">Foydalanuvchi</th>
-                        <th className="text-left">IP Manzil</th>
+                        <th className="text-left max-w-[280px]">{t('erp.auditLogs.colOperation')}</th>
+                        <th className="text-left">{t('erp.auditLogs.colEntities')}</th>
+                        <th className="text-left">{t('erp.auditLogs.colLogs')}</th>
+                        <th className="text-left">{t('erp.auditLogs.colTime')}</th>
+                        <th className="text-left">{t('erp.auditLogs.colUser')}</th>
+                        <th className="text-left">{t('erp.auditLogs.colIpAddress')}</th>
                         <th className="text-right w-28"></th>
                       </tr>
                     </thead>
@@ -347,8 +350,8 @@ export function AuditLogsPage() {
                 <Shield className="h-12 w-12 mx-auto text-base-content/30 mb-4" />
                 <p className="text-sm sm:text-base text-base-content/60">
                   {entityTypeFilter || actionFilter || searchQuery
-                    ? "Tanlangan filtrlar bo'yicha audit loglar topilmadi"
-                    : "Hali hech qanday audit log yo'q"}
+                    ? t('erp.auditLogs.emptyFiltered')
+                    : t('erp.auditLogs.emptyTitle')}
                 </p>
               </div>
             )}
@@ -366,12 +369,12 @@ export function AuditLogsPage() {
                     <thead className="bg-base-200">
                       <tr>
                         <th className="w-12"></th>
-                        <th className="text-left">ID</th>
-                        <th className="text-left">Obyekt</th>
-                        <th className="text-left">Amal</th>
-                        <th className="text-left">Vaqt</th>
-                        <th className="text-left">Foydalanuvchi</th>
-                        <th className="text-left">IP Manzil</th>
+                        <th className="text-left">{t('erp.auditLogs.colId')}</th>
+                        <th className="text-left">{t('erp.auditLogs.colEntity')}</th>
+                        <th className="text-left">{t('erp.auditLogs.colAction')}</th>
+                        <th className="text-left">{t('erp.auditLogs.colTime')}</th>
+                        <th className="text-left">{t('erp.auditLogs.colUser')}</th>
+                        <th className="text-left">{t('erp.auditLogs.colIpAddress')}</th>
                         <th className="text-left w-28"></th>
                       </tr>
                     </thead>
@@ -409,8 +412,8 @@ export function AuditLogsPage() {
                 <Shield className="h-12 w-12 mx-auto text-base-content/30 mb-4" />
                 <p className="text-sm sm:text-base text-base-content/60">
                   {entityTypeFilter || actionFilter || searchQuery
-                    ? "Tanlangan filtrlar bo'yicha audit loglar topilmadi"
-                    : "Hali hech qanday audit log yo'q"}
+                    ? t('erp.auditLogs.emptyFiltered')
+                    : t('erp.auditLogs.emptyTitle')}
                 </p>
               </div>
             )}
@@ -429,7 +432,7 @@ export function AuditLogsPage() {
               onClick={() => setCurrentPage((prev) => Math.max(0, prev - 1))}
               disabled={currentPage === 0 || refreshing}
             >
-              Oldingi
+              {t('erp.auditLogs.prevPage')}
             </Button>
             <span className="flex items-center px-3 sm:px-4 text-base sm:text-sm font-medium">
               {currentPage + 1} / {totalPages}
@@ -441,13 +444,13 @@ export function AuditLogsPage() {
               onClick={() => setCurrentPage((prev) => Math.min(totalPages - 1, prev + 1))}
               disabled={currentPage >= totalPages - 1 || refreshing}
             >
-              Keyingi
+              {t('erp.auditLogs.nextPage')}
             </Button>
           </div>
           <span className="text-xs text-base-content/50">
             {viewMode === 'grouped'
-              ? `Jami ${totalElements} ta guruh, sahifada ${auditLogGroups.length} ta`
-              : `Jami ${totalElements} ta log, sahifada ${auditLogs.length} ta`}
+              ? t('erp.auditLogs.groupCountSummary', { total: totalElements, count: auditLogGroups.length })
+              : t('erp.auditLogs.logCountSummary', { total: totalElements, count: auditLogs.length })}
           </span>
         </div>
       )}

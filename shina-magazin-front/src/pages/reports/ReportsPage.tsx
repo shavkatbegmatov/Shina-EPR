@@ -22,6 +22,7 @@ import {
   Check,
 } from 'lucide-react';
 import clsx from 'clsx';
+import { useTranslation } from 'react-i18next';
 import { Button } from '@/ui';
 import { reportsApi } from '../../api/reports.api';
 import {
@@ -50,6 +51,7 @@ import { PermissionGate } from '../../components/common/PermissionGate';
 type ReportTab = 'sales' | 'warehouse' | 'debts';
 
 export function ReportsPage() {
+  const { t } = useTranslation();
   const [activeTab, setActiveTab] = useState<ReportTab>('sales');
   const [salesReport, setSalesReport] = useState<SalesReport | null>(null);
   const [warehouseReport, setWarehouseReport] = useState<WarehouseReport | null>(null);
@@ -107,7 +109,7 @@ export function ReportsPage() {
     try {
       const { start, end } = getDateRangeValues(dateRangePreset);
       if (!start || !end) {
-        setError("Iltimos, sana oralig'ini tanlang");
+        setError(t('erp.reports.selectDateRange'));
         setInitialLoading(false);
         setRefreshing(false);
         return;
@@ -127,12 +129,12 @@ export function ReportsPage() {
       }
     } catch (err) {
       console.error('Failed to load reports:', err);
-      setError('Hisobotlarni yuklashda xatolik yuz berdi');
+      setError(t('erp.reports.loadError'));
     } finally {
       setInitialLoading(false);
       setRefreshing(false);
     }
-  }, [dateRangePreset, getDateRangeValues, initialLoading]);
+  }, [dateRangePreset, getDateRangeValues, initialLoading, t]);
 
   useEffect(() => {
     if (dateRangePreset !== 'custom' || (customRange.start && customRange.end)) {
@@ -202,8 +204,8 @@ export function ReportsPage() {
       {/* Header */}
       <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
         <div>
-          <h1 className="section-title">Hisobotlar</h1>
-          <p className="section-subtitle">Sotuvlar, ombor va qarzlar hisobotlari</p>
+          <h1 className="section-title">{t('erp.reports.title')}</h1>
+          <p className="section-subtitle">{t('erp.reports.subtitle')}</p>
         </div>
 
         <div className="flex flex-wrap items-center gap-3">
@@ -223,12 +225,12 @@ export function ReportsPage() {
             {refreshSuccess ? (
               <>
                 <Check className="h-4 w-4" />
-                Yangilandi
+                {t('erp.reports.refreshed')}
               </>
             ) : (
               <>
                 <RefreshCw className={clsx('h-4 w-4', refreshing && 'animate-spin')} />
-                {refreshing ? 'Yangilanmoqda...' : 'Yangilash'}
+                {refreshing ? t('erp.reports.refreshing') : t('common.refresh')}
               </>
             )}
           </Button>
@@ -257,21 +259,21 @@ export function ReportsPage() {
           onClick={() => setActiveTab('sales')}
         >
           <ShoppingCart className="h-4 w-4" />
-          Sotuvlar
+          {t('erp.reports.tabSales')}
         </button>
         <button
           className={clsx('tab gap-2', activeTab === 'warehouse' && 'tab-active')}
           onClick={() => setActiveTab('warehouse')}
         >
           <Warehouse className="h-4 w-4" />
-          Ombor
+          {t('erp.reports.tabWarehouse')}
         </button>
         <button
           className={clsx('tab gap-2', activeTab === 'debts' && 'tab-active')}
           onClick={() => setActiveTab('debts')}
         >
           <Receipt className="h-4 w-4" />
-          Qarzlar
+          {t('erp.reports.tabDebts')}
         </button>
       </div>
 
@@ -289,7 +291,7 @@ export function ReportsPage() {
           <div className="absolute inset-0 z-10 flex items-center justify-center rounded-xl bg-base-100/60 backdrop-blur-sm">
             <div className="flex flex-col items-center gap-3">
               <span className="loading loading-spinner loading-lg text-primary"></span>
-              <span className="text-sm font-medium text-base-content/70">Hisobotlar yangilanmoqda...</span>
+              <span className="text-sm font-medium text-base-content/70">{t('erp.reports.reportsRefreshing')}</span>
             </div>
           </div>
         )}
@@ -311,30 +313,31 @@ export function ReportsPage() {
 
 // Sales Report View
 function SalesReportView({ report }: { report: SalesReport }) {
+  const { t } = useTranslation();
   return (
     <div className="space-y-6">
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
         <StatCard
-          title="Jami daromad"
+          title={t('erp.reports.statTotalRevenue')}
           value={formatCurrency(report.totalRevenue)}
           icon={TrendingUp}
           color="success"
         />
         <StatCard
-          title="Jami foyda"
+          title={t('erp.reports.statTotalProfit')}
           value={formatCurrency(report.totalProfit)}
           icon={Banknote}
           color="primary"
         />
         <StatCard
-          title="Sotuvlar soni"
+          title={t('erp.reports.statSalesCount')}
           value={formatNumber(report.completedSalesCount)}
           icon={ShoppingCart}
           color="info"
-          subtext={`Bekor qilingan: ${report.cancelledSalesCount}`}
+          subtext={t('erp.reports.cancelledCount', { count: report.cancelledSalesCount })}
         />
         <StatCard
-          title="O'rtacha sotuv"
+          title={t('erp.reports.statAverageSale')}
           value={formatCurrency(report.averageSaleAmount)}
           icon={TrendingUp}
           color="secondary"
@@ -342,26 +345,26 @@ function SalesReportView({ report }: { report: SalesReport }) {
       </div>
 
       <div className="surface-card p-6">
-        <h2 className="mb-4 text-lg font-semibold">To'lov usullari bo'yicha</h2>
+        <h2 className="mb-4 text-lg font-semibold">{t('erp.reports.byPaymentMethod')}</h2>
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
-          <PaymentMethodCard icon={Banknote} label="Naqd" amount={report.cashTotal} color="bg-green-500" />
-          <PaymentMethodCard icon={CreditCard} label="Karta" amount={report.cardTotal} color="bg-blue-500" />
-          <PaymentMethodCard icon={Building2} label="O'tkazma" amount={report.transferTotal} color="bg-purple-500" />
-          <PaymentMethodCard icon={AlertCircle} label="Qarz" amount={report.debtTotal} color="bg-orange-500" />
+          <PaymentMethodCard icon={Banknote} label={t('erp.reports.cash')} amount={report.cashTotal} color="bg-green-500" />
+          <PaymentMethodCard icon={CreditCard} label={t('erp.reports.card')} amount={report.cardTotal} color="bg-blue-500" />
+          <PaymentMethodCard icon={Building2} label={t('erp.reports.transfer')} amount={report.transferTotal} color="bg-purple-500" />
+          <PaymentMethodCard icon={AlertCircle} label={t('erp.reports.debt')} amount={report.debtTotal} color="bg-orange-500" />
         </div>
       </div>
 
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
         <div className="surface-card p-6">
-          <h2 className="mb-4 text-lg font-semibold">Kunlik sotuvlar</h2>
+          <h2 className="mb-4 text-lg font-semibold">{t('erp.reports.dailySales')}</h2>
           {report.dailyData.length > 0 ? (
             <div className="overflow-x-auto">
               <table className="table table-sm">
                 <thead>
                   <tr>
-                    <th>Sana</th>
-                    <th className="text-right">Sotuvlar</th>
-                    <th className="text-right">Daromad</th>
+                    <th>{t('erp.reports.colDate')}</th>
+                    <th className="text-right">{t('erp.reports.colSales')}</th>
+                    <th className="text-right">{t('erp.reports.colRevenue')}</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -376,18 +379,18 @@ function SalesReportView({ report }: { report: SalesReport }) {
               </table>
             </div>
           ) : (
-            <p className="text-base-content/60">Ma'lumot mavjud emas</p>
+            <p className="text-base-content/60">{t('erp.reports.noData')}</p>
           )}
         </div>
 
         <div className="surface-card p-6">
-          <h2 className="mb-4 text-lg font-semibold">Daromad grafigi</h2>
+          <h2 className="mb-4 text-lg font-semibold">{t('erp.reports.revenueChart')}</h2>
           {report.dailyData.length > 0 ? (
             <div className="h-64">
               <SimpleBarChart data={report.dailyData.slice(-14)} />
             </div>
           ) : (
-            <p className="text-base-content/60">Ma'lumot mavjud emas</p>
+            <p className="text-base-content/60">{t('erp.reports.noData')}</p>
           )}
         </div>
       </div>
@@ -396,7 +399,7 @@ function SalesReportView({ report }: { report: SalesReport }) {
         <div className="surface-card p-6">
           <h2 className="mb-4 flex items-center gap-2 text-lg font-semibold">
             <Package className="h-5 w-5" />
-            Top mahsulotlar
+            {t('erp.reports.topProducts')}
           </h2>
           {report.topProducts.length > 0 ? (
             <div className="overflow-x-auto">
@@ -404,9 +407,9 @@ function SalesReportView({ report }: { report: SalesReport }) {
                 <thead>
                   <tr>
                     <th>#</th>
-                    <th>Mahsulot</th>
-                    <th className="text-right">Sotildi</th>
-                    <th className="text-right">Daromad</th>
+                    <th>{t('erp.reports.colProduct')}</th>
+                    <th className="text-right">{t('erp.reports.colSold')}</th>
+                    <th className="text-right">{t('erp.reports.colRevenue')}</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -417,7 +420,7 @@ function SalesReportView({ report }: { report: SalesReport }) {
                         <span className="font-medium">{product.productName}</span>
                         <span className="ml-2 text-xs text-base-content/60">{product.productSku}</span>
                       </td>
-                      <td className="text-right">{product.quantitySold} dona</td>
+                      <td className="text-right">{t('erp.reports.unitsCount', { units: product.quantitySold })}</td>
                       <td className="text-right">{formatCurrency(product.totalRevenue)}</td>
                     </tr>
                   ))}
@@ -425,14 +428,14 @@ function SalesReportView({ report }: { report: SalesReport }) {
               </table>
             </div>
           ) : (
-            <p className="text-base-content/60">Ma'lumot mavjud emas</p>
+            <p className="text-base-content/60">{t('erp.reports.noData')}</p>
           )}
         </div>
 
         <div className="surface-card p-6">
           <h2 className="mb-4 flex items-center gap-2 text-lg font-semibold">
             <Users className="h-5 w-5" />
-            Top mijozlar
+            {t('erp.reports.topCustomers')}
           </h2>
           {report.topCustomers.length > 0 ? (
             <div className="overflow-x-auto">
@@ -440,9 +443,9 @@ function SalesReportView({ report }: { report: SalesReport }) {
                 <thead>
                   <tr>
                     <th>#</th>
-                    <th>Mijoz</th>
-                    <th className="text-right">Xaridlar</th>
-                    <th className="text-right">Jami</th>
+                    <th>{t('erp.reports.colCustomer')}</th>
+                    <th className="text-right">{t('erp.reports.colPurchases')}</th>
+                    <th className="text-right">{t('common.total')}</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -461,7 +464,7 @@ function SalesReportView({ report }: { report: SalesReport }) {
               </table>
             </div>
           ) : (
-            <p className="text-base-content/60">Ma'lumot mavjud emas</p>
+            <p className="text-base-content/60">{t('erp.reports.noData')}</p>
           )}
         </div>
       </div>
@@ -471,36 +474,37 @@ function SalesReportView({ report }: { report: SalesReport }) {
 
 // Warehouse Report View
 function WarehouseReportView({ report }: { report: WarehouseReport }) {
+  const { t } = useTranslation();
   return (
     <div className="space-y-6">
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
         <StatCard
-          title="Jami mahsulotlar"
+          title={t('erp.reports.statTotalProducts')}
           value={formatNumber(report.totalProducts)}
           icon={Package}
           color="primary"
-          subtext={`Omborda: ${formatNumber(report.totalStock)} dona`}
+          subtext={t('erp.reports.inStockUnits', { units: formatNumber(report.totalStock) })}
         />
         <StatCard
-          title="Ombor qiymati"
+          title={t('erp.reports.statStockValue')}
           value={formatCurrency(report.totalStockValue)}
           icon={Banknote}
           color="success"
-          subtext={`Potensial: ${formatCurrency(report.totalPotentialRevenue)}`}
+          subtext={t('erp.reports.potentialValue', { value: formatCurrency(report.totalPotentialRevenue) })}
         />
         <StatCard
-          title="Kam qolgan"
+          title={t('erp.reports.statLowStock')}
           value={formatNumber(report.lowStockCount)}
           icon={AlertTriangle}
           color="warning"
-          subtext={`Tugagan: ${report.outOfStockCount}`}
+          subtext={t('erp.reports.outOfStockSub', { count: report.outOfStockCount })}
         />
         <StatCard
-          title="Harakatlar"
+          title={t('erp.reports.statMovements')}
           value={`${report.inMovementsCount} / ${report.outMovementsCount}`}
           icon={ArrowDownToLine}
           color="info"
-          subtext={`Kirim: ${report.totalIncoming}, Chiqim: ${report.totalOutgoing}`}
+          subtext={t('erp.reports.incomingOutgoing', { incoming: report.totalIncoming, outgoing: report.totalOutgoing })}
         />
       </div>
 
@@ -508,17 +512,17 @@ function WarehouseReportView({ report }: { report: WarehouseReport }) {
         <div className="surface-card p-6">
           <h2 className="mb-4 flex items-center gap-2 text-lg font-semibold">
             <Tag className="h-5 w-5" />
-            Kategoriya bo'yicha
+            {t('erp.reports.byCategory')}
           </h2>
           {report.stockByCategory.length > 0 ? (
             <div className="overflow-x-auto">
               <table className="table table-sm">
                 <thead>
                   <tr>
-                    <th>Kategoriya</th>
-                    <th className="text-right">Mahsulotlar</th>
-                    <th className="text-right">Omborda</th>
-                    <th className="text-right">Qiymati</th>
+                    <th>{t('erp.reports.colCategory')}</th>
+                    <th className="text-right">{t('erp.reports.colProducts')}</th>
+                    <th className="text-right">{t('erp.reports.colInStock')}</th>
+                    <th className="text-right">{t('erp.reports.colValue')}</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -526,7 +530,7 @@ function WarehouseReportView({ report }: { report: WarehouseReport }) {
                     <tr key={cat.categoryId}>
                       <td className="font-medium">{cat.categoryName}</td>
                       <td className="text-right">{cat.productCount}</td>
-                      <td className="text-right">{formatNumber(cat.totalStock)} dona</td>
+                      <td className="text-right">{t('erp.reports.unitsCount', { units: formatNumber(cat.totalStock) })}</td>
                       <td className="text-right">{formatCurrency(cat.stockValue)}</td>
                     </tr>
                   ))}
@@ -534,24 +538,24 @@ function WarehouseReportView({ report }: { report: WarehouseReport }) {
               </table>
             </div>
           ) : (
-            <p className="text-base-content/60">Ma'lumot mavjud emas</p>
+            <p className="text-base-content/60">{t('erp.reports.noData')}</p>
           )}
         </div>
 
         <div className="surface-card p-6">
           <h2 className="mb-4 flex items-center gap-2 text-lg font-semibold">
             <Package className="h-5 w-5" />
-            Brend bo'yicha
+            {t('erp.reports.byBrand')}
           </h2>
           {report.stockByBrand.length > 0 ? (
             <div className="overflow-x-auto">
               <table className="table table-sm">
                 <thead>
                   <tr>
-                    <th>Brend</th>
-                    <th className="text-right">Mahsulotlar</th>
-                    <th className="text-right">Omborda</th>
-                    <th className="text-right">Qiymati</th>
+                    <th>{t('erp.reports.colBrand')}</th>
+                    <th className="text-right">{t('erp.reports.colProducts')}</th>
+                    <th className="text-right">{t('erp.reports.colInStock')}</th>
+                    <th className="text-right">{t('erp.reports.colValue')}</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -559,7 +563,7 @@ function WarehouseReportView({ report }: { report: WarehouseReport }) {
                     <tr key={brand.brandId}>
                       <td className="font-medium">{brand.brandName}</td>
                       <td className="text-right">{brand.productCount}</td>
-                      <td className="text-right">{formatNumber(brand.totalStock)} dona</td>
+                      <td className="text-right">{t('erp.reports.unitsCount', { units: formatNumber(brand.totalStock) })}</td>
                       <td className="text-right">{formatCurrency(brand.stockValue)}</td>
                     </tr>
                   ))}
@@ -567,7 +571,7 @@ function WarehouseReportView({ report }: { report: WarehouseReport }) {
               </table>
             </div>
           ) : (
-            <p className="text-base-content/60">Ma'lumot mavjud emas</p>
+            <p className="text-base-content/60">{t('erp.reports.noData')}</p>
           )}
         </div>
       </div>
@@ -576,17 +580,17 @@ function WarehouseReportView({ report }: { report: WarehouseReport }) {
         <div className="surface-card p-6">
           <h2 className="mb-4 flex items-center gap-2 text-lg font-semibold">
             <AlertTriangle className="h-5 w-5 text-warning" />
-            Kam qolgan mahsulotlar
+            {t('erp.reports.lowStockProducts')}
           </h2>
           {report.lowStockProducts.length > 0 ? (
             <div className="overflow-x-auto">
               <table className="table table-sm">
                 <thead>
                   <tr>
-                    <th>Mahsulot</th>
-                    <th className="text-right">Hozirgi</th>
-                    <th className="text-right">Minimal</th>
-                    <th className="text-right">Narxi</th>
+                    <th>{t('erp.reports.colProduct')}</th>
+                    <th className="text-right">{t('erp.reports.colCurrent')}</th>
+                    <th className="text-right">{t('erp.reports.colMinimal')}</th>
+                    <th className="text-right">{t('erp.reports.colPrice')}</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -605,23 +609,23 @@ function WarehouseReportView({ report }: { report: WarehouseReport }) {
               </table>
             </div>
           ) : (
-            <p className="text-success">Barcha mahsulotlar yetarli miqdorda</p>
+            <p className="text-success">{t('erp.reports.allProductsSufficient')}</p>
           )}
         </div>
 
         <div className="surface-card p-6">
           <h2 className="mb-4 flex items-center gap-2 text-lg font-semibold">
             <ArrowUpFromLine className="h-5 w-5" />
-            Kunlik harakatlar
+            {t('erp.reports.dailyMovements')}
           </h2>
           {report.recentMovements.length > 0 ? (
             <div className="overflow-x-auto">
               <table className="table table-sm">
                 <thead>
                   <tr>
-                    <th>Sana</th>
-                    <th className="text-right text-success">Kirim</th>
-                    <th className="text-right text-error">Chiqim</th>
+                    <th>{t('erp.reports.colDate')}</th>
+                    <th className="text-right text-success">{t('erp.reports.colIncoming')}</th>
+                    <th className="text-right text-error">{t('erp.reports.colOutgoing')}</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -629,10 +633,10 @@ function WarehouseReportView({ report }: { report: WarehouseReport }) {
                     <tr key={mov.date}>
                       <td>{formatDate(mov.date)}</td>
                       <td className="text-right text-success">
-                        {mov.inCount > 0 && `${mov.inCount} ta (${mov.inQuantity} dona)`}
+                        {mov.inCount > 0 && t('erp.reports.movementCount', { count: mov.inCount, units: mov.inQuantity })}
                       </td>
                       <td className="text-right text-error">
-                        {mov.outCount > 0 && `${mov.outCount} ta (${mov.outQuantity} dona)`}
+                        {mov.outCount > 0 && t('erp.reports.movementCount', { count: mov.outCount, units: mov.outQuantity })}
                       </td>
                     </tr>
                   ))}
@@ -640,7 +644,7 @@ function WarehouseReportView({ report }: { report: WarehouseReport }) {
               </table>
             </div>
           ) : (
-            <p className="text-base-content/60">Ma'lumot mavjud emas</p>
+            <p className="text-base-content/60">{t('erp.reports.noData')}</p>
           )}
         </div>
       </div>
@@ -650,41 +654,42 @@ function WarehouseReportView({ report }: { report: WarehouseReport }) {
 
 // Debts Report View
 function DebtsReportView({ report }: { report: DebtsReport }) {
+  const { t } = useTranslation();
   return (
     <div className="space-y-6">
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
         <StatCard
-          title="Faol qarzlar"
+          title={t('erp.reports.statActiveDebts')}
           value={formatCurrency(report.totalActiveDebt)}
           icon={Receipt}
           color="error"
-          subtext={`${report.activeDebtsCount} ta qarz`}
+          subtext={t('erp.reports.debtsCount', { count: report.activeDebtsCount })}
         />
         <StatCard
-          title="To'langan"
+          title={t('erp.reports.statPaid')}
           value={formatCurrency(report.totalPaidDebt)}
           icon={Banknote}
           color="success"
-          subtext={`${report.paidDebtsCount} ta qarz`}
+          subtext={t('erp.reports.debtsCount', { count: report.paidDebtsCount })}
         />
         <StatCard
-          title="Muddati o'tgan"
+          title={t('erp.reports.statOverdue')}
           value={formatCurrency(report.totalOverdueDebt)}
           icon={Clock}
           color="warning"
-          subtext={`${report.overdueDebtsCount} ta qarz`}
+          subtext={t('erp.reports.debtsCount', { count: report.overdueDebtsCount })}
         />
         <StatCard
-          title="O'rtacha qarz"
+          title={t('erp.reports.statAverageDebt')}
           value={formatCurrency(report.averageDebtAmount)}
           icon={TrendingUp}
           color="info"
-          subtext={`To'lovlar: ${report.paymentsCount} ta`}
+          subtext={t('erp.reports.paymentsCountSub', { count: report.paymentsCount })}
         />
       </div>
 
       <div className="surface-card p-6">
-        <h2 className="mb-4 text-lg font-semibold">Qarz davrlari (Aging)</h2>
+        <h2 className="mb-4 text-lg font-semibold">{t('erp.reports.debtAging')}</h2>
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-5">
           {report.debtAging.map((aging) => (
             <div key={aging.period} className="rounded-xl bg-base-200/50 p-4 text-center">
@@ -700,7 +705,7 @@ function DebtsReportView({ report }: { report: DebtsReport }) {
         <div className="surface-card p-6">
           <h2 className="mb-4 flex items-center gap-2 text-lg font-semibold">
             <UserX className="h-5 w-5 text-error" />
-            Top qarzdorlar
+            {t('erp.reports.topDebtors')}
           </h2>
           {report.topDebtors.length > 0 ? (
             <div className="overflow-x-auto">
@@ -708,10 +713,10 @@ function DebtsReportView({ report }: { report: DebtsReport }) {
                 <thead>
                   <tr>
                     <th>#</th>
-                    <th>Mijoz</th>
-                    <th className="text-right">Jami qarz</th>
-                    <th className="text-right">Soni</th>
-                    <th className="text-right">Kechikkan</th>
+                    <th>{t('erp.reports.colCustomer')}</th>
+                    <th className="text-right">{t('erp.reports.colTotalDebt')}</th>
+                    <th className="text-right">{t('erp.reports.colCount')}</th>
+                    <th className="text-right">{t('erp.reports.colOverdue')}</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -737,23 +742,23 @@ function DebtsReportView({ report }: { report: DebtsReport }) {
               </table>
             </div>
           ) : (
-            <p className="text-success">Qarzdorlar yo'q</p>
+            <p className="text-success">{t('erp.reports.noDebtors')}</p>
           )}
         </div>
 
         <div className="surface-card p-6">
           <h2 className="mb-4 flex items-center gap-2 text-lg font-semibold">
             <Clock className="h-5 w-5 text-warning" />
-            Muddati o'tgan qarzlar
+            {t('erp.reports.overdueDebts')}
           </h2>
           {report.overdueDebts.length > 0 ? (
             <div className="overflow-x-auto">
               <table className="table table-sm">
                 <thead>
                   <tr>
-                    <th>Mijoz</th>
-                    <th className="text-right">Qoldiq</th>
-                    <th className="text-right">O'tgan kunlar</th>
+                    <th>{t('erp.reports.colCustomer')}</th>
+                    <th className="text-right">{t('erp.reports.colRemaining')}</th>
+                    <th className="text-right">{t('erp.reports.colDaysOverdue')}</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -765,7 +770,7 @@ function DebtsReportView({ report }: { report: DebtsReport }) {
                       </td>
                       <td className="text-right font-semibold">{formatCurrency(debt.remainingAmount)}</td>
                       <td className="text-right">
-                        <span className="badge badge-error badge-sm">{debt.daysOverdue} kun</span>
+                        <span className="badge badge-error badge-sm">{t('erp.reports.daysCount', { count: debt.daysOverdue })}</span>
                       </td>
                     </tr>
                   ))}
@@ -773,7 +778,7 @@ function DebtsReportView({ report }: { report: DebtsReport }) {
               </table>
             </div>
           ) : (
-            <p className="text-success">Muddati o'tgan qarzlar yo'q</p>
+            <p className="text-success">{t('erp.reports.noOverdueDebts')}</p>
           )}
         </div>
       </div>
@@ -782,16 +787,16 @@ function DebtsReportView({ report }: { report: DebtsReport }) {
         <div className="surface-card p-6">
           <h2 className="mb-4 flex items-center gap-2 text-lg font-semibold">
             <Banknote className="h-5 w-5 text-success" />
-            So'nggi to'lovlar
+            {t('erp.reports.recentPayments')}
           </h2>
           {report.recentPayments.length > 0 ? (
             <div className="overflow-x-auto">
               <table className="table table-sm">
                 <thead>
                   <tr>
-                    <th>Sana</th>
-                    <th className="text-right">Soni</th>
-                    <th className="text-right">Miqdori</th>
+                    <th>{t('erp.reports.colDate')}</th>
+                    <th className="text-right">{t('erp.reports.colCount')}</th>
+                    <th className="text-right">{t('erp.reports.colAmount')}</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -806,25 +811,25 @@ function DebtsReportView({ report }: { report: DebtsReport }) {
               </table>
             </div>
           ) : (
-            <p className="text-base-content/60">To'lovlar mavjud emas</p>
+            <p className="text-base-content/60">{t('erp.reports.noPayments')}</p>
           )}
         </div>
 
         <div className="surface-card p-6">
-          <h2 className="mb-4 text-lg font-semibold">Qarzlar statistikasi</h2>
+          <h2 className="mb-4 text-lg font-semibold">{t('erp.reports.debtsStatistics')}</h2>
           <div className="space-y-4">
             <div className="flex items-center justify-between rounded-lg bg-base-200/50 p-4">
-              <span className="text-base-content/70">Qabul qilingan to'lovlar</span>
+              <span className="text-base-content/70">{t('erp.reports.paymentsReceived')}</span>
               <span className="text-xl font-bold text-success">
                 {formatCurrency(report.totalPaymentsReceived)}
               </span>
             </div>
             <div className="flex items-center justify-between rounded-lg bg-base-200/50 p-4">
-              <span className="text-base-content/70">To'lovlar soni</span>
+              <span className="text-base-content/70">{t('erp.reports.paymentsCountLabel')}</span>
               <span className="text-xl font-bold">{formatNumber(report.paymentsCount)}</span>
             </div>
             <div className="flex items-center justify-between rounded-lg bg-base-200/50 p-4">
-              <span className="text-base-content/70">Faol + Muddati o'tgan</span>
+              <span className="text-base-content/70">{t('erp.reports.activePlusOverdue')}</span>
               <span className="text-xl font-bold text-error">
                 {formatCurrency(report.totalActiveDebt + report.totalOverdueDebt)}
               </span>

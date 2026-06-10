@@ -13,6 +13,8 @@ import {
   RefreshCw,
 } from 'lucide-react';
 import clsx from 'clsx';
+import { useTranslation } from 'react-i18next';
+import type { TFunction } from 'i18next';
 import { useNotificationsStore, type Notification } from '../../store/notificationsStore';
 import { PermissionCode } from '../../hooks/usePermission';
 import { PermissionGate } from '../../components/common/PermissionGate';
@@ -54,7 +56,7 @@ const getNotificationBorderColor = (type: NotificationType) => {
   }
 };
 
-const formatTimeAgo = (dateString: string) => {
+const formatTimeAgo = (dateString: string, t: TFunction) => {
   const date = new Date(dateString);
   const now = new Date();
   const diffMs = now.getTime() - date.getTime();
@@ -63,11 +65,11 @@ const formatTimeAgo = (dateString: string) => {
   const diffDays = Math.floor(diffMs / 86400000);
 
   if (diffMins < 60) {
-    return `${diffMins} daqiqa oldin`;
+    return t('erp.notifications.minutesAgo', { count: diffMins });
   } else if (diffHours < 24) {
-    return `${diffHours} soat oldin`;
+    return t('erp.notifications.hoursAgo', { count: diffHours });
   } else if (diffDays < 7) {
-    return `${diffDays} kun oldin`;
+    return t('erp.notifications.daysAgo', { count: diffDays });
   } else {
     const day = date.getDate().toString().padStart(2, '0');
     const month = (date.getMonth() + 1).toString().padStart(2, '0');
@@ -79,6 +81,7 @@ const formatTimeAgo = (dateString: string) => {
 type FilterType = 'all' | 'unread' | 'warning' | 'order' | 'payment';
 
 export function NotificationsPage() {
+  const { t } = useTranslation();
   const {
     notifications,
     unreadCount,
@@ -108,11 +111,11 @@ export function NotificationsPage() {
       {/* Header */}
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <h1 className="section-title">Bildirishnomalar</h1>
+          <h1 className="section-title">{t('erp.notifications.title')}</h1>
           <p className="section-subtitle">
             {unreadCount > 0
-              ? `${unreadCount} ta o'qilmagan xabar`
-              : "Barcha xabarlar o'qilgan"}
+              ? t('erp.notifications.unreadCount', { count: unreadCount })
+              : t('erp.notifications.allRead')}
           </p>
         </div>
         <div className="flex items-center gap-2">
@@ -131,7 +134,7 @@ export function NotificationsPage() {
               onClick={() => markAllAsRead()}
             >
               <CheckCheck className="h-4 w-4" />
-              <span className="hidden sm:inline">Barchasini o'qilgan qilish</span>
+              <span className="hidden sm:inline">{t('erp.notifications.markAllRead')}</span>
             </Button>
           )}
         </div>
@@ -142,11 +145,11 @@ export function NotificationsPage() {
         <Filter className="h-4 w-4 text-base-content/50" />
         <div className="flex flex-wrap gap-1">
           {[
-            { key: 'all', label: 'Barchasi' },
-            { key: 'unread', label: "O'qilmagan" },
-            { key: 'warning', label: 'Ogohlantirishlar' },
-            { key: 'order', label: 'Buyurtmalar' },
-            { key: 'payment', label: "To'lovlar" },
+            { key: 'all', label: t('common.all') },
+            { key: 'unread', label: t('erp.notifications.filterUnread') },
+            { key: 'warning', label: t('erp.notifications.filterWarning') },
+            { key: 'order', label: t('erp.notifications.filterOrder') },
+            { key: 'payment', label: t('erp.notifications.filterPayment') },
           ].map((item) => (
             <Button
               key={item.key}
@@ -173,11 +176,11 @@ export function NotificationsPage() {
           <div className="flex flex-col items-center justify-center gap-2 p-10 text-center text-base-content/50">
             <Bell className="h-12 w-12" />
             <div>
-              <p className="text-base font-medium">Bildirishnomalar yo'q</p>
+              <p className="text-base font-medium">{t('erp.notifications.emptyTitle')}</p>
               <p className="text-sm">
                 {filter !== 'all'
-                  ? "Bu toifada hech narsa yo'q"
-                  : "Yangi bildirishnomalar bu yerda ko'rinadi"}
+                  ? t('erp.notifications.emptyFiltered')
+                  : t('erp.notifications.emptyDescription')}
               </p>
             </div>
           </div>
@@ -209,14 +212,14 @@ export function NotificationsPage() {
                           {notification.title}
                         </h3>
                         {!notification.isRead && (
-                          <span className="badge badge-primary badge-xs">Yangi</span>
+                          <span className="badge badge-primary badge-xs">{t('erp.notifications.newBadge')}</span>
                         )}
                       </div>
                       <p className="mt-0.5 text-sm text-base-content/70 line-clamp-2">
                         {notification.message}
                       </p>
                       <p className="mt-1 text-xs text-base-content/50">
-                        {formatTimeAgo(notification.createdAt)}
+                        {formatTimeAgo(notification.createdAt, t)}
                       </p>
                     </div>
                     <div className="flex items-center gap-1 flex-shrink-0">
@@ -226,7 +229,7 @@ export function NotificationsPage() {
                             variant="ghost"
                             size="xs"
                             onClick={() => markAsRead(notification.id)}
-                            title="O'qilgan qilish"
+                            title={t('erp.notifications.markReadTitle')}
                           >
                             <CheckCircle className="h-4 w-4" />
                           </Button>
@@ -238,7 +241,7 @@ export function NotificationsPage() {
                           size="xs"
                           className="text-error"
                           onClick={() => deleteNotification(notification.id)}
-                          title="O'chirish"
+                          title={t('common.delete')}
                         >
                           <Trash2 className="h-4 w-4" />
                         </Button>
