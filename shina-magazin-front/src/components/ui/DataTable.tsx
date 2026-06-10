@@ -1,6 +1,7 @@
 import { useState, useMemo, useEffect, useRef, ReactNode } from 'react';
-import { ArrowUpDown, ArrowUp, ArrowDown, ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight } from 'lucide-react';
+import { ArrowUpDown, ArrowUp, ArrowDown, ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight, AlertTriangle, RefreshCw } from 'lucide-react';
 import clsx from 'clsx';
+import { Skeleton } from '@/ui';
 import { Select } from './Select';
 
 // Types
@@ -44,6 +45,12 @@ export interface DataTableProps<T> {
 
   // States
   loading?: boolean;
+  /** xato xabari — berilsa, bo'sh holat o'rniga xato paneli ko'rsatiladi */
+  error?: string | null;
+  /** xato panelidagi "Qayta urinish" tugmasi uchun */
+  onRetry?: () => void;
+  /** yuklanishda ko'rsatiladigan skeleton qatorlar soni (default 5) */
+  skeletonRows?: number;
   emptyIcon?: ReactNode;
   emptyTitle?: string;
   emptyDescription?: string;
@@ -120,6 +127,9 @@ export function DataTable<T>({
   onSort,
   enableClientSort = true,
   loading = false,
+  error = null,
+  onRetry,
+  skeletonRows = 5,
   emptyIcon,
   emptyTitle = "Ma'lumotlar topilmadi",
   emptyDescription = "Filtrlarni o'zgartirib ko'ring",
@@ -249,12 +259,61 @@ export function DataTable<T>({
     );
   };
 
-  // Loading state
+  // Loading state — skeleton qatorlar (layout-shift yo'q)
   if (loading) {
     return (
       <div className={clsx('surface-card', containerClassName)}>
-        <div className="flex items-center justify-center h-64">
-          <span className="loading loading-spinner loading-lg" />
+        <div className={clsx('hidden lg:block', className)}>
+          <table className="table w-full">
+            <thead>
+              <tr>
+                {columns.map((column) => (
+                  <th key={column.key} className="!bg-base-100 border-b border-base-200">
+                    {column.header}
+                  </th>
+                ))}
+              </tr>
+            </thead>
+            <tbody>
+              {Array.from({ length: skeletonRows }).map((_, rowIdx) => (
+                <tr key={rowIdx}>
+                  {columns.map((column) => (
+                    <td key={column.key} className={column.className}>
+                      <Skeleton className="h-4 w-full max-w-[12rem]" />
+                    </td>
+                  ))}
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+        <div className="space-y-3 p-4 lg:hidden">
+          {Array.from({ length: skeletonRows }).map((_, rowIdx) => (
+            <Skeleton key={rowIdx} className="h-20 w-full rounded-xl" />
+          ))}
+        </div>
+      </div>
+    );
+  }
+
+  // Error state — onRetry bilan (audit: xatolar jimgina yutilib, bo'sh holat ko'rinardi)
+  if (error) {
+    return (
+      <div className={clsx('surface-card', containerClassName)}>
+        <div className="flex flex-col items-center justify-center gap-3 p-10 text-center">
+          <div className="grid h-12 w-12 place-items-center rounded-2xl bg-error/10 text-error">
+            <AlertTriangle className="h-6 w-6" />
+          </div>
+          <div>
+            <p className="font-semibold">Ma'lumotni yuklab bo'lmadi</p>
+            <p className="mt-1 text-sm text-base-content/60">{error}</p>
+          </div>
+          {onRetry && (
+            <button className="btn btn-sm btn-outline gap-2" onClick={onRetry}>
+              <RefreshCw className="h-4 w-4" />
+              Qayta urinish
+            </button>
+          )}
         </div>
       </div>
     );

@@ -68,6 +68,7 @@ const isValidPhone = (phone: string): boolean => {
 
 export function EmployeesPage() {
   const [employees, setEmployees] = useState<Employee[]>([]);
+  const [loadError, setLoadError] = useState<string | null>(null);
   const [initialLoading, setInitialLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [search, setSearch] = useState('');
@@ -268,8 +269,10 @@ export function EmployeesPage() {
       setEmployees(data.content);
       setTotalPages(data.totalPages);
       setTotalElements(data.totalElements);
+      setLoadError(null);
     } catch (error) {
       console.error('Failed to load employees:', error);
+      setLoadError("Xodimlar ro'yxatini yuklab bo'lmadi. Iltimos, qayta urinib ko'ring.");
     } finally {
       setInitialLoading(false);
       setRefreshing(false);
@@ -612,6 +615,8 @@ export function EmployeesPage() {
           columns={columns}
           keyExtractor={(employee) => employee.id}
           loading={initialLoading && !refreshing}
+          error={loadError}
+          onRetry={() => loadEmployees(true)}
           highlightId={highlightId}
           onHighlightComplete={clearHighlight}
           emptyIcon={<UserCog className="h-12 w-12" />}
