@@ -430,9 +430,8 @@ export interface StockAdjustmentRequest {
   quantity: number;
   referenceType?: string;
   notes?: string;
-  // DIQQAT: IncomeModal bu maydonlarni yuboradi, lekin backend DTO
-  // (StockAdjustmentRequest.java) ularni hali qabul qilmaydi — kirim uchun
-  // ta'minotchi va narx saqlanmaydi. Backendda tuzatilishi kerak (alohida bug).
+  // Kirim (IN) uchun ixtiyoriy — backend StockAdjustmentRequest qabul qiladi
+  // va StockMovement entity'siga saqlaydi (ta'minotchi + birlik narxi).
   supplierId?: number;
   unitPrice?: number;
 }

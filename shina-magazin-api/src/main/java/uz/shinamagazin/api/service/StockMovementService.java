@@ -10,12 +10,14 @@ import uz.shinamagazin.api.dto.request.StockAdjustmentRequest;
 import uz.shinamagazin.api.dto.response.StockMovementResponse;
 import uz.shinamagazin.api.entity.Product;
 import uz.shinamagazin.api.entity.StockMovement;
+import uz.shinamagazin.api.entity.Supplier;
 import uz.shinamagazin.api.entity.User;
 import uz.shinamagazin.api.enums.MovementType;
 import uz.shinamagazin.api.exception.BadRequestException;
 import uz.shinamagazin.api.exception.ResourceNotFoundException;
 import uz.shinamagazin.api.repository.ProductRepository;
 import uz.shinamagazin.api.repository.StockMovementRepository;
+import uz.shinamagazin.api.repository.SupplierRepository;
 import uz.shinamagazin.api.repository.UserRepository;
 import uz.shinamagazin.api.security.CustomUserDetails;
 
@@ -32,6 +34,7 @@ public class StockMovementService {
     private final StockMovementRepository stockMovementRepository;
     private final ProductRepository productRepository;
     private final UserRepository userRepository;
+    private final SupplierRepository supplierRepository;
 
     public Page<StockMovementResponse> getAllMovements(Pageable pageable) {
         return stockMovementRepository.findAllByOrderByCreatedAtDesc(pageable)
@@ -88,6 +91,13 @@ public class StockMovementService {
                 throw new BadRequestException("Noto'g'ri harakat turi");
         }
 
+        // Kirim (IN) uchun ixtiyoriy ta'minotchi
+        Supplier supplier = null;
+        if (request.getSupplierId() != null) {
+            supplier = supplierRepository.findById(request.getSupplierId())
+                    .orElseThrow(() -> new ResourceNotFoundException("Ta'minotchi", "id", request.getSupplierId()));
+        }
+
         // Update product stock
         product.setQuantity(newStock);
         productRepository.save(product);
@@ -101,6 +111,8 @@ public class StockMovementService {
                 .newStock(newStock)
                 .referenceType(request.getReferenceType() != null ? request.getReferenceType() : "MANUAL")
                 .notes(request.getNotes())
+                .supplier(supplier)
+                .unitPrice(request.getUnitPrice())
                 .createdBy(currentUser)
                 .build();
 

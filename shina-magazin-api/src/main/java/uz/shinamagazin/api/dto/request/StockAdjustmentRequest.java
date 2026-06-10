@@ -6,6 +6,8 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 import uz.shinamagazin.api.enums.MovementType;
 
+import java.math.BigDecimal;
+
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
@@ -23,4 +25,9 @@ public class StockAdjustmentRequest {
     private String referenceType;
 
     private String notes;
+
+    // Kirim (IN) uchun ixtiyoriy: ta'minotchi va birlik narxi
+    private Long supplierId;
+
+    private BigDecimal unitPrice;
 }

@@ -9,6 +9,7 @@ import uz.shinamagazin.api.audit.AuditEntityListener;
 import uz.shinamagazin.api.entity.base.BaseEntity;
 import uz.shinamagazin.api.enums.MovementType;
 
+import java.math.BigDecimal;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
@@ -49,6 +50,15 @@ public class StockMovement extends BaseEntity implements Auditable {
     @Column(length = 500)
     private String notes;
 
+    // Kirim (IN) uchun ta'minotchi (ixtiyoriy)
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "supplier_id")
+    private Supplier supplier;
+
+    // Kirim birlik narxi (ixtiyoriy)
+    @Column(name = "unit_price", precision = 15, scale = 2)
+    private BigDecimal unitPrice;
+
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "created_by", nullable = false)
     private User createdBy;
@@ -74,10 +84,14 @@ public class StockMovement extends BaseEntity implements Auditable {
         map.put("referenceType", this.referenceType);
         map.put("referenceId", this.referenceId);
         map.put("notes", this.notes);
+        map.put("unitPrice", this.unitPrice);
 
         // Avoid lazy loading
         if (this.product != null) {
             map.put("productId", this.product.getId());
+        }
+        if (this.supplier != null) {
+            map.put("supplierId", this.supplier.getId());
         }
         if (this.createdBy != null) {
             map.put("createdById", this.createdBy.getId());

@@ -10,6 +10,7 @@ import uz.shinamagazin.api.annotation.ExportEntity;
 import uz.shinamagazin.api.entity.StockMovement;
 import uz.shinamagazin.api.enums.MovementType;
 
+import java.math.BigDecimal;
 import java.time.LocalDateTime;
 
 @Data
@@ -50,10 +51,18 @@ public class StockMovementResponse {
     @ExportColumn(header = "Izoh", order = 10)
     private String notes;
 
-    @ExportColumn(header = "Kim yaratgan", order = 11)
+    private Long supplierId; // Not exported
+
+    @ExportColumn(header = "Ta'minotchi", order = 11)
+    private String supplierName;
+
+    @ExportColumn(header = "Birlik narxi", order = 12, type = ColumnType.NUMBER)
+    private BigDecimal unitPrice;
+
+    @ExportColumn(header = "Kim yaratgan", order = 13)
     private String createdByName;
 
-    @ExportColumn(header = "Yaratilgan", order = 12, type = ColumnType.DATETIME)
+    @ExportColumn(header = "Yaratilgan", order = 14, type = ColumnType.DATETIME)
     private LocalDateTime createdAt;
 
     public static StockMovementResponse from(StockMovement movement) {
@@ -69,6 +78,9 @@ public class StockMovementResponse {
                 .referenceType(movement.getReferenceType())
                 .referenceId(movement.getReferenceId())
                 .notes(movement.getNotes())
+                .supplierId(movement.getSupplier() != null ? movement.getSupplier().getId() : null)
+                .supplierName(movement.getSupplier() != null ? movement.getSupplier().getName() : null)
+                .unitPrice(movement.getUnitPrice())
                 .createdByName(movement.getCreatedBy().getFullName())
                 .createdAt(movement.getCreatedAt())
                 .build();
