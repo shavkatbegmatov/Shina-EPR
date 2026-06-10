@@ -1,4 +1,5 @@
 import daisyui from 'daisyui';
+import { RADIUS, SHADOW, ZINDEX, FONT_SIZE, SPACING, MAX_WIDTH } from './src/ui/tokens/scales.mjs';
 
 /** @type {import('tailwindcss').Config} */
 export default {
@@ -8,6 +9,13 @@ export default {
   ],
   theme: {
     extend: {
+      // Protektor token shkalalari (faqat yangi, to'qnashmaydigan nomlar)
+      borderRadius: RADIUS,
+      boxShadow: SHADOW,
+      zIndex: ZINDEX,
+      fontSize: FONT_SIZE,
+      spacing: SPACING,
+      maxWidth: MAX_WIDTH,
       keyframes: {
         'fade-in': {
           '0%': { opacity: '0' },

@@ -24,6 +24,14 @@ Backend (run in `shina-magazin-api/`):
 - Java types use PascalCase with suffixes (`*Controller`, `*Service`, `*Repository`); DTOs in `dto/request` and `dto/response` use `*Request`/`*Response`.
 - Linting is via ESLint in the frontend; no formatter config is checked in.
 
+## Brand & Design Tokens (Protektor)
+- **Brand name:** "Protektor" (tire/tread motif). Use the shared `<Logo>` (`src/components/brand/Logo.tsx`, variants `mark`/`lockup`/`wordmark`, `tone="shop"|"erp"`) — never re-create letter/emoji placeholders.
+- **Colors:** primary teal `#0f766e`, secondary orange `#ea580c` (**FILL only** — for orange *text* use `#c2410c` / dark `#fb923c`; `#ea580c` fails WCAG-AA as text), accent lime `#84cc16`. Driven by the DaisyUI `shina` / `shina-dark` themes in `tailwind.config.js`.
+- **Token source of truth:** `src/ui/tokens/` (`colors.ts`, `scales.mjs`) + CSS vars in `src/index.css` (`--chart-*`, `--shadow-*`). `scales.mjs` feeds `tailwind.config.js` (new utilities only: `shadow-soft/strong/pop`, `z-modal/drawer/...`, `text-display/heading/...`, `rounded-field/card/sheet/pill`, `max-w-shell`).
+- **Charts:** use `useChartColors()` (`src/ui/charts/useChartColors.ts`) — theme-aware, reads `--chart-*`. Never hardcode chart hex.
+- **No raw hex in `src/pages/**` and `src/portal/**`:** ESLint blocks off-brand / FILL-only hex (`#6366f1`, `#8b5cf6`, `#ea580c`). Use semantic DaisyUI tokens (`text-primary`, `bg-secondary`) or the token layer.
+- **Fonts:** Manrope (body), Sora (display — via `var(--font-display)`, applied to `h1–h5`).
+
 ## Testing Guidelines
 - Backend uses Spring Boot Starter Test (JUnit 5). Place tests in `shina-magazin-api/src/test/java/...` and name them `*Test.java`.
 - Frontend test tooling is not configured yet; add a runner and script before adding UI tests.

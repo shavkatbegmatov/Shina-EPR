@@ -27,5 +27,21 @@ export default tseslint.config(
         { allowConstantExport: true },
       ],
     },
+  },
+  {
+    // Layer 4 (app sahifalari) — xom brend-tashqi / FILL-only hex taqiqlanadi.
+    // Ranglar src/ui/tokens, DaisyUI semantik tokenlar yoki useChartColors() dan kelishi kerak.
+    files: ['src/pages/**/*.{ts,tsx}', 'src/portal/**/*.{ts,tsx}'],
+    rules: {
+      'no-restricted-syntax': [
+        'error',
+        {
+          selector: 'Literal[value=/#(6366f1|8b5cf6|ea580c)/i]',
+          message:
+            "Xom brend-tashqi/FILL-only hex (#6366f1, #8b5cf6, #ea580c) yozmang. " +
+            'src/ui/tokens, DaisyUI semantik tokenlar (text-primary, bg-secondary) yoki useChartColors() dan foydalaning.',
+        },
+      ],
+    },
   }
 );
