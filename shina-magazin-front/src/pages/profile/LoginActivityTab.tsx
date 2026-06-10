@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Shield, CheckCircle, XCircle, Calendar, MapPin, Loader2 } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { loginActivityApi, type LoginAttempt } from '../../api/login-activity.api';
@@ -12,6 +13,7 @@ import { LoadingOverlay } from '../../components/common/LoadingOverlay';
 import { Button, buttonVariants } from '@/ui';
 
 export function LoginActivityTab() {
+  const { t } = useTranslation();
   const [attempts, setAttempts] = useState<LoginAttempt[]>([]);
   const [totalPages, setTotalPages] = useState(0);
   const [currentPage, setCurrentPage] = useState(0);
@@ -23,7 +25,7 @@ export function LoginActivityTab() {
       setTotalPages(data.totalPages);
       return data;
     },
-    onError: () => toast.error('Kirish tarixini yuklashda xatolik'),
+    onError: () => toast.error(t('erp.loginActivity.loadError')),
   });
 
   useEffect(() => {
@@ -35,14 +37,14 @@ export function LoginActivityTab() {
       return (
         <span className="badge badge-success gap-1">
           <CheckCircle className="h-3 w-3" />
-          Muvaffaqiyatli
+          {t('erp.loginActivity.statusSuccess')}
         </span>
       );
     }
     return (
       <span className="badge badge-error gap-1">
         <XCircle className="h-3 w-3" />
-        Xato
+        {t('erp.loginActivity.statusFailed')}
       </span>
     );
   };
@@ -56,7 +58,7 @@ export function LoginActivityTab() {
 
   const handleExport = async (format: 'excel' | 'pdf') => {
     try {
-      toast.loading(`${format === 'excel' ? 'Excel' : 'PDF'} fayli tayyorlanmoqda...`, { id: 'export' });
+      toast.loading(t('erp.loginActivity.exportPreparing', { format: format === 'excel' ? 'Excel' : 'PDF' }), { id: 'export' });
 
       const response = await api.get('/v1/login-activity/export', {
         params: { format },
@@ -70,9 +72,9 @@ export function LoginActivityTab() {
       link.click();
       window.URL.revokeObjectURL(url);
 
-      toast.success('Fayl yuklab olindi!', { id: 'export' });
+      toast.success(t('erp.loginActivity.fileDownloaded'), { id: 'export' });
     } catch {
-      toast.error('Eksport qilishda xatolik', { id: 'export' });
+      toast.error(t('erp.loginActivity.exportError'), { id: 'export' });
     }
   };
 
@@ -89,9 +91,9 @@ export function LoginActivityTab() {
       {/* Header */}
       <div className="flex flex-col sm:flex-row items-start sm:items-start justify-between gap-3 sm:gap-4">
         <div className="flex-1">
-          <h3 className="text-base sm:text-lg font-semibold">Kirish tarixi</h3>
+          <h3 className="text-base sm:text-lg font-semibold">{t('erp.loginActivity.title')}</h3>
           <p className="text-xs sm:text-sm text-base-content/60 mt-1">
-            Barcha kirish urinishlaringiz tarixi (muvaffaqiyatli va xato)
+            {t('erp.loginActivity.subtitle')}
           </p>
         </div>
         <div className="flex gap-2 w-full sm:w-auto">
@@ -113,7 +115,7 @@ export function LoginActivityTab() {
 
       {/* Login attempts list */}
       <div className="relative">
-        <LoadingOverlay show={refreshing} message="Kirish tarixi yangilanmoqda..." />
+        <LoadingOverlay show={refreshing} message={t('erp.loginActivity.refreshing')} />
         {attempts.length > 0 ? (
           <div className="space-y-3">
           {attempts.map((attempt) => (
@@ -141,7 +143,7 @@ export function LoginActivityTab() {
                     </p>
                     {attempt.failureReason && (
                       <p className="text-xs text-error mt-1">
-                        Sabab: {attempt.failureReason}
+                        {t('erp.loginActivity.reason', { reason: attempt.failureReason })}
                       </p>
                     )}
                     <div className="flex flex-col sm:flex-row sm:flex-wrap items-start sm:items-center gap-2 sm:gap-4 mt-2 sm:mt-3 text-xs text-base-content/50">
@@ -163,9 +165,9 @@ export function LoginActivityTab() {
       ) : (
         <div className="surface-card p-12 text-center">
           <Shield className="h-12 w-12 mx-auto text-base-content/30" />
-          <h4 className="text-lg font-semibold mt-4">Kirish tarixi topilmadi</h4>
+          <h4 className="text-lg font-semibold mt-4">{t('erp.loginActivity.emptyTitle')}</h4>
           <p className="text-sm text-base-content/60 mt-2">
-            Hozircha kirish urinishlari yo'q
+            {t('erp.loginActivity.emptyDescription')}
           </p>
         </div>
         )}
@@ -180,7 +182,7 @@ export function LoginActivityTab() {
             onClick={() => setCurrentPage(prev => Math.max(0, prev - 1))}
             disabled={currentPage === 0 || refreshing}
           >
-            Oldingi
+            {t('erp.loginActivity.previous')}
           </Button>
           <span className={buttonVariants({ variant: 'ghost', size: 'sm' })}>
             {currentPage + 1} / {totalPages}
@@ -191,7 +193,7 @@ export function LoginActivityTab() {
             onClick={() => setCurrentPage(prev => Math.min(totalPages - 1, prev + 1))}
             disabled={currentPage === totalPages - 1 || refreshing}
           >
-            Keyingi
+            {t('erp.loginActivity.next')}
           </Button>
         </div>
       )}
@@ -200,10 +202,9 @@ export function LoginActivityTab() {
       <div className="alert alert-info">
         <Shield className="h-5 w-5" />
         <div className="text-sm">
-          <p className="font-semibold">Xavfsizlik eslatmasi</p>
+          <p className="font-semibold">{t('erp.loginActivity.securityNoticeTitle')}</p>
           <p className="mt-1">
-            Agar noma'lum IP manzillardan kirish urinishlarini ko'rsangiz,
-            darhol parolingizni o'zgartiring va xavfsizlik bo'limiga xabar bering.
+            {t('erp.loginActivity.securityNoticeText')}
           </p>
         </div>
       </div>

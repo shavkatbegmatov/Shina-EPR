@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useForm } from 'react-hook-form';
+import { useTranslation } from 'react-i18next';
 import { Key, Eye, EyeOff, ShieldCheck, Check, X } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { authApi } from '../../api/auth.api';
@@ -15,6 +16,7 @@ interface FormData {
 }
 
 export function ChangePasswordPage() {
+  const { t } = useTranslation();
   const [showCurrentPassword, setShowCurrentPassword] = useState(false);
   const [showNewPassword, setShowNewPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
@@ -47,15 +49,15 @@ export function ChangePasswordPage() {
   };
 
   const getStrengthLabel = () => {
-    if (passwordStrength <= 1) return 'Juda zaif';
-    if (passwordStrength === 2) return 'Zaif';
-    if (passwordStrength === 3) return 'Yaxshi';
-    return 'Kuchli';
+    if (passwordStrength <= 1) return t('erp.changePassword.strengthVeryWeak');
+    if (passwordStrength === 2) return t('erp.changePassword.strengthWeak');
+    if (passwordStrength === 3) return t('erp.changePassword.strengthGood');
+    return t('erp.changePassword.strengthStrong');
   };
 
   const onSubmit = async (data: FormData) => {
     if (data.newPassword !== data.confirmPassword) {
-      toast.error('Yangi parol va tasdiqlash mos kelmadi');
+      toast.error(t('erp.changePassword.toastMismatch'));
       return;
     }
 
@@ -68,14 +70,14 @@ export function ChangePasswordPage() {
       };
 
       await authApi.changePassword(request);
-      toast.success("Parol muvaffaqiyatli o'zgartirildi!");
+      toast.success(t('erp.changePassword.toastSuccess'));
 
       // Force re-login after password change
       logout();
       navigate('/login');
     } catch (error: unknown) {
       const err = error as { response?: { data?: { message?: string } } };
-      toast.error(err.response?.data?.message || "Parolni o'zgartirishda xatolik");
+      toast.error(err.response?.data?.message || t('erp.changePassword.toastError'));
     } finally {
       setLoading(false);
     }
@@ -97,12 +99,12 @@ export function ChangePasswordPage() {
             <div className="mx-auto grid h-16 w-16 place-items-center rounded-2xl bg-primary/15 text-primary mb-4">
               <Key className="h-8 w-8" />
             </div>
-            <h1 className="text-2xl font-bold">Parolni o'zgartirish</h1>
+            <h1 className="text-2xl font-bold">{t('erp.changePassword.title')}</h1>
             <p className="text-sm text-base-content/60 mt-2">
               {user?.username && (
                 <span className="badge badge-outline badge-sm mr-2">{user.username}</span>
               )}
-              Davom etish uchun yangi parol o'rnating
+              {t('erp.changePassword.subtitle')}
             </p>
           </div>
 
@@ -110,23 +112,23 @@ export function ChangePasswordPage() {
           <div className="alert alert-warning mb-6">
             <ShieldCheck className="h-5 w-5" />
             <div>
-              <p className="font-medium">Birinchi kirish</p>
-              <p className="text-sm">Xavfsizlik uchun vaqtinchalik parolni o'zgartiring</p>
+              <p className="font-medium">{t('erp.changePassword.alertTitle')}</p>
+              <p className="text-sm">{t('erp.changePassword.alertText')}</p>
             </div>
           </div>
 
           <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
             {/* Current Password */}
             <label className="form-control">
-              <span className="label-text text-sm">Joriy parol (vaqtinchalik)</span>
+              <span className="label-text text-sm">{t('erp.changePassword.currentPasswordLabel')}</span>
               <div className="relative">
                 <input
                   type={showCurrentPassword ? 'text' : 'password'}
-                  placeholder="Sizga berilgan parol"
+                  placeholder={t('erp.changePassword.currentPasswordPlaceholder')}
                   autoComplete="current-password"
                   className={`input input-bordered w-full pr-10 ${errors.currentPassword ? 'input-error' : ''}`}
                   {...register('currentPassword', {
-                    required: 'Joriy parol kiritilishi shart',
+                    required: t('erp.changePassword.currentPasswordRequired'),
                   })}
                 />
                 <button
@@ -144,16 +146,16 @@ export function ChangePasswordPage() {
 
             {/* New Password */}
             <label className="form-control">
-              <span className="label-text text-sm">Yangi parol</span>
+              <span className="label-text text-sm">{t('erp.changePassword.newPasswordLabel')}</span>
               <div className="relative">
                 <input
                   type={showNewPassword ? 'text' : 'password'}
-                  placeholder="Yangi xavfsiz parol"
+                  placeholder={t('erp.changePassword.newPasswordPlaceholder')}
                   autoComplete="new-password"
                   className={`input input-bordered w-full pr-10 ${errors.newPassword ? 'input-error' : ''}`}
                   {...register('newPassword', {
-                    required: 'Yangi parol kiritilishi shart',
-                    minLength: { value: 6, message: 'Parol kamida 6 belgi' },
+                    required: t('erp.changePassword.newPasswordRequired'),
+                    minLength: { value: 6, message: t('erp.changePassword.newPasswordMinLength') },
                   })}
                 />
                 <button
@@ -184,26 +186,26 @@ export function ChangePasswordPage() {
                   </span>
                 </div>
                 <div className="grid grid-cols-2 gap-2">
-                  <PasswordRequirement met={hasMinLength} text="Kamida 6 belgi" />
-                  <PasswordRequirement met={hasUppercase} text="Katta harf" />
-                  <PasswordRequirement met={hasLowercase} text="Kichik harf" />
-                  <PasswordRequirement met={hasNumber} text="Raqam" />
+                  <PasswordRequirement met={hasMinLength} text={t('erp.changePassword.reqMinLength')} />
+                  <PasswordRequirement met={hasUppercase} text={t('erp.changePassword.reqUppercase')} />
+                  <PasswordRequirement met={hasLowercase} text={t('erp.changePassword.reqLowercase')} />
+                  <PasswordRequirement met={hasNumber} text={t('erp.changePassword.reqNumber')} />
                 </div>
               </div>
             )}
 
             {/* Confirm Password */}
             <label className="form-control">
-              <span className="label-text text-sm">Parolni tasdiqlash</span>
+              <span className="label-text text-sm">{t('erp.changePassword.confirmPasswordLabel')}</span>
               <div className="relative">
                 <input
                   type={showConfirmPassword ? 'text' : 'password'}
-                  placeholder="Yangi parolni qayta kiriting"
+                  placeholder={t('erp.changePassword.confirmPasswordPlaceholder')}
                   autoComplete="new-password"
                   className={`input input-bordered w-full pr-10 ${errors.confirmPassword ? 'input-error' : ''}`}
                   {...register('confirmPassword', {
-                    required: 'Parolni tasdiqlash kiritilishi shart',
-                    validate: (value) => value === newPassword || 'Parollar mos kelmadi',
+                    required: t('erp.changePassword.confirmPasswordRequired'),
+                    validate: (value) => value === newPassword || t('erp.changePassword.passwordsMismatch'),
                   })}
                 />
                 <button
@@ -230,14 +232,14 @@ export function ChangePasswordPage() {
               ) : (
                 <>
                   <ShieldCheck className="h-5 w-5" />
-                  Parolni o'zgartirish
+                  {t('erp.changePassword.submit')}
                 </>
               )}
             </Button>
           </form>
 
           <div className="mt-6 text-center text-xs text-base-content/50">
-            Parol o'zgartirilgandan so'ng tizimga qayta kirishingiz kerak bo'ladi
+            {t('erp.changePassword.footerNote')}
           </div>
         </div>
       </div>

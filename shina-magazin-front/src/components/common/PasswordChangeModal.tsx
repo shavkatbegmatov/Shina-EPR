@@ -12,6 +12,7 @@ import {
 } from 'lucide-react';
 import toast from 'react-hot-toast';
 import clsx from 'clsx';
+import { useTranslation } from 'react-i18next';
 import { Button } from '@/ui';
 import { authApi } from '../../api/auth.api';
 import { useAuthStore } from '../../store/authStore';
@@ -30,6 +31,7 @@ interface PasswordChangeModalProps {
 }
 
 export function PasswordChangeModal({ isOpen, onClose }: PasswordChangeModalProps) {
+  const { t } = useTranslation();
   const [showCurrentPassword, setShowCurrentPassword] = useState(false);
   const [showNewPassword, setShowNewPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
@@ -63,15 +65,15 @@ export function PasswordChangeModal({ isOpen, onClose }: PasswordChangeModalProp
   };
 
   const getStrengthLabel = () => {
-    if (passwordStrength <= 1) return 'Juda zaif';
-    if (passwordStrength === 2) return 'Zaif';
-    if (passwordStrength === 3) return 'Yaxshi';
-    return 'Kuchli';
+    if (passwordStrength <= 1) return t('erp.passwordChange.strengthVeryWeak');
+    if (passwordStrength === 2) return t('erp.passwordChange.strengthWeak');
+    if (passwordStrength === 3) return t('erp.passwordChange.strengthGood');
+    return t('erp.passwordChange.strengthStrong');
   };
 
   const onSubmit = async (data: PasswordFormData) => {
     if (data.newPassword !== data.confirmPassword) {
-      toast.error('Yangi parol va tasdiqlash mos kelmadi');
+      toast.error(t('erp.passwordChange.confirmMismatch'));
       return;
     }
 
@@ -84,7 +86,7 @@ export function PasswordChangeModal({ isOpen, onClose }: PasswordChangeModalProp
       };
 
       await authApi.changePassword(request);
-      toast.success("Parol muvaffaqiyatli o'zgartirildi!");
+      toast.success(t('erp.passwordChange.changeSuccess'));
       reset();
       onClose();
 
@@ -95,7 +97,7 @@ export function PasswordChangeModal({ isOpen, onClose }: PasswordChangeModalProp
       }, 1500);
     } catch (error: unknown) {
       const err = error as { response?: { data?: { message?: string } } };
-      toast.error(err.response?.data?.message || "Parolni o'zgartirishda xatolik");
+      toast.error(err.response?.data?.message || t('erp.passwordChange.changeError'));
     } finally {
       setChangingPassword(false);
     }
@@ -125,9 +127,9 @@ export function PasswordChangeModal({ isOpen, onClose }: PasswordChangeModalProp
               <AlertTriangle className="h-6 w-6 text-warning" />
             </div>
             <div>
-              <h3 className="text-lg font-semibold">Parolingizni o'zgartiring</h3>
+              <h3 className="text-lg font-semibold">{t('erp.passwordChange.title')}</h3>
               <p className="text-sm text-base-content/60 mt-1">
-                Xavfsizlik uchun admin tomonidan berilgan parolni o'zgartiring
+                {t('erp.passwordChange.subtitle')}
               </p>
             </div>
           </div>
@@ -149,27 +151,26 @@ export function PasswordChangeModal({ isOpen, onClose }: PasswordChangeModalProp
           <div className="alert alert-warning">
             <AlertTriangle className="h-5 w-5" />
             <span className="text-sm">
-              Siz hozircha admin tomonidan berilgan paroldan foydalanayapsiz.
-              Xavfsizlik uchun uni o'zgartirishingizni tavsiya etamiz.
+              {t('erp.passwordChange.warningMessage')}
             </span>
           </div>
 
           {/* Current Password */}
           <div className="form-control">
             <span className="label-text mb-1 text-xs font-semibold uppercase tracking-[0.18em] text-base-content/50">
-              Joriy parol
+              {t('erp.passwordChange.currentPasswordLabel')}
             </span>
             <div className="relative">
               <input
                 type={showCurrentPassword ? 'text' : 'password'}
-                placeholder="Joriy parolingizni kiriting"
+                placeholder={t('erp.passwordChange.currentPasswordPlaceholder')}
                 autoComplete="current-password"
                 className={clsx(
                   'input input-bordered w-full pr-10',
                   errors.currentPassword && 'input-error'
                 )}
                 {...register('currentPassword', {
-                  required: 'Joriy parol kiritilishi shart',
+                  required: t('erp.passwordChange.currentPasswordRequired'),
                 })}
               />
               <button
@@ -188,20 +189,20 @@ export function PasswordChangeModal({ isOpen, onClose }: PasswordChangeModalProp
           {/* New Password */}
           <div className="form-control">
             <span className="label-text mb-1 text-xs font-semibold uppercase tracking-[0.18em] text-base-content/50">
-              Yangi parol
+              {t('erp.passwordChange.newPasswordLabel')}
             </span>
             <div className="relative">
               <input
                 type={showNewPassword ? 'text' : 'password'}
-                placeholder="Yangi xavfsiz parol"
+                placeholder={t('erp.passwordChange.newPasswordPlaceholder')}
                 autoComplete="new-password"
                 className={clsx(
                   'input input-bordered w-full pr-10',
                   errors.newPassword && 'input-error'
                 )}
                 {...register('newPassword', {
-                  required: 'Yangi parol kiritilishi shart',
-                  minLength: { value: 6, message: 'Parol kamida 6 belgi' },
+                  required: t('erp.passwordChange.newPasswordRequired'),
+                  minLength: { value: 6, message: t('erp.passwordChange.minLengthError') },
                 })}
               />
               <button
@@ -232,10 +233,10 @@ export function PasswordChangeModal({ isOpen, onClose }: PasswordChangeModalProp
                 </span>
               </div>
               <div className="grid grid-cols-2 gap-2">
-                <PasswordRequirement met={hasMinLength} text="Kamida 6 belgi" />
-                <PasswordRequirement met={hasUppercase} text="Katta harf" />
-                <PasswordRequirement met={hasLowercase} text="Kichik harf" />
-                <PasswordRequirement met={hasNumber} text="Raqam" />
+                <PasswordRequirement met={hasMinLength} text={t('erp.passwordChange.reqMinLength')} />
+                <PasswordRequirement met={hasUppercase} text={t('erp.passwordChange.reqUppercase')} />
+                <PasswordRequirement met={hasLowercase} text={t('erp.passwordChange.reqLowercase')} />
+                <PasswordRequirement met={hasNumber} text={t('erp.passwordChange.reqNumber')} />
               </div>
             </div>
           )}
@@ -243,20 +244,20 @@ export function PasswordChangeModal({ isOpen, onClose }: PasswordChangeModalProp
           {/* Confirm Password */}
           <div className="form-control">
             <span className="label-text mb-1 text-xs font-semibold uppercase tracking-[0.18em] text-base-content/50">
-              Parolni tasdiqlash
+              {t('erp.passwordChange.confirmPasswordLabel')}
             </span>
             <div className="relative">
               <input
                 type={showConfirmPassword ? 'text' : 'password'}
-                placeholder="Yangi parolni qayta kiriting"
+                placeholder={t('erp.passwordChange.confirmPasswordPlaceholder')}
                 autoComplete="new-password"
                 className={clsx(
                   'input input-bordered w-full pr-10',
                   errors.confirmPassword && 'input-error'
                 )}
                 {...register('confirmPassword', {
-                  required: 'Parolni tasdiqlash kiritilishi shart',
-                  validate: (value) => value === newPassword || 'Parollar mos kelmadi',
+                  required: t('erp.passwordChange.confirmPasswordRequired'),
+                  validate: (value) => value === newPassword || t('erp.passwordChange.passwordsMismatch'),
                 })}
               />
               <button
@@ -283,12 +284,12 @@ export function PasswordChangeModal({ isOpen, onClose }: PasswordChangeModalProp
               {changingPassword ? (
                 <>
                   <Loader2 className="h-4 w-4 animate-spin" />
-                  O'zgartirilmoqda...
+                  {t('erp.passwordChange.changing')}
                 </>
               ) : (
                 <>
                   <Key className="h-4 w-4" />
-                  Parolni o'zgartirish
+                  {t('erp.passwordChange.changeButton')}
                 </>
               )}
             </Button>
@@ -298,12 +299,12 @@ export function PasswordChangeModal({ isOpen, onClose }: PasswordChangeModalProp
               onClick={handleSkip}
               disabled={changingPassword}
             >
-              Keyinroq
+              {t('erp.passwordChange.skipButton')}
             </Button>
           </div>
 
           <p className="text-xs text-base-content/50">
-            Parol o'zgartirilgandan so'ng tizimga qayta kirishingiz kerak bo'ladi
+            {t('erp.passwordChange.footerNote')}
           </p>
         </form>
       </div>

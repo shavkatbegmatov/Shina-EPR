@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Activity, Loader2, Filter } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { usersApi, type UserActivity } from '../../api/users.api';
@@ -14,6 +15,7 @@ import { AuditLogMobileCard } from '../../components/audit-logs/AuditLogMobileCa
 import { Button } from '@/ui';
 
 export function ActivityHistoryTab() {
+  const { t } = useTranslation();
   const [activities, setActivities] = useState<UserActivity[]>([]);
   const [totalPages, setTotalPages] = useState(0);
   const [currentPage, setCurrentPage] = useState(0);
@@ -43,7 +45,7 @@ export function ActivityHistoryTab() {
       setTotalPages(data.totalPages);
       return data;
     },
-    onError: () => toast.error('Faoliyat tarixini yuklashda xatolik'),
+    onError: () => toast.error(t('erp.activityHistory.loadError')),
   });
 
   useEffect(() => {
@@ -69,9 +71,11 @@ export function ActivityHistoryTab() {
         entityType: entityTypeFilter || undefined,
         action: actionFilter || undefined,
       });
-      toast.success(`${format === 'excel' ? 'Excel' : 'PDF'} fayli yuklab olindi`);
+      toast.success(
+        t('erp.activityHistory.fileDownloaded', { format: format === 'excel' ? 'Excel' : 'PDF' })
+      );
     } catch {
-      toast.error('Eksport qilishda xatolik');
+      toast.error(t('erp.activityHistory.exportError'));
     }
   };
 
@@ -102,7 +106,7 @@ export function ActivityHistoryTab() {
       });
     } catch (err) {
       console.error('Failed to load field changes:', err);
-      toast.error("Batafsil ma'lumotlarni yuklashda xatolik");
+      toast.error(t('erp.activityHistory.loadDetailError'));
     }
   };
 
@@ -137,9 +141,9 @@ export function ActivityHistoryTab() {
       {/* Header */}
       <div className="flex flex-col sm:flex-row items-start sm:items-start justify-between gap-3 sm:gap-4">
         <div className="flex-1">
-          <h3 className="text-base sm:text-lg font-semibold">Faoliyat tarixi</h3>
+          <h3 className="text-base sm:text-lg font-semibold">{t('erp.activityHistory.title')}</h3>
           <p className="text-xs sm:text-sm text-base-content/60 mt-1">
-            Tizim ichidagi barcha harakatlaringiz tarixi
+            {t('erp.activityHistory.subtitle')}
           </p>
         </div>
         <div className="flex gap-2 w-full sm:w-auto">
@@ -163,7 +167,7 @@ export function ActivityHistoryTab() {
       <div className="surface-card p-4">
         <div className="flex items-center gap-2 mb-4">
           <Filter className="h-4 w-4 text-base-content/60" />
-          <span className="text-sm font-medium">Filtrlar</span>
+          <span className="text-sm font-medium">{t('erp.activityHistory.filters')}</span>
         </div>
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
           <select
@@ -174,13 +178,13 @@ export function ActivityHistoryTab() {
               setCurrentPage(0);
             }}
           >
-            <option value="">Barcha obyektlar</option>
-            <option value="Product">Mahsulotlar</option>
-            <option value="Sale">Sotuvlar</option>
-            <option value="Customer">Mijozlar</option>
-            <option value="PurchaseOrder">Xaridlar</option>
-            <option value="Payment">To'lovlar</option>
-            <option value="User">Foydalanuvchilar</option>
+            <option value="">{t('erp.activityHistory.allEntities')}</option>
+            <option value="Product">{t('erp.activityHistory.entityProduct')}</option>
+            <option value="Sale">{t('erp.activityHistory.entitySale')}</option>
+            <option value="Customer">{t('erp.activityHistory.entityCustomer')}</option>
+            <option value="PurchaseOrder">{t('erp.activityHistory.entityPurchaseOrder')}</option>
+            <option value="Payment">{t('erp.activityHistory.entityPayment')}</option>
+            <option value="User">{t('erp.activityHistory.entityUser')}</option>
           </select>
 
           <select
@@ -191,15 +195,15 @@ export function ActivityHistoryTab() {
               setCurrentPage(0);
             }}
           >
-            <option value="">Barcha harakatlar</option>
-            <option value="CREATE">Yaratildi</option>
-            <option value="UPDATE">O'zgartirildi</option>
-            <option value="DELETE">O'chirildi</option>
+            <option value="">{t('erp.activityHistory.allActions')}</option>
+            <option value="CREATE">{t('erp.activityHistory.actionCreate')}</option>
+            <option value="UPDATE">{t('erp.activityHistory.actionUpdate')}</option>
+            <option value="DELETE">{t('erp.activityHistory.actionDelete')}</option>
           </select>
 
           {(entityTypeFilter || actionFilter) && (
             <Button variant="ghost" size="sm" onClick={resetFilters}>
-              Tozalash
+              {t('common.clear')}
             </Button>
           )}
         </div>
@@ -207,7 +211,7 @@ export function ActivityHistoryTab() {
 
       {/* Activity Table */}
       <div className="relative">
-        <LoadingOverlay show={refreshing} message="Faoliyat tarixi yangilanmoqda..." />
+        <LoadingOverlay show={refreshing} message={t('erp.activityHistory.refreshing')} />
         {activities.length > 0 ? (
           <>
             {/* Desktop table */}
@@ -217,11 +221,11 @@ export function ActivityHistoryTab() {
                   <tr>
                     <th className="w-12"></th>
                     <th className="text-left">ID</th>
-                    <th className="text-left">Obyekt</th>
-                    <th className="text-left">Amal</th>
-                    <th className="text-left">Vaqt</th>
-                    <th className="text-left">Foydalanuvchi</th>
-                    <th className="text-left">IP Manzil</th>
+                    <th className="text-left">{t('erp.activityHistory.colEntity')}</th>
+                    <th className="text-left">{t('erp.activityHistory.colAction')}</th>
+                    <th className="text-left">{t('erp.activityHistory.colTime')}</th>
+                    <th className="text-left">{t('erp.activityHistory.colUser')}</th>
+                    <th className="text-left">{t('erp.activityHistory.colIpAddress')}</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -258,8 +262,8 @@ export function ActivityHistoryTab() {
             <Activity className="h-12 w-12 mx-auto text-base-content/30 mb-4" />
             <p className="text-sm sm:text-base text-base-content/60">
               {entityTypeFilter || actionFilter
-                ? "Tanlangan filtrlar bo'yicha faoliyat topilmadi"
-                : "Hali hech qanday faoliyat yo'q"}
+                ? t('erp.activityHistory.noActivityForFilters')
+                : t('erp.activityHistory.noActivityYet')}
             </p>
           </div>
         )}
@@ -274,7 +278,7 @@ export function ActivityHistoryTab() {
             onClick={() => setCurrentPage((prev) => Math.max(0, prev - 1))}
             disabled={currentPage === 0 || refreshing}
           >
-            Oldingi
+            {t('erp.activityHistory.previous')}
           </Button>
           <span className="flex items-center px-3 sm:px-4 text-base sm:text-sm font-medium">
             {currentPage + 1} / {totalPages}
@@ -285,7 +289,7 @@ export function ActivityHistoryTab() {
             onClick={() => setCurrentPage((prev) => Math.min(totalPages - 1, prev + 1))}
             disabled={currentPage >= totalPages - 1 || refreshing}
           >
-            Keyingi
+            {t('erp.activityHistory.next')}
           </Button>
         </div>
       )}

@@ -13,6 +13,7 @@ import {
   RefreshCw,
 } from 'lucide-react';
 import toast from 'react-hot-toast';
+import { useTranslation } from 'react-i18next';
 import { sessionsApi, type Session } from '../../api/sessions.api';
 import { useAuthStore } from '../../store/authStore';
 import { formatDistanceToNow } from 'date-fns';
@@ -21,6 +22,7 @@ import type { SessionUpdateMessage } from '../../services/websocket';
 import { Button } from '@/ui';
 
 export function SessionsTab() {
+  const { t } = useTranslation();
   const [sessions, setSessions] = useState<Session[]>([]);
   const [loading, setLoading] = useState(true);
   const [revokingId, setRevokingId] = useState<number | null>(null);
@@ -52,13 +54,13 @@ export function SessionsTab() {
       // If 401 Unauthorized, the session was revoked from another device
       const axiosError = error as { response?: { status?: number } };
       if (axiosError?.response?.status === 401) {
-        toast.error('Sessioningiz boshqa qurilmadan yopilgan. Qayta kiring.');
+        toast.error(t('erp.sessions.revokedFromAnotherDevice'));
         setTimeout(() => {
           logout();
           navigate('/login');
         }, 1500);
       } else {
-        toast.error('Sessiyalarni yuklashda xatolik');
+        toast.error(t('erp.sessions.loadError'));
       }
     } finally {
       setLoading(false);
@@ -90,7 +92,7 @@ export function SessionsTab() {
         if (isCurrentSession) {
           // Our own session was revoked from another device - logout
           console.log('[SessionsTab] 🚪 Current session revoked - logging out...');
-          toast.error('Sessioningiz boshqa qurilmadan yopilgan. Qayta kiring.');
+          toast.error(t('erp.sessions.revokedFromAnotherDevice'));
           setTimeout(() => {
             logout();
             navigate('/login');
@@ -128,24 +130,24 @@ export function SessionsTab() {
   }, [fetchSessions, currentSessionId, logout, navigate]);
 
   const handleRevokeSession = async (sessionId: number) => {
-    if (!confirm('Ushbu qurilmadan chiqmoqchimisiz?')) return;
+    if (!confirm(t('erp.sessions.confirmRevoke'))) return;
 
     setRevokingId(sessionId);
     try {
       await sessionsApi.revokeSession(sessionId, 'Foydalanuvchi tomonidan tugatildi');
-      toast.success('Session tugatildi');
+      toast.success(t('erp.sessions.revokeSuccess'));
       void fetchSessions();
     } catch (error: unknown) {
       // If 401, session was already revoked or user logged out
       const axiosError = error as { response?: { status?: number } };
       if (axiosError?.response?.status === 401) {
-        toast.error('Sessioningiz yaroqsiz. Qayta kiring.');
+        toast.error(t('erp.sessions.sessionInvalid'));
         setTimeout(() => {
           logout();
           navigate('/login');
         }, 1500);
       } else {
-        toast.error('Sessionni tugatishda xatolik');
+        toast.error(t('erp.sessions.revokeError'));
       }
     } finally {
       setRevokingId(null);
@@ -153,24 +155,24 @@ export function SessionsTab() {
   };
 
   const handleRevokeAllOthers = async () => {
-    if (!confirm('Boshqa barcha qurilmalardan chiqmoqchimisiz?')) return;
+    if (!confirm(t('erp.sessions.confirmRevokeAll'))) return;
 
     setRevokingAll(true);
     try {
       const result = await sessionsApi.revokeAllOtherSessions();
-      toast.success(`${result.revokedCount} ta session tugatildi`);
+      toast.success(t('erp.sessions.revokeAllSuccess', { count: result.revokedCount }));
       void fetchSessions();
     } catch (error: unknown) {
       // If 401, session was already revoked or user logged out
       const axiosError = error as { response?: { status?: number } };
       if (axiosError?.response?.status === 401) {
-        toast.error('Sessioningiz yaroqsiz. Qayta kiring.');
+        toast.error(t('erp.sessions.sessionInvalid'));
         setTimeout(() => {
           logout();
           navigate('/login');
         }, 1500);
       } else {
-        toast.error('Sessiyalarni tugatishda xatolik');
+        toast.error(t('erp.sessions.revokeAllError'));
       }
     } finally {
       setRevokingAll(false);
@@ -211,9 +213,9 @@ export function SessionsTab() {
       {/* Header */}
       <div className="flex flex-col sm:flex-row items-start sm:items-start justify-between gap-3 sm:gap-4">
         <div className="flex-1">
-          <h3 className="text-base sm:text-lg font-semibold">Faol sessiyalar</h3>
+          <h3 className="text-base sm:text-lg font-semibold">{t('erp.sessions.title')}</h3>
           <p className="text-xs sm:text-sm text-base-content/60 mt-1">
-            Barcha kirish sessiyalarini boshqaring va xavfsizligingizni ta'minlang
+            {t('erp.sessions.subtitle')}
           </p>
         </div>
         <div className="flex flex-wrap items-center gap-2 w-full sm:w-auto">
@@ -223,10 +225,10 @@ export function SessionsTab() {
             className="flex-1 sm:flex-initial"
             onClick={fetchSessions}
             disabled={loading}
-            title="Yangilash"
+            title={t('common.refresh')}
           >
             <RefreshCw className={`h-4 w-4 ${loading ? 'animate-spin' : ''}`} />
-            Yangilash
+            {t('common.refresh')}
           </Button>
           {otherSessions.length > 0 && (
             <Button
@@ -239,12 +241,12 @@ export function SessionsTab() {
               {revokingAll ? (
                 <>
                   <Loader2 className="h-4 w-4 animate-spin" />
-                  Tugatilmoqda
+                  {t('erp.sessions.revoking')}
                 </>
               ) : (
                 <>
                   <LogOut className="h-4 w-4" />
-                  Hammadan chiq
+                  {t('erp.sessions.revokeAll')}
                 </>
               )}
             </Button>
@@ -267,7 +269,7 @@ export function SessionsTab() {
                   </h4>
                   <span className="badge badge-success badge-sm gap-1 flex-shrink-0">
                     <CheckCircle className="h-3 w-3" />
-                    Hozirgi session
+                    {t('erp.sessions.currentSession')}
                   </span>
                 </div>
                 <p className="text-sm text-base-content/60 mt-1">
@@ -280,11 +282,11 @@ export function SessionsTab() {
                   </div>
                   <div className="flex items-center gap-1.5 sm:gap-2 whitespace-nowrap">
                     <Clock className="h-3 w-3 flex-shrink-0" />
-                    <span className="text-xs">Kirish: {formatTimeAgo(currentSession.createdAt)}</span>
+                    <span className="text-xs">{t('erp.sessions.loggedIn', { time: formatTimeAgo(currentSession.createdAt) })}</span>
                   </div>
                   <div className="flex items-center gap-1.5 sm:gap-2 whitespace-nowrap">
                     <Clock className="h-3 w-3 flex-shrink-0" />
-                    <span className="text-xs">Faollik: {formatTimeAgo(currentSession.lastActivityAt)}</span>
+                    <span className="text-xs">{t('erp.sessions.lastActivity', { time: formatTimeAgo(currentSession.lastActivityAt) })}</span>
                   </div>
                 </div>
               </div>
@@ -297,7 +299,7 @@ export function SessionsTab() {
       {otherSessions.length > 0 ? (
         <div className="space-y-3">
           <h4 className="text-sm font-semibold text-base-content/70">
-            Boshqa qurilmalar ({otherSessions.length})
+            {t('erp.sessions.otherDevices', { count: otherSessions.length })}
           </h4>
           {otherSessions.map((session) => (
             <div key={session.id} className="surface-card p-4 sm:p-6">
@@ -320,11 +322,11 @@ export function SessionsTab() {
                       </div>
                       <div className="flex items-center gap-1.5 sm:gap-2 whitespace-nowrap">
                         <Clock className="h-3 w-3 flex-shrink-0" />
-                        <span className="text-xs">Kirish: {formatTimeAgo(session.createdAt)}</span>
+                        <span className="text-xs">{t('erp.sessions.loggedIn', { time: formatTimeAgo(session.createdAt) })}</span>
                       </div>
                       <div className="flex items-center gap-1.5 sm:gap-2 whitespace-nowrap">
                         <Clock className="h-3 w-3 flex-shrink-0" />
-                        <span className="text-xs">Faollik: {formatTimeAgo(session.lastActivityAt)}</span>
+                        <span className="text-xs">{t('erp.sessions.lastActivity', { time: formatTimeAgo(session.lastActivityAt) })}</span>
                       </div>
                     </div>
                   </div>
@@ -341,7 +343,7 @@ export function SessionsTab() {
                   ) : (
                     <>
                       <LogOut className="h-4 w-4" />
-                      Chiqish
+                      {t('erp.sessions.logout')}
                     </>
                   )}
                 </Button>
@@ -352,9 +354,9 @@ export function SessionsTab() {
       ) : (
         <div className="surface-card p-12 text-center">
           <AlertTriangle className="h-12 w-12 mx-auto text-base-content/30" />
-          <h4 className="text-lg font-semibold mt-4">Boshqa sessiyalar yo'q</h4>
+          <h4 className="text-lg font-semibold mt-4">{t('erp.sessions.noOtherSessions')}</h4>
           <p className="text-sm text-base-content/60 mt-2">
-            Faqat hozirgi qurilmadan kirilgan
+            {t('erp.sessions.onlyCurrentDevice')}
           </p>
         </div>
       )}
@@ -363,10 +365,9 @@ export function SessionsTab() {
       <div className="alert alert-info">
         <AlertTriangle className="h-5 w-5" />
         <div className="text-sm">
-          <p className="font-semibold">Xavfsizlik eslatmasi</p>
+          <p className="font-semibold">{t('erp.sessions.securityNoticeTitle')}</p>
           <p className="mt-1">
-            Agar noma'lum qurilmalarni ko'rsangiz, darhol barchasidan chiqing va
-            parolingizni o'zgartiring.
+            {t('erp.sessions.securityNoticeText')}
           </p>
         </div>
       </div>

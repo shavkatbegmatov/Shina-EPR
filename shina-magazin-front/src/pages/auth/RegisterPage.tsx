@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { useForm, Controller } from 'react-hook-form';
+import { useTranslation } from 'react-i18next';
 import { Link } from 'react-router-dom';
 import { UserPlus } from 'lucide-react';
 import toast from 'react-hot-toast';
@@ -16,6 +17,7 @@ type RegisterRequest = {
 };
 
 export function RegisterPage() {
+  const { t } = useTranslation();
   const [loading, setLoading] = useState(false);
   const {
     register,
@@ -32,7 +34,7 @@ export function RegisterPage() {
   const onSubmit = async () => {
     setLoading(true);
     setTimeout(() => {
-      toast.success("So'rov qabul qilindi. Administrator bilan bog'laning.");
+      toast.success(t('erp.register.requestAccepted'));
       reset();
       setLoading(false);
     }, 600);
@@ -44,21 +46,21 @@ export function RegisterPage() {
         <div className="surface-card w-full rounded-3xl p-8 shadow-[var(--shadow-strong)]">
           <div className="mb-6">
             <div className="pill w-fit">Access</div>
-            <h1 className="mt-3 text-3xl font-semibold">Ro'yxatdan o'tish</h1>
+            <h1 className="mt-3 text-3xl font-semibold">{t('erp.register.title')}</h1>
             <p className="text-sm text-base-content/60">
-              Hisob yaratish bo'yicha so'rov qoldiring. Administrator tasdiqlaydi.
+              {t('erp.register.subtitle')}
             </p>
           </div>
 
           <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
             <label className="form-control">
-              <span className="label-text text-sm">Ism-familiya</span>
+              <span className="label-text text-sm">{t('erp.register.fullName')}</span>
               <input
                 type="text"
                 className={`input input-bordered w-full ${errors.fullName ? 'input-error' : ''}`}
-                placeholder="Ism va familiyangiz"
+                placeholder={t('erp.register.fullNamePlaceholder')}
                 {...register('fullName', {
-                  required: 'Ism-familiya kiritilishi shart',
+                  required: t('erp.register.fullNameRequired'),
                 })}
               />
               {errors.fullName && (
@@ -71,10 +73,10 @@ export function RegisterPage() {
             <Controller
               name="phone"
               control={control}
-              rules={{ required: 'Telefon raqam kiritilishi shart' }}
+              rules={{ required: t('erp.register.phoneRequired') }}
               render={({ field }) => (
                 <PhoneInput
-                  label="Telefon"
+                  label={t('erp.register.phone')}
                   value={field.value || ''}
                   onChange={field.onChange}
                   error={errors.phone?.message}
@@ -84,11 +86,11 @@ export function RegisterPage() {
             />
 
             <label className="form-control">
-              <span className="label-text text-sm">Kompaniya (ixtiyoriy)</span>
+              <span className="label-text text-sm">{t('erp.register.company')}</span>
               <input
                 type="text"
                 className="input input-bordered w-full"
-                placeholder="Kompaniya nomi"
+                placeholder={t('erp.register.companyPlaceholder')}
                 {...register('companyName')}
               />
             </label>
@@ -98,24 +100,24 @@ export function RegisterPage() {
               control={control}
               render={({ field }) => (
                 <Select
-                  label="Rol"
+                  label={t('erp.register.role')}
                   value={field.value}
                   onChange={(val) => field.onChange(val)}
                   options={[
-                    { value: 'SELLER', label: 'Sotuvchi' },
-                    { value: 'MANAGER', label: 'Menejer' },
-                    { value: 'ADMIN', label: 'Administrator' },
+                    { value: 'SELLER', label: t('erp.register.roleSeller') },
+                    { value: 'MANAGER', label: t('erp.register.roleManager') },
+                    { value: 'ADMIN', label: t('erp.register.roleAdmin') },
                   ]}
-                  placeholder="Rolni tanlang"
+                  placeholder={t('erp.register.rolePlaceholder')}
                 />
               )}
             />
 
             <label className="form-control">
-              <span className="label-text text-sm">Izoh (ixtiyoriy)</span>
+              <span className="label-text text-sm">{t('erp.register.note')}</span>
               <textarea
                 className="textarea textarea-bordered min-h-[96px]"
-                placeholder="Qisqacha izoh"
+                placeholder={t('erp.register.notePlaceholder')}
                 {...register('note')}
               />
             </label>
@@ -126,16 +128,16 @@ export function RegisterPage() {
               ) : (
                 <>
                   <UserPlus className="h-5 w-5" />
-                  So'rov yuborish
+                  {t('erp.register.submit')}
                 </>
               )}
             </Button>
           </form>
 
           <div className="mt-6 text-center text-xs text-base-content/60">
-            Hisobingiz bormi?{' '}
+            {t('erp.register.haveAccount')}{' '}
             <Link to="/login" className="link link-primary">
-              Kirish
+              {t('erp.register.login')}
             </Link>
           </div>
         </div>

@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useForm } from 'react-hook-form';
+import { useTranslation } from 'react-i18next';
 import {
   User,
   Mail,
@@ -39,6 +40,7 @@ interface PasswordFormData {
 }
 
 export function ProfilePage() {
+  const { t } = useTranslation();
   const [activeTab, setActiveTab] = useState<Tab>('profile');
   const [userData, setUserData] = useState<UserType | null>(null);
   const [roles, setRoles] = useState<Role[]>([]);
@@ -76,10 +78,10 @@ export function ProfilePage() {
   };
 
   const getStrengthLabel = () => {
-    if (passwordStrength <= 1) return 'Juda zaif';
-    if (passwordStrength === 2) return 'Zaif';
-    if (passwordStrength === 3) return 'Yaxshi';
-    return 'Kuchli';
+    if (passwordStrength <= 1) return t('erp.profile.strengthVeryWeak');
+    if (passwordStrength === 2) return t('erp.profile.strengthWeak');
+    if (passwordStrength === 3) return t('erp.profile.strengthGood');
+    return t('erp.profile.strengthStrong');
   };
 
   // Fetch user data and roles
@@ -93,7 +95,7 @@ export function ProfilePage() {
         setUserData(userData);
         setRoles(rolesData);
       } catch {
-        toast.error("Ma'lumotlarni yuklashda xatolik");
+        toast.error(t('erp.profile.loadError'));
       } finally {
         setLoading(false);
       }
@@ -115,7 +117,7 @@ export function ProfilePage() {
 
   const onSubmitPassword = async (data: PasswordFormData) => {
     if (data.newPassword !== data.confirmPassword) {
-      toast.error('Yangi parol va tasdiqlash mos kelmadi');
+      toast.error(t('erp.profile.passwordMismatchConfirm'));
       return;
     }
 
@@ -128,7 +130,7 @@ export function ProfilePage() {
       };
 
       await authApi.changePassword(request);
-      toast.success("Parol muvaffaqiyatli o'zgartirildi!");
+      toast.success(t('erp.profile.passwordChangedSuccess'));
       reset();
 
       // Force re-login after password change
@@ -138,7 +140,7 @@ export function ProfilePage() {
       }, 1500);
     } catch (error: unknown) {
       const err = error as { response?: { data?: { message?: string } } };
-      toast.error(err.response?.data?.message || "Parolni o'zgartirishda xatolik");
+      toast.error(err.response?.data?.message || t('erp.profile.passwordChangeError'));
     } finally {
       setChangingPassword(false);
     }
@@ -179,8 +181,8 @@ export function ProfilePage() {
     <div className="space-y-6">
       {/* Header */}
       <div>
-        <h1 className="section-title">Profil</h1>
-        <p className="section-subtitle">Shaxsiy ma'lumotlar va xavfsizlik sozlamalari</p>
+        <h1 className="section-title">{t('erp.profile.title')}</h1>
+        <p className="section-subtitle">{t('erp.profile.subtitle')}</p>
       </div>
 
       {/* Tabs */}
@@ -190,35 +192,35 @@ export function ProfilePage() {
           onClick={() => setActiveTab('profile')}
         >
           <UserCircle className="h-4 w-4" />
-          Ma'lumotlar
+          {t('erp.profile.tabProfile')}
         </button>
         <button
           className={clsx('tab gap-2 text-xs sm:text-sm px-3 sm:px-4 min-h-[48px]', activeTab === 'security' && 'tab-active')}
           onClick={() => setActiveTab('security')}
         >
           <Lock className="h-4 w-4" />
-          Xavfsizlik
+          {t('erp.profile.tabSecurity')}
         </button>
         <button
           className={clsx('tab gap-2 text-xs sm:text-sm px-3 sm:px-4 min-h-[48px]', activeTab === 'sessions' && 'tab-active')}
           onClick={() => setActiveTab('sessions')}
         >
           <Monitor className="h-4 w-4" />
-          Sessiyalar
+          {t('erp.profile.tabSessions')}
         </button>
         <button
           className={clsx('tab gap-2 text-xs sm:text-sm px-3 sm:px-4 min-h-[48px]', activeTab === 'login-activity' && 'tab-active')}
           onClick={() => setActiveTab('login-activity')}
         >
           <Shield className="h-4 w-4" />
-          Kirish tarixi
+          {t('erp.profile.tabLoginActivity')}
         </button>
         <button
           className={clsx('tab gap-2 text-xs sm:text-sm px-3 sm:px-4 min-h-[48px]', activeTab === 'activity' && 'tab-active')}
           onClick={() => setActiveTab('activity')}
         >
           <Activity className="h-4 w-4" />
-          Faoliyat tarixi
+          {t('erp.profile.tabActivity')}
         </button>
       </div>
 
@@ -254,12 +256,12 @@ export function ProfilePage() {
                 {userData?.active ? (
                   <span className="badge badge-success gap-1">
                     <Check className="h-3 w-3" />
-                    Faol
+                    {t('erp.profile.statusActive')}
                   </span>
                 ) : (
                   <span className="badge badge-error gap-1">
                     <X className="h-3 w-3" />
-                    Nofaol
+                    {t('erp.profile.statusInactive')}
                   </span>
                 )}
               </div>
@@ -268,7 +270,7 @@ export function ProfilePage() {
 
           {/* Contact Info */}
           <div className="surface-card p-4 sm:p-6">
-            <h3 className="text-base sm:text-lg font-semibold mb-4 sm:mb-6">Kontakt ma'lumotlari</h3>
+            <h3 className="text-base sm:text-lg font-semibold mb-4 sm:mb-6">{t('erp.profile.contactInfo')}</h3>
             <div className="grid gap-4 sm:gap-6 sm:grid-cols-2">
               {/* Email */}
               <div className="flex items-center gap-3 sm:gap-4 p-3 sm:p-4 rounded-xl bg-base-200/50">
@@ -276,8 +278,8 @@ export function ProfilePage() {
                   <Mail className="h-5 w-5 text-primary" />
                 </div>
                 <div>
-                  <p className="text-xs text-base-content/50 uppercase tracking-wider">Email</p>
-                  <p className="font-semibold">{userData?.email || 'Kiritilmagan'}</p>
+                  <p className="text-xs text-base-content/50 uppercase tracking-wider">{t('erp.profile.labelEmail')}</p>
+                  <p className="font-semibold">{userData?.email || t('erp.profile.notProvided')}</p>
                 </div>
               </div>
 
@@ -287,8 +289,8 @@ export function ProfilePage() {
                   <Phone className="h-5 w-5 text-primary" />
                 </div>
                 <div>
-                  <p className="text-xs text-base-content/50 uppercase tracking-wider">Telefon</p>
-                  <p className="font-semibold">{userData?.phone || 'Kiritilmagan'}</p>
+                  <p className="text-xs text-base-content/50 uppercase tracking-wider">{t('erp.profile.labelPhone')}</p>
+                  <p className="font-semibold">{userData?.phone || t('erp.profile.notProvided')}</p>
                 </div>
               </div>
 
@@ -298,7 +300,7 @@ export function ProfilePage() {
                   <User className="h-5 w-5 text-info" />
                 </div>
                 <div>
-                  <p className="text-xs text-base-content/50 uppercase tracking-wider">Foydalanuvchi nomi</p>
+                  <p className="text-xs text-base-content/50 uppercase tracking-wider">{t('erp.profile.labelUsername')}</p>
                   <p className="font-semibold">{userData?.username}</p>
                 </div>
               </div>
@@ -309,7 +311,7 @@ export function ProfilePage() {
                   <Shield className="h-5 w-5 text-warning" />
                 </div>
                 <div>
-                  <p className="text-xs text-base-content/50 uppercase tracking-wider">Rol</p>
+                  <p className="text-xs text-base-content/50 uppercase tracking-wider">{t('erp.profile.labelRole')}</p>
                   <p className="font-semibold">{userData?.role && getRoleLabel(userData.role)}</p>
                 </div>
               </div>
@@ -327,10 +329,9 @@ export function ProfilePage() {
               <div className="flex items-start gap-3">
                 <AlertTriangle className="h-5 w-5 flex-shrink-0 mt-0.5" />
                 <div>
-                  <h4 className="font-semibold">Parolingizni o'zgartiring</h4>
+                  <h4 className="font-semibold">{t('erp.profile.mustChangeTitle')}</h4>
                   <p className="text-sm mt-1">
-                    Siz hozircha admin tomonidan berilgan paroldan foydalanayapsiz.
-                    Xavfsizlik uchun uni o'zgartiring.
+                    {t('erp.profile.mustChangeDesc')}
                   </p>
                 </div>
               </div>
@@ -343,9 +344,9 @@ export function ProfilePage() {
                 <Key className="h-6 w-6 text-warning" />
               </div>
               <div>
-                <h3 className="text-lg font-semibold">Parolni o'zgartirish</h3>
+                <h3 className="text-lg font-semibold">{t('erp.profile.changePasswordTitle')}</h3>
                 <p className="text-sm text-base-content/60">
-                  Hisobingiz xavfsizligi uchun kuchli parol o'rnating
+                  {t('erp.profile.changePasswordDesc')}
                 </p>
               </div>
             </div>
@@ -354,19 +355,19 @@ export function ProfilePage() {
               {/* Current Password */}
               <div className="form-control">
                 <span className="label-text mb-1 text-xs font-semibold uppercase tracking-[0.18em] text-base-content/50">
-                  Joriy parol
+                  {t('erp.profile.currentPasswordLabel')}
                 </span>
                 <div className="relative">
                   <input
                     type={showCurrentPassword ? 'text' : 'password'}
-                    placeholder="Joriy parolingizni kiriting"
+                    placeholder={t('erp.profile.currentPasswordPlaceholder')}
                     autoComplete="current-password"
                     className={clsx(
                       'input input-bordered w-full pr-10',
                       errors.currentPassword && 'input-error'
                     )}
                     {...register('currentPassword', {
-                      required: 'Joriy parol kiritilishi shart',
+                      required: t('erp.profile.currentPasswordRequired'),
                     })}
                   />
                   <button
@@ -385,20 +386,20 @@ export function ProfilePage() {
               {/* New Password */}
               <div className="form-control">
                 <span className="label-text mb-1 text-xs font-semibold uppercase tracking-[0.18em] text-base-content/50">
-                  Yangi parol
+                  {t('erp.profile.newPasswordLabel')}
                 </span>
                 <div className="relative">
                   <input
                     type={showNewPassword ? 'text' : 'password'}
-                    placeholder="Yangi xavfsiz parol"
+                    placeholder={t('erp.profile.newPasswordPlaceholder')}
                     autoComplete="new-password"
                     className={clsx(
                       'input input-bordered w-full pr-10',
                       errors.newPassword && 'input-error'
                     )}
                     {...register('newPassword', {
-                      required: 'Yangi parol kiritilishi shart',
-                      minLength: { value: 6, message: 'Parol kamida 6 belgi' },
+                      required: t('erp.profile.newPasswordRequired'),
+                      minLength: { value: 6, message: t('erp.profile.passwordMinLength') },
                     })}
                   />
                   <button
@@ -429,10 +430,10 @@ export function ProfilePage() {
                     </span>
                   </div>
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                    <PasswordRequirement met={hasMinLength} text="Kamida 6 belgi" />
-                    <PasswordRequirement met={hasUppercase} text="Katta harf" />
-                    <PasswordRequirement met={hasLowercase} text="Kichik harf" />
-                    <PasswordRequirement met={hasNumber} text="Raqam" />
+                    <PasswordRequirement met={hasMinLength} text={t('erp.profile.reqMinLength')} />
+                    <PasswordRequirement met={hasUppercase} text={t('erp.profile.reqUppercase')} />
+                    <PasswordRequirement met={hasLowercase} text={t('erp.profile.reqLowercase')} />
+                    <PasswordRequirement met={hasNumber} text={t('erp.profile.reqNumber')} />
                   </div>
                 </div>
               )}
@@ -440,20 +441,20 @@ export function ProfilePage() {
               {/* Confirm Password */}
               <div className="form-control">
                 <span className="label-text mb-1 text-xs font-semibold uppercase tracking-[0.18em] text-base-content/50">
-                  Parolni tasdiqlash
+                  {t('erp.profile.confirmPasswordLabel')}
                 </span>
                 <div className="relative">
                   <input
                     type={showConfirmPassword ? 'text' : 'password'}
-                    placeholder="Yangi parolni qayta kiriting"
+                    placeholder={t('erp.profile.confirmPasswordPlaceholder')}
                     autoComplete="new-password"
                     className={clsx(
                       'input input-bordered w-full pr-10',
                       errors.confirmPassword && 'input-error'
                     )}
                     {...register('confirmPassword', {
-                      required: 'Parolni tasdiqlash kiritilishi shart',
-                      validate: (value) => value === newPassword || 'Parollar mos kelmadi',
+                      required: t('erp.profile.confirmPasswordRequired'),
+                      validate: (value) => value === newPassword || t('erp.profile.passwordsDoNotMatch'),
                     })}
                   />
                   <button
@@ -479,19 +480,19 @@ export function ProfilePage() {
                   {changingPassword ? (
                     <>
                       <Loader2 className="h-4 w-4 animate-spin" />
-                      O'zgartirilmoqda...
+                      {t('erp.profile.changing')}
                     </>
                   ) : (
                     <>
                       <Key className="h-4 w-4" />
-                      Parolni o'zgartirish
+                      {t('erp.profile.changePasswordButton')}
                     </>
                   )}
                 </Button>
               </div>
 
               <p className="text-xs text-base-content/50">
-                Parol o'zgartirilgandan so'ng tizimga qayta kirishingiz kerak bo'ladi
+                {t('erp.profile.reloginNote')}
               </p>
             </form>
           </div>
