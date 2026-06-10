@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import {
   ArrowLeft,
   Package,
@@ -20,6 +21,7 @@ import { formatCurrency } from '../../config/constants';
 import type { Product } from '../../types';
 
 export function ProductDetailPage() {
+  const { t } = useTranslation();
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
 
@@ -46,11 +48,11 @@ export function ProductDetailPage() {
   const getSeasonLabel = (season?: string) => {
     switch (season) {
       case 'SUMMER':
-        return 'Yozgi';
+        return t('erp.productDetail.seasonSummer');
       case 'WINTER':
-        return 'Qishki';
+        return t('erp.productDetail.seasonWinter');
       case 'ALL_SEASON':
-        return 'Barcha mavsumlar';
+        return t('erp.productDetail.seasonAllSeason');
       default:
         return '—';
     }
@@ -84,9 +86,9 @@ export function ProductDetailPage() {
     return (
       <div className="text-center py-12">
         <AlertCircle className="h-12 w-12 mx-auto text-error mb-4" />
-        <h2 className="text-xl font-semibold">Mahsulot topilmadi</h2>
+        <h2 className="text-xl font-semibold">{t('erp.productDetail.notFound')}</h2>
         <Button variant="primary" className="mt-4" onClick={() => navigate('/products')}>
-          Orqaga qaytish
+          {t('common.back')}
         </Button>
       </div>
     );
@@ -114,10 +116,10 @@ export function ProductDetailPage() {
         </div>
         <div className="flex flex-wrap items-center gap-2">
           <span className={clsx('badge', product.active ? 'badge-success' : 'badge-error')}>
-            {product.active ? 'Faol' : 'Nofaol'}
+            {product.active ? t('erp.productDetail.active') : t('erp.productDetail.inactive')}
           </span>
           {product.lowStock && (
-            <span className="badge badge-warning">Kam qoldi</span>
+            <span className="badge badge-warning">{t('erp.productDetail.lowStock')}</span>
           )}
           {product.season && (
             <span className={clsx('badge', getSeasonBadgeClass(product.season))}>
@@ -135,7 +137,7 @@ export function ProductDetailPage() {
               <Tag className="h-5 w-5 text-primary" />
             </div>
             <div>
-              <p className="text-xs text-base-content/60">Brand</p>
+              <p className="text-xs text-base-content/60">{t('erp.productDetail.brand')}</p>
               <p className="font-semibold">{product.brandName || '—'}</p>
             </div>
           </div>
@@ -147,7 +149,7 @@ export function ProductDetailPage() {
               <Package className="h-5 w-5 text-info" />
             </div>
             <div>
-              <p className="text-xs text-base-content/60">Kategoriya</p>
+              <p className="text-xs text-base-content/60">{t('erp.productDetail.category')}</p>
               <p className="font-semibold">{product.categoryName || '—'}</p>
             </div>
           </div>
@@ -159,7 +161,7 @@ export function ProductDetailPage() {
               <DollarSign className="h-5 w-5 text-success" />
             </div>
             <div>
-              <p className="text-xs text-base-content/60">Sotish narxi</p>
+              <p className="text-xs text-base-content/60">{t('erp.productDetail.sellingPrice')}</p>
               <p className="font-semibold">{formatCurrency(product.sellingPrice)}</p>
             </div>
           </div>
@@ -171,12 +173,12 @@ export function ProductDetailPage() {
               <Warehouse className="h-5 w-5 text-warning" />
             </div>
             <div>
-              <p className="text-xs text-base-content/60">Ombor qoldig'i</p>
+              <p className="text-xs text-base-content/60">{t('erp.productDetail.stockBalance')}</p>
               <p className={clsx(
                 'font-semibold',
                 product.lowStock ? 'text-error' : 'text-success'
               )}>
-                {product.quantity} dona
+                {t('erp.productDetail.pcs', { count: product.quantity })}
               </p>
             </div>
           </div>
@@ -188,7 +190,7 @@ export function ProductDetailPage() {
         {/* Technical Specifications */}
         <div className="surface-card p-4">
           <h3 className="text-sm font-semibold uppercase tracking-[0.15em] text-base-content/60 mb-4">
-            Texnik xususiyatlari
+            {t('erp.productDetail.technicalSpecs')}
           </h3>
           <div className="space-y-4">
             {/* Size */}
@@ -198,7 +200,7 @@ export function ProductDetailPage() {
                   <Ruler className="h-4 w-4 text-base-content/60" />
                 </div>
                 <div>
-                  <p className="text-xs text-base-content/60">O'lchami</p>
+                  <p className="text-xs text-base-content/60">{t('erp.productDetail.size')}</p>
                   <p className="font-semibold">{product.sizeString}</p>
                 </div>
               </div>
@@ -209,19 +211,19 @@ export function ProductDetailPage() {
               <div className="grid grid-cols-3 gap-4 pl-11">
                 {product.width && (
                   <div>
-                    <p className="text-xs text-base-content/60">Kengligi</p>
+                    <p className="text-xs text-base-content/60">{t('erp.productDetail.width')}</p>
                     <p className="font-medium">{product.width} mm</p>
                   </div>
                 )}
                 {product.profile && (
                   <div>
-                    <p className="text-xs text-base-content/60">Profil</p>
+                    <p className="text-xs text-base-content/60">{t('erp.productDetail.profile')}</p>
                     <p className="font-medium">{product.profile}%</p>
                   </div>
                 )}
                 {product.diameter && (
                   <div>
-                    <p className="text-xs text-base-content/60">Diametr</p>
+                    <p className="text-xs text-base-content/60">{t('erp.productDetail.diameter')}</p>
                     <p className="font-medium">R{product.diameter}</p>
                   </div>
                 )}
@@ -235,7 +237,7 @@ export function ProductDetailPage() {
                   <Thermometer className="h-4 w-4 text-base-content/60" />
                 </div>
                 <div>
-                  <p className="text-xs text-base-content/60">Mavsum</p>
+                  <p className="text-xs text-base-content/60">{t('erp.productDetail.season')}</p>
                   <p className="font-semibold">{getSeasonLabel(product.season)}</p>
                 </div>
               </div>
@@ -248,7 +250,7 @@ export function ProductDetailPage() {
                   <Gauge className="h-4 w-4 text-base-content/60" />
                 </div>
                 <div>
-                  <p className="text-xs text-base-content/60">Yuklanish indeksi</p>
+                  <p className="text-xs text-base-content/60">{t('erp.productDetail.loadIndex')}</p>
                   <p className="font-semibold">{product.loadIndex}</p>
                 </div>
               </div>
@@ -261,7 +263,7 @@ export function ProductDetailPage() {
                   <Zap className="h-4 w-4 text-base-content/60" />
                 </div>
                 <div>
-                  <p className="text-xs text-base-content/60">Tezlik reytingi</p>
+                  <p className="text-xs text-base-content/60">{t('erp.productDetail.speedRating')}</p>
                   <p className="font-semibold">{product.speedRating}</p>
                 </div>
               </div>
@@ -270,7 +272,7 @@ export function ProductDetailPage() {
             {/* Show placeholder if no specs */}
             {!product.sizeString && !product.season && !product.loadIndex && !product.speedRating && (
               <p className="text-base-content/50 text-center py-4">
-                Texnik xususiyatlar mavjud emas
+                {t('erp.productDetail.noSpecs')}
               </p>
             )}
           </div>
@@ -279,27 +281,27 @@ export function ProductDetailPage() {
         {/* Price & Stock Info */}
         <div className="surface-card p-4">
           <h3 className="text-sm font-semibold uppercase tracking-[0.15em] text-base-content/60 mb-4">
-            Narx va ombor
+            {t('erp.productDetail.priceAndStock')}
           </h3>
           <div className="space-y-4">
             {/* Purchase Price */}
             {product.purchasePrice !== undefined && (
               <div className="flex items-center justify-between py-2 border-b border-base-200">
-                <span className="text-base-content/70">Xarid narxi</span>
+                <span className="text-base-content/70">{t('erp.productDetail.purchasePrice')}</span>
                 <span className="font-semibold">{formatCurrency(product.purchasePrice)}</span>
               </div>
             )}
 
             {/* Selling Price */}
             <div className="flex items-center justify-between py-2 border-b border-base-200">
-              <span className="text-base-content/70">Sotish narxi</span>
+              <span className="text-base-content/70">{t('erp.productDetail.sellingPrice')}</span>
               <span className="font-semibold text-success">{formatCurrency(product.sellingPrice)}</span>
             </div>
 
             {/* Profit Margin */}
             {product.purchasePrice !== undefined && product.purchasePrice > 0 && (
               <div className="flex items-center justify-between py-2 border-b border-base-200">
-                <span className="text-base-content/70">Foyda</span>
+                <span className="text-base-content/70">{t('erp.productDetail.profit')}</span>
                 <span className="font-semibold text-primary">
                   {formatCurrency(product.sellingPrice - product.purchasePrice)}
                   <span className="text-xs text-base-content/50 ml-1">
@@ -311,19 +313,19 @@ export function ProductDetailPage() {
 
             {/* Current Stock */}
             <div className="flex items-center justify-between py-2 border-b border-base-200">
-              <span className="text-base-content/70">Joriy zaxira</span>
+              <span className="text-base-content/70">{t('erp.productDetail.currentStock')}</span>
               <span className={clsx(
                 'font-semibold',
                 product.lowStock ? 'text-error' : ''
               )}>
-                {product.quantity} dona
+                {t('erp.productDetail.pcs', { count: product.quantity })}
               </span>
             </div>
 
             {/* Min Stock Level */}
             <div className="flex items-center justify-between py-2">
-              <span className="text-base-content/70">Minimal daraja</span>
-              <span className="font-semibold">{product.minStockLevel} dona</span>
+              <span className="text-base-content/70">{t('erp.productDetail.minLevel')}</span>
+              <span className="font-semibold">{t('erp.productDetail.pcs', { count: product.minStockLevel })}</span>
             </div>
           </div>
         </div>
@@ -334,7 +336,7 @@ export function ProductDetailPage() {
         <div className="surface-card p-4">
           <h3 className="text-sm font-semibold uppercase tracking-[0.15em] text-base-content/60 mb-2 flex items-center gap-2">
             <FileText className="h-4 w-4" />
-            Tavsif
+            {t('erp.productDetail.description')}
           </h3>
           <p className="text-base-content/80 whitespace-pre-wrap">{product.description}</p>
         </div>
@@ -344,7 +346,7 @@ export function ProductDetailPage() {
       <div className="flex justify-start">
         <Button variant="ghost" onClick={() => navigate('/products')}>
           <ArrowLeft className="h-4 w-4" />
-          Mahsulotlar ro'yxatiga qaytish
+          {t('erp.productDetail.backToList')}
         </Button>
       </div>
     </div>

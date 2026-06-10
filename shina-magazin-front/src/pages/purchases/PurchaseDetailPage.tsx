@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { useParams, useNavigate } from 'react-router-dom';
 import {
   ArrowLeft,
@@ -46,6 +47,7 @@ interface ReturnCartItem {
 }
 
 export function PurchaseDetailPage() {
+  const { t } = useTranslation();
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const { notifications } = useNotificationsStore();
@@ -258,7 +260,7 @@ export function PurchaseDetailPage() {
 
   // Delete return
   const handleDeleteReturn = async (returnId: number) => {
-    if (!confirm("Qaytarishni o'chirishni xohlaysizmi?")) return;
+    if (!confirm(t('erp.purchaseDetail.deleteReturnConfirm'))) return;
     try {
       await purchasesApi.deleteReturn(returnId);
       void loadReturns();
@@ -284,9 +286,9 @@ export function PurchaseDetailPage() {
     return (
       <div className="text-center py-12">
         <AlertCircle className="h-12 w-12 mx-auto text-error mb-4" />
-        <h2 className="text-xl font-semibold">Xarid topilmadi</h2>
+        <h2 className="text-xl font-semibold">{t('erp.purchaseDetail.notFound')}</h2>
         <Button variant="primary" className="mt-4" onClick={() => navigate('/purchases')}>
-          Orqaga qaytish
+          {t('erp.purchaseDetail.goBack')}
         </Button>
       </div>
     );
@@ -298,7 +300,7 @@ export function PurchaseDetailPage() {
         <div className="absolute inset-0 z-10 flex items-center justify-center rounded-xl bg-base-100/60 backdrop-blur-sm">
           <div className="flex flex-col items-center gap-3">
             <span className="loading loading-spinner loading-lg text-primary"></span>
-            <span className="text-sm font-medium text-base-content/70">Yangilanmoqda...</span>
+            <span className="text-sm font-medium text-base-content/70">{t('erp.purchaseDetail.refreshing')}</span>
           </div>
         </div>
       )}
@@ -327,9 +329,9 @@ export function PurchaseDetailPage() {
             purchase.status === 'DRAFT' && 'badge-warning',
             purchase.status === 'CANCELLED' && 'badge-error'
           )}>
-            {purchase.status === 'RECEIVED' && 'Qabul qilingan'}
-            {purchase.status === 'DRAFT' && 'Qoralama'}
-            {purchase.status === 'CANCELLED' && 'Bekor qilingan'}
+            {purchase.status === 'RECEIVED' && t('erp.purchaseDetail.statusReceived')}
+            {purchase.status === 'DRAFT' && t('erp.purchaseDetail.statusDraft')}
+            {purchase.status === 'CANCELLED' && t('erp.purchaseDetail.statusCancelled')}
           </span>
           <span className={clsx(
             'badge',
@@ -337,9 +339,9 @@ export function PurchaseDetailPage() {
             purchase.paymentStatus === 'PARTIAL' && 'badge-warning',
             purchase.paymentStatus === 'UNPAID' && 'badge-error'
           )}>
-            {purchase.paymentStatus === 'PAID' && "To'langan"}
-            {purchase.paymentStatus === 'PARTIAL' && 'Qisman'}
-            {purchase.paymentStatus === 'UNPAID' && "To'lanmagan"}
+            {purchase.paymentStatus === 'PAID' && t('erp.purchaseDetail.paymentStatusPaid')}
+            {purchase.paymentStatus === 'PARTIAL' && t('erp.purchaseDetail.paymentStatusPartial')}
+            {purchase.paymentStatus === 'UNPAID' && t('erp.purchaseDetail.paymentStatusUnpaid')}
           </span>
         </div>
       </div>
@@ -352,7 +354,7 @@ export function PurchaseDetailPage() {
               <Calendar className="h-5 w-5 text-primary" />
             </div>
             <div>
-              <p className="text-xs text-base-content/60">Sana</p>
+              <p className="text-xs text-base-content/60">{t('erp.purchaseDetail.date')}</p>
               <p className="font-semibold">{formatDate(purchase.orderDate)}</p>
             </div>
           </div>
@@ -364,8 +366,8 @@ export function PurchaseDetailPage() {
               <Package className="h-5 w-5 text-info" />
             </div>
             <div>
-              <p className="text-xs text-base-content/60">Mahsulotlar</p>
-              <p className="font-semibold">{purchase.itemCount} xil, {purchase.totalQuantity} dona</p>
+              <p className="text-xs text-base-content/60">{t('erp.purchaseDetail.products')}</p>
+              <p className="font-semibold">{t('erp.purchaseDetail.productsSummary', { itemCount: purchase.itemCount, totalQuantity: purchase.totalQuantity })}</p>
             </div>
           </div>
         </div>
@@ -376,7 +378,7 @@ export function PurchaseDetailPage() {
               <CreditCard className="h-5 w-5 text-success" />
             </div>
             <div>
-              <p className="text-xs text-base-content/60">Jami summa</p>
+              <p className="text-xs text-base-content/60">{t('erp.purchaseDetail.totalAmount')}</p>
               <p className="font-semibold">{formatCurrency(purchase.totalAmount)}</p>
             </div>
           </div>
@@ -388,12 +390,12 @@ export function PurchaseDetailPage() {
               <Wallet className="h-5 w-5 text-error" />
             </div>
             <div>
-              <p className="text-xs text-base-content/60">Qarz</p>
+              <p className="text-xs text-base-content/60">{t('erp.purchaseDetail.debt')}</p>
               <p className={clsx(
                 'font-semibold',
                 purchase.debtAmount > 0 ? 'text-error' : 'text-success'
               )}>
-                {purchase.debtAmount > 0 ? formatCurrency(purchase.debtAmount) : "To'langan"}
+                {purchase.debtAmount > 0 ? formatCurrency(purchase.debtAmount) : t('erp.purchaseDetail.paymentStatusPaid')}
               </p>
             </div>
           </div>
@@ -405,16 +407,16 @@ export function PurchaseDetailPage() {
         {purchase.debtAmount > 0 && (
           <Button variant="primary" size="sm" onClick={handleOpenPaymentModal}>
             <Plus className="h-4 w-4" />
-            To'lov qo'shish
+            {t('erp.purchaseDetail.addPayment')}
           </Button>
         )}
         <Button variant="secondary" size="sm" onClick={handleOpenReturnModal}>
           <RotateCcw className="h-4 w-4" />
-          Qaytarish yaratish
+          {t('erp.purchaseDetail.createReturn')}
         </Button>
         <Button variant="ghost" size="sm">
           <Printer className="h-4 w-4" />
-          Chop etish
+          {t('erp.purchaseDetail.print')}
         </Button>
       </div>
 
@@ -425,21 +427,21 @@ export function PurchaseDetailPage() {
           onClick={() => setActiveTab('items')}
         >
           <Package className="h-4 w-4 mr-2" />
-          Mahsulotlar ({purchase.itemCount})
+          {t('erp.purchaseDetail.tabProducts', { count: purchase.itemCount })}
         </button>
         <button
           className={clsx('tab', activeTab === 'payments' && 'tab-active')}
           onClick={() => setActiveTab('payments')}
         >
           <CreditCard className="h-4 w-4 mr-2" />
-          To'lovlar ({purchase.paymentCount})
+          {t('erp.purchaseDetail.tabPayments', { count: purchase.paymentCount })}
         </button>
         <button
           className={clsx('tab', activeTab === 'returns' && 'tab-active')}
           onClick={() => setActiveTab('returns')}
         >
           <RotateCcw className="h-4 w-4 mr-2" />
-          Qaytarishlar ({purchase.returnCount})
+          {t('erp.purchaseDetail.tabReturns', { count: purchase.returnCount })}
         </button>
       </div>
 
@@ -452,10 +454,10 @@ export function PurchaseDetailPage() {
               <thead>
                 <tr>
                   <th>#</th>
-                  <th>Mahsulot</th>
-                  <th className="text-right">Miqdor</th>
-                  <th className="text-right">Narx</th>
-                  <th className="text-right">Summa</th>
+                  <th>{t('erp.purchaseDetail.colProduct')}</th>
+                  <th className="text-right">{t('erp.purchaseDetail.colQuantity')}</th>
+                  <th className="text-right">{t('erp.purchaseDetail.colPrice')}</th>
+                  <th className="text-right">{t('erp.purchaseDetail.colAmount')}</th>
                 </tr>
               </thead>
               <tbody>
@@ -468,7 +470,7 @@ export function PurchaseDetailPage() {
                         <p className="text-xs text-base-content/60">{item.productSku}</p>
                       </div>
                     </td>
-                    <td className="text-right">{item.quantity} dona</td>
+                    <td className="text-right">{t('erp.purchaseDetail.quantityUnit', { count: item.quantity })}</td>
                     <td className="text-right">{formatCurrency(item.unitPrice)}</td>
                     <td className="text-right font-semibold">{formatCurrency(item.totalPrice)}</td>
                   </tr>
@@ -476,7 +478,7 @@ export function PurchaseDetailPage() {
               </tbody>
               <tfoot>
                 <tr>
-                  <td colSpan={4} className="text-right font-semibold">Jami:</td>
+                  <td colSpan={4} className="text-right font-semibold">{t('erp.purchaseDetail.totalLabel')}</td>
                   <td className="text-right font-bold text-lg">{formatCurrency(purchase.totalAmount)}</td>
                 </tr>
               </tfoot>
@@ -492,12 +494,12 @@ export function PurchaseDetailPage() {
                 <table className="table">
                   <thead>
                     <tr>
-                      <th>Sana</th>
-                      <th>Summa</th>
-                      <th>Usul</th>
-                      <th>Referens</th>
-                      <th>Izoh</th>
-                      <th>Qabul qiluvchi</th>
+                      <th>{t('erp.purchaseDetail.colDate')}</th>
+                      <th>{t('erp.purchaseDetail.colAmount')}</th>
+                      <th>{t('erp.purchaseDetail.colMethod')}</th>
+                      <th>{t('erp.purchaseDetail.colReference')}</th>
+                      <th>{t('erp.purchaseDetail.colNotes')}</th>
+                      <th>{t('erp.purchaseDetail.colReceivedBy')}</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -507,9 +509,9 @@ export function PurchaseDetailPage() {
                         <td className="font-semibold text-success">{formatCurrency(payment.amount)}</td>
                         <td>
                           <span className="badge badge-sm badge-ghost">
-                            {payment.paymentMethod === 'CASH' && 'Naqd'}
-                            {payment.paymentMethod === 'CARD' && 'Karta'}
-                            {payment.paymentMethod === 'TRANSFER' && "O'tkazma"}
+                            {payment.paymentMethod === 'CASH' && t('erp.purchaseDetail.methodCash')}
+                            {payment.paymentMethod === 'CARD' && t('erp.purchaseDetail.methodCard')}
+                            {payment.paymentMethod === 'TRANSFER' && t('erp.purchaseDetail.methodTransfer')}
                           </span>
                         </td>
                         <td className="text-base-content/60">{payment.referenceNumber || '—'}</td>
@@ -520,7 +522,7 @@ export function PurchaseDetailPage() {
                   </tbody>
                   <tfoot>
                     <tr>
-                      <td className="font-semibold">Jami to'langan:</td>
+                      <td className="font-semibold">{t('erp.purchaseDetail.totalPaidLabel')}</td>
                       <td className="font-bold text-success">{formatCurrency(purchase.paidAmount)}</td>
                       <td colSpan={4}></td>
                     </tr>
@@ -530,11 +532,11 @@ export function PurchaseDetailPage() {
             ) : (
               <div className="text-center py-12 text-base-content/50">
                 <CreditCard className="h-12 w-12 mx-auto mb-2 opacity-50" />
-                <p>To'lovlar mavjud emas</p>
+                <p>{t('erp.purchaseDetail.noPayments')}</p>
                 {purchase.debtAmount > 0 && (
                   <Button variant="primary" size="sm" className="mt-4" onClick={handleOpenPaymentModal}>
                     <Plus className="h-4 w-4" />
-                    To'lov qo'shish
+                    {t('erp.purchaseDetail.addPayment')}
                   </Button>
                 )}
               </div>
@@ -560,10 +562,10 @@ export function PurchaseDetailPage() {
                             returnItem.status === 'COMPLETED' && 'badge-success',
                             returnItem.status === 'REJECTED' && 'badge-error'
                           )}>
-                            {returnItem.status === 'PENDING' && 'Kutilmoqda'}
-                            {returnItem.status === 'APPROVED' && 'Tasdiqlangan'}
-                            {returnItem.status === 'COMPLETED' && 'Yakunlangan'}
-                            {returnItem.status === 'REJECTED' && 'Rad etilgan'}
+                            {returnItem.status === 'PENDING' && t('erp.purchaseDetail.returnStatusPending')}
+                            {returnItem.status === 'APPROVED' && t('erp.purchaseDetail.returnStatusApproved')}
+                            {returnItem.status === 'COMPLETED' && t('erp.purchaseDetail.returnStatusCompleted')}
+                            {returnItem.status === 'REJECTED' && t('erp.purchaseDetail.returnStatusRejected')}
                           </span>
                         </div>
                         <p className="text-sm text-base-content/70">
@@ -571,13 +573,13 @@ export function PurchaseDetailPage() {
                           {formatDate(returnItem.returnDate)}
                         </p>
                         <p className="text-sm text-base-content/70 mt-1">
-                          Sabab: {returnItem.reason}
+                          {t('erp.purchaseDetail.reasonLabel')} {returnItem.reason}
                         </p>
                       </div>
                       <div className="text-right">
                         <p className="text-lg font-bold text-error">{formatCurrency(returnItem.refundAmount)}</p>
                         <p className="text-xs text-base-content/60">
-                          {returnItem.items.length} ta mahsulot
+                          {t('erp.purchaseDetail.itemsCount', { count: returnItem.items.length })}
                         </p>
                       </div>
                     </div>
@@ -587,10 +589,10 @@ export function PurchaseDetailPage() {
                       <table className="table table-sm">
                         <thead>
                           <tr>
-                            <th>Mahsulot</th>
-                            <th className="text-right">Miqdor</th>
-                            <th className="text-right">Narx</th>
-                            <th className="text-right">Summa</th>
+                            <th>{t('erp.purchaseDetail.colProduct')}</th>
+                            <th className="text-right">{t('erp.purchaseDetail.colQuantity')}</th>
+                            <th className="text-right">{t('erp.purchaseDetail.colPrice')}</th>
+                            <th className="text-right">{t('erp.purchaseDetail.colAmount')}</th>
                           </tr>
                         </thead>
                         <tbody>
@@ -602,7 +604,7 @@ export function PurchaseDetailPage() {
                                   <p className="text-xs text-base-content/60">{item.productSku}</p>
                                 </div>
                               </td>
-                              <td className="text-right">{item.returnedQuantity} dona</td>
+                              <td className="text-right">{t('erp.purchaseDetail.quantityUnit', { count: item.returnedQuantity })}</td>
                               <td className="text-right">{formatCurrency(item.unitPrice)}</td>
                               <td className="text-right font-semibold">{formatCurrency(item.totalPrice)}</td>
                             </tr>
@@ -621,7 +623,7 @@ export function PurchaseDetailPage() {
                             onClick={() => handleApproveReturn(returnItem.id)}
                           >
                             <Check className="h-4 w-4" />
-                            Tasdiqlash
+                            {t('erp.purchaseDetail.approve')}
                           </Button>
                           <Button
                             variant="danger"
@@ -629,7 +631,7 @@ export function PurchaseDetailPage() {
                             onClick={() => handleDeleteReturn(returnItem.id)}
                           >
                             <Trash2 className="h-4 w-4" />
-                            O'chirish
+                            {t('common.delete')}
                           </Button>
                         </>
                       )}
@@ -640,7 +642,7 @@ export function PurchaseDetailPage() {
                           onClick={() => handleCompleteReturn(returnItem.id)}
                         >
                           <CheckCircle className="h-4 w-4" />
-                          Yakunlash
+                          {t('erp.purchaseDetail.complete')}
                         </Button>
                       )}
                     </div>
@@ -650,10 +652,10 @@ export function PurchaseDetailPage() {
             ) : (
               <div className="text-center py-12 text-base-content/50">
                 <RotateCcw className="h-12 w-12 mx-auto mb-2 opacity-50" />
-                <p>Qaytarishlar mavjud emas</p>
+                <p>{t('erp.purchaseDetail.noReturns')}</p>
                 <Button variant="secondary" size="sm" className="mt-4" onClick={handleOpenReturnModal}>
                   <Plus className="h-4 w-4" />
-                  Qaytarish yaratish
+                  {t('erp.purchaseDetail.createReturn')}
                 </Button>
               </div>
             )}
@@ -665,7 +667,7 @@ export function PurchaseDetailPage() {
       {purchase.notes && (
         <div className="surface-card p-4">
           <h3 className="text-sm font-semibold uppercase tracking-[0.15em] text-base-content/60 mb-2">
-            Izoh
+            {t('erp.purchaseDetail.notesLabel')}
           </h3>
           <p className="text-base-content/80">{purchase.notes}</p>
         </div>
@@ -677,9 +679,9 @@ export function PurchaseDetailPage() {
           <div className="p-4 sm:p-6">
             <div className="flex items-start justify-between gap-4">
               <div>
-                <h3 className="text-xl font-semibold">To'lov qo'shish</h3>
+                <h3 className="text-xl font-semibold">{t('erp.purchaseDetail.addPayment')}</h3>
                 <p className="text-sm text-base-content/60">
-                  Qarz: {formatCurrency(purchase.debtAmount)}
+                  {t('erp.purchaseDetail.debtLabel', { amount: formatCurrency(purchase.debtAmount) })}
                 </p>
               </div>
               <Button variant="ghost" size="sm" onClick={handleClosePaymentModal}>
@@ -689,7 +691,7 @@ export function PurchaseDetailPage() {
 
             <div className="mt-6 space-y-4">
               <CurrencyInput
-                label="Summa *"
+                label={t('erp.purchaseDetail.amountRequired')}
                 value={paymentAmount}
                 onChange={setPaymentAmount}
                 min={0}
@@ -699,7 +701,7 @@ export function PurchaseDetailPage() {
 
               <label className="form-control">
                 <span className="label-text mb-1 text-xs font-semibold uppercase tracking-[0.18em] text-base-content/50">
-                  Sana *
+                  {t('erp.purchaseDetail.dateRequired')}
                 </span>
                 <input
                   type="date"
@@ -710,48 +712,48 @@ export function PurchaseDetailPage() {
               </label>
 
               <Select
-                label="To'lov usuli"
+                label={t('erp.purchaseDetail.paymentMethodLabel')}
                 required
                 value={paymentMethod}
                 onChange={(val) => setPaymentMethod(val as PaymentMethod)}
                 options={[
-                  { value: 'CASH', label: 'Naqd pul' },
-                  { value: 'CARD', label: 'Karta' },
-                  { value: 'TRANSFER', label: "Bank o'tkazmasi" },
+                  { value: 'CASH', label: t('erp.purchaseDetail.methodCashFull') },
+                  { value: 'CARD', label: t('erp.purchaseDetail.methodCard') },
+                  { value: 'TRANSFER', label: t('erp.purchaseDetail.methodTransferFull') },
                 ]}
-                placeholder="To'lov usulini tanlang"
+                placeholder={t('erp.purchaseDetail.paymentMethodPlaceholder')}
               />
 
               <label className="form-control">
                 <span className="label-text mb-1 text-xs font-semibold uppercase tracking-[0.18em] text-base-content/50">
-                  Referens raqami
+                  {t('erp.purchaseDetail.referenceNumberLabel')}
                 </span>
                 <input
                   type="text"
                   className="input input-bordered w-full"
                   value={paymentReference}
                   onChange={(e) => setPaymentReference(e.target.value)}
-                  placeholder="Kvitansiya yoki chek raqami"
+                  placeholder={t('erp.purchaseDetail.referenceNumberPlaceholder')}
                 />
               </label>
 
               <label className="form-control">
                 <span className="label-text mb-1 text-xs font-semibold uppercase tracking-[0.18em] text-base-content/50">
-                  Izoh
+                  {t('erp.purchaseDetail.notesLabel')}
                 </span>
                 <textarea
                   className="textarea textarea-bordered w-full"
                   rows={2}
                   value={paymentNotes}
                   onChange={(e) => setPaymentNotes(e.target.value)}
-                  placeholder="Qo'shimcha ma'lumot..."
+                  placeholder={t('erp.purchaseDetail.notesPlaceholder')}
                 />
               </label>
             </div>
 
             <div className="mt-6 flex justify-end gap-2">
               <Button variant="ghost" onClick={handleClosePaymentModal} disabled={paymentSaving}>
-                Bekor qilish
+                {t('common.cancel')}
               </Button>
               <Button
                 variant="primary"
@@ -759,7 +761,7 @@ export function PurchaseDetailPage() {
                 disabled={paymentSaving || paymentAmount <= 0}
               >
                 {paymentSaving && <span className="loading loading-spinner loading-sm" />}
-                Saqlash
+                {t('common.save')}
               </Button>
             </div>
           </div>
@@ -772,9 +774,9 @@ export function PurchaseDetailPage() {
           <div className="p-4 sm:p-6">
             <div className="flex items-start justify-between gap-4">
               <div>
-                <h3 className="text-xl font-semibold">Qaytarish yaratish</h3>
+                <h3 className="text-xl font-semibold">{t('erp.purchaseDetail.createReturn')}</h3>
                 <p className="text-sm text-base-content/60">
-                  Mahsulotlarni ta'minotchiga qaytarish
+                  {t('erp.purchaseDetail.returnModalSubtitle')}
                 </p>
               </div>
               <Button variant="ghost" size="sm" onClick={handleCloseReturnModal}>
@@ -786,7 +788,7 @@ export function PurchaseDetailPage() {
               <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                 <label className="form-control">
                   <span className="label-text mb-1 text-xs font-semibold uppercase tracking-[0.18em] text-base-content/50">
-                    Qaytarish sanasi *
+                    {t('erp.purchaseDetail.returnDateRequired')}
                   </span>
                   <input
                     type="date"
@@ -798,14 +800,14 @@ export function PurchaseDetailPage() {
 
                 <label className="form-control">
                   <span className="label-text mb-1 text-xs font-semibold uppercase tracking-[0.18em] text-base-content/50">
-                    Sabab *
+                    {t('erp.purchaseDetail.reasonRequired')}
                   </span>
                   <input
                     type="text"
                     className="input input-bordered w-full"
                     value={returnReason}
                     onChange={(e) => setReturnReason(e.target.value)}
-                    placeholder="Nuqsonli mahsulot, xato yetkazib berish..."
+                    placeholder={t('erp.purchaseDetail.reasonPlaceholder')}
                   />
                 </label>
               </div>
@@ -813,17 +815,17 @@ export function PurchaseDetailPage() {
               {/* Return items */}
               <div className="surface-soft rounded-xl p-4">
                 <h4 className="text-sm font-semibold uppercase tracking-[0.15em] text-base-content/60 mb-4">
-                  Qaytariladigan mahsulotlar
+                  {t('erp.purchaseDetail.returnableProducts')}
                 </h4>
 
                 <div className="overflow-x-auto">
                   <table className="table table-sm">
                     <thead>
                       <tr>
-                        <th>Mahsulot</th>
-                        <th className="text-center">Mavjud</th>
-                        <th className="w-28 text-center">Qaytarish</th>
-                        <th className="text-right">Summa</th>
+                        <th>{t('erp.purchaseDetail.colProduct')}</th>
+                        <th className="text-center">{t('erp.purchaseDetail.colAvailable')}</th>
+                        <th className="w-28 text-center">{t('erp.purchaseDetail.colReturn')}</th>
+                        <th className="text-right">{t('erp.purchaseDetail.colAmount')}</th>
                       </tr>
                     </thead>
                     <tbody>
@@ -858,11 +860,11 @@ export function PurchaseDetailPage() {
                 {selectedReturnItemsCount > 0 && (
                   <div className="mt-4 pt-4 border-t border-base-200">
                     <div className="flex justify-between text-lg font-semibold">
-                      <span>Jami qaytarish summasi:</span>
+                      <span>{t('erp.purchaseDetail.returnTotalLabel')}</span>
                       <span className="text-error">{formatCurrency(returnTotal)}</span>
                     </div>
                     <p className="text-sm text-base-content/60 mt-1">
-                      {selectedReturnItemsCount} ta mahsulot tanlangan
+                      {t('erp.purchaseDetail.itemsSelected', { count: selectedReturnItemsCount })}
                     </p>
                   </div>
                 )}
@@ -871,7 +873,7 @@ export function PurchaseDetailPage() {
 
             <div className="mt-6 flex justify-end gap-2">
               <Button variant="ghost" onClick={handleCloseReturnModal} disabled={returnSaving}>
-                Bekor qilish
+                {t('common.cancel')}
               </Button>
               <Button
                 variant="primary"
@@ -879,7 +881,7 @@ export function PurchaseDetailPage() {
                 disabled={returnSaving || selectedReturnItemsCount === 0 || !returnReason.trim()}
               >
                 {returnSaving && <span className="loading loading-spinner loading-sm" />}
-                Qaytarishni yaratish
+                {t('erp.purchaseDetail.createReturnButton')}
               </Button>
             </div>
           </div>

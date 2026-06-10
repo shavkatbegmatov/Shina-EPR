@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import {
   ArrowLeft,
   Receipt,
@@ -20,6 +21,7 @@ import { formatCurrency, formatDate } from '../../config/constants';
 import type { Sale } from '../../types';
 
 export function SaleDetailPage() {
+  const { t } = useTranslation();
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
 
@@ -46,11 +48,11 @@ export function SaleDetailPage() {
   const getStatusLabel = (status?: string) => {
     switch (status) {
       case 'COMPLETED':
-        return 'Yakunlangan';
+        return t('erp.saleDetail.statusCompleted');
       case 'CANCELLED':
-        return 'Bekor qilingan';
+        return t('erp.saleDetail.statusCancelled');
       case 'REFUNDED':
-        return 'Qaytarilgan';
+        return t('erp.saleDetail.statusRefunded');
       default:
         return '—';
     }
@@ -72,11 +74,11 @@ export function SaleDetailPage() {
   const getPaymentStatusLabel = (status?: string) => {
     switch (status) {
       case 'PAID':
-        return "To'langan";
+        return t('erp.saleDetail.payStatusPaid');
       case 'PARTIAL':
-        return 'Qisman';
+        return t('erp.saleDetail.payStatusPartial');
       case 'UNPAID':
-        return "To'lanmagan";
+        return t('erp.saleDetail.payStatusUnpaid');
       default:
         return '—';
     }
@@ -98,13 +100,13 @@ export function SaleDetailPage() {
   const getPaymentMethodLabel = (method?: string) => {
     switch (method) {
       case 'CASH':
-        return 'Naqd';
+        return t('erp.saleDetail.payMethodCash');
       case 'CARD':
-        return 'Karta';
+        return t('erp.saleDetail.payMethodCard');
       case 'TRANSFER':
-        return "O'tkazma";
+        return t('erp.saleDetail.payMethodTransfer');
       case 'MIXED':
-        return 'Aralash';
+        return t('erp.saleDetail.payMethodMixed');
       default:
         return '—';
     }
@@ -124,9 +126,9 @@ export function SaleDetailPage() {
     return (
       <div className="text-center py-12">
         <AlertCircle className="h-12 w-12 mx-auto text-error mb-4" />
-        <h2 className="text-xl font-semibold">Sotuv topilmadi</h2>
+        <h2 className="text-xl font-semibold">{t('erp.saleDetail.notFound')}</h2>
         <Button variant="primary" className="mt-4" onClick={() => navigate('/sales')}>
-          Orqaga qaytish
+          {t('common.back')}
         </Button>
       </div>
     );
@@ -170,7 +172,7 @@ export function SaleDetailPage() {
               <Calendar className="h-5 w-5 text-primary" />
             </div>
             <div>
-              <p className="text-xs text-base-content/60">Sana</p>
+              <p className="text-xs text-base-content/60">{t('erp.saleDetail.date')}</p>
               <p className="font-semibold">{formatDate(sale.saleDate)}</p>
             </div>
           </div>
@@ -182,7 +184,7 @@ export function SaleDetailPage() {
               <Wallet className="h-5 w-5 text-success" />
             </div>
             <div>
-              <p className="text-xs text-base-content/60">Jami summa</p>
+              <p className="text-xs text-base-content/60">{t('erp.saleDetail.totalSum')}</p>
               <p className="font-semibold">{formatCurrency(sale.totalAmount)}</p>
             </div>
           </div>
@@ -194,7 +196,7 @@ export function SaleDetailPage() {
               <CreditCard className="h-5 w-5 text-info" />
             </div>
             <div>
-              <p className="text-xs text-base-content/60">To'langan</p>
+              <p className="text-xs text-base-content/60">{t('erp.saleDetail.paid')}</p>
               <p className="font-semibold text-success">{formatCurrency(sale.paidAmount)}</p>
             </div>
           </div>
@@ -212,12 +214,12 @@ export function SaleDetailPage() {
               )} />
             </div>
             <div>
-              <p className="text-xs text-base-content/60">Qarz</p>
+              <p className="text-xs text-base-content/60">{t('erp.saleDetail.debt')}</p>
               <p className={clsx(
                 'font-semibold',
                 sale.debtAmount > 0 ? 'text-error' : 'text-success'
               )}>
-                {sale.debtAmount > 0 ? formatCurrency(sale.debtAmount) : "Yo'q"}
+                {sale.debtAmount > 0 ? formatCurrency(sale.debtAmount) : t('common.no')}
               </p>
             </div>
           </div>
@@ -229,7 +231,7 @@ export function SaleDetailPage() {
         {/* Customer Information */}
         <div className="surface-card p-4">
           <h3 className="text-sm font-semibold uppercase tracking-[0.15em] text-base-content/60 mb-4">
-            Mijoz ma'lumotlari
+            {t('erp.saleDetail.customerInfo')}
           </h3>
           <div className="space-y-4">
             {sale.customerName ? (
@@ -239,7 +241,7 @@ export function SaleDetailPage() {
                     <User className="h-4 w-4 text-base-content/60" />
                   </div>
                   <div>
-                    <p className="text-xs text-base-content/60">Mijoz</p>
+                    <p className="text-xs text-base-content/60">{t('erp.saleDetail.customer')}</p>
                     <p className="font-semibold">{sale.customerName}</p>
                   </div>
                 </div>
@@ -249,7 +251,7 @@ export function SaleDetailPage() {
                       <Phone className="h-4 w-4 text-base-content/60" />
                     </div>
                     <div>
-                      <p className="text-xs text-base-content/60">Telefon</p>
+                      <p className="text-xs text-base-content/60">{t('erp.saleDetail.phone')}</p>
                       <p className="font-semibold">{sale.customerPhone}</p>
                     </div>
                   </div>
@@ -257,7 +259,7 @@ export function SaleDetailPage() {
               </>
             ) : (
               <p className="text-base-content/50 text-center py-4">
-                Anonim sotuv (mijoz tanlanmagan)
+                {t('erp.saleDetail.anonymousSale')}
               </p>
             )}
           </div>
@@ -266,19 +268,19 @@ export function SaleDetailPage() {
         {/* Payment Information */}
         <div className="surface-card p-4">
           <h3 className="text-sm font-semibold uppercase tracking-[0.15em] text-base-content/60 mb-4">
-            To'lov ma'lumotlari
+            {t('erp.saleDetail.paymentInfo')}
           </h3>
           <div className="space-y-4">
             {/* Subtotal */}
             <div className="flex items-center justify-between py-2 border-b border-base-200">
-              <span className="text-base-content/70">Oraliq summa</span>
+              <span className="text-base-content/70">{t('erp.saleDetail.subtotal')}</span>
               <span className="font-semibold">{formatCurrency(sale.subtotal)}</span>
             </div>
 
             {/* Discount */}
             {(sale.discountAmount > 0 || sale.discountPercent > 0) && (
               <div className="flex items-center justify-between py-2 border-b border-base-200">
-                <span className="text-base-content/70">Chegirma</span>
+                <span className="text-base-content/70">{t('erp.saleDetail.discount')}</span>
                 <span className="font-semibold text-warning">
                   -{formatCurrency(sale.discountAmount)}
                   {sale.discountPercent > 0 && ` (${sale.discountPercent}%)`}
@@ -288,27 +290,27 @@ export function SaleDetailPage() {
 
             {/* Total */}
             <div className="flex items-center justify-between py-2 border-b border-base-200">
-              <span className="text-base-content/70 font-medium">Jami</span>
+              <span className="text-base-content/70 font-medium">{t('erp.saleDetail.total')}</span>
               <span className="font-bold text-lg">{formatCurrency(sale.totalAmount)}</span>
             </div>
 
             {/* Paid Amount */}
             <div className="flex items-center justify-between py-2 border-b border-base-200">
-              <span className="text-base-content/70">To'langan</span>
+              <span className="text-base-content/70">{t('erp.saleDetail.paid')}</span>
               <span className="font-semibold text-success">{formatCurrency(sale.paidAmount)}</span>
             </div>
 
             {/* Debt Amount */}
             {sale.debtAmount > 0 && (
               <div className="flex items-center justify-between py-2 border-b border-base-200">
-                <span className="text-base-content/70">Qarz</span>
+                <span className="text-base-content/70">{t('erp.saleDetail.debt')}</span>
                 <span className="font-semibold text-error">{formatCurrency(sale.debtAmount)}</span>
               </div>
             )}
 
             {/* Payment Method */}
             <div className="flex items-center justify-between py-2">
-              <span className="text-base-content/70">To'lov usuli</span>
+              <span className="text-base-content/70">{t('erp.saleDetail.paymentMethod')}</span>
               <span className="badge badge-ghost">{getPaymentMethodLabel(sale.paymentMethod)}</span>
             </div>
           </div>
@@ -321,7 +323,7 @@ export function SaleDetailPage() {
           <div className="p-4 border-b border-base-200">
             <h3 className="text-sm font-semibold uppercase tracking-[0.15em] text-base-content/60 flex items-center gap-2">
               <Package className="h-4 w-4" />
-              Mahsulotlar ({sale.items.length})
+              {t('erp.saleDetail.productsCount', { count: sale.items.length })}
             </h3>
           </div>
           <div className="overflow-x-auto">
@@ -329,11 +331,11 @@ export function SaleDetailPage() {
               <thead>
                 <tr>
                   <th>#</th>
-                  <th>Mahsulot</th>
-                  <th className="text-right">Miqdor</th>
-                  <th className="text-right">Narx</th>
-                  <th className="text-right">Chegirma</th>
-                  <th className="text-right">Summa</th>
+                  <th>{t('erp.saleDetail.product')}</th>
+                  <th className="text-right">{t('erp.saleDetail.quantity')}</th>
+                  <th className="text-right">{t('erp.saleDetail.price')}</th>
+                  <th className="text-right">{t('erp.saleDetail.discount')}</th>
+                  <th className="text-right">{t('common.sum')}</th>
                 </tr>
               </thead>
               <tbody>
@@ -349,7 +351,7 @@ export function SaleDetailPage() {
                         )}
                       </div>
                     </td>
-                    <td className="text-right">{item.quantity} dona</td>
+                    <td className="text-right">{t('erp.saleDetail.qtyPcs', { count: item.quantity })}</td>
                     <td className="text-right">{formatCurrency(item.unitPrice)}</td>
                     <td className="text-right">
                       {item.discount > 0 ? (
@@ -364,7 +366,7 @@ export function SaleDetailPage() {
               </tbody>
               <tfoot>
                 <tr>
-                  <td colSpan={5} className="text-right font-semibold">Jami:</td>
+                  <td colSpan={5} className="text-right font-semibold">{t('erp.saleDetail.totalColon')}</td>
                   <td className="text-right font-bold text-lg">{formatCurrency(sale.totalAmount)}</td>
                 </tr>
               </tfoot>
@@ -380,7 +382,7 @@ export function SaleDetailPage() {
           <div className="surface-card p-4">
             <h3 className="text-sm font-semibold uppercase tracking-[0.15em] text-base-content/60 mb-2 flex items-center gap-2">
               <FileText className="h-4 w-4" />
-              Izoh
+              {t('erp.saleDetail.notes')}
             </h3>
             <p className="text-base-content/80 whitespace-pre-wrap">{sale.notes}</p>
           </div>
@@ -390,7 +392,7 @@ export function SaleDetailPage() {
         {sale.createdByName && (
           <div className="surface-card p-4">
             <h3 className="text-sm font-semibold uppercase tracking-[0.15em] text-base-content/60 mb-2">
-              Sotuvchi
+              {t('erp.saleDetail.seller')}
             </h3>
             <p className="font-semibold">{sale.createdByName}</p>
           </div>
@@ -401,7 +403,7 @@ export function SaleDetailPage() {
       <div className="flex justify-start">
         <Button variant="ghost" onClick={() => navigate('/sales')}>
           <ArrowLeft className="h-4 w-4" />
-          Sotuvlar ro'yxatiga qaytish
+          {t('erp.saleDetail.backToSales')}
         </Button>
       </div>
     </div>

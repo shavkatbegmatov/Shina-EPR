@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import {
   ArrowLeft,
   User,
@@ -17,6 +18,7 @@ import { formatCurrency } from '../../config/constants';
 import type { Customer } from '../../types';
 
 export function CustomerDetailPage() {
+  const { t } = useTranslation();
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
 
@@ -43,9 +45,9 @@ export function CustomerDetailPage() {
   const getCustomerTypeLabel = (type?: string) => {
     switch (type) {
       case 'INDIVIDUAL':
-        return 'Jismoniy shaxs';
+        return t('erp.customerDetail.individual');
       case 'BUSINESS':
-        return 'Yuridik shaxs';
+        return t('erp.customerDetail.business');
       default:
         return '—';
     }
@@ -65,9 +67,9 @@ export function CustomerDetailPage() {
     return (
       <div className="text-center py-12">
         <AlertCircle className="h-12 w-12 mx-auto text-error mb-4" />
-        <h2 className="text-xl font-semibold">Mijoz topilmadi</h2>
+        <h2 className="text-xl font-semibold">{t('erp.customerDetail.notFound')}</h2>
         <Button variant="primary" className="mt-4" onClick={() => navigate('/customers')}>
-          Orqaga qaytish
+          {t('common.back')}
         </Button>
       </div>
     );
@@ -95,10 +97,10 @@ export function CustomerDetailPage() {
         </div>
         <div className="flex flex-wrap items-center gap-2">
           <span className={clsx('badge', customer.active ? 'badge-success' : 'badge-error')}>
-            {customer.active ? 'Faol' : 'Nofaol'}
+            {customer.active ? t('erp.customerDetail.active') : t('erp.customerDetail.inactive')}
           </span>
           {customer.hasDebt && (
-            <span className="badge badge-warning">Qarzdor</span>
+            <span className="badge badge-warning">{t('erp.customerDetail.debtor')}</span>
           )}
         </div>
       </div>
@@ -111,7 +113,7 @@ export function CustomerDetailPage() {
               <Phone className="h-5 w-5 text-primary" />
             </div>
             <div>
-              <p className="text-xs text-base-content/60">Telefon</p>
+              <p className="text-xs text-base-content/60">{t('erp.customerDetail.phone')}</p>
               <p className="font-semibold">{customer.phone}</p>
             </div>
           </div>
@@ -124,7 +126,7 @@ export function CustomerDetailPage() {
                 <Phone className="h-5 w-5 text-info" />
               </div>
               <div>
-                <p className="text-xs text-base-content/60">Qo'shimcha telefon</p>
+                <p className="text-xs text-base-content/60">{t('erp.customerDetail.additionalPhone')}</p>
                 <p className="font-semibold">{customer.phone2}</p>
               </div>
             </div>
@@ -143,13 +145,13 @@ export function CustomerDetailPage() {
               )} />
             </div>
             <div>
-              <p className="text-xs text-base-content/60">Balans</p>
+              <p className="text-xs text-base-content/60">{t('erp.customerDetail.balance')}</p>
               <p className={clsx(
                 'font-semibold',
                 customer.balance < 0 ? 'text-error' : 'text-success'
               )}>
                 {formatCurrency(Math.abs(customer.balance))}
-                {customer.balance < 0 && ' (qarz)'}
+                {customer.balance < 0 && ` (${t('erp.customerDetail.debt')})`}
               </p>
             </div>
           </div>
@@ -162,7 +164,7 @@ export function CustomerDetailPage() {
                 <Building2 className="h-5 w-5 text-warning" />
               </div>
               <div>
-                <p className="text-xs text-base-content/60">Kompaniya</p>
+                <p className="text-xs text-base-content/60">{t('erp.customerDetail.company')}</p>
                 <p className="font-semibold">{customer.companyName}</p>
               </div>
             </div>
@@ -175,7 +177,7 @@ export function CustomerDetailPage() {
         {/* Contact Information */}
         <div className="surface-card p-4">
           <h3 className="text-sm font-semibold uppercase tracking-[0.15em] text-base-content/60 mb-4">
-            Aloqa ma'lumotlari
+            {t('erp.customerDetail.contactInfo')}
           </h3>
           <div className="space-y-4">
             {/* Phone */}
@@ -184,7 +186,7 @@ export function CustomerDetailPage() {
                 <Phone className="h-4 w-4 text-base-content/60" />
               </div>
               <div>
-                <p className="text-xs text-base-content/60">Asosiy telefon</p>
+                <p className="text-xs text-base-content/60">{t('erp.customerDetail.primaryPhone')}</p>
                 <p className="font-semibold">{customer.phone}</p>
               </div>
             </div>
@@ -196,7 +198,7 @@ export function CustomerDetailPage() {
                   <Phone className="h-4 w-4 text-base-content/60" />
                 </div>
                 <div>
-                  <p className="text-xs text-base-content/60">Qo'shimcha telefon</p>
+                  <p className="text-xs text-base-content/60">{t('erp.customerDetail.additionalPhone')}</p>
                   <p className="font-semibold">{customer.phone2}</p>
                 </div>
               </div>
@@ -209,7 +211,7 @@ export function CustomerDetailPage() {
                   <MapPin className="h-4 w-4 text-base-content/60" />
                 </div>
                 <div>
-                  <p className="text-xs text-base-content/60">Manzil</p>
+                  <p className="text-xs text-base-content/60">{t('erp.customerDetail.address')}</p>
                   <p className="font-semibold">{customer.address}</p>
                 </div>
               </div>
@@ -222,7 +224,7 @@ export function CustomerDetailPage() {
                   <Building2 className="h-4 w-4 text-base-content/60" />
                 </div>
                 <div>
-                  <p className="text-xs text-base-content/60">Kompaniya nomi</p>
+                  <p className="text-xs text-base-content/60">{t('erp.customerDetail.companyName')}</p>
                   <p className="font-semibold">{customer.companyName}</p>
                 </div>
               </div>
@@ -231,7 +233,7 @@ export function CustomerDetailPage() {
             {/* Show placeholder if minimal info */}
             {!customer.phone2 && !customer.address && !customer.companyName && (
               <p className="text-base-content/50 text-center py-4">
-                Qo'shimcha aloqa ma'lumotlari mavjud emas
+                {t('erp.customerDetail.noAdditionalContact')}
               </p>
             )}
           </div>
@@ -240,18 +242,18 @@ export function CustomerDetailPage() {
         {/* Financial Info */}
         <div className="surface-card p-4">
           <h3 className="text-sm font-semibold uppercase tracking-[0.15em] text-base-content/60 mb-4">
-            Moliyaviy ma'lumotlar
+            {t('erp.customerDetail.financialInfo')}
           </h3>
           <div className="space-y-4">
             {/* Customer Type */}
             <div className="flex items-center justify-between py-2 border-b border-base-200">
-              <span className="text-base-content/70">Mijoz turi</span>
+              <span className="text-base-content/70">{t('erp.customerDetail.customerType')}</span>
               <span className="font-semibold">{getCustomerTypeLabel(customer.customerType)}</span>
             </div>
 
             {/* Balance */}
             <div className="flex items-center justify-between py-2 border-b border-base-200">
-              <span className="text-base-content/70">Balans</span>
+              <span className="text-base-content/70">{t('erp.customerDetail.balance')}</span>
               <span className={clsx(
                 'font-semibold',
                 customer.balance < 0 ? 'text-error' : 'text-success'
@@ -262,23 +264,23 @@ export function CustomerDetailPage() {
 
             {/* Debt Status */}
             <div className="flex items-center justify-between py-2 border-b border-base-200">
-              <span className="text-base-content/70">Qarz holati</span>
+              <span className="text-base-content/70">{t('erp.customerDetail.debtStatus')}</span>
               <span className={clsx(
                 'badge',
                 customer.hasDebt ? 'badge-warning' : 'badge-success'
               )}>
-                {customer.hasDebt ? 'Qarzdor' : 'Qarzsiz'}
+                {customer.hasDebt ? t('erp.customerDetail.debtor') : t('erp.customerDetail.noDebt')}
               </span>
             </div>
 
             {/* Status */}
             <div className="flex items-center justify-between py-2">
-              <span className="text-base-content/70">Holat</span>
+              <span className="text-base-content/70">{t('common.status')}</span>
               <span className={clsx(
                 'badge',
                 customer.active ? 'badge-success' : 'badge-error'
               )}>
-                {customer.active ? 'Faol' : 'Nofaol'}
+                {customer.active ? t('erp.customerDetail.active') : t('erp.customerDetail.inactive')}
               </span>
             </div>
           </div>
@@ -290,7 +292,7 @@ export function CustomerDetailPage() {
         <div className="surface-card p-4">
           <h3 className="text-sm font-semibold uppercase tracking-[0.15em] text-base-content/60 mb-2 flex items-center gap-2">
             <FileText className="h-4 w-4" />
-            Izoh
+            {t('erp.customerDetail.notes')}
           </h3>
           <p className="text-base-content/80 whitespace-pre-wrap">{customer.notes}</p>
         </div>
@@ -300,7 +302,7 @@ export function CustomerDetailPage() {
       <div className="flex justify-start">
         <Button variant="ghost" onClick={() => navigate('/customers')}>
           <ArrowLeft className="h-4 w-4" />
-          Mijozlar ro'yxatiga qaytish
+          {t('erp.customerDetail.backToList')}
         </Button>
       </div>
     </div>

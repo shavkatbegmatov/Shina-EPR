@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { useParams, useNavigate } from 'react-router-dom';
 import {
   ArrowLeft,
@@ -22,6 +23,7 @@ import { formatCurrency, formatDate } from '../../config/constants';
 import type { Employee } from '../../types';
 
 export function EmployeeDetailPage() {
+  const { t } = useTranslation();
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
 
@@ -48,11 +50,11 @@ export function EmployeeDetailPage() {
   const getStatusLabel = (status?: string) => {
     switch (status) {
       case 'ACTIVE':
-        return 'Faol';
+        return t('erp.employeeDetail.statusActive');
       case 'ON_LEAVE':
-        return "Ta'tilda";
+        return t('erp.employeeDetail.statusOnLeave');
       case 'TERMINATED':
-        return 'Ishdan bo\'shagan';
+        return t('erp.employeeDetail.statusTerminated');
       default:
         return '—';
     }
@@ -86,9 +88,9 @@ export function EmployeeDetailPage() {
     return (
       <div className="text-center py-12">
         <AlertCircle className="h-12 w-12 mx-auto text-error mb-4" />
-        <h2 className="text-xl font-semibold">Xodim topilmadi</h2>
+        <h2 className="text-xl font-semibold">{t('erp.employeeDetail.notFound')}</h2>
         <Button variant="primary" className="mt-4" onClick={() => navigate('/employees')}>
-          Orqaga qaytish
+          {t('common.back')}
         </Button>
       </div>
     );
@@ -119,7 +121,7 @@ export function EmployeeDetailPage() {
             {getStatusLabel(employee.status)}
           </span>
           {employee.hasUserAccount && (
-            <span className="badge badge-info">Tizim foydalanuvchisi</span>
+            <span className="badge badge-info">{t('erp.employeeDetail.systemUser')}</span>
           )}
         </div>
       </div>
@@ -132,7 +134,7 @@ export function EmployeeDetailPage() {
               <Phone className="h-5 w-5 text-primary" />
             </div>
             <div>
-              <p className="text-xs text-base-content/60">Telefon</p>
+              <p className="text-xs text-base-content/60">{t('erp.employeeDetail.phone')}</p>
               <p className="font-semibold">{employee.phone}</p>
             </div>
           </div>
@@ -144,7 +146,7 @@ export function EmployeeDetailPage() {
               <Briefcase className="h-5 w-5 text-info" />
             </div>
             <div>
-              <p className="text-xs text-base-content/60">Lavozim</p>
+              <p className="text-xs text-base-content/60">{t('erp.employeeDetail.position')}</p>
               <p className="font-semibold">{employee.position}</p>
             </div>
           </div>
@@ -157,7 +159,7 @@ export function EmployeeDetailPage() {
                 <Building2 className="h-5 w-5 text-warning" />
               </div>
               <div>
-                <p className="text-xs text-base-content/60">Bo'lim</p>
+                <p className="text-xs text-base-content/60">{t('erp.employeeDetail.department')}</p>
                 <p className="font-semibold">{employee.department}</p>
               </div>
             </div>
@@ -170,7 +172,7 @@ export function EmployeeDetailPage() {
               <Calendar className="h-5 w-5 text-success" />
             </div>
             <div>
-              <p className="text-xs text-base-content/60">Ishga kirgan sana</p>
+              <p className="text-xs text-base-content/60">{t('erp.employeeDetail.hireDate')}</p>
               <p className="font-semibold">{formatDate(employee.hireDate)}</p>
             </div>
           </div>
@@ -182,7 +184,7 @@ export function EmployeeDetailPage() {
         {/* Personal Information */}
         <div className="surface-card p-4">
           <h3 className="text-sm font-semibold uppercase tracking-[0.15em] text-base-content/60 mb-4">
-            Shaxsiy ma'lumotlar
+            {t('erp.employeeDetail.personalInfo')}
           </h3>
           <div className="space-y-4">
             {/* Phone */}
@@ -191,7 +193,7 @@ export function EmployeeDetailPage() {
                 <Phone className="h-4 w-4 text-base-content/60" />
               </div>
               <div>
-                <p className="text-xs text-base-content/60">Telefon</p>
+                <p className="text-xs text-base-content/60">{t('erp.employeeDetail.phone')}</p>
                 <p className="font-semibold">{employee.phone}</p>
               </div>
             </div>
@@ -203,7 +205,7 @@ export function EmployeeDetailPage() {
                   <Mail className="h-4 w-4 text-base-content/60" />
                 </div>
                 <div>
-                  <p className="text-xs text-base-content/60">Email</p>
+                  <p className="text-xs text-base-content/60">{t('erp.employeeDetail.email')}</p>
                   <p className="font-semibold">{employee.email}</p>
                 </div>
               </div>
@@ -216,7 +218,7 @@ export function EmployeeDetailPage() {
                   <Calendar className="h-4 w-4 text-base-content/60" />
                 </div>
                 <div>
-                  <p className="text-xs text-base-content/60">Tug'ilgan sana</p>
+                  <p className="text-xs text-base-content/60">{t('erp.employeeDetail.birthDate')}</p>
                   <p className="font-semibold">{formatDate(employee.birthDate)}</p>
                 </div>
               </div>
@@ -229,7 +231,7 @@ export function EmployeeDetailPage() {
                   <Shield className="h-4 w-4 text-base-content/60" />
                 </div>
                 <div>
-                  <p className="text-xs text-base-content/60">Pasport raqami</p>
+                  <p className="text-xs text-base-content/60">{t('erp.employeeDetail.passportNumber')}</p>
                   <p className="font-semibold">{employee.passportNumber}</p>
                 </div>
               </div>
@@ -242,7 +244,7 @@ export function EmployeeDetailPage() {
                   <MapPin className="h-4 w-4 text-base-content/60" />
                 </div>
                 <div>
-                  <p className="text-xs text-base-content/60">Manzil</p>
+                  <p className="text-xs text-base-content/60">{t('erp.employeeDetail.address')}</p>
                   <p className="font-semibold">{employee.address}</p>
                 </div>
               </div>
@@ -253,19 +255,19 @@ export function EmployeeDetailPage() {
         {/* Work & Financial Info */}
         <div className="surface-card p-4">
           <h3 className="text-sm font-semibold uppercase tracking-[0.15em] text-base-content/60 mb-4">
-            Ish va moliyaviy ma'lumotlar
+            {t('erp.employeeDetail.workFinancialInfo')}
           </h3>
           <div className="space-y-4">
             {/* Position */}
             <div className="flex items-center justify-between py-2 border-b border-base-200">
-              <span className="text-base-content/70">Lavozim</span>
+              <span className="text-base-content/70">{t('erp.employeeDetail.position')}</span>
               <span className="font-semibold">{employee.position}</span>
             </div>
 
             {/* Department */}
             {employee.department && (
               <div className="flex items-center justify-between py-2 border-b border-base-200">
-                <span className="text-base-content/70">Bo'lim</span>
+                <span className="text-base-content/70">{t('erp.employeeDetail.department')}</span>
                 <span className="font-semibold">{employee.department}</span>
               </div>
             )}
@@ -273,20 +275,20 @@ export function EmployeeDetailPage() {
             {/* Salary */}
             {employee.salary !== undefined && (
               <div className="flex items-center justify-between py-2 border-b border-base-200">
-                <span className="text-base-content/70">Oylik maosh</span>
+                <span className="text-base-content/70">{t('erp.employeeDetail.salary')}</span>
                 <span className="font-semibold text-success">{formatCurrency(employee.salary)}</span>
               </div>
             )}
 
             {/* Hire Date */}
             <div className="flex items-center justify-between py-2 border-b border-base-200">
-              <span className="text-base-content/70">Ishga kirgan sana</span>
+              <span className="text-base-content/70">{t('erp.employeeDetail.hireDate')}</span>
               <span className="font-semibold">{formatDate(employee.hireDate)}</span>
             </div>
 
             {/* Status */}
             <div className="flex items-center justify-between py-2 border-b border-base-200">
-              <span className="text-base-content/70">Holat</span>
+              <span className="text-base-content/70">{t('common.status')}</span>
               <span className={clsx('badge', getStatusBadgeClass(employee.status))}>
                 {getStatusLabel(employee.status)}
               </span>
@@ -299,7 +301,7 @@ export function EmployeeDetailPage() {
                   <CreditCard className="h-4 w-4 text-base-content/60" />
                 </div>
                 <div>
-                  <p className="text-xs text-base-content/60">Bank hisob raqami</p>
+                  <p className="text-xs text-base-content/60">{t('erp.employeeDetail.bankAccount')}</p>
                   <p className="font-medium">{employee.bankAccountNumber}</p>
                 </div>
               </div>
@@ -315,7 +317,7 @@ export function EmployeeDetailPage() {
           <div className="surface-card p-4">
             <h3 className="text-sm font-semibold uppercase tracking-[0.15em] text-base-content/60 mb-4 flex items-center gap-2">
               <Heart className="h-4 w-4" />
-              Favqulodda aloqa
+              {t('erp.employeeDetail.emergencyContact')}
             </h3>
             <div className="space-y-4">
               {employee.emergencyContactName && (
@@ -324,7 +326,7 @@ export function EmployeeDetailPage() {
                     <UserCircle className="h-4 w-4 text-base-content/60" />
                   </div>
                   <div>
-                    <p className="text-xs text-base-content/60">Ism</p>
+                    <p className="text-xs text-base-content/60">{t('common.name')}</p>
                     <p className="font-semibold">{employee.emergencyContactName}</p>
                   </div>
                 </div>
@@ -335,7 +337,7 @@ export function EmployeeDetailPage() {
                     <Phone className="h-4 w-4 text-base-content/60" />
                   </div>
                   <div>
-                    <p className="text-xs text-base-content/60">Telefon</p>
+                    <p className="text-xs text-base-content/60">{t('erp.employeeDetail.phone')}</p>
                     <p className="font-semibold">{employee.emergencyContactPhone}</p>
                   </div>
                 </div>
@@ -349,18 +351,18 @@ export function EmployeeDetailPage() {
           <div className="surface-card p-4">
             <h3 className="text-sm font-semibold uppercase tracking-[0.15em] text-base-content/60 mb-4 flex items-center gap-2">
               <UserCog className="h-4 w-4" />
-              Tizim akkaunti
+              {t('erp.employeeDetail.systemAccount')}
             </h3>
             <div className="space-y-4">
               {employee.username && (
                 <div className="flex items-center justify-between py-2 border-b border-base-200">
-                  <span className="text-base-content/70">Foydalanuvchi nomi</span>
+                  <span className="text-base-content/70">{t('erp.employeeDetail.username')}</span>
                   <span className="font-semibold font-mono">{employee.username}</span>
                 </div>
               )}
               {employee.userRole && (
                 <div className="flex items-center justify-between py-2">
-                  <span className="text-base-content/70">Rol</span>
+                  <span className="text-base-content/70">{t('erp.employeeDetail.role')}</span>
                   <span className="badge badge-primary">{employee.userRole}</span>
                 </div>
               )}
@@ -373,7 +375,7 @@ export function EmployeeDetailPage() {
       <div className="flex justify-start">
         <Button variant="ghost" onClick={() => navigate('/employees')}>
           <ArrowLeft className="h-4 w-4" />
-          Xodimlar ro'yxatiga qaytish
+          {t('erp.employeeDetail.backToList')}
         </Button>
       </div>
     </div>
