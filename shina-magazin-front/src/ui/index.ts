@@ -12,6 +12,10 @@ export { Skeleton } from './primitives/Skeleton';
 export type { SkeletonProps } from './primitives/Skeleton';
 export { EmptyState } from './primitives/EmptyState';
 export type { EmptyStateProps } from './primitives/EmptyState';
+export { Modal } from './primitives/Modal';
+export type { ModalProps, ModalSize } from './primitives/Modal';
+export { ConfirmDialog } from './primitives/ConfirmDialog';
+export type { ConfirmDialogProps } from './primitives/ConfirmDialog';
 
 // Token va grafik qatlami
 export * from './tokens/colors';

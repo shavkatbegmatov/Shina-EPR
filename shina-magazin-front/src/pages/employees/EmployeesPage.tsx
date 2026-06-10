@@ -27,6 +27,7 @@ import { rolesApi } from '../../api/roles.api';
 import { formatCurrency, formatDate, EMPLOYEE_STATUSES, ROLES, getTashkentToday } from '../../config/constants';
 import { DataTable, Column } from '../../components/ui/DataTable';
 import { ModalPortal } from '../../components/common/Modal';
+import { ConfirmDialog } from '@/ui';
 import { CurrencyInput } from '../../components/ui/CurrencyInput';
 import { PhoneInput } from '../../components/ui/PhoneInput';
 import { Select } from '../../components/ui/Select';
@@ -78,6 +79,7 @@ export function EmployeesPage() {
   const [editingEmployee, setEditingEmployee] = useState<Employee | null>(null);
   const [formData, setFormData] = useState<EmployeeRequest>(emptyFormData);
   const [saving, setSaving] = useState(false);
+  const [confirmDeleteOpen, setConfirmDeleteOpen] = useState(false);
   const [modalTab, setModalTab] = useState<ModalTab>('basic');
 
   // Stats
@@ -411,10 +413,10 @@ export function EmployeesPage() {
     }
   };
 
-  const handleDeleteEmployee = async () => {
+  const handleDeleteEmployee = () => {
     if (!editingEmployee) return;
 
-    // Check permission before API call
+    // Check permission before opening the confirm dialog
     if (!hasPermission(PermissionCode.EMPLOYEES_DELETE)) {
       toast.error("Sizda bu amalni bajarish huquqi yo'q", {
         icon: '🔒',
@@ -422,12 +424,17 @@ export function EmployeesPage() {
       return;
     }
 
-    if (!window.confirm(`"${editingEmployee.fullName}" xodimini o'chirmoqchimisiz?`)) return;
+    setConfirmDeleteOpen(true);
+  };
+
+  const confirmDeleteEmployee = async () => {
+    if (!editingEmployee) return;
 
     setSaving(true);
     try {
       await employeesApi.delete(editingEmployee.id);
       toast.success('Xodim muvaffaqiyatli o\'chirildi');
+      setConfirmDeleteOpen(false);
       handleCloseModal();
       void loadEmployees();
       void loadStats();
@@ -1217,6 +1224,17 @@ export function EmployeesPage() {
           </div>
         </div>
       </ModalPortal>
+
+      <ConfirmDialog
+        open={confirmDeleteOpen}
+        onClose={() => setConfirmDeleteOpen(false)}
+        onConfirm={confirmDeleteEmployee}
+        title="Xodimni o'chirish"
+        description={`"${editingEmployee?.fullName ?? ''}" xodimini o'chirmoqchimisiz? Bu amalni qaytarib bo'lmaydi.`}
+        confirmText="O'chirish"
+        danger
+        loading={saving}
+      />
     </div>
   );
 }
