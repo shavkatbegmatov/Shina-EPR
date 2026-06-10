@@ -67,18 +67,18 @@ export function Sidebar() {
       {/* Sidebar */}
       <aside
         className={clsx(
-          'fixed left-0 top-0 z-50 flex h-screen w-72 flex-col bg-base-100/95 backdrop-blur transition-transform md:sticky md:translate-x-0',
+          'fixed left-0 top-0 z-50 flex h-screen w-72 flex-col bg-base-100/95 backdrop-blur transition-[transform,width] md:sticky md:w-16 md:translate-x-0 lg:w-72',
           'border-r border-base-200 shadow-[var(--shadow-soft)]',
           sidebarOpen ? 'translate-x-0' : '-translate-x-full'
         )}
       >
-        <div className="relative flex h-16 items-center justify-between overflow-hidden border-b border-base-200 px-4">
+        <div className="relative flex h-16 items-center justify-between overflow-hidden border-b border-base-200 px-4 md:px-2 lg:px-4">
           <div className="pointer-events-none absolute inset-0 bg-gradient-to-br from-primary/15 via-transparent to-secondary/10" />
-          <div className="relative flex items-center gap-3">
-            <div className="grid h-9 w-9 place-items-center rounded-xl bg-primary/15 text-primary shadow-sm">
+          <div className="relative flex items-center gap-3 md:justify-center lg:justify-start">
+            <div className="grid h-9 w-9 shrink-0 place-items-center rounded-xl bg-primary/15 text-primary shadow-sm">
               <Logo variant="mark" tone="erp" className="h-6 w-6" />
             </div>
-            <div>
+            <div className="md:hidden lg:block">
               <h1 className="text-base font-bold leading-tight">Protektor</h1>
               <p className="text-[11px] text-base-content/60">
                 ERP boshqaruv paneli
@@ -96,8 +96,8 @@ export function Sidebar() {
           </Button>
         </div>
 
-        <nav className="flex-1 overflow-y-auto p-4 scrollbar-thin" aria-label="Asosiy navigatsiya">
-          <p className="px-3 pb-3 text-xs font-semibold uppercase tracking-[0.2em] text-base-content/40">
+        <nav className="flex-1 overflow-y-auto p-4 md:p-2 lg:p-4 scrollbar-thin" aria-label="Asosiy navigatsiya">
+          <p className="px-3 pb-3 text-xs font-semibold uppercase tracking-[0.2em] text-base-content/40 md:hidden lg:block">
             Navigatsiya
           </p>
           <ul className="stagger-children flex flex-col gap-1 pb-4">
@@ -109,9 +109,10 @@ export function Sidebar() {
                 <NavLink
                   to={item.path}
                   end={item.path === '/'}
+                  title={item.label}
                   className={({ isActive }) =>
                     clsx(
-                      'group flex items-center gap-3 rounded-xl border px-3 py-2.5 text-sm font-medium transition',
+                      'group flex items-center gap-3 rounded-xl border px-3 py-2.5 text-sm font-medium transition md:justify-center md:px-0 lg:justify-start lg:px-3',
                       isActive
                         ? 'border-base-300 bg-base-200 text-base-content shadow-sm'
                         : 'border-transparent text-base-content/70 hover:border-base-300 hover:bg-base-200/70 hover:text-base-content'
@@ -131,7 +132,7 @@ export function Sidebar() {
                       >
                         <item.icon className="h-5 w-5" />
                       </span>
-                      <span>{item.label}</span>
+                      <span className="md:hidden lg:inline">{item.label}</span>
                     </>
                   )}
                 </NavLink>
