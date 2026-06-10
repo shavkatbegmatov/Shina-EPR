@@ -1,4 +1,6 @@
-import { defineConfig, type ProxyOptions } from 'vite'
+/// <reference types="vitest/config" />
+import { defineConfig } from 'vitest/config'
+import type { ProxyOptions } from 'vite'
 import react from '@vitejs/plugin-react-swc'
 import type { IncomingMessage, ClientRequest } from 'node:http'
 import { fileURLToPath, URL } from 'node:url'
@@ -10,6 +12,12 @@ export default defineConfig({
     alias: {
       '@': fileURLToPath(new URL('./src', import.meta.url)),
     },
+  },
+  test: {
+    environment: 'jsdom',
+    setupFiles: ['./src/test/setup.ts'],
+    css: false,
+    include: ['src/**/*.{test,spec}.{ts,tsx}'],
   },
   define: {
     global: 'globalThis',
