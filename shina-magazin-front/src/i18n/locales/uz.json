@@ -1834,6 +1834,17 @@
     "quickView": {
       "button": "Tezkor ko'rish",
       "details": "Batafsil"
+    },
+    "compare": {
+      "title": "Solishtirish",
+      "add": "Solishtirishga qo'shish",
+      "remove": "Solishtirishdan olib tashlash",
+      "max": "Maksimal {{count}} ta mahsulot solishtirish mumkin",
+      "empty": "Solishtirish ro'yxati bo'sh",
+      "emptyHint": "Kartadagi tarozi tugmasi bilan mahsulot qo'shing.",
+      "clear": "Tozalash",
+      "priceRow": "Narx",
+      "stockRow": "Holat"
     }
   }
 }

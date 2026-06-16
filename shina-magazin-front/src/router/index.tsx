@@ -43,6 +43,7 @@ const CheckoutPage = lazy(() => import('../shop/pages/CheckoutPage').then(m => (
 const OrderConfirmationPage = lazy(() => import('../shop/pages/OrderConfirmationPage').then(m => ({ default: m.OrderConfirmationPage })));
 const OrdersPage = lazy(() => import('../shop/pages/OrdersPage').then(m => ({ default: m.OrdersPage })));
 const WishlistPage = lazy(() => import('../shop/pages/WishlistPage').then(m => ({ default: m.WishlistPage })));
+const ComparePage = lazy(() => import('../shop/pages/ComparePage').then(m => ({ default: m.ComparePage })));
 const ShopNotFound = lazy(() => import('../shop/pages/ShopNotFound').then(m => ({ default: m.ShopNotFound })));
 
 // Lazy-loaded portal pages
@@ -446,6 +447,11 @@ export const router = createBrowserRouter([
         path: 'saqlanganlar',
         element: <LazyRoute><WishlistPage /></LazyRoute>,
         handle: { title: 'Saqlanganlar' },
+      },
+      {
+        path: 'solishtirish',
+        element: <LazyRoute><ComparePage /></LazyRoute>,
+        handle: { title: 'Solishtirish' },
       },
       {
         path: '*',

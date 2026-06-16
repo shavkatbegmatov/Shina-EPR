@@ -7,6 +7,7 @@ import type { Product } from '../../types';
 import { formatCurrency } from '../../config/constants';
 import { ProductImage } from './ProductImage';
 import { WishlistButton } from './WishlistButton';
+import { CompareButton } from './CompareButton';
 import { useCartStore } from '../store/cartStore';
 import { useQuickViewStore } from '../store/quickViewStore';
 
@@ -55,7 +56,10 @@ export function ProductCard({ product }: ProductCardProps) {
             <Badge tone="error">{t('shop.product.lowStock')}</Badge>
           ) : null}
         </div>
-        <WishlistButton productId={product.id} className="absolute right-3 top-3 z-10" />
+        <div className="absolute right-3 top-3 z-10 flex flex-col gap-2">
+          <WishlistButton productId={product.id} />
+          <CompareButton productId={product.id} />
+        </div>
         <button
           type="button"
           onClick={() => openQuickView(product.id)}

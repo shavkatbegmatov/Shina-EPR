@@ -1,11 +1,12 @@
 import { useState } from 'react';
 import { Link, NavLink } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
-import { ShoppingCart, Menu, X, Sun, Moon, Globe, Heart } from 'lucide-react';
+import { ShoppingCart, Menu, X, Sun, Moon, Globe, Heart, Scale } from 'lucide-react';
 import { Button, Badge, buttonVariants, cn } from '@/ui';
 import { useThemeStore } from '../../../shared/theme/themeStore';
 import { useCartStore, selectCartCount } from '../../store/cartStore';
 import { useWishlistStore, selectWishlistCount } from '../../store/wishlistStore';
+import { useCompareStore, selectCompareCount } from '../../store/compareStore';
 import { ShopSearchBox } from '../ShopSearchBox';
 import { ShopLogo } from './ShopLogo';
 
@@ -18,6 +19,7 @@ export function ShopHeader({ onOpenCart }: ShopHeaderProps) {
   const { mode, setMode } = useThemeStore();
   const cartCount = useCartStore(selectCartCount);
   const wishlistCount = useWishlistStore(selectWishlistCount);
+  const compareCount = useCompareStore(selectCompareCount);
   const [menuOpen, setMenuOpen] = useState(false);
 
   const isDark = mode === 'dark' || (mode === 'system' && window.matchMedia('(prefers-color-scheme: dark)').matches);
@@ -56,6 +58,14 @@ export function ShopHeader({ onOpenCart }: ShopHeaderProps) {
           <Button variant="ghost" size="sm" iconOnly onClick={toggleTheme} title={t('shop.theme.toggle')} aria-label={t('shop.theme.toggle')}>
             {isDark ? <Moon size={18} /> : <Sun size={18} />}
           </Button>
+          <Link to="/magazin/solishtirish" className={cn(buttonVariants({ variant: 'ghost', size: 'sm', iconOnly: true }), 'relative hidden sm:inline-flex')} title={t('shop.compare.title')} aria-label={t('shop.compare.title')}>
+            <Scale size={18} />
+            {compareCount > 0 && (
+              <Badge tone="primary" className="absolute -right-1 -top-1 min-w-5 justify-center px-1 py-0 text-[10px] font-bold">
+                {compareCount}
+              </Badge>
+            )}
+          </Link>
           <Link to="/magazin/saqlanganlar" className={cn(buttonVariants({ variant: 'ghost', size: 'sm', iconOnly: true }), 'relative')} title={t('shop.nav.wishlist')} aria-label={t('shop.nav.wishlist')}>
             <Heart size={18} />
             {wishlistCount > 0 && (
@@ -86,6 +96,7 @@ export function ShopHeader({ onOpenCart }: ShopHeaderProps) {
             <NavLink to="/magazin" end onClick={() => setMenuOpen(false)} className="rounded-lg px-2 py-2.5 text-sm font-medium hover:bg-base-200">{t('shop.nav.home')}</NavLink>
             <NavLink to="/magazin/katalog" onClick={() => setMenuOpen(false)} className="rounded-lg px-2 py-2.5 text-sm font-medium hover:bg-base-200">{t('shop.nav.catalog')}</NavLink>
             <NavLink to="/magazin/saqlanganlar" onClick={() => setMenuOpen(false)} className="rounded-lg px-2 py-2.5 text-sm font-medium hover:bg-base-200">{t('shop.nav.wishlist')}</NavLink>
+            <NavLink to="/magazin/solishtirish" onClick={() => setMenuOpen(false)} className="rounded-lg px-2 py-2.5 text-sm font-medium hover:bg-base-200">{t('shop.compare.title')}</NavLink>
             <NavLink to="/magazin/buyurtmalarim" onClick={() => setMenuOpen(false)} className="rounded-lg px-2 py-2.5 text-sm font-medium hover:bg-base-200">{t('shop.nav.orders')}</NavLink>
           </nav>
         </div>
