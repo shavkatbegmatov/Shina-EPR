@@ -162,7 +162,10 @@
       "systemSettings": "Tizim sozlamalari",
       "lightMode": "Yorug' rejim",
       "darkMode": "Qorong'i rejim",
-      "logout": "Chiqish"
+      "logout": "Chiqish",
+      "minutesAgo": "{{count}} daqiqa oldin",
+      "hoursAgo": "{{count}} soat oldin",
+      "daysAgo": "{{count}} kun oldin"
     },
     "products": {
       "title": "Mahsulotlar",

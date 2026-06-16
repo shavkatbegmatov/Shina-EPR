@@ -19,6 +19,7 @@ import {
   Languages,
 } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
+import i18n from '../../i18n';
 import { useMatches, useNavigate, Link } from 'react-router-dom';
 import clsx from 'clsx';
 import { useAuthStore } from '../../store/authStore';
@@ -76,11 +77,11 @@ const formatTimeAgo = (dateString: string) => {
   const diffDays = Math.floor(diffMs / 86400000);
 
   if (diffMins < 60) {
-    return `${diffMins} daqiqa oldin`;
+    return i18n.t('erp.header.minutesAgo', { count: diffMins });
   } else if (diffHours < 24) {
-    return `${diffHours} soat oldin`;
+    return i18n.t('erp.header.hoursAgo', { count: diffHours });
   } else if (diffDays < 7) {
-    return `${diffDays} kun oldin`;
+    return i18n.t('erp.header.daysAgo', { count: diffDays });
   } else {
     const day = date.getDate().toString().padStart(2, '0');
     const month = (date.getMonth() + 1).toString().padStart(2, '0');
