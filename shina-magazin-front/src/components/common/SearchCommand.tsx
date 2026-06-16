@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { createPortal } from 'react-dom';
 import { useNavigate } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import {
   Search,
   X,
@@ -73,21 +74,23 @@ const PAGE_ICONS: Record<string, LucideIcon> = {
   'page-settings': Settings,
 };
 
-const QUICK_ACTIONS: SearchResult[] = [
-  { id: 'page-dashboard', type: 'page', title: 'Dashboard', href: '/' },
-  { id: 'page-pos', type: 'page', title: 'Kassa (POS)', subtitle: 'Yangi sotuv qilish', href: '/pos' },
-  { id: 'page-products', type: 'page', title: 'Mahsulotlar', href: '/products' },
-  { id: 'page-customers', type: 'page', title: 'Mijozlar', href: '/customers' },
-  { id: 'page-sales', type: 'page', title: 'Sotuvlar', href: '/sales' },
-  { id: 'page-debts', type: 'page', title: 'Qarzlar', subtitle: 'Qarzdorlik nazorati', href: '/debts' },
-  { id: 'page-purchases', type: 'page', title: 'Xaridlar', subtitle: 'Kirim hujjatlari', href: '/purchases' },
-  { id: 'page-suppliers', type: 'page', title: "Ta'minotchilar", href: '/suppliers' },
-  { id: 'page-warehouse', type: 'page', title: 'Ombor', subtitle: 'Zaxira nazorati', href: '/warehouse' },
-  { id: 'page-employees', type: 'page', title: 'Xodimlar', href: '/employees' },
-  { id: 'page-roles', type: 'page', title: 'Rollar', subtitle: 'Ruxsatlar boshqaruvi', href: '/roles' },
-  { id: 'page-reports', type: 'page', title: 'Hisobotlar', href: '/reports' },
-  { id: 'page-settings', type: 'page', title: 'Sozlamalar', href: '/settings' },
-];
+function getQuickActions(t: (key: string) => string): SearchResult[] {
+  return [
+    { id: 'page-dashboard', type: 'page', title: t('erp.nav.dashboard'), href: '/' },
+    { id: 'page-pos', type: 'page', title: t('erp.nav.pos'), subtitle: t('erp.search.subPos'), href: '/pos' },
+    { id: 'page-products', type: 'page', title: t('erp.nav.products'), href: '/products' },
+    { id: 'page-customers', type: 'page', title: t('erp.nav.customers'), href: '/customers' },
+    { id: 'page-sales', type: 'page', title: t('erp.nav.sales'), href: '/sales' },
+    { id: 'page-debts', type: 'page', title: t('erp.nav.debts'), subtitle: t('erp.search.subDebts'), href: '/debts' },
+    { id: 'page-purchases', type: 'page', title: t('erp.nav.purchases'), subtitle: t('erp.search.subPurchases'), href: '/purchases' },
+    { id: 'page-suppliers', type: 'page', title: t('erp.nav.suppliers'), href: '/suppliers' },
+    { id: 'page-warehouse', type: 'page', title: t('erp.nav.warehouse'), subtitle: t('erp.search.subWarehouse'), href: '/warehouse' },
+    { id: 'page-employees', type: 'page', title: t('erp.nav.employees'), href: '/employees' },
+    { id: 'page-roles', type: 'page', title: t('erp.nav.roles'), subtitle: t('erp.search.subRoles'), href: '/roles' },
+    { id: 'page-reports', type: 'page', title: t('erp.nav.reports'), href: '/reports' },
+    { id: 'page-settings', type: 'page', title: t('erp.nav.settings'), href: '/settings' },
+  ];
+}
 
 const RECENT_SEARCHES_KEY = 'search_recent';
 const MAX_RECENT = 5;
@@ -117,6 +120,7 @@ function getIconColorClass(type: ResultType, isSelected: boolean): string {
 }
 
 export function SearchCommand() {
+  const { t } = useTranslation();
   const [open, setOpen] = useState(false);
   const [query, setQuery] = useState('');
   const [loading, setLoading] = useState(false);
@@ -221,7 +225,7 @@ export function SearchCommand() {
       const searchResults: SearchResult[] = [];
 
       // Filter pages by query
-      const matchedPages = QUICK_ACTIONS.filter(
+      const matchedPages = getQuickActions(t).filter(
         (action) =>
           action.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
           action.subtitle?.toLowerCase().includes(searchQuery.toLowerCase())
@@ -353,7 +357,7 @@ export function SearchCommand() {
   // Keyboard navigation
   const handleKeyDown = (e: React.KeyboardEvent) => {
     const recentIdsSet = new Set(recentSearches.map((r) => r.id));
-    const filteredActions = QUICK_ACTIONS.filter((action) => !recentIdsSet.has(action.id));
+    const filteredActions = getQuickActions(t).filter((action) => !recentIdsSet.has(action.id));
     const items = query ? results : [...recentSearches, ...filteredActions];
 
     if (e.key === 'ArrowDown') {
@@ -376,7 +380,7 @@ export function SearchCommand() {
 
   // Filter out QUICK_ACTIONS that are already in recentSearches to avoid duplicate keys
   const recentIds = new Set(recentSearches.map((r) => r.id));
-  const filteredQuickActions = QUICK_ACTIONS.filter((action) => !recentIds.has(action.id));
+  const filteredQuickActions = getQuickActions(t).filter((action) => !recentIds.has(action.id));
   const displayItems = query ? results : [...recentSearches, ...filteredQuickActions];
   const hasRecent = !query && recentSearches.length > 0;
 
@@ -395,7 +399,7 @@ export function SearchCommand() {
         )}
       >
         <Search className="h-4 w-4" />
-        <span className="flex-1 text-left">Qidirish...</span>
+        <span className="flex-1 text-left">{t('erp.combobox.searchPlaceholder')}</span>
         <kbd className="hidden lg:inline-flex items-center gap-1 px-1.5 py-0.5 text-[10px] font-medium bg-base-300/50 rounded">
           ⌘K
         </kbd>
@@ -408,7 +412,7 @@ export function SearchCommand() {
         iconOnly
         onClick={() => setOpen(true)}
         className="md:hidden"
-        title="Qidirish"
+        title={t('common.search')}
       >
         <Search className="h-4 w-4" />
       </Button>
@@ -445,7 +449,7 @@ export function SearchCommand() {
                   value={query}
                   onChange={(e) => setQuery(e.target.value)}
                   onKeyDown={handleKeyDown}
-                  placeholder="Mahsulot, mijoz yoki sahifa qidiring..."
+                  placeholder={t('erp.search.inputPlaceholder')}
                   className="flex-1 bg-transparent py-3 text-base outline-none placeholder:text-base-content/40"
                 />
                 <Button
@@ -463,14 +467,14 @@ export function SearchCommand() {
                 {displayItems.length === 0 && query && !loading && (
                   <div className="py-8 text-center text-base-content/50">
                     <Search className="h-8 w-8 mx-auto mb-2 opacity-50" />
-                    <p>"{query}" bo'yicha natija topilmadi</p>
+                    <p>{t('erp.search.noResults', { query })}</p>
                   </div>
                 )}
 
                 {hasRecent && (
                   <div className="px-2 py-1.5 text-xs font-medium text-base-content/50 flex items-center gap-2">
                     <Clock className="h-3 w-3" />
-                    So'nggi qidiruvlar
+                    {t('erp.search.recent')}
                   </div>
                 )}
 
@@ -483,7 +487,7 @@ export function SearchCommand() {
                     <div key={item.id}>
                       {showQuickActionHeader && (
                         <div className="px-2 py-1.5 text-xs font-medium text-base-content/50 mt-2">
-                          Tez havolalar
+                          {t('erp.search.quickLinks')}
                         </div>
                       )}
                       <button
@@ -550,15 +554,15 @@ export function SearchCommand() {
                 <div className="flex items-center gap-3">
                   <span className="flex items-center gap-1">
                     <kbd className="px-1.5 py-0.5 bg-base-200 rounded">↑↓</kbd>
-                    navigatsiya
+                    {t('erp.search.hintNavigate')}
                   </span>
                   <span className="flex items-center gap-1">
                     <kbd className="px-1.5 py-0.5 bg-base-200 rounded">↵</kbd>
-                    tanlash
+                    {t('erp.search.hintSelect')}
                   </span>
                   <span className="flex items-center gap-1">
                     <kbd className="px-1.5 py-0.5 bg-base-200 rounded">esc</kbd>
-                    yopish
+                    {t('erp.search.hintClose')}
                   </span>
                 </div>
               </div>

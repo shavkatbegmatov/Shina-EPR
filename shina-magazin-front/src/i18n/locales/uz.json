@@ -1614,6 +1614,20 @@
       "customerSearch": "Mijozni qidirish...",
       "employeeSearch": "Xodimni qidirish...",
       "supplierSearch": "Taʼminotchini qidirish..."
+    },
+    "search": {
+      "inputPlaceholder": "Mahsulot, mijoz yoki sahifa qidiring...",
+      "noResults": "\"{{query}}\" boʻyicha natija topilmadi",
+      "recent": "Soʻnggi qidiruvlar",
+      "quickLinks": "Tez havolalar",
+      "hintNavigate": "navigatsiya",
+      "hintSelect": "tanlash",
+      "hintClose": "yopish",
+      "subPos": "Yangi sotuv qilish",
+      "subDebts": "Qarzdorlik nazorati",
+      "subPurchases": "Kirim hujjatlari",
+      "subWarehouse": "Zaxira nazorati",
+      "subRoles": "Ruxsatlar boshqaruvi"
     }
   }
 }

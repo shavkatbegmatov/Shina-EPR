@@ -1614,6 +1614,20 @@
       "customerSearch": "Поиск клиента...",
       "employeeSearch": "Поиск сотрудника...",
       "supplierSearch": "Поиск поставщика..."
+    },
+    "search": {
+      "inputPlaceholder": "Поиск товара, клиента или страницы...",
+      "noResults": "По запросу \"{{query}}\" ничего не найдено",
+      "recent": "Недавние поиски",
+      "quickLinks": "Быстрые ссылки",
+      "hintNavigate": "навигация",
+      "hintSelect": "выбрать",
+      "hintClose": "закрыть",
+      "subPos": "Новая продажа",
+      "subDebts": "Контроль задолженности",
+      "subPurchases": "Документы прихода",
+      "subWarehouse": "Контроль запасов",
+      "subRoles": "Управление правами"
     }
   }
 }
