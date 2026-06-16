@@ -36,7 +36,7 @@ describe('ProductCard', () => {
   it('"Savatga" tugmasi mahsulotni savatga qo\'shadi', () => {
     renderCard();
     expect(useCartStore.getState().items).toHaveLength(0);
-    fireEvent.click(screen.getByRole('button'));
+    fireEvent.click(screen.getByRole('button', { name: /Savatga/i }));
     const items = useCartStore.getState().items;
     expect(items).toHaveLength(1);
     expect(items[0].product.id).toBe(99);
@@ -45,6 +45,6 @@ describe('ProductCard', () => {
 
   it('zaxira tugagan mahsulot uchun tugma o\'chiriladi', () => {
     renderCard({ ...PRODUCT, quantity: 0 });
-    expect(screen.getByRole('button')).toBeDisabled();
+    expect(screen.getByRole('button', { name: /Savatga/i })).toBeDisabled();
   });
 });

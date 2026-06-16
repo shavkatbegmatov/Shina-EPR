@@ -6,6 +6,7 @@ import { Card, Badge, Button, cn } from '@/ui';
 import type { Product } from '../../types';
 import { formatCurrency } from '../../config/constants';
 import { ProductImage } from './ProductImage';
+import { WishlistButton } from './WishlistButton';
 import { useCartStore } from '../store/cartStore';
 
 interface ProductCardProps {
@@ -34,23 +35,26 @@ export function ProductCard({ product }: ProductCardProps) {
 
   return (
     <Card padding="none" className="group flex flex-col overflow-hidden transition-shadow hover:shadow-strong">
-      <Link to={href} className="relative block aspect-square overflow-hidden bg-base-200/40">
-        <ProductImage
-          src={product.imageUrl}
-          alt={product.name}
-          className="transition-transform duration-300 group-hover:scale-105"
-        />
+      <div className="relative aspect-square overflow-hidden bg-base-200/40">
+        <Link to={href} className="block h-full w-full">
+          <ProductImage
+            src={product.imageUrl}
+            alt={product.name}
+            className="transition-transform duration-300 group-hover:scale-105"
+          />
+        </Link>
         {product.season && (
           <Badge tone={SEASON_TONE[product.season]} className="absolute left-3 top-3">
             {t(`shop.season.${product.season}`)}
           </Badge>
         )}
         {outOfStock ? (
-          <Badge tone="neutral" className="absolute right-3 top-3">{t('shop.product.outOfStock')}</Badge>
+          <Badge tone="neutral" className="absolute bottom-3 left-3">{t('shop.product.outOfStock')}</Badge>
         ) : product.lowStock ? (
-          <Badge tone="error" className="absolute right-3 top-3">{t('shop.product.lowStock')}</Badge>
+          <Badge tone="error" className="absolute bottom-3 left-3">{t('shop.product.lowStock')}</Badge>
         ) : null}
-      </Link>
+        <WishlistButton productId={product.id} className="absolute right-3 top-3 z-10" />
+      </div>
 
       <div className="flex flex-1 flex-col gap-2 p-4">
         <span className="text-xs font-medium uppercase tracking-wide text-base-content/50">

@@ -42,6 +42,7 @@ const ShopProductDetailPage = lazy(() => import('../shop/pages/ProductDetailPage
 const CheckoutPage = lazy(() => import('../shop/pages/CheckoutPage').then(m => ({ default: m.CheckoutPage })));
 const OrderConfirmationPage = lazy(() => import('../shop/pages/OrderConfirmationPage').then(m => ({ default: m.OrderConfirmationPage })));
 const OrdersPage = lazy(() => import('../shop/pages/OrdersPage').then(m => ({ default: m.OrdersPage })));
+const WishlistPage = lazy(() => import('../shop/pages/WishlistPage').then(m => ({ default: m.WishlistPage })));
 const ShopNotFound = lazy(() => import('../shop/pages/ShopNotFound').then(m => ({ default: m.ShopNotFound })));
 
 // Lazy-loaded portal pages
@@ -440,6 +441,11 @@ export const router = createBrowserRouter([
         path: 'buyurtmalarim',
         element: <LazyRoute><OrdersPage /></LazyRoute>,
         handle: { title: 'Buyurtmalarim' },
+      },
+      {
+        path: 'saqlanganlar',
+        element: <LazyRoute><WishlistPage /></LazyRoute>,
+        handle: { title: 'Saqlanganlar' },
       },
       {
         path: '*',

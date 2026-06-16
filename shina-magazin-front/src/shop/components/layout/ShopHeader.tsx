@@ -1,10 +1,11 @@
 import { useState } from 'react';
 import { Link, NavLink, useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
-import { ShoppingCart, Search, Menu, X, Sun, Moon, Globe } from 'lucide-react';
-import { Button, Badge, cn } from '@/ui';
+import { ShoppingCart, Search, Menu, X, Sun, Moon, Globe, Heart } from 'lucide-react';
+import { Button, Badge, buttonVariants, cn } from '@/ui';
 import { useThemeStore } from '../../../shared/theme/themeStore';
 import { useCartStore, selectCartCount } from '../../store/cartStore';
+import { useWishlistStore, selectWishlistCount } from '../../store/wishlistStore';
 import { ShopLogo } from './ShopLogo';
 
 interface ShopHeaderProps {
@@ -16,6 +17,7 @@ export function ShopHeader({ onOpenCart }: ShopHeaderProps) {
   const navigate = useNavigate();
   const { mode, setMode } = useThemeStore();
   const cartCount = useCartStore(selectCartCount);
+  const wishlistCount = useWishlistStore(selectWishlistCount);
   const [query, setQuery] = useState('');
   const [menuOpen, setMenuOpen] = useState(false);
 
@@ -70,6 +72,14 @@ export function ShopHeader({ onOpenCart }: ShopHeaderProps) {
           <Button variant="ghost" size="sm" iconOnly onClick={toggleTheme} title={t('shop.theme.toggle')} aria-label={t('shop.theme.toggle')}>
             {isDark ? <Moon size={18} /> : <Sun size={18} />}
           </Button>
+          <Link to="/magazin/saqlanganlar" className={cn(buttonVariants({ variant: 'ghost', size: 'sm', iconOnly: true }), 'relative')} title={t('shop.nav.wishlist')} aria-label={t('shop.nav.wishlist')}>
+            <Heart size={18} />
+            {wishlistCount > 0 && (
+              <Badge tone="error" className="absolute -right-1 -top-1 min-w-5 justify-center px-1 py-0 text-[10px] font-bold">
+                {wishlistCount}
+              </Badge>
+            )}
+          </Link>
           <Button variant="ghost" size="sm" iconOnly onClick={onOpenCart} title={t('shop.cart.title')} aria-label={t('shop.cart.title')} className="relative">
             <ShoppingCart size={18} />
             {cartCount > 0 && (
@@ -100,6 +110,7 @@ export function ShopHeader({ onOpenCart }: ShopHeaderProps) {
           <nav className="flex flex-col">
             <NavLink to="/magazin" end onClick={() => setMenuOpen(false)} className="rounded-lg px-2 py-2.5 text-sm font-medium hover:bg-base-200">{t('shop.nav.home')}</NavLink>
             <NavLink to="/magazin/katalog" onClick={() => setMenuOpen(false)} className="rounded-lg px-2 py-2.5 text-sm font-medium hover:bg-base-200">{t('shop.nav.catalog')}</NavLink>
+            <NavLink to="/magazin/saqlanganlar" onClick={() => setMenuOpen(false)} className="rounded-lg px-2 py-2.5 text-sm font-medium hover:bg-base-200">{t('shop.nav.wishlist')}</NavLink>
             <NavLink to="/magazin/buyurtmalarim" onClick={() => setMenuOpen(false)} className="rounded-lg px-2 py-2.5 text-sm font-medium hover:bg-base-200">{t('shop.nav.orders')}</NavLink>
           </nav>
         </div>

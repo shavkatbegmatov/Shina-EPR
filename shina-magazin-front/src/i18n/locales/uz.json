@@ -1635,7 +1635,8 @@
       "home": "Bosh sahifa",
       "catalog": "Katalog",
       "menu": "Menyu",
-      "orders": "Buyurtmalarim"
+      "orders": "Buyurtmalarim",
+      "wishlist": "Saqlanganlar"
     },
     "search": {
       "placeholder": "Shina, brend yoki o'lcham (205/55 R16)..."
@@ -1815,6 +1816,14 @@
       "diameter": "Radius (R)",
       "any": "Barchasi",
       "find": "Topish"
+    },
+    "wishlist": {
+      "title": "Saqlanganlar",
+      "empty": "Saqlangan mahsulot yo'q",
+      "emptyHint": "Yoqqan mahsulotlarni yurakcha tugmasi bilan saqlang.",
+      "clear": "Tozalash",
+      "add": "Saqlanganlarga qo'shish",
+      "remove": "Saqlanganlardan olib tashlash"
     }
   }
 }

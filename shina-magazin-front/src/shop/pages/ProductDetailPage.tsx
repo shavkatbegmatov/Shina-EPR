@@ -6,6 +6,7 @@ import { Card, Badge, Button, EmptyState, buttonVariants, cn } from '@/ui';
 import { formatCurrency } from '../../config/constants';
 import { ProductImage } from '../components/ProductImage';
 import { ProductCard } from '../components/ProductCard';
+import { WishlistButton } from '../components/WishlistButton';
 import { useProduct, useRelatedProducts } from '../data/useCatalog';
 import { useCartStore } from '../store/cartStore';
 
@@ -103,6 +104,7 @@ export function ProductDetailPage() {
               {added ? <Check size={18} /> : <ShoppingCart size={18} />}
               {added ? t('shop.cart.added') : t('shop.product.addToCart')}
             </Button>
+            <WishlistButton productId={product.id} variant="inline" size={20} />
           </div>
 
           {/* Specs */}
