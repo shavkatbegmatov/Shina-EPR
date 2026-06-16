@@ -2,6 +2,8 @@ import { useState, useRef, useEffect, useCallback, KeyboardEvent, ReactNode } fr
 import { createPortal } from 'react-dom';
 import { Phone, Loader2, User as UserIcon } from 'lucide-react';
 import clsx from 'clsx';
+import { useTranslation } from 'react-i18next';
+import i18n from '../../i18n';
 import { SearchInput } from '../ui/SearchInput';
 import type { Customer, Employee, Supplier } from '../../types';
 import { customersApi } from '../../api/customers.api';
@@ -71,7 +73,7 @@ function useEntitySearch<T>(
         }
       } catch {
         if (!controller.signal.aborted) {
-          setError('Xatolik yuz berdi');
+          setError(i18n.t('common.error'));
           setData([]);
         }
       } finally {
@@ -97,7 +99,7 @@ export function NamePhoneSearchCombobox<T extends NamePhoneEntity>({
   fetchFunction,
   getDisplayName,
   getSubtitle,
-  placeholder = 'Qidirish...',
+  placeholder,
   label,
   disabled = false,
   className,
@@ -105,6 +107,7 @@ export function NamePhoneSearchCombobox<T extends NamePhoneEntity>({
   debounceMs = 300,
   dropdownFooter,
 }: NamePhoneSearchComboboxProps<T>) {
+  const { t } = useTranslation();
   const [isOpen, setIsOpen] = useState(false);
   const [activeIndex, setActiveIndex] = useState(-1);
   const [dropdownPosition, setDropdownPosition] = useState({ top: 0, left: 0, width: 0 });
@@ -267,7 +270,7 @@ export function NamePhoneSearchCombobox<T extends NamePhoneEntity>({
       ref={dropdownRef}
       role="listbox"
       id={listId}
-      aria-label="Qidiruv natijalari"
+      aria-label={t('erp.combobox.searchResults')}
       style={{
         position: 'absolute',
         top: dropdownPosition.top,
@@ -283,7 +286,7 @@ export function NamePhoneSearchCombobox<T extends NamePhoneEntity>({
         // Loading state
         <div className="flex items-center justify-center gap-2 p-4 text-base-content/60">
           <Loader2 className="h-5 w-5 animate-spin" />
-          <span>Qidirilmoqda...</span>
+          <span>{t('common.searching')}</span>
         </div>
       ) : error ? (
         // Error state
@@ -294,7 +297,7 @@ export function NamePhoneSearchCombobox<T extends NamePhoneEntity>({
         // Empty state
         <div className="flex flex-col items-center justify-center gap-2 p-6 text-base-content/50">
           <UserIcon className="h-8 w-8" />
-          <span className="text-sm">Topilmadi</span>
+          <span className="text-sm">{t('erp.combobox.notFound')}</span>
         </div>
       ) : (
         // Results list
@@ -402,7 +405,7 @@ export function NamePhoneSearchCombobox<T extends NamePhoneEntity>({
       <SearchInput
         value={value}
         onValueChange={onChange}
-        placeholder={placeholder}
+        placeholder={placeholder ?? t('erp.combobox.searchPlaceholder')}
         hideLabel
         ariaLabel={label || placeholder}
         disabled={disabled}
@@ -443,6 +446,7 @@ export function CustomerSearchCombobox({
   getSubtitle?: (customer: Customer) => string | undefined;
   dropdownFooter?: ReactNode;
 }) {
+  const { t } = useTranslation();
   const fetchCustomers = async (search: string) => {
     const response = await customersApi.getAll({ search, size: 20 });
     return response.content;
@@ -458,7 +462,7 @@ export function CustomerSearchCombobox({
       fetchFunction={fetchCustomers}
       getDisplayName={getDisplayName}
       getSubtitle={getSubtitle ?? defaultGetSubtitle}
-      placeholder={props.placeholder ?? 'Mijozni qidirish...'}
+      placeholder={props.placeholder ?? t('erp.combobox.customerSearch')}
       dropdownFooter={dropdownFooter}
     />
   );
@@ -476,6 +480,7 @@ export function EmployeeSearchCombobox({
   getSubtitle?: (employee: Employee) => string | undefined;
   dropdownFooter?: ReactNode;
 }) {
+  const { t } = useTranslation();
   const fetchEmployees = async (search: string) => {
     const response = await employeesApi.getAll({ search, size: 20 });
     return response.content;
@@ -492,7 +497,7 @@ export function EmployeeSearchCombobox({
       fetchFunction={fetchEmployees}
       getDisplayName={getDisplayName}
       getSubtitle={getSubtitle ?? defaultGetSubtitle}
-      placeholder={props.placeholder ?? 'Xodimni qidirish...'}
+      placeholder={props.placeholder ?? t('erp.combobox.employeeSearch')}
       dropdownFooter={dropdownFooter}
     />
   );
@@ -510,6 +515,7 @@ export function SupplierSearchCombobox({
   getSubtitle?: (supplier: Supplier) => string | undefined;
   dropdownFooter?: ReactNode;
 }) {
+  const { t } = useTranslation();
   const fetchSuppliers = async (search: string) => {
     const response = await suppliersApi.getAll({ search, size: 20 });
     return response.content;
@@ -525,7 +531,7 @@ export function SupplierSearchCombobox({
       fetchFunction={fetchSuppliers}
       getDisplayName={getDisplayName}
       getSubtitle={getSubtitle ?? defaultGetSubtitle}
-      placeholder={props.placeholder ?? "Ta'minotchini qidirish..."}
+      placeholder={props.placeholder ?? t('erp.combobox.supplierSearch')}
       dropdownFooter={dropdownFooter}
     />
   );

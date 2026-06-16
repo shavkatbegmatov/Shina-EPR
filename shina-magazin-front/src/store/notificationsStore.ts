@@ -1,5 +1,6 @@
 import { create } from 'zustand';
 import toast from 'react-hot-toast';
+import i18n from '../i18n';
 import { notificationsApi, type StaffNotification, type StaffNotificationType } from '../api/notifications.api';
 import { webSocketService, type WebSocketNotification, type PermissionUpdateMessage, type SessionUpdateMessage } from '../services/websocket';
 import { useAuthStore } from './authStore';
@@ -96,7 +97,7 @@ export const useNotificationsStore = create<NotificationsState>((set, get) => ({
       set({ notifications, unreadCount, loading: false });
     } catch (error) {
       console.error('Failed to fetch notifications:', error);
-      set({ error: 'Bildirishnomalarni yuklashda xatolik', loading: false });
+      set({ error: i18n.t('erp.notif.loadError'), loading: false });
     }
   },
 
@@ -210,7 +211,7 @@ export const useNotificationsStore = create<NotificationsState>((set, get) => ({
 
             // Show toast notification
             toast(
-              permissionUpdate.reason || 'Sizning kirish huquqlaringiz yangilandi',
+              permissionUpdate.reason || i18n.t('erp.notif.permissionsUpdated'),
               {
                 duration: 5000,
                 icon: '🔐',
@@ -248,7 +249,7 @@ export const useNotificationsStore = create<NotificationsState>((set, get) => ({
               // Our session was revoked from another device
               console.log('[Session] Current session was revoked - logging out immediately');
 
-              toast.error('Sessioningiz boshqa qurilmadan yopilgan. Qayta kiring.');
+              toast.error(i18n.t('erp.notif.sessionRevoked'));
 
               // Logout after a short delay to show the toast
               const { useAuthStore } = await import('./authStore');

@@ -30,7 +30,8 @@
     "status": "Holat",
     "amount": "Summa",
     "success": "Muvaffaqiyatli",
-    "noResults": "Natija topilmadi"
+    "noResults": "Natija topilmadi",
+    "searching": "Qidirilmoqda..."
   },
   "auth": {
     "login": "Kirish",
@@ -1597,6 +1598,22 @@
         "Sh",
         "Ya"
       ]
+    },
+    "notif": {
+      "loadError": "Bildirishnomalarni yuklashda xatolik",
+      "permissionsUpdated": "Sizning kirish huquqlaringiz yangilandi",
+      "sessionRevoked": "Sessioningiz boshqa qurilmadan yopilgan. Qayta kiring."
+    },
+    "combobox": {
+      "searchPlaceholder": "Qidirish...",
+      "productSearchPlaceholder": "Mahsulot qidirish...",
+      "searchResults": "Qidiruv natijalari",
+      "productList": "Mahsulotlar roʻyxati",
+      "notFound": "Topilmadi",
+      "productNotFound": "Mahsulot topilmadi",
+      "customerSearch": "Mijozni qidirish...",
+      "employeeSearch": "Xodimni qidirish...",
+      "supplierSearch": "Taʼminotchini qidirish..."
     }
   }
 }

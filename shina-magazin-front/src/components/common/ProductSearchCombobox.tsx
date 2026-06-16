@@ -2,6 +2,7 @@ import { useState, useRef, useEffect, useCallback, KeyboardEvent } from 'react';
 import { createPortal } from 'react-dom';
 import { Package, Loader2 } from 'lucide-react';
 import clsx from 'clsx';
+import { useTranslation } from 'react-i18next';
 import { Product } from '../../types';
 import { formatCurrency } from '../../config/constants';
 import { SearchInput } from '../ui/SearchInput';
@@ -23,10 +24,11 @@ export function ProductSearchCombobox({
   onSelect,
   products,
   isLoading,
-  placeholder = 'Mahsulot qidirish...',
+  placeholder,
   disabled = false,
   className,
 }: ProductSearchComboboxProps) {
+  const { t } = useTranslation();
   const [isOpen, setIsOpen] = useState(false);
   const [activeIndex, setActiveIndex] = useState(-1);
   const [dropdownPosition, setDropdownPosition] = useState({ top: 0, left: 0, width: 0 });
@@ -171,7 +173,7 @@ export function ProductSearchCombobox({
       ref={dropdownRef}
       role="listbox"
       id={listId}
-      aria-label="Mahsulotlar ro'yxati"
+      aria-label={t('erp.combobox.productList')}
       style={{
         position: 'absolute',
         top: dropdownPosition.top,
@@ -187,13 +189,13 @@ export function ProductSearchCombobox({
         // Loading state
         <div className="flex items-center justify-center gap-2 p-4 text-base-content/60">
           <Loader2 className="h-5 w-5 animate-spin" />
-          <span>Qidirilmoqda...</span>
+          <span>{t('common.searching')}</span>
         </div>
       ) : products.length === 0 ? (
         // Empty state
         <div className="flex flex-col items-center justify-center gap-2 p-6 text-base-content/50">
           <Package className="h-8 w-8" />
-          <span className="text-sm">Mahsulot topilmadi</span>
+          <span className="text-sm">{t('erp.combobox.productNotFound')}</span>
         </div>
       ) : (
         // Results list
@@ -272,7 +274,7 @@ export function ProductSearchCombobox({
       <SearchInput
         value={value}
         onValueChange={onChange}
-        placeholder={placeholder}
+        placeholder={placeholder ?? t('erp.combobox.productSearchPlaceholder')}
         hideLabel
         ariaLabel={placeholder}
         disabled={disabled}

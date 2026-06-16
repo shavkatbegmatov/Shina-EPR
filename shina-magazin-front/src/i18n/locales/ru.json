@@ -30,7 +30,8 @@
     "status": "Статус",
     "amount": "Сумма",
     "success": "Успешно",
-    "noResults": "Ничего не найдено"
+    "noResults": "Ничего не найдено",
+    "searching": "Поиск..."
   },
   "auth": {
     "login": "Вход",
@@ -1597,6 +1598,22 @@
         "Сб",
         "Вс"
       ]
+    },
+    "notif": {
+      "loadError": "Ошибка загрузки уведомлений",
+      "permissionsUpdated": "Ваши права доступа обновлены",
+      "sessionRevoked": "Ваша сессия закрыта с другого устройства. Войдите снова."
+    },
+    "combobox": {
+      "searchPlaceholder": "Поиск...",
+      "productSearchPlaceholder": "Поиск товара...",
+      "searchResults": "Результаты поиска",
+      "productList": "Список товаров",
+      "notFound": "Не найдено",
+      "productNotFound": "Товар не найден",
+      "customerSearch": "Поиск клиента...",
+      "employeeSearch": "Поиск сотрудника...",
+      "supplierSearch": "Поиск поставщика..."
     }
   }
 }
