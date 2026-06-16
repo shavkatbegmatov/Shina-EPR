@@ -1639,7 +1639,8 @@
       "wishlist": "Saqlanganlar"
     },
     "search": {
-      "placeholder": "Shina, brend yoki o'lcham (205/55 R16)..."
+      "placeholder": "Shina, brend yoki o'lcham (205/55 R16)...",
+      "allResults": "Barcha natijalar"
     },
     "season": {
       "SUMMER": "Yozgi",
