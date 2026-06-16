@@ -4,6 +4,7 @@ import { ArrowRight, Car, Mountain, Gauge, Snowflake, ShieldCheck, Truck, BadgeC
 import { Card, buttonVariants, cn } from '@/ui';
 import { ProductCard } from '../components/ProductCard';
 import { ShopLogo } from '../components/layout/ShopLogo';
+import { TireSizeFinder } from '../components/TireSizeFinder';
 import { useCatalogProducts } from '../data/useCatalog';
 
 const CATEGORIES = [
@@ -50,6 +51,11 @@ export function ShopHomePage() {
             </Link>
           </div>
         </div>
+      </section>
+
+      {/* Tire size finder — heroni biroz qoplaydi */}
+      <section className="relative z-10 mx-auto -mt-8 max-w-7xl px-4 sm:px-6">
+        <TireSizeFinder className="shadow-strong" />
       </section>
 
       {/* Categories */}

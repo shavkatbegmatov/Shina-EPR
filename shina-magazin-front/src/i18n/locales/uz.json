@@ -1807,6 +1807,14 @@
     "notFound": {
       "title": "Sahifa topilmadi",
       "hint": "Bunday sahifa mavjud emas yoki ko'chirilgan."
+    },
+    "finder": {
+      "title": "Shina o'lchamini tanlang",
+      "width": "Eni",
+      "profile": "Balandligi",
+      "diameter": "Radius (R)",
+      "any": "Barchasi",
+      "find": "Topish"
     }
   }
 }

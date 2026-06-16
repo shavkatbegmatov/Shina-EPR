@@ -5,6 +5,7 @@ import { SlidersHorizontal, X } from 'lucide-react';
 import { EmptyState, Button } from '@/ui';
 import type { Season } from '../../types';
 import { ProductCard } from '../components/ProductCard';
+import { TireSizeFinder } from '../components/TireSizeFinder';
 import { useCatalogProducts, useCatalogBrands } from '../data/useCatalog';
 
 type SortKey = 'new' | 'price-asc' | 'price-desc';
@@ -21,11 +22,19 @@ export function CatalogPage() {
   const [season, setSeason] = useState<string>(searchParams.get('season') ?? '');
   const [sort, setSort] = useState<SortKey>('new');
 
+  // O'lcham filtri qidiruvchidan URL orqali keladi (jonli o'qiladi)
+  const width = searchParams.get('width') ?? '';
+  const profile = searchParams.get('profile') ?? '';
+  const diameter = searchParams.get('diameter') ?? '';
+
   const results = useMemo(() => {
     const needle = q.trim().toLowerCase();
     let list = products.filter((p) => {
       if (brand && p.brandName !== brand) return false;
       if (season && p.season !== season) return false;
+      if (width && p.width !== Number(width)) return false;
+      if (profile && p.profile !== Number(profile)) return false;
+      if (diameter && p.diameter !== Number(diameter)) return false;
       if (needle) {
         const hay = `${p.name} ${p.sku} ${p.brandName ?? ''} ${p.sizeString ?? ''}`.toLowerCase();
         if (!hay.includes(needle)) return false;
@@ -38,13 +47,20 @@ export function CatalogPage() {
       return b.id - a.id;
     });
     return list;
-  }, [products, q, brand, season, sort]);
+  }, [products, q, brand, season, sort, width, profile, diameter]);
 
-  const hasFilters = Boolean(q || brand || season);
+  const hasSize = Boolean(width || profile || diameter);
+  const hasFilters = Boolean(q || brand || season) || hasSize;
 
   const clearFilters = () => {
     setQ(''); setBrand(''); setSeason(''); setSort('new');
     setSearchParams({}, { replace: true });
+  };
+
+  const clearSize = () => {
+    const next = new URLSearchParams(searchParams);
+    next.delete('width'); next.delete('profile'); next.delete('diameter');
+    setSearchParams(next, { replace: true });
   };
 
   const selectClass = 'h-11 rounded-xl border border-base-300 bg-base-100 px-3 text-sm outline-none transition focus:border-primary';
@@ -58,6 +74,8 @@ export function CatalogPage() {
       <p className="mb-6 text-sm text-base-content/60">
         {t('shop.catalog.results', { count: results.length })}
       </p>
+
+      <TireSizeFinder className="mb-6" />
 
       {/* Filters */}
       <div className="mb-6 flex flex-wrap items-center gap-3">
@@ -81,6 +99,12 @@ export function CatalogPage() {
           <option value="price-asc">{t('shop.catalog.sortPriceAsc')}</option>
           <option value="price-desc">{t('shop.catalog.sortPriceDesc')}</option>
         </select>
+        {hasSize && (
+          <span className="pill gap-1.5 font-mono">
+            {width || '…'}/{profile || '…'} R{diameter || '…'}
+            <button type="button" onClick={clearSize} aria-label={t('shop.catalog.clear')} className="hover:text-error"><X size={12} /></button>
+          </span>
+        )}
         {hasFilters && (
           <Button variant="ghost" size="sm" onClick={clearFilters} className="gap-1">
             <X size={15} /> {t('shop.catalog.clear')}
