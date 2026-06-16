@@ -1,39 +1,63 @@
 import { useMemo } from 'react';
+import { useQuery } from '@tanstack/react-query';
 import type { Product } from '../../types';
 import { DEMO_PRODUCTS, DEMO_BRANDS } from './demoProducts';
+import { catalogApi } from './catalogApi';
 
 /**
  * Katalog ma'lumotlari uchun YAGONA seam (ulanish nuqtasi).
  *
- * Hozir demo massivdan o'qiydi. Commerce backend (`GET /v1/catalog`) tayyor
- * bo'lganda FAQAT shu fayl React Query'ga o'tadi (useQuery + catalogApi);
- * iste'molchi sahifalar (Home/Catalog/PDP) o'zgarmaydi — ular shu hooklarni
- * ishlatadi, `DEMO_PRODUCTS`'ni to'g'ridan-to'g'ri import qilmaydi.
+ * Backend `GET /v1/catalog` bo'lsa undan o'qiydi; backend yo'q yoki xato bo'lsa
+ * demo massivga TUSHADI — storefront offline/backendsiz ham to'liq ko'rinadi.
+ * Iste'molchi sahifalar (Home/Catalog/PDP) faqat shu hooklarni ishlatadi.
  */
+function useCatalogQuery() {
+  return useQuery({
+    queryKey: ['catalog'],
+    queryFn: async (): Promise<Product[]> => {
+      try {
+        const products = await catalogApi.list();
+        return products.length ? products : DEMO_PRODUCTS;
+      } catch {
+        return DEMO_PRODUCTS; // backend yo'q/xato → demo (vitrina baribir ishlaydi)
+      }
+    },
+    staleTime: 5 * 60 * 1000,
+    retry: false,
+  });
+}
+
 export function useCatalogProducts(): { products: Product[]; isLoading: boolean } {
-  return { products: DEMO_PRODUCTS, isLoading: false };
+  const { data, isLoading } = useCatalogQuery();
+  return { products: data ?? DEMO_PRODUCTS, isLoading };
 }
 
 export function useProduct(id?: string | number): { product: Product | undefined; isLoading: boolean } {
-  const product = useMemo(
-    () => DEMO_PRODUCTS.find((p) => String(p.id) === String(id)),
-    [id]
-  );
-  return { product, isLoading: false };
+  const { data, isLoading } = useCatalogQuery();
+  const list = data ?? DEMO_PRODUCTS;
+  const product = useMemo(() => list.find((p) => String(p.id) === String(id)), [list, id]);
+  return { product, isLoading };
 }
 
 /** O'xshash mahsulotlar: avval bir brend, keyin bir kategoriya (boshqa brend) bilan to'ldiriladi. */
 export function useRelatedProducts(product: Product | undefined, limit = 4): Product[] {
+  const { data } = useCatalogQuery();
+  const list = data ?? DEMO_PRODUCTS;
   return useMemo(() => {
     if (!product) return [];
-    const sameBrand = DEMO_PRODUCTS.filter((p) => p.id !== product.id && p.brandName === product.brandName);
-    const sameCat = DEMO_PRODUCTS.filter(
+    const sameBrand = list.filter((p) => p.id !== product.id && p.brandName === product.brandName);
+    const sameCat = list.filter(
       (p) => p.id !== product.id && p.categoryName === product.categoryName && p.brandName !== product.brandName
     );
     return [...sameBrand, ...sameCat].slice(0, limit);
-  }, [product, limit]);
+  }, [list, product, limit]);
 }
 
 export function useCatalogBrands(): string[] {
-  return DEMO_BRANDS;
+  const { data } = useCatalogQuery();
+  const list = data ?? DEMO_PRODUCTS;
+  return useMemo(() => {
+    if (!list.length) return DEMO_BRANDS;
+    return [...new Set(list.map((p) => p.brandName).filter((b): b is string => Boolean(b)))].sort();
+  }, [list]);
 }

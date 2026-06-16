@@ -46,6 +46,9 @@ public class SecurityConfig {
                         // Public endpoints
                         .requestMatchers("/v1/auth/**").permitAll()
                         .requestMatchers("/v1/customer-auth/**").permitAll()
+                        // Ommaviy storefront katalogi — faqat O'QISH (GET). Yozish operatsiyalari
+                        // /v1/products ostida himoyalangan bo'lib qoladi.
+                        .requestMatchers(HttpMethod.GET, "/v1/catalog/**").permitAll()
                         .requestMatchers("/swagger-ui/**", "/api-docs/**", "/swagger-ui.html").permitAll()
                         .requestMatchers("/actuator/**").permitAll()
                         // WebSocket endpoint (JWT token interceptor'da tekshiriladi)
