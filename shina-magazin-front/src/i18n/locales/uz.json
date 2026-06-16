@@ -1634,7 +1634,8 @@
     "nav": {
       "home": "Bosh sahifa",
       "catalog": "Katalog",
-      "menu": "Menyu"
+      "menu": "Menyu",
+      "orders": "Buyurtmalarim"
     },
     "search": {
       "placeholder": "Shina, brend yoki o'lcham (205/55 R16)..."
@@ -1794,6 +1795,17 @@
       "continueShopping": "Xaridni davom ettirish",
       "notFound": "Buyurtma topilmadi",
       "notFoundHint": "Bunday buyurtma mavjud emas yoki muddati o'tgan."
+    },
+    "orders": {
+      "title": "Buyurtmalarim",
+      "empty": "Buyurtmalar yo'q",
+      "emptyHint": "Hali buyurtma bermagansiz.",
+      "statusAccepted": "Qabul qilingan",
+      "itemsCount": "{{count}} ta mahsulot"
+    },
+    "notFound": {
+      "title": "Sahifa topilmadi",
+      "hint": "Bunday sahifa mavjud emas yoki ko'chirilgan."
     }
   }
 }

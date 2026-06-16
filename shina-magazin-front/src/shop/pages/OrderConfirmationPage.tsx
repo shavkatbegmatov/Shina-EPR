@@ -90,7 +90,8 @@ export function OrderConfirmationPage() {
         {t('shop.order.contactSoon')}
       </div>
 
-      <div className="flex justify-center gap-3">
+      <div className="flex flex-wrap justify-center gap-3">
+        <Link to="/magazin/buyurtmalarim" className={buttonVariants({ variant: 'outline' })}>{t('shop.nav.orders')}</Link>
         <Link to="/magazin/katalog" className={buttonVariants({ variant: 'outline' })}>{t('shop.order.continueShopping')}</Link>
         <Link to="/magazin" className={buttonVariants({ variant: 'primary' })}>{t('shop.order.backHome')}</Link>
       </div>

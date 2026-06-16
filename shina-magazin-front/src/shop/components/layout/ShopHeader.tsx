@@ -47,6 +47,7 @@ export function ShopHeader({ onOpenCart }: ShopHeaderProps) {
         <nav className="ml-4 hidden items-center gap-6 md:flex">
           <NavLink to="/magazin" end className={navLinkClass}>{t('shop.nav.home')}</NavLink>
           <NavLink to="/magazin/katalog" className={navLinkClass}>{t('shop.nav.catalog')}</NavLink>
+          <NavLink to="/magazin/buyurtmalarim" className={navLinkClass}>{t('shop.nav.orders')}</NavLink>
         </nav>
 
         {/* Desktop search */}
@@ -99,6 +100,7 @@ export function ShopHeader({ onOpenCart }: ShopHeaderProps) {
           <nav className="flex flex-col">
             <NavLink to="/magazin" end onClick={() => setMenuOpen(false)} className="rounded-lg px-2 py-2.5 text-sm font-medium hover:bg-base-200">{t('shop.nav.home')}</NavLink>
             <NavLink to="/magazin/katalog" onClick={() => setMenuOpen(false)} className="rounded-lg px-2 py-2.5 text-sm font-medium hover:bg-base-200">{t('shop.nav.catalog')}</NavLink>
+            <NavLink to="/magazin/buyurtmalarim" onClick={() => setMenuOpen(false)} className="rounded-lg px-2 py-2.5 text-sm font-medium hover:bg-base-200">{t('shop.nav.orders')}</NavLink>
           </nav>
         </div>
       )}

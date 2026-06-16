@@ -41,6 +41,8 @@ const CatalogPage = lazy(() => import('../shop/pages/CatalogPage').then(m => ({ 
 const ShopProductDetailPage = lazy(() => import('../shop/pages/ProductDetailPage').then(m => ({ default: m.ProductDetailPage })));
 const CheckoutPage = lazy(() => import('../shop/pages/CheckoutPage').then(m => ({ default: m.CheckoutPage })));
 const OrderConfirmationPage = lazy(() => import('../shop/pages/OrderConfirmationPage').then(m => ({ default: m.OrderConfirmationPage })));
+const OrdersPage = lazy(() => import('../shop/pages/OrdersPage').then(m => ({ default: m.OrdersPage })));
+const ShopNotFound = lazy(() => import('../shop/pages/ShopNotFound').then(m => ({ default: m.ShopNotFound })));
 
 // Lazy-loaded portal pages
 const PortalLayout = lazy(() => import('../portal/components/layout/PortalLayout'));
@@ -433,6 +435,16 @@ export const router = createBrowserRouter([
         path: 'buyurtma/:orderNo',
         element: <LazyRoute><OrderConfirmationPage /></LazyRoute>,
         handle: { title: 'Buyurtma tasdig\'i' },
+      },
+      {
+        path: 'buyurtmalarim',
+        element: <LazyRoute><OrdersPage /></LazyRoute>,
+        handle: { title: 'Buyurtmalarim' },
+      },
+      {
+        path: '*',
+        element: <LazyRoute><ShopNotFound /></LazyRoute>,
+        handle: { title: 'Topilmadi' },
       },
     ],
   },
