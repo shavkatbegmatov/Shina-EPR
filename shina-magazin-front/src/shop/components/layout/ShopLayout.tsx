@@ -3,6 +3,7 @@ import { Outlet } from 'react-router-dom';
 import { ShopHeader } from './ShopHeader';
 import { ShopFooter } from './ShopFooter';
 import { CartDrawer } from '../CartDrawer';
+import { QuickViewModal } from '../QuickViewModal';
 import { ShopRouteEffects } from '../ShopRouteEffects';
 
 /**
@@ -22,6 +23,7 @@ export default function ShopLayout() {
       </main>
       <ShopFooter />
       <CartDrawer open={cartOpen} onClose={() => setCartOpen(false)} />
+      <QuickViewModal />
     </div>
   );
 }

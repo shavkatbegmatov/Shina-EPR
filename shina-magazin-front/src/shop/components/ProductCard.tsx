@@ -1,6 +1,6 @@
 import { Link } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
-import { ShoppingCart, Check } from 'lucide-react';
+import { ShoppingCart, Check, Eye } from 'lucide-react';
 import { useState } from 'react';
 import { Card, Badge, Button, cn } from '@/ui';
 import type { Product } from '../../types';
@@ -8,6 +8,7 @@ import { formatCurrency } from '../../config/constants';
 import { ProductImage } from './ProductImage';
 import { WishlistButton } from './WishlistButton';
 import { useCartStore } from '../store/cartStore';
+import { useQuickViewStore } from '../store/quickViewStore';
 
 interface ProductCardProps {
   product: Product;
@@ -22,6 +23,7 @@ const SEASON_TONE: Record<string, 'info' | 'warning' | 'success'> = {
 export function ProductCard({ product }: ProductCardProps) {
   const { t } = useTranslation();
   const add = useCartStore((s) => s.add);
+  const openQuickView = useQuickViewStore((s) => s.open);
   const [justAdded, setJustAdded] = useState(false);
 
   const outOfStock = product.quantity <= 0;
@@ -43,17 +45,24 @@ export function ProductCard({ product }: ProductCardProps) {
             className="transition-transform duration-300 group-hover:scale-105"
           />
         </Link>
-        {product.season && (
-          <Badge tone={SEASON_TONE[product.season]} className="absolute left-3 top-3">
-            {t(`shop.season.${product.season}`)}
-          </Badge>
-        )}
-        {outOfStock ? (
-          <Badge tone="neutral" className="absolute bottom-3 left-3">{t('shop.product.outOfStock')}</Badge>
-        ) : product.lowStock ? (
-          <Badge tone="error" className="absolute bottom-3 left-3">{t('shop.product.lowStock')}</Badge>
-        ) : null}
+        <div className="absolute left-3 top-3 flex flex-col items-start gap-2">
+          {product.season && (
+            <Badge tone={SEASON_TONE[product.season]}>{t(`shop.season.${product.season}`)}</Badge>
+          )}
+          {outOfStock ? (
+            <Badge tone="neutral">{t('shop.product.outOfStock')}</Badge>
+          ) : product.lowStock ? (
+            <Badge tone="error">{t('shop.product.lowStock')}</Badge>
+          ) : null}
+        </div>
         <WishlistButton productId={product.id} className="absolute right-3 top-3 z-10" />
+        <button
+          type="button"
+          onClick={() => openQuickView(product.id)}
+          className="absolute inset-x-0 bottom-0 z-10 flex translate-y-full items-center justify-center gap-1.5 border-t border-base-200 bg-base-100/95 py-2.5 text-sm font-medium backdrop-blur transition-transform duration-200 group-hover:translate-y-0"
+        >
+          <Eye size={16} /> {t('shop.quickView.button')}
+        </button>
       </div>
 
       <div className="flex flex-1 flex-col gap-2 p-4">
