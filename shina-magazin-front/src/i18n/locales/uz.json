@@ -1708,7 +1708,8 @@
       "category": "Kategoriya",
       "sku": "Artikul (SKU)",
       "specs": "Xususiyatlar",
-      "backToCatalog": "Katalogga qaytish"
+      "backToCatalog": "Katalogga qaytish",
+      "related": "O'xshash mahsulotlar"
     },
     "cart": {
       "title": "Savat",

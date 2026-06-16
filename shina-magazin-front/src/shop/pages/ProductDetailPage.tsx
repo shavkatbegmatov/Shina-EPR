@@ -5,7 +5,8 @@ import { ChevronRight, Minus, Plus, ShoppingCart, Check, ArrowLeft } from 'lucid
 import { Card, Badge, Button, EmptyState, buttonVariants, cn } from '@/ui';
 import { formatCurrency } from '../../config/constants';
 import { ProductImage } from '../components/ProductImage';
-import { DEMO_PRODUCTS } from '../data/demoProducts';
+import { ProductCard } from '../components/ProductCard';
+import { useProduct, useRelatedProducts } from '../data/useCatalog';
 import { useCartStore } from '../store/cartStore';
 
 export function ProductDetailPage() {
@@ -15,7 +16,8 @@ export function ProductDetailPage() {
   const [qty, setQty] = useState(1);
   const [added, setAdded] = useState(false);
 
-  const product = DEMO_PRODUCTS.find((p) => String(p.id) === id);
+  const { product } = useProduct(id);
+  const related = useRelatedProducts(product);
 
   if (!product) {
     return (
@@ -121,6 +123,15 @@ export function ProductDetailPage() {
           </Link>
         </div>
       </div>
+
+      {related.length > 0 && (
+        <section className="mt-14">
+          <h2 className="section-title mb-6">{t('shop.product.related')}</h2>
+          <div className="grid grid-cols-2 gap-4 md:grid-cols-3 lg:grid-cols-4">
+            {related.map((p) => <ProductCard key={p.id} product={p} />)}
+          </div>
+        </section>
+      )}
     </div>
   );
 }

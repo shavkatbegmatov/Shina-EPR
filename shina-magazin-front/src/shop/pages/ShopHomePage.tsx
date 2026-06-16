@@ -4,7 +4,7 @@ import { ArrowRight, Car, Mountain, Gauge, Snowflake, ShieldCheck, Truck, BadgeC
 import { Card, buttonVariants, cn } from '@/ui';
 import { ProductCard } from '../components/ProductCard';
 import { ShopLogo } from '../components/layout/ShopLogo';
-import { DEMO_PRODUCTS } from '../data/demoProducts';
+import { useCatalogProducts } from '../data/useCatalog';
 
 const CATEGORIES = [
   { key: 'passenger', icon: Car, to: '/magazin/katalog' },
@@ -21,7 +21,8 @@ const WHY = [
 
 export function ShopHomePage() {
   const { t } = useTranslation();
-  const featured = DEMO_PRODUCTS.slice(0, 8);
+  const { products } = useCatalogProducts();
+  const featured = products.slice(0, 8);
 
   return (
     <div>

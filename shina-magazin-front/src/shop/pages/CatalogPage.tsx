@@ -5,13 +5,15 @@ import { SlidersHorizontal, X } from 'lucide-react';
 import { EmptyState, Button } from '@/ui';
 import type { Season } from '../../types';
 import { ProductCard } from '../components/ProductCard';
-import { DEMO_PRODUCTS, DEMO_BRANDS } from '../data/demoProducts';
+import { useCatalogProducts, useCatalogBrands } from '../data/useCatalog';
 
 type SortKey = 'new' | 'price-asc' | 'price-desc';
 const SEASONS: Season[] = ['SUMMER', 'WINTER', 'ALL_SEASON'];
 
 export function CatalogPage() {
   const { t } = useTranslation();
+  const { products } = useCatalogProducts();
+  const brands = useCatalogBrands();
   const [searchParams, setSearchParams] = useSearchParams();
 
   const [q, setQ] = useState(searchParams.get('q') ?? '');
@@ -21,7 +23,7 @@ export function CatalogPage() {
 
   const results = useMemo(() => {
     const needle = q.trim().toLowerCase();
-    let list = DEMO_PRODUCTS.filter((p) => {
+    let list = products.filter((p) => {
       if (brand && p.brandName !== brand) return false;
       if (season && p.season !== season) return false;
       if (needle) {
@@ -36,7 +38,7 @@ export function CatalogPage() {
       return b.id - a.id;
     });
     return list;
-  }, [q, brand, season, sort]);
+  }, [products, q, brand, season, sort]);
 
   const hasFilters = Boolean(q || brand || season);
 
@@ -68,7 +70,7 @@ export function CatalogPage() {
         />
         <select value={brand} onChange={(e) => setBrand(e.target.value)} aria-label={t('shop.catalog.brand')} className={selectClass}>
           <option value="">{t('shop.catalog.allBrands')}</option>
-          {DEMO_BRANDS.map((b) => <option key={b} value={b}>{b}</option>)}
+          {brands.map((b) => <option key={b} value={b}>{b}</option>)}
         </select>
         <select value={season} onChange={(e) => setSeason(e.target.value)} aria-label={t('shop.catalog.season')} className={selectClass}>
           <option value="">{t('shop.catalog.allSeasons')}</option>
