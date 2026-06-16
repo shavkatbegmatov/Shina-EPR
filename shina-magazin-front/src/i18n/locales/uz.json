@@ -1560,6 +1560,43 @@
       "help": "Yordam",
       "support": "Qoʻllab-quvvatlash",
       "keyboard": "Klaviatura"
+    },
+    "dateRange": {
+      "presetAll": "Barchasi",
+      "presetToday": "Bugun",
+      "presetWeek": "Hafta",
+      "presetMonth": "Oy",
+      "presetQuarter": "Chorak",
+      "presetYear": "Yil",
+      "presetCustom": "Maxsus",
+      "select": "Tanlang",
+      "quickSelect": "Tez tanlash",
+      "start": "Boshlanish",
+      "end": "Tugash",
+      "apply": "Qoʻllash",
+      "months": [
+        "Yanvar",
+        "Fevral",
+        "Mart",
+        "Aprel",
+        "May",
+        "Iyun",
+        "Iyul",
+        "Avgust",
+        "Sentabr",
+        "Oktabr",
+        "Noyabr",
+        "Dekabr"
+      ],
+      "weekdays": [
+        "Du",
+        "Se",
+        "Ch",
+        "Pa",
+        "Ju",
+        "Sh",
+        "Ya"
+      ]
     }
   }
 }

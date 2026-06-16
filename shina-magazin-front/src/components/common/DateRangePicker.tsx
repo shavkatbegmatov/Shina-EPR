@@ -9,6 +9,7 @@ import {
   CalendarDays,
 } from 'lucide-react';
 import clsx from 'clsx';
+import { useTranslation } from 'react-i18next';
 import { Button } from '@/ui';
 import { getTashkentToday, getDateDaysAgo, formatDateForApi, getTashkentNow } from '../../config/constants';
 
@@ -26,22 +27,15 @@ interface DateRangePickerProps {
   className?: string;
 }
 
-const PRESET_OPTIONS: { value: DateRangePreset; label: string; icon?: string }[] = [
-  { value: 'all', label: 'Barchasi' },
-  { value: 'today', label: 'Bugun' },
-  { value: 'week', label: 'Hafta' },
-  { value: 'month', label: 'Oy' },
-  { value: 'quarter', label: 'Chorak' },
-  { value: 'year', label: 'Yil' },
-  { value: 'custom', label: 'Maxsus' },
+const PRESET_OPTIONS: { value: DateRangePreset; labelKey: string }[] = [
+  { value: 'all', labelKey: 'erp.dateRange.presetAll' },
+  { value: 'today', labelKey: 'erp.dateRange.presetToday' },
+  { value: 'week', labelKey: 'erp.dateRange.presetWeek' },
+  { value: 'month', labelKey: 'erp.dateRange.presetMonth' },
+  { value: 'quarter', labelKey: 'erp.dateRange.presetQuarter' },
+  { value: 'year', labelKey: 'erp.dateRange.presetYear' },
+  { value: 'custom', labelKey: 'erp.dateRange.presetCustom' },
 ];
-
-const MONTHS_UZ = [
-  'Yanvar', 'Fevral', 'Mart', 'Aprel', 'May', 'Iyun',
-  'Iyul', 'Avgust', 'Sentabr', 'Oktabr', 'Noyabr', 'Dekabr',
-];
-
-const WEEKDAYS_UZ = ['Du', 'Se', 'Ch', 'Pa', 'Ju', 'Sh', 'Ya'];
 
 export function DateRangePicker({
   value,
@@ -49,6 +43,9 @@ export function DateRangePicker({
   onChange,
   className,
 }: DateRangePickerProps) {
+  const { t } = useTranslation();
+  const months = t('erp.dateRange.months', { returnObjects: true }) as unknown as string[];
+  const weekdays = t('erp.dateRange.weekdays', { returnObjects: true }) as unknown as string[];
   const [isOpen, setIsOpen] = useState(false);
   const [showCalendar, setShowCalendar] = useState(false);
   const [tempStart, setTempStart] = useState<string>(customRange.start);
@@ -107,7 +104,8 @@ export function DateRangePicker({
     if (value === 'custom' && customRange.start && customRange.end) {
       return `${formatDisplayDate(customRange.start)} - ${formatDisplayDate(customRange.end)}`;
     }
-    return PRESET_OPTIONS.find((opt) => opt.value === value)?.label || 'Tanlang';
+    const found = PRESET_OPTIONS.find((opt) => opt.value === value);
+    return found ? t(found.labelKey) : t('erp.dateRange.select');
   };
 
   const formatDisplayDate = (dateStr: string) => {
@@ -237,7 +235,7 @@ export function DateRangePicker({
         /* Preset Options */
         <div className="p-2">
           <div className="mb-2 px-2 text-xs font-medium uppercase tracking-wide text-base-content/50">
-            Tez tanlash
+            {t('erp.dateRange.quickSelect')}
           </div>
           {PRESET_OPTIONS.map((option) => (
             <button
@@ -250,7 +248,7 @@ export function DateRangePicker({
                   : 'hover:bg-base-200'
               )}
             >
-              <span className="font-medium">{option.label}</span>
+              <span className="font-medium">{t(option.labelKey)}</span>
               {value === option.value && option.value !== 'custom' && (
                 <Check className="h-4 w-4" />
               )}
@@ -272,7 +270,7 @@ export function DateRangePicker({
               <ChevronLeft className="h-5 w-5" />
             </button>
             <span className="font-semibold">
-              {MONTHS_UZ[currentMonth.getMonth()]} {currentMonth.getFullYear()}
+              {months[currentMonth.getMonth()]} {currentMonth.getFullYear()}
             </span>
             <button
               onClick={() => navigateMonth('next')}
@@ -292,7 +290,7 @@ export function DateRangePicker({
                   : 'bg-base-100'
               )}
             >
-              <div className="text-xs opacity-70">Boshlanish</div>
+              <div className="text-xs opacity-70">{t('erp.dateRange.start')}</div>
               <div className="font-medium">
                 {tempStart ? formatDisplayDate(tempStart) : '—'}
               </div>
@@ -306,7 +304,7 @@ export function DateRangePicker({
                   : 'bg-base-100'
               )}
             >
-              <div className="text-xs opacity-70">Tugash</div>
+              <div className="text-xs opacity-70">{t('erp.dateRange.end')}</div>
               <div className="font-medium">
                 {tempEnd ? formatDisplayDate(tempEnd) : '—'}
               </div>
@@ -315,7 +313,7 @@ export function DateRangePicker({
 
           {/* Weekday Headers */}
           <div className="mb-2 grid grid-cols-7 gap-1">
-            {WEEKDAYS_UZ.map((day) => (
+            {weekdays.map((day) => (
               <div
                 key={day}
                 className="text-center text-xs font-medium text-base-content/50"
@@ -365,7 +363,7 @@ export function DateRangePicker({
                 }}
                 className="rounded-lg bg-base-200 px-2 py-1 text-xs font-medium transition-colors hover:bg-base-300"
               >
-                {PRESET_OPTIONS.find((o) => o.value === preset)?.label}
+                {t(PRESET_OPTIONS.find((o) => o.value === preset)?.labelKey ?? 'erp.dateRange.select')}
               </button>
             ))}
           </div>
@@ -383,7 +381,7 @@ export function DateRangePicker({
               className="flex-1"
             >
               <X className="h-4 w-4" />
-              Bekor
+              {t('common.cancel')}
             </Button>
             <Button
               variant="primary"
@@ -393,7 +391,7 @@ export function DateRangePicker({
               className="flex-1"
             >
               <Check className="h-4 w-4" />
-              Qo'llash
+              {t('erp.dateRange.apply')}
             </Button>
           </div>
         </div>
