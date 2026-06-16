@@ -1543,6 +1543,20 @@
         "ON_LEAVE": "Taʼtilda",
         "TERMINATED": "Ishdan chiqqan"
       }
+    },
+    "ui": {
+      "refreshing": "Yangilanmoqda...",
+      "refreshed": "Yangilandi",
+      "exportExcel": "Excel formatida eksport",
+      "exportPdf": "PDF formatida eksport",
+      "comingSoon": "Tez orada yangi imkoniyatlar qoʻshiladi."
+    },
+    "footer": {
+      "rights": "Barcha huquqlar himoyalangan",
+      "systemActive": "Tizim faol",
+      "help": "Yordam",
+      "support": "Qoʻllab-quvvatlash",
+      "keyboard": "Klaviatura"
     }
   }
 }

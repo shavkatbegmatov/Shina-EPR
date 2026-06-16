@@ -1,8 +1,10 @@
 import { useState, useEffect } from 'react';
 import { Circle, Keyboard, ExternalLink } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 import { Logo } from '../brand/Logo';
 
 export function Footer() {
+  const { t } = useTranslation();
   const year = new Date().getFullYear();
   const [currentTime, setCurrentTime] = useState(new Date());
 
@@ -44,7 +46,7 @@ export function Footer() {
               <span className="text-xs font-medium text-base-content/70">Protektor</span>
             </div>
             <div className="h-3 w-px bg-base-300" />
-            <span className="text-[11px] text-base-content/50">© {year} Barcha huquqlar himoyalangan</span>
+            <span className="text-[11px] text-base-content/50">© {year} {t('erp.footer.rights')}</span>
           </div>
 
           {/* Center section - Quick Links */}
@@ -54,21 +56,21 @@ export function Footer() {
               className="inline-flex items-center gap-1.5 rounded-md px-2 py-1 text-[11px] text-base-content/50 transition-colors hover:bg-base-200 hover:text-base-content"
             >
               <Keyboard className="h-3 w-3" />
-              Klaviatura
+              {t('erp.footer.keyboard')}
               <kbd className="kbd kbd-xs scale-90 bg-base-200">?</kbd>
             </a>
             <a
               href="#"
               className="inline-flex items-center gap-1 rounded-md px-2 py-1 text-[11px] text-base-content/50 transition-colors hover:bg-base-200 hover:text-base-content"
             >
-              Yordam
+              {t('erp.footer.help')}
               <ExternalLink className="h-2.5 w-2.5" />
             </a>
             <a
               href="#"
               className="rounded-md px-2 py-1 text-[11px] text-base-content/50 transition-colors hover:bg-base-200 hover:text-base-content"
             >
-              Qo'llab-quvvatlash
+              {t('erp.footer.support')}
             </a>
           </div>
 
@@ -76,7 +78,7 @@ export function Footer() {
           <div className="flex items-center gap-3">
             <div className="flex items-center gap-1.5">
               <Circle className="h-1.5 w-1.5 fill-success text-success animate-pulse" />
-              <span className="text-[11px] text-base-content/50">Tizim faol</span>
+              <span className="text-[11px] text-base-content/50">{t('erp.footer.systemActive')}</span>
             </div>
             <div className="h-3 w-px bg-base-300" />
             <span className="text-[11px] tabular-nums text-base-content/40">{formatTime(currentTime)}</span>

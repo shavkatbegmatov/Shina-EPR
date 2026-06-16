@@ -1,5 +1,6 @@
 import { RefreshCw, Check } from 'lucide-react';
 import clsx from 'clsx';
+import { useTranslation } from 'react-i18next';
 import { Button } from '@/ui';
 
 interface RefreshButtonProps {
@@ -34,6 +35,7 @@ export function RefreshButton({
   disabled = false,
   className,
 }: RefreshButtonProps) {
+  const { t } = useTranslation();
   return (
     <Button
       size="sm"
@@ -41,17 +43,17 @@ export function RefreshButton({
       className={clsx('gap-2 transition-all', className)}
       onClick={onClick}
       disabled={disabled || loading}
-      title={success ? 'Yangilandi' : 'Yangilash'}
+      title={success ? t('erp.ui.refreshed') : t('common.refresh')}
     >
       {success ? (
         <>
           <Check className="h-4 w-4" />
-          Yangilandi
+          {t('erp.ui.refreshed')}
         </>
       ) : (
         <>
           <RefreshCw className={clsx('h-4 w-4', loading && 'animate-spin')} />
-          {loading ? 'Yangilanmoqda...' : 'Yangilash'}
+          {loading ? t('erp.ui.refreshing') : t('common.refresh')}
         </>
       )}
     </Button>

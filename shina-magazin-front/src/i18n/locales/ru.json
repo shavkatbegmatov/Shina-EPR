@@ -1543,6 +1543,20 @@
         "ON_LEAVE": "В отпуске",
         "TERMINATED": "Уволен"
       }
+    },
+    "ui": {
+      "refreshing": "Обновление...",
+      "refreshed": "Обновлено",
+      "exportExcel": "Экспорт в Excel",
+      "exportPdf": "Экспорт в PDF",
+      "comingSoon": "Скоро появятся новые возможности."
+    },
+    "footer": {
+      "rights": "Все права защищены",
+      "systemActive": "Система активна",
+      "help": "Помощь",
+      "support": "Поддержка",
+      "keyboard": "Клавиатура"
     }
   }
 }

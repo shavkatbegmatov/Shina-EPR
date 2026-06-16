@@ -1,4 +1,5 @@
 import { FileSpreadsheet, FileDown } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 import { Button } from '@/ui';
 
 interface ExportButtonsProps {
@@ -31,6 +32,7 @@ export function ExportButtons({
   disabled = false,
   loading = false,
 }: ExportButtonsProps) {
+  const { t } = useTranslation();
   const isDisabled = disabled || loading;
 
   return (
@@ -41,7 +43,7 @@ export function ExportButtons({
         className="flex-1 sm:flex-none"
         onClick={onExportExcel}
         disabled={isDisabled}
-        title="Excel formatida eksport"
+        title={t('erp.ui.exportExcel')}
       >
         <FileSpreadsheet className="h-4 w-4" />
         Excel
@@ -52,7 +54,7 @@ export function ExportButtons({
         className="flex-1 sm:flex-none"
         onClick={onExportPdf}
         disabled={isDisabled}
-        title="PDF formatida eksport"
+        title={t('erp.ui.exportPdf')}
       >
         <FileDown className="h-4 w-4" />
         PDF
