@@ -48,19 +48,19 @@ export function useCatalogProducts() {
 }
 ```
 
-## Backenddan kerak bo'lgan shartnoma (kelajakdagi faza)
+## Backend shartnomasi
 
 `Product` shakli ERP bilan **bir xil** (`src/types`), shuning uchun katalog DTO o'sha.
 
-1. **Ommaviy katalog (read-only)** — auth'siz, Spring Security'da `permitAll`:
-   - `GET /v1/catalog?search=&brandId=&categoryId=&season=&width=&profile=&diameter=&page=&size=`
-     → `PagedResponse<Product>` (faqat `active=true`)
-   - `GET /v1/catalog/{id}` → `Product`
-   - (mavjud `ProductService`'ni qayta ishlatadi; faqat `active` va kerakli maydonlar)
-2. **Buyurtma (Order domeni)** — `POST /v1/orders`:
+1. **Ommaviy katalog (read-only)** — ✅ **BAJARILDI** (d3758e8, faqat kompilatsiya-verify):
+   - `GET /v1/catalog?brandId=&categoryId=&season=&search=&page=&size=` → `PagedResponse<CatalogProductResponse>` (faqat `active=true`)
+   - `GET /v1/catalog/{id}` → `CatalogProductResponse` (faqat faol)
+   - Backend: `CatalogController`/`CatalogService`/`CatalogProductResponse` (tannarx YASHIRIN), `SecurityConfig` permitAll GET. Frontend: `catalogApi.ts` + `useCatalog` React Query, backend yo'q bo'lsa demo'ga tushadi.
+   - ⏳ Qoldi: jonli DB bilan endpoint javobini ISHGA TUSHIRIB tekshirish.
+2. **Buyurtma (Order domeni)** — ⏳ KERAK, `POST /v1/orders`:
    - body: `{ items:[{productId, qty}], contact:{name,phone,email?}, delivery:{method,address?,note?}, payment }`
    - → `{ orderNo, status, total, ... }` (server `orderNo` va narxni HISOBLAYDI — mijoz narxiga ishonilmaydi)
-   - stok rezervatsiyasi/konkurensiya, holat oqimi
+   - stok rezervatsiyasi/konkurensiya, holat oqimi, yangi jadvallar (Flyway migratsiya — jonli DB'da verify shart)
 
 ## 🔑 Mahsulot egasi qaror qabul qilishi kerak (backend fazasidan oldin)
 
