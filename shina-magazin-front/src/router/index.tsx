@@ -34,6 +34,12 @@ const RolesPage = lazy(() => import('../pages/roles/RolesPage').then(m => ({ def
 const ProfilePage = lazy(() => import('../pages/profile/ProfilePage').then(m => ({ default: m.ProfilePage })));
 const AuditLogsPage = lazy(() => import('../pages/audit-logs/AuditLogsPage').then(m => ({ default: m.AuditLogsPage })));
 
+// Lazy-loaded storefront (Protektor magazin) — ommaviy
+const ShopLayout = lazy(() => import('../shop/components/layout/ShopLayout'));
+const ShopHomePage = lazy(() => import('../shop/pages/ShopHomePage').then(m => ({ default: m.ShopHomePage })));
+const CatalogPage = lazy(() => import('../shop/pages/CatalogPage').then(m => ({ default: m.CatalogPage })));
+const ShopProductDetailPage = lazy(() => import('../shop/pages/ProductDetailPage').then(m => ({ default: m.ProductDetailPage })));
+
 // Lazy-loaded portal pages
 const PortalLayout = lazy(() => import('../portal/components/layout/PortalLayout'));
 const PortalLoginPage = lazy(() => import('../portal/pages/LoginPage'));
@@ -389,6 +395,32 @@ export const router = createBrowserRouter([
           </LazyRoute>
         ),
         handle: { title: 'Profil' },
+      },
+    ],
+  },
+  // Storefront (Protektor magazin) — ommaviy, auth talab qilmaydi
+  {
+    path: '/magazin',
+    element: (
+      <LazyRoute>
+        <ShopLayout />
+      </LazyRoute>
+    ),
+    children: [
+      {
+        index: true,
+        element: <LazyRoute><ShopHomePage /></LazyRoute>,
+        handle: { title: 'Protektor — Magazin' },
+      },
+      {
+        path: 'katalog',
+        element: <LazyRoute><CatalogPage /></LazyRoute>,
+        handle: { title: 'Katalog' },
+      },
+      {
+        path: 'mahsulot/:id',
+        element: <LazyRoute><ShopProductDetailPage /></LazyRoute>,
+        handle: { title: 'Mahsulot' },
       },
     ],
   },

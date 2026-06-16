@@ -1629,5 +1629,113 @@
       "subWarehouse": "Zaxira nazorati",
       "subRoles": "Ruxsatlar boshqaruvi"
     }
+  },
+  "shop": {
+    "nav": {
+      "home": "Bosh sahifa",
+      "catalog": "Katalog",
+      "menu": "Menyu"
+    },
+    "search": {
+      "placeholder": "Shina, brend yoki o'lcham (205/55 R16)..."
+    },
+    "season": {
+      "SUMMER": "Yozgi",
+      "WINTER": "Qishki",
+      "ALL_SEASON": "Hamma mavsum"
+    },
+    "hero": {
+      "badge": "Original shinalar · Kafolat",
+      "title": "Sifatli shinalar — ishonchli yo'lingiz",
+      "subtitle": "Dunyoning yetakchi brendlari, asl mahsulot va tezkor yetkazib berish. Avtomobilingizga mos shinani bir necha daqiqada toping.",
+      "ctaPrimary": "Katalogni ko'rish",
+      "ctaSecondary": "Qishki shinalar"
+    },
+    "home": {
+      "categories": "Kategoriyalar",
+      "cat": {
+        "passenger": "Yengil avtomobil",
+        "suv": "SUV / Krossover",
+        "sport": "Sport",
+        "winter": "Qishki"
+      },
+      "featured": "Tanlangan mahsulotlar",
+      "viewAll": "Hammasini ko'rish",
+      "why": {
+        "original": {
+          "title": "Asl mahsulot",
+          "desc": "Rasmiy ta'minotchilardan — 100% original shinalar."
+        },
+        "warranty": {
+          "title": "Kafolat",
+          "desc": "Har bir mahsulotga ishlab chiqaruvchi kafolati."
+        },
+        "delivery": {
+          "title": "Tezkor yetkazish",
+          "desc": "Toshkent bo'ylab 24 soat ichida yetkazib beramiz."
+        }
+      },
+      "ctaTitle": "Kerakli o'lchamni topa olmadingizmi?",
+      "ctaText": "Katalogda 1000+ mahsulot — brend, o'lcham va mavsum bo'yicha tanlang.",
+      "ctaButton": "Katalogga o'tish"
+    },
+    "catalog": {
+      "results": "{{count}} ta mahsulot topildi",
+      "brand": "Brend",
+      "season": "Mavsum",
+      "allBrands": "Barcha brendlar",
+      "allSeasons": "Barcha mavsumlar",
+      "sortBy": "Saralash",
+      "sortNew": "Avval yangilari",
+      "sortPriceAsc": "Narx: arzondan",
+      "sortPriceDesc": "Narx: qimmatdan",
+      "clear": "Tozalash",
+      "empty": "Mahsulot topilmadi",
+      "emptyHint": "Filtrlarni o'zgartirib qayta urinib ko'ring."
+    },
+    "product": {
+      "addToCart": "Savatga",
+      "inStock": "Sotuvda bor",
+      "outOfStock": "Tugagan",
+      "lowStock": "Kam qoldi",
+      "notFound": "Mahsulot topilmadi",
+      "notFoundHint": "Bu mahsulot mavjud emas yoki o'chirilgan.",
+      "size": "O'lcham",
+      "season": "Mavsum",
+      "loadSpeed": "Yuk / Tezlik indeksi",
+      "brand": "Brend",
+      "category": "Kategoriya",
+      "sku": "Artikul (SKU)",
+      "specs": "Xususiyatlar",
+      "backToCatalog": "Katalogga qaytish"
+    },
+    "cart": {
+      "title": "Savat",
+      "empty": "Savat bo'sh",
+      "emptyHint": "Kataloga o'tib mahsulot qo'shing.",
+      "total": "Jami",
+      "checkout": "Buyurtma berish",
+      "checkoutSoon": "Buyurtma berish tez orada qo'shiladi.",
+      "continue": "Xaridni davom ettirish",
+      "added": "Qo'shildi",
+      "remove": "O'chirish",
+      "increase": "Ko'paytirish",
+      "decrease": "Kamaytirish"
+    },
+    "footer": {
+      "aboutText": "Protektor — O'zbekistondagi ishonchli shina do'koni. Original mahsulot, kafolat va tezkor yetkazib berish.",
+      "links": "Havolalar",
+      "account": "Mijoz kabineti",
+      "contact": "Aloqa",
+      "address": "Toshkent sh., Chilonzor t.",
+      "rights": "Barcha huquqlar himoyalangan.",
+      "madeIn": "O'zbekistonda ishlab chiqilgan"
+    },
+    "theme": {
+      "toggle": "Mavzuni o'zgartirish"
+    },
+    "language": {
+      "toggle": "Tilni o'zgartirish"
+    }
   }
 }
