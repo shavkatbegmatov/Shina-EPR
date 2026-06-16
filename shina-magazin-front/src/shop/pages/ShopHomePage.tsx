@@ -3,6 +3,7 @@ import { useTranslation } from 'react-i18next';
 import { ArrowRight, Car, Mountain, Gauge, Snowflake, ShieldCheck, Truck, BadgeCheck } from 'lucide-react';
 import { Card, buttonVariants, cn } from '@/ui';
 import { ProductCard } from '../components/ProductCard';
+import { RecentlyViewed } from '../components/RecentlyViewed';
 import { ShopLogo } from '../components/layout/ShopLogo';
 import { TireSizeFinder } from '../components/TireSizeFinder';
 import { useCatalogProducts } from '../data/useCatalog';
@@ -87,6 +88,9 @@ export function ShopHomePage() {
           {featured.map((p) => <ProductCard key={p.id} product={p} />)}
         </div>
       </section>
+
+      {/* Recently viewed */}
+      <RecentlyViewed className="mx-auto max-w-7xl px-4 pt-12 sm:px-6" />
 
       {/* Why us */}
       <section className="mx-auto max-w-7xl px-4 py-14 sm:px-6">

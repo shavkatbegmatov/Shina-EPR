@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Link, useParams } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { ChevronRight, Minus, Plus, ShoppingCart, Check, ArrowLeft } from 'lucide-react';
@@ -7,8 +7,10 @@ import { formatCurrency } from '../../config/constants';
 import { ProductImage } from '../components/ProductImage';
 import { ProductCard } from '../components/ProductCard';
 import { WishlistButton } from '../components/WishlistButton';
+import { RecentlyViewed } from '../components/RecentlyViewed';
 import { useProduct, useRelatedProducts } from '../data/useCatalog';
 import { useCartStore } from '../store/cartStore';
+import { useRecentStore } from '../store/recentStore';
 
 export function ProductDetailPage() {
   const { t } = useTranslation();
@@ -19,6 +21,11 @@ export function ProductDetailPage() {
 
   const { product } = useProduct(id);
   const related = useRelatedProducts(product);
+  const addRecent = useRecentStore((s) => s.add);
+
+  useEffect(() => {
+    if (product) addRecent(product.id);
+  }, [product, addRecent]);
 
   if (!product) {
     return (
@@ -134,6 +141,8 @@ export function ProductDetailPage() {
           </div>
         </section>
       )}
+
+      <RecentlyViewed excludeId={product.id} className="mt-14" />
     </div>
   );
 }
