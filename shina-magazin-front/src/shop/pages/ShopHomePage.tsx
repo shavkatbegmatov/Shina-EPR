@@ -1,3 +1,4 @@
+import { useMemo } from 'react';
 import { Link } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { ArrowRight, Car, Mountain, Gauge, Snowflake, ShieldCheck, Truck, BadgeCheck } from 'lucide-react';
@@ -25,6 +26,14 @@ export function ShopHomePage() {
   const { t } = useTranslation();
   const { products } = useCatalogProducts();
   const featured = products.slice(0, 8);
+
+  const brandCounts = useMemo(() => {
+    const m = new Map<string, number>();
+    products.forEach((p) => {
+      if (p.brandName) m.set(p.brandName, (m.get(p.brandName) ?? 0) + 1);
+    });
+    return [...m.entries()].sort((a, b) => b[1] - a[1]);
+  }, [products]);
 
   return (
     <div>
@@ -76,8 +85,23 @@ export function ShopHomePage() {
         </div>
       </section>
 
+      {/* Brands */}
+      <section className="mx-auto max-w-7xl px-4 pb-2 sm:px-6">
+        <h2 className="section-title mb-6">{t('shop.home.brands')}</h2>
+        <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6">
+          {brandCounts.map(([brand, count]) => (
+            <Link key={brand} to={`/magazin/katalog?brand=${encodeURIComponent(brand)}`}>
+              <Card className="flex h-full flex-col items-center justify-center gap-1 p-4 text-center transition-shadow hover:border-primary/40 hover:shadow-strong">
+                <span className="font-bold">{brand}</span>
+                <span className="text-xs text-base-content/50">{t('shop.home.brandCount', { count })}</span>
+              </Card>
+            </Link>
+          ))}
+        </div>
+      </section>
+
       {/* Featured products */}
-      <section className="mx-auto max-w-7xl px-4 sm:px-6">
+      <section className="mx-auto max-w-7xl px-4 pt-12 sm:px-6">
         <div className="mb-6 flex items-end justify-between">
           <h2 className="section-title">{t('shop.home.featured')}</h2>
           <Link to="/magazin/katalog" className="inline-flex items-center gap-1 text-sm font-medium text-primary hover:underline">

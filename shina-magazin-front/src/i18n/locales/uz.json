@@ -1679,7 +1679,9 @@
       },
       "ctaTitle": "Kerakli o'lchamni topa olmadingizmi?",
       "ctaText": "Katalogda 1000+ mahsulot — brend, o'lcham va mavsum bo'yicha tanlang.",
-      "ctaButton": "Katalogga o'tish"
+      "ctaButton": "Katalogga o'tish",
+      "brands": "Brendlar",
+      "brandCount": "{{count}} ta mahsulot"
     },
     "catalog": {
       "results": "{{count}} ta mahsulot topildi",
