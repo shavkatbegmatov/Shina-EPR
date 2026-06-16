@@ -8,7 +8,8 @@ import { salesApi } from '../../api/sales.api';
 import { customersApi } from '../../api/customers.api';
 import { useCartStore } from '../../store/cartStore';
 import { useNotificationsStore } from '../../store/notificationsStore';
-import { formatCurrency, PAYMENT_METHODS, CUSTOMER_TYPES } from '../../config/constants';
+import { formatCurrency, PAYMENT_METHODS } from '../../config/constants';
+import { enumLabel } from '@/shared/enumLabel';
 import { CurrencyInput } from '../../components/ui/CurrencyInput';
 import { PercentInput } from '../../components/ui/PercentInput';
 import { Select } from '../../components/ui/Select';
@@ -157,7 +158,7 @@ export function POSPage() {
       header: t('erp.pos.colType'),
       render: (customer) => (
         <span className="badge badge-outline badge-sm">
-          {CUSTOMER_TYPES[customer.customerType]?.label}
+          {enumLabel('customerType', customer.customerType)}
         </span>
       ),
     },

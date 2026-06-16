@@ -32,6 +32,7 @@ import {
   MOVEMENT_TYPES,
   REFERENCE_TYPES,
 } from '../../config/constants';
+import { enumLabel } from '@/shared/enumLabel';
 import type {
   MovementType,
   Product,
@@ -113,7 +114,7 @@ export function WarehousePage() {
         <div className="flex items-center gap-2">
           {getMovementIcon(movement.movementType)}
           <span className="badge badge-outline badge-sm">
-            {MOVEMENT_TYPES[movement.movementType]?.label}
+            {enumLabel('movement', movement.movementType)}
           </span>
         </div>
       ),
@@ -151,7 +152,7 @@ export function WarehousePage() {
       header: t('erp.warehouse.colSource'),
       render: (movement) => (
         <span className="badge badge-ghost badge-sm">
-          {REFERENCE_TYPES[movement.referenceType as keyof typeof REFERENCE_TYPES]?.label || movement.referenceType}
+          {enumLabel('reference', movement.referenceType) || movement.referenceType}
         </span>
       ),
     },

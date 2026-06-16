@@ -28,6 +28,7 @@ import { useNotificationsStore, type Notification } from '../../store/notificati
 import { rolesApi } from '../../api/roles.api';
 import { authApi } from '../../api/auth.api';
 import { ROLES } from '../../config/constants';
+import { enumLabel } from '@/shared/enumLabel';
 import { SearchCommand } from '../common/SearchCommand';
 import { Button } from '@/ui';
 import type { Role } from '../../types';
@@ -207,7 +208,7 @@ export function Header() {
     // First check if it's a legacy role
     const legacyRole = ROLES[roleCode as keyof typeof ROLES];
     if (legacyRole) {
-      return legacyRole.label;
+      return enumLabel('role', roleCode);
     }
     // Otherwise, find it in fetched roles
     const role = roles.find((r) => r.code === roleCode);

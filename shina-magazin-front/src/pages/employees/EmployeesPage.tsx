@@ -26,6 +26,7 @@ import { useTranslation } from 'react-i18next';
 import { employeesApi } from '../../api/employees.api';
 import { rolesApi } from '../../api/roles.api';
 import { formatCurrency, formatDate, EMPLOYEE_STATUSES, ROLES, getTashkentToday } from '../../config/constants';
+import { enumLabel } from '@/shared/enumLabel';
 import { DataTable, Column } from '../../components/ui/DataTable';
 import { ModalPortal } from '../../components/common/Modal';
 import { ConfirmDialog } from '@/ui';
@@ -144,7 +145,7 @@ export function EmployeesPage() {
     // First check if it's a legacy role
     const legacyRole = ROLES[roleCode as keyof typeof ROLES];
     if (legacyRole) {
-      return legacyRole.label;
+      return enumLabel('role', roleCode);
     }
     // Otherwise, find it in fetched roles
     const role = roles.find((r) => r.code === roleCode);
@@ -223,7 +224,7 @@ export function EmployeesPage() {
       header: t('common.status'),
       render: (employee) => (
         <span className={clsx('badge badge-sm', EMPLOYEE_STATUSES[employee.status]?.color)}>
-          {EMPLOYEE_STATUSES[employee.status]?.label}
+          {enumLabel('employeeStatus', employee.status)}
         </span>
       ),
     },
@@ -646,7 +647,7 @@ export function EmployeesPage() {
                   </div>
                 </div>
                 <span className={clsx('badge badge-sm', EMPLOYEE_STATUSES[employee.status]?.color)}>
-                  {EMPLOYEE_STATUSES[employee.status]?.label}
+                  {enumLabel('employeeStatus', employee.status)}
                 </span>
               </div>
 
@@ -937,7 +938,7 @@ export function EmployeesPage() {
                                 <Shield className="h-4 w-4 text-primary" />
                                 <span className="font-medium text-primary">
                                   {roles.find(r => r.code === editingEmployee.userRole)?.name ||
-                                   ROLES[editingEmployee.userRole as keyof typeof ROLES]?.label ||
+                                   enumLabel('role', editingEmployee.userRole) ||
                                    editingEmployee.userRole ||
                                    t('erp.employees.unknownRole')}
                                 </span>

@@ -1489,6 +1489,60 @@
       "requiredPermissionLabel": "Требуемое право:",
       "goHome": "На главную",
       "helpText": "Если вы считаете это ошибкой, обратитесь к системному администратору."
+    },
+    "enum": {
+      "season": {
+        "SUMMER": "Летние",
+        "WINTER": "Зимние",
+        "ALL_SEASON": "Всесезонные"
+      },
+      "payment": {
+        "CASH": "Наличные",
+        "CARD": "Карта",
+        "TRANSFER": "Перевод",
+        "MIXED": "Смешанный"
+      },
+      "paymentStatus": {
+        "PAID": "Оплачено",
+        "PARTIAL": "Частично",
+        "UNPAID": "Не оплачено"
+      },
+      "saleStatus": {
+        "COMPLETED": "Завершён",
+        "CANCELLED": "Отменён",
+        "REFUNDED": "Возвращён"
+      },
+      "debtStatus": {
+        "ACTIVE": "Активный",
+        "PAID": "Оплачен",
+        "OVERDUE": "Просрочен"
+      },
+      "movement": {
+        "IN": "Приход",
+        "OUT": "Расход",
+        "ADJUSTMENT": "Корректировка"
+      },
+      "reference": {
+        "SALE": "Продажа",
+        "SALE_CANCEL": "Отмена продажи",
+        "PURCHASE": "Закупка",
+        "MANUAL": "Вручную",
+        "RETURN": "Возврат"
+      },
+      "customerType": {
+        "INDIVIDUAL": "Физическое лицо",
+        "BUSINESS": "Юридическое лицо"
+      },
+      "role": {
+        "ADMIN": "Администратор",
+        "MANAGER": "Менеджер",
+        "SELLER": "Продавец"
+      },
+      "employeeStatus": {
+        "ACTIVE": "Активен",
+        "ON_LEAVE": "В отпуске",
+        "TERMINATED": "Уволен"
+      }
     }
   }
 }

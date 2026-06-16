@@ -20,6 +20,7 @@ import clsx from 'clsx';
 import { useTranslation } from 'react-i18next';
 import { debtsApi } from '../../api/debts.api';
 import { formatCurrency, formatDate, formatDateTime, DEBT_STATUSES, PAYMENT_METHODS } from '../../config/constants';
+import { enumLabel } from '@/shared/enumLabel';
 import { CurrencyInput } from '../../components/ui/CurrencyInput';
 import { SearchInput } from '../../components/ui/SearchInput';
 import { Select } from '../../components/ui/Select';
@@ -139,7 +140,7 @@ export function DebtsPage() {
             (debt.status === 'OVERDUE' || debt.overdue) && 'badge-error'
           )}
         >
-          {debt.overdue ? t('erp.debts.overdueBadge') : DEBT_STATUSES[debt.status]?.label}
+          {debt.overdue ? t('erp.debts.overdueBadge') : enumLabel('debtStatus', debt.status)}
         </span>
       ),
     },
@@ -507,7 +508,7 @@ export function DebtsPage() {
                         +{formatCurrency(payment.amount)}
                       </span>
                       <span className="badge badge-outline badge-xs">
-                        {PAYMENT_METHODS[payment.method]?.label}
+                        {enumLabel('payment', payment.method)}
                       </span>
                     </div>
                     <div className="text-xs text-base-content/60 mt-1">
@@ -685,7 +686,7 @@ export function DebtsPage() {
                               (debt.status === 'OVERDUE' || debt.overdue) && 'badge-error'
                             )}
                           >
-                            {debt.overdue ? t('erp.debts.overdueBadge') : DEBT_STATUSES[debt.status]?.label}
+                            {debt.overdue ? t('erp.debts.overdueBadge') : enumLabel('debtStatus', debt.status)}
                           </span>
                         </div>
                         <div className="flex items-center justify-between">

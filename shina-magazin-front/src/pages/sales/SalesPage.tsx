@@ -8,7 +8,6 @@ import { salesApi } from '../../api/sales.api';
 import {
   formatCurrency,
   formatDateTime,
-  PAYMENT_METHODS,
   PAYMENT_STATUSES,
   SALE_STATUSES,
   getDateDaysAgo,
@@ -16,6 +15,7 @@ import {
   getDateYearsAgo,
   getTashkentToday,
 } from '../../config/constants';
+import { enumLabel } from '@/shared/enumLabel';
 import { DataTable, Column } from '../../components/ui/DataTable';
 import { Select } from '../../components/ui/Select';
 import { ModalPortal } from '../../components/common/Modal';
@@ -124,12 +124,12 @@ export function SalesPage() {
 
   const getPaymentStatusBadge = (status: PaymentStatus) => {
     const styles: Record<PaymentStatus, string> = { PAID: 'badge-success', PARTIAL: 'badge-warning', UNPAID: 'badge-error' };
-    return <span className={clsx('badge badge-sm', styles[status])}>{PAYMENT_STATUSES[status]?.label}</span>;
+    return <span className={clsx('badge badge-sm', styles[status])}>{enumLabel('paymentStatus', status)}</span>;
   };
 
   const getSaleStatusBadge = (status: SaleStatus) => {
     const styles: Record<SaleStatus, string> = { COMPLETED: 'badge-success badge-outline', CANCELLED: 'badge-error badge-outline', REFUNDED: 'badge-warning badge-outline' };
-    return <span className={clsx('badge badge-sm', styles[status])}>{SALE_STATUSES[status]?.label}</span>;
+    return <span className={clsx('badge badge-sm', styles[status])}>{enumLabel('saleStatus', status)}</span>;
   };
 
   const handleViewSale = async (sale: Sale) => {
@@ -205,7 +205,7 @@ export function SalesPage() {
       render: (sale) => (
         <div className="flex items-center gap-1.5">
           {paymentMethodIcons[sale.paymentMethod]}
-          <span className="text-sm">{PAYMENT_METHODS[sale.paymentMethod]?.label}</span>
+          <span className="text-sm">{enumLabel('payment', sale.paymentMethod)}</span>
         </div>
       ),
     },
@@ -397,7 +397,7 @@ export function SalesPage() {
               { value: '', label: t('common.all') },
               ...Object.values(PAYMENT_STATUSES).map((status) => ({
                 value: status.value,
-                label: status.label,
+                label: enumLabel('paymentStatus', status.value),
               })),
             ]}
             placeholder={t('common.all')}
@@ -410,7 +410,7 @@ export function SalesPage() {
               { value: '', label: t('common.all') },
               ...Object.values(SALE_STATUSES).map((status) => ({
                 value: status.value,
-                label: status.label,
+                label: enumLabel('saleStatus', status.value),
               })),
             ]}
             placeholder={t('common.all')}
@@ -516,7 +516,7 @@ export function SalesPage() {
                     <p className="text-xs font-semibold uppercase tracking-wider text-base-content/50">{t('erp.sales.colPaymentMethod')}</p>
                     <div className="mt-1 flex items-center gap-2">
                       {paymentMethodIcons[selectedSale.paymentMethod]}
-                      <span className="font-medium">{PAYMENT_METHODS[selectedSale.paymentMethod]?.label}</span>
+                      <span className="font-medium">{enumLabel('payment', selectedSale.paymentMethod)}</span>
                     </div>
                   </div>
                   <div className="surface-soft rounded-lg p-3">

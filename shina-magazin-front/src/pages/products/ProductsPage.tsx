@@ -4,6 +4,7 @@ import { Plus, Package, BadgeCheck, AlertTriangle, X } from 'lucide-react';
 import clsx from 'clsx';
 import { productsApi, brandsApi, categoriesApi } from '../../api/products.api';
 import { formatCurrency, SEASONS } from '../../config/constants';
+import { enumLabel } from '@/shared/enumLabel';
 import { NumberInput } from '../../components/ui/NumberInput';
 import { CurrencyInput } from '../../components/ui/CurrencyInput';
 import { Select } from '../../components/ui/Select';
@@ -89,7 +90,7 @@ export function ProductsPage() {
       header: t('erp.products.colSeason'),
       render: (product) =>
         product.season ? (
-          <span className="badge badge-outline badge-sm">{SEASONS[product.season]?.label}</span>
+          <span className="badge badge-outline badge-sm">{enumLabel('season', product.season)}</span>
         ) : null,
     },
     {
@@ -382,7 +383,7 @@ export function ProductsPage() {
             </div>
             <div className="flex flex-wrap items-center gap-2 text-xs text-base-content/60">
               {product.brandName && <span className="pill">{product.brandName}</span>}
-              {product.season && <span className="pill">{SEASONS[product.season]?.label}</span>}
+              {product.season && <span className="pill">{enumLabel('season', product.season)}</span>}
               {product.categoryName && <span className="pill">{product.categoryName}</span>}
             </div>
             <div className="flex items-center justify-between">
@@ -429,7 +430,7 @@ export function ProductsPage() {
                   <div className="flex flex-wrap items-center gap-2 text-xs text-base-content/60">
                     {selectedProduct.brandName && <span className="pill">{selectedProduct.brandName}</span>}
                     {selectedProduct.categoryName && <span className="pill">{selectedProduct.categoryName}</span>}
-                    {selectedProduct.season && <span className="pill">{SEASONS[selectedProduct.season]?.label}</span>}
+                    {selectedProduct.season && <span className="pill">{enumLabel('season', selectedProduct.season)}</span>}
                   </div>
 
                   <div className="grid grid-cols-2 gap-3 text-sm">

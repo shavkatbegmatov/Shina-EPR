@@ -1489,6 +1489,60 @@
       "requiredPermissionLabel": "Kerakli huquq:",
       "goHome": "Bosh sahifaga",
       "helpText": "Agar bu xato deb hisoblasangiz, tizim administratoriga murojaat qiling."
+    },
+    "enum": {
+      "season": {
+        "SUMMER": "Yozgi",
+        "WINTER": "Qishki",
+        "ALL_SEASON": "Universal"
+      },
+      "payment": {
+        "CASH": "Naqd",
+        "CARD": "Karta",
+        "TRANSFER": "Oʻtkazma",
+        "MIXED": "Aralash"
+      },
+      "paymentStatus": {
+        "PAID": "Toʻlangan",
+        "PARTIAL": "Qisman",
+        "UNPAID": "Toʻlanmagan"
+      },
+      "saleStatus": {
+        "COMPLETED": "Yakunlangan",
+        "CANCELLED": "Bekor qilingan",
+        "REFUNDED": "Qaytarilgan"
+      },
+      "debtStatus": {
+        "ACTIVE": "Faol",
+        "PAID": "Toʻlangan",
+        "OVERDUE": "Muddati oʻtgan"
+      },
+      "movement": {
+        "IN": "Kirim",
+        "OUT": "Chiqim",
+        "ADJUSTMENT": "Tuzatish"
+      },
+      "reference": {
+        "SALE": "Sotuv",
+        "SALE_CANCEL": "Sotuv bekor",
+        "PURCHASE": "Xarid",
+        "MANUAL": "Qoʻlda",
+        "RETURN": "Qaytarish"
+      },
+      "customerType": {
+        "INDIVIDUAL": "Jismoniy shaxs",
+        "BUSINESS": "Yuridik shaxs"
+      },
+      "role": {
+        "ADMIN": "Administrator",
+        "MANAGER": "Menejer",
+        "SELLER": "Sotuvchi"
+      },
+      "employeeStatus": {
+        "ACTIVE": "Faol",
+        "ON_LEAVE": "Taʼtilda",
+        "TERMINATED": "Ishdan chiqqan"
+      }
     }
   }
 }

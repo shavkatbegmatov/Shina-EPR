@@ -5,6 +5,7 @@ import clsx from 'clsx';
 import toast from 'react-hot-toast';
 import { customersApi } from '../../api/customers.api';
 import { formatCurrency, CUSTOMER_TYPES } from '../../config/constants';
+import { enumLabel } from '@/shared/enumLabel';
 import { DataTable, Column } from '../../components/ui/DataTable';
 import { SearchInput } from '../../components/ui/SearchInput';
 import { ModalPortal } from '../../components/common/Modal';
@@ -114,7 +115,7 @@ export function CustomersPage() {
       header: t('erp.customers.colType'),
       render: (customer) => (
         <span className="badge badge-outline badge-sm">
-          {CUSTOMER_TYPES[customer.customerType]?.label}
+          {enumLabel('customerType', customer.customerType)}
         </span>
       ),
     },
