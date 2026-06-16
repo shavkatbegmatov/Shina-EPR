@@ -1,7 +1,7 @@
 import { Dialog, DialogBackdrop, DialogPanel, DialogTitle } from '@headlessui/react';
 import { useTranslation } from 'react-i18next';
+import { useNavigate } from 'react-router-dom';
 import { X, Plus, Minus, Trash2, ShoppingBag } from 'lucide-react';
-import toast from 'react-hot-toast';
 import { Button } from '@/ui';
 import { formatCurrency } from '../../config/constants';
 import { useCartStore, selectCartSubtotal } from '../store/cartStore';
@@ -14,6 +14,7 @@ interface CartDrawerProps {
 
 export function CartDrawer({ open, onClose }: CartDrawerProps) {
   const { t } = useTranslation();
+  const navigate = useNavigate();
   const items = useCartStore((s) => s.items);
   const setQty = useCartStore((s) => s.setQty);
   const remove = useCartStore((s) => s.remove);
@@ -85,7 +86,7 @@ export function CartDrawer({ open, onClose }: CartDrawerProps) {
                 </div>
                 <Button
                   block
-                  onClick={() => toast(t('shop.cart.checkoutSoon'), { icon: '🚧' })}
+                  onClick={() => { onClose(); navigate('/magazin/checkout'); }}
                 >
                   {t('shop.cart.checkout')}
                 </Button>

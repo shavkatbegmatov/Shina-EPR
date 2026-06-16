@@ -39,6 +39,8 @@ const ShopLayout = lazy(() => import('../shop/components/layout/ShopLayout'));
 const ShopHomePage = lazy(() => import('../shop/pages/ShopHomePage').then(m => ({ default: m.ShopHomePage })));
 const CatalogPage = lazy(() => import('../shop/pages/CatalogPage').then(m => ({ default: m.CatalogPage })));
 const ShopProductDetailPage = lazy(() => import('../shop/pages/ProductDetailPage').then(m => ({ default: m.ProductDetailPage })));
+const CheckoutPage = lazy(() => import('../shop/pages/CheckoutPage').then(m => ({ default: m.CheckoutPage })));
+const OrderConfirmationPage = lazy(() => import('../shop/pages/OrderConfirmationPage').then(m => ({ default: m.OrderConfirmationPage })));
 
 // Lazy-loaded portal pages
 const PortalLayout = lazy(() => import('../portal/components/layout/PortalLayout'));
@@ -421,6 +423,16 @@ export const router = createBrowserRouter([
         path: 'mahsulot/:id',
         element: <LazyRoute><ShopProductDetailPage /></LazyRoute>,
         handle: { title: 'Mahsulot' },
+      },
+      {
+        path: 'checkout',
+        element: <LazyRoute><CheckoutPage /></LazyRoute>,
+        handle: { title: 'Buyurtma rasmiylashtirish' },
+      },
+      {
+        path: 'buyurtma/:orderNo',
+        element: <LazyRoute><OrderConfirmationPage /></LazyRoute>,
+        handle: { title: 'Buyurtma tasdig\'i' },
       },
     ],
   },

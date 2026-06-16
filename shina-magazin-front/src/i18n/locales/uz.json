@@ -1736,6 +1736,64 @@
     },
     "language": {
       "toggle": "Tilni o'zgartirish"
+    },
+    "checkout": {
+      "title": "Buyurtmani rasmiylashtirish",
+      "steps": {
+        "contact": "Aloqa",
+        "delivery": "Yetkazib berish",
+        "payment": "To'lov",
+        "review": "Tasdiqlash"
+      },
+      "name": "Ism familiya",
+      "namePlaceholder": "Ismingizni kiriting",
+      "phone": "Telefon raqam",
+      "email": "Email",
+      "optional": "ixtiyoriy",
+      "required": "Majburiy maydon",
+      "invalidPhone": "To'g'ri telefon raqam kiriting",
+      "invalidEmail": "To'g'ri email kiriting",
+      "delivery": "Yetkazib berish",
+      "pickup": "Olib ketish",
+      "address": "Manzil",
+      "addressPlaceholder": "Shahar, ko'cha, uy",
+      "pickupNote": "Buyurtmani do'konimizdan olib ketishingiz mumkin: Toshkent sh., Chilonzor t.",
+      "note": "Izoh",
+      "notePlaceholder": "Buyurtmaga qo'shimcha izoh (ixtiyoriy)",
+      "pay": {
+        "cash": "Naqd pul",
+        "card": "Bank kartasi (Uzcard/Humo)",
+        "payme": "Payme",
+        "click": "Click"
+      },
+      "payDesc": {
+        "cash": "Yetkazib berishda naqd to'lov",
+        "card": "Karta orqali onlayn to'lov",
+        "payme": "Payme ilovasi orqali",
+        "click": "Click ilovasi orqali"
+      },
+      "back": "Orqaga",
+      "next": "Davom etish",
+      "placeOrder": "Buyurtmani tasdiqlash",
+      "summary": "Buyurtma xulosasi",
+      "subtotal": "Mahsulotlar",
+      "deliveryFee": "Yetkazib berish",
+      "free": "Bepul",
+      "total": "Jami",
+      "emptyTitle": "Savat bo'sh",
+      "emptyHint": "Buyurtma berish uchun avval mahsulot qo'shing.",
+      "demoNote": "Diqqat: bu demo. Haqiqiy to'lov amalga oshmaydi — buyurtma faqat namoyish uchun saqlanadi."
+    },
+    "order": {
+      "success": "Buyurtma qabul qilindi!",
+      "thanks": "Buyurtmangiz uchun rahmat. Tez orada operatorimiz siz bilan bog'lanadi.",
+      "orderNo": "Buyurtma raqami",
+      "items": "Mahsulotlar",
+      "contactSoon": "Operatorimiz buyurtmani tasdiqlash uchun ko'rsatilgan raqamga qo'ng'iroq qiladi.",
+      "backHome": "Bosh sahifa",
+      "continueShopping": "Xaridni davom ettirish",
+      "notFound": "Buyurtma topilmadi",
+      "notFoundHint": "Bunday buyurtma mavjud emas yoki muddati o'tgan."
     }
   }
 }
