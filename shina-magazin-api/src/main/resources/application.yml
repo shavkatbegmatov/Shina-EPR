@@ -53,3 +53,23 @@ logging:
     org.springframework.security: DEBUG
     org.springframework.security.web.access: DEBUG
     org.springframework.security.access: DEBUG
+
+# Storefront (/magazin) to'lov sozlamalari. DEFAULT: O'CHIQ (enabled=false).
+# Yoqish: tegishli provayder merchant kreditsiallarini env yoki shu yerga qo'ying
+# va enabled=true qiling. Webhook URL'lari (provayder kabinetida ro'yxatdan o'tkazing):
+#   Payme:  https://<domain>/api/v1/payments/payme
+#   Click:  https://<domain>/api/v1/payments/click/prepare  va  .../complete
+shop:
+  payment:
+    return-url: ${SHOP_RETURN_URL:http://localhost:5183/magazin/buyurtma}
+    payme:
+      enabled: ${PAYME_ENABLED:false}
+      merchant-id: ${PAYME_MERCHANT_ID:}
+      key: ${PAYME_KEY:}
+      checkout-url: https://checkout.paycom.uz
+    click:
+      enabled: ${CLICK_ENABLED:false}
+      merchant-id: ${CLICK_MERCHANT_ID:}
+      service-id: ${CLICK_SERVICE_ID:}
+      secret-key: ${CLICK_SECRET_KEY:}
+      pay-url: https://my.click.uz/services/pay
