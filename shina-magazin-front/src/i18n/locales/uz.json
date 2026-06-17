@@ -1650,6 +1650,14 @@
         "CONFIRMED": "Tasdiqlangan",
         "COMPLETED": "Yakunlangan",
         "CANCELLED": "Bekor qilingan"
+      },
+      "payStatus": {
+        "PENDING": "To'lov kutilmoqda",
+        "PROCESSING": "To'lov jarayonida",
+        "PAID": "To'langan",
+        "FAILED": "To'lov xato",
+        "CANCELLED": "Bekor qilingan",
+        "REFUNDED": "Qaytarilgan"
       }
     }
   },

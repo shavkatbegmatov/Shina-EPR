@@ -2,6 +2,7 @@ package uz.shinamagazin.api.controller;
 
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Pageable;
@@ -9,6 +10,7 @@ import org.springframework.data.web.PageableDefault;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.server.ResponseStatusException;
 import uz.shinamagazin.api.dto.request.CreateShopOrderRequest;
 import uz.shinamagazin.api.dto.response.ApiResponse;
 import uz.shinamagazin.api.dto.response.PagedResponse;
@@ -16,6 +18,7 @@ import uz.shinamagazin.api.dto.response.ShopOrderResponse;
 import uz.shinamagazin.api.enums.PermissionCode;
 import uz.shinamagazin.api.enums.ShopOrderStatus;
 import uz.shinamagazin.api.security.RequiresPermission;
+import uz.shinamagazin.api.security.SimpleRateLimiter;
 import uz.shinamagazin.api.service.ShopOrderService;
 
 /**
@@ -32,14 +35,26 @@ import uz.shinamagazin.api.service.ShopOrderService;
 public class ShopOrderController {
 
     private final ShopOrderService shopOrderService;
+    private final SimpleRateLimiter rateLimiter;
 
     @PostMapping
     @Operation(summary = "Create order", description = "Storefront buyurtma yaratish (narx serverda hisoblanadi)")
     public ResponseEntity<ApiResponse<ShopOrderResponse>> createOrder(
-            @Valid @RequestBody CreateShopOrderRequest request) {
+            @Valid @RequestBody CreateShopOrderRequest request,
+            HttpServletRequest httpRequest) {
+        if (!rateLimiter.allow("order:" + clientIp(httpRequest))) {
+            throw new ResponseStatusException(HttpStatus.TOO_MANY_REQUESTS,
+                    "Juda ko'p so'rov yuborildi. Birozdan keyin urinib ko'ring.");
+        }
         ShopOrderResponse order = shopOrderService.createOrder(request);
         return ResponseEntity.status(HttpStatus.CREATED)
                 .body(ApiResponse.success("Buyurtma qabul qilindi", order));
+    }
+
+    private static String clientIp(HttpServletRequest req) {
+        String xff = req.getHeader("X-Forwarded-For");
+        if (xff != null && !xff.isBlank()) return xff.split(",")[0].trim();
+        return req.getRemoteAddr();
     }
 
     @GetMapping("/{orderNo}")

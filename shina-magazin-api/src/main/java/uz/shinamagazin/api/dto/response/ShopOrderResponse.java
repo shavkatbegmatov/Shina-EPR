@@ -22,6 +22,7 @@ public class ShopOrderResponse {
     private String deliveryAddress;
     private String deliveryNote;
     private String paymentMethod;
+    private String paymentStatus;
     private BigDecimal subtotal;
     private BigDecimal deliveryFee;
     private BigDecimal totalAmount;
@@ -61,6 +62,7 @@ public class ShopOrderResponse {
                 .deliveryAddress(o.getDeliveryAddress())
                 .deliveryNote(o.getDeliveryNote())
                 .paymentMethod(o.getPaymentMethod() != null ? o.getPaymentMethod().name() : null)
+                .paymentStatus(o.getPaymentStatus() != null ? o.getPaymentStatus().name() : null)
                 .subtotal(o.getSubtotal())
                 .deliveryFee(o.getDeliveryFee())
                 .totalAmount(o.getTotalAmount())

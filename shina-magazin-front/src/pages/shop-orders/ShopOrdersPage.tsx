@@ -7,7 +7,7 @@ import { Badge, Button, cn } from '@/ui';
 import { DataTable, type Column } from '../../components/ui/DataTable';
 import { Select } from '../../components/ui/Select';
 import { formatCurrency } from '../../config/constants';
-import { shopOrdersApi, type ShopOrderDto, type ShopOrderStatus } from '../../api/shopOrders.api';
+import { shopOrdersApi, type ShopOrderDto, type ShopOrderStatus, type ShopPaymentStatus } from '../../api/shopOrders.api';
 
 const STATUSES: ShopOrderStatus[] = ['NEW', 'CONFIRMED', 'COMPLETED', 'CANCELLED'];
 const STATUS_TONE: Record<ShopOrderStatus, 'warning' | 'info' | 'success' | 'neutral'> = {
@@ -15,6 +15,14 @@ const STATUS_TONE: Record<ShopOrderStatus, 'warning' | 'info' | 'success' | 'neu
   CONFIRMED: 'info',
   COMPLETED: 'success',
   CANCELLED: 'neutral',
+};
+const PAY_TONE: Record<ShopPaymentStatus, 'warning' | 'info' | 'success' | 'error' | 'neutral'> = {
+  PENDING: 'warning',
+  PROCESSING: 'info',
+  PAID: 'success',
+  FAILED: 'error',
+  CANCELLED: 'neutral',
+  REFUNDED: 'neutral',
 };
 
 function formatDate(iso: string, lang: string): string {
@@ -80,7 +88,13 @@ export function ShopOrdersPage() {
       header: t('erp.shopOrders.total'),
       className: 'text-right',
       headerClassName: 'text-right',
-      render: (o) => <span className="font-bold text-primary">{formatCurrency(o.totalAmount)}</span>,
+      sortable: false,
+      render: (o) => (
+        <div className="flex flex-col items-end gap-1">
+          <span className="font-bold text-primary">{formatCurrency(o.totalAmount)}</span>
+          <Badge tone={PAY_TONE[o.paymentStatus]} className="text-[10px]">{t(`erp.shopOrders.payStatus.${o.paymentStatus}`)}</Badge>
+        </div>
+      ),
     },
     {
       key: 'status',
@@ -162,7 +176,10 @@ export function ShopOrdersPage() {
             <p className="text-sm font-medium">{o.customerName} · <span className="text-base-content/60">{o.customerPhone}</span></p>
             <p className="text-xs text-base-content/50">{formatDate(o.createdAt, i18n.language)}</p>
             <div className="flex items-center justify-between gap-2 pt-1">
-              <span className="font-bold text-primary">{formatCurrency(o.totalAmount)}</span>
+              <div className="flex flex-col gap-1">
+                <span className="font-bold text-primary">{formatCurrency(o.totalAmount)}</span>
+                <Badge tone={PAY_TONE[o.paymentStatus]} className="text-[10px]">{t(`erp.shopOrders.payStatus.${o.paymentStatus}`)}</Badge>
+              </div>
               <Select
                 value={o.status}
                 onChange={(val) => statusMutation.mutate({ orderNo: o.orderNo, next: val as ShopOrderStatus })}

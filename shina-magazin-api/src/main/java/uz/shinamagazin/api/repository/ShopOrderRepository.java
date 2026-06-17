@@ -12,6 +12,7 @@ import java.util.Optional;
 @Repository
 public interface ShopOrderRepository extends JpaRepository<ShopOrder, Long> {
     Optional<ShopOrder> findByOrderNo(String orderNo);
+    Optional<ShopOrder> findByProviderTransactionId(String providerTransactionId);
     boolean existsByOrderNo(String orderNo);
 
     Page<ShopOrder> findAllByOrderByCreatedAtDesc(Pageable pageable);

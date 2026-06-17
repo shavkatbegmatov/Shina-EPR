@@ -4,6 +4,7 @@ import type { ApiResponse, PagedResponse } from '../types';
 export type ShopOrderStatus = 'NEW' | 'CONFIRMED' | 'CANCELLED' | 'COMPLETED';
 export type ShopDeliveryMethod = 'DELIVERY' | 'PICKUP';
 export type ShopPaymentMethod = 'CASH' | 'CARD' | 'PAYME' | 'CLICK';
+export type ShopPaymentStatus = 'PENDING' | 'PROCESSING' | 'PAID' | 'FAILED' | 'CANCELLED' | 'REFUNDED';
 
 export interface ShopOrderItemDto {
   productId: number;
@@ -24,6 +25,7 @@ export interface ShopOrderDto {
   deliveryAddress?: string;
   deliveryNote?: string;
   paymentMethod: ShopPaymentMethod;
+  paymentStatus: ShopPaymentStatus;
   subtotal: number;
   deliveryFee: number;
   totalAmount: number;

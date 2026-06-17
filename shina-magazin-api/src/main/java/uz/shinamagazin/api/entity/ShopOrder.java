@@ -6,8 +6,10 @@ import uz.shinamagazin.api.entity.base.BaseEntity;
 import uz.shinamagazin.api.enums.ShopDeliveryMethod;
 import uz.shinamagazin.api.enums.ShopOrderStatus;
 import uz.shinamagazin.api.enums.ShopPaymentMethod;
+import uz.shinamagazin.api.enums.ShopPaymentStatus;
 
 import java.math.BigDecimal;
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -49,10 +51,22 @@ public class ShopOrder extends BaseEntity {
     @Column(name = "delivery_note", length = 500)
     private String deliveryNote;
 
-    // To'lov (usul; haqiqiy gateway integratsiyasi keyin)
+    // To'lov usuli + holati
     @Enumerated(EnumType.STRING)
     @Column(name = "payment_method", nullable = false, length = 20)
     private ShopPaymentMethod paymentMethod;
+
+    @Enumerated(EnumType.STRING)
+    @Column(name = "payment_status", nullable = false, length = 20)
+    @Builder.Default
+    private ShopPaymentStatus paymentStatus = ShopPaymentStatus.PENDING;
+
+    /** Provayder tranzaksiya ID'si (Payme/Click) */
+    @Column(name = "provider_transaction_id", length = 100)
+    private String providerTransactionId;
+
+    @Column(name = "paid_at")
+    private LocalDateTime paidAt;
 
     // Narxlar (serverda hisoblangan)
     @Column(nullable = false, precision = 15, scale = 2)

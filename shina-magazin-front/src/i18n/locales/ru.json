@@ -1650,6 +1650,14 @@
         "CONFIRMED": "Подтверждён",
         "COMPLETED": "Завершён",
         "CANCELLED": "Отменён"
+      },
+      "payStatus": {
+        "PENDING": "Ожидает оплаты",
+        "PROCESSING": "Оплата в процессе",
+        "PAID": "Оплачено",
+        "FAILED": "Ошибка оплаты",
+        "CANCELLED": "Отменён",
+        "REFUNDED": "Возвращён"
       }
     }
   },

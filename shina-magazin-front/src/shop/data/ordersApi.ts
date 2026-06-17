@@ -22,6 +22,16 @@ export interface ServerOrder {
   totalAmount: number;
 }
 
+/** To'lov boshlash javobi (PaymentInitResponse). */
+export interface PaymentInit {
+  orderNo: string;
+  method: string;
+  /** Onlayn usul uchun provayder checkout URL'i; naqd/o'chiq uchun null */
+  redirectUrl: string | null;
+  paymentStatus: string;
+  online: boolean;
+}
+
 /**
  * Storefront buyurtma API klienti — backend `POST /v1/orders` (guest, auth'siz).
  * Backend narxni SERVERDA hisoblaydi va rasmiy orderNo qaytaradi.
@@ -29,6 +39,12 @@ export interface ServerOrder {
 export const ordersApi = {
   create: async (payload: CreateOrderPayload): Promise<ServerOrder> => {
     const res = await api.post<ApiResponse<ServerOrder>>('/v1/orders', payload);
+    return res.data.data;
+  },
+
+  /** To'lovni boshlash — onlayn usul uchun provayder checkout URL qaytaradi. */
+  initiatePayment: async (orderNo: string): Promise<PaymentInit> => {
+    const res = await api.post<ApiResponse<PaymentInit>>(`/v1/orders/${encodeURIComponent(orderNo)}/pay`);
     return res.data.data;
   },
 };

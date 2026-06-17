@@ -50,9 +50,11 @@ public class SecurityConfig {
                         // /v1/products ostida himoyalangan bo'lib qoladi.
                         .requestMatchers(HttpMethod.GET, "/v1/catalog/**").permitAll()
                         // Storefront guest checkout — FAQAT buyurtma yaratish (POST) ommaviy.
-                        // GET /v1/orders/{orderNo} himoyalangan qoladi (frontend tasdiqni
-                        // client-side saqlaydi). ⚠️ Rate-limiting keyingi bosqichda.
+                        // GET/PATCH /v1/orders/** xodim uchun himoyalangan (SALES_VIEW).
                         .requestMatchers(HttpMethod.POST, "/v1/orders").permitAll()
+                        // To'lovni boshlash (guest) + provayder webhook'lari (Payme/Click)
+                        .requestMatchers(HttpMethod.POST, "/v1/orders/*/pay").permitAll()
+                        .requestMatchers("/v1/payments/**").permitAll()
                         .requestMatchers("/swagger-ui/**", "/api-docs/**", "/swagger-ui.html").permitAll()
                         .requestMatchers("/actuator/**").permitAll()
                         // WebSocket endpoint (JWT token interceptor'da tekshiriladi)

@@ -88,6 +88,7 @@ export function CheckoutPage() {
     // Backendga yuborishga harakat (narx serverda hisoblanadi, rasmiy orderNo).
     // Backend yo'q/xato bo'lsa client-side (demo) orderNo bilan davom etamiz.
     let orderNo = generateOrderNo();
+    let serverCreated = false;
     try {
       const server = await ordersApi.create({
         items: items.map((i) => ({ productId: i.product.id, quantity: i.qty })),
@@ -100,6 +101,7 @@ export function CheckoutPage() {
         payment: form.payment,
       });
       orderNo = server.orderNo;
+      serverCreated = true;
     } catch {
       // backend mavjud emas — client-side buyurtma (storefront offline ham ishlaydi)
     }
@@ -115,7 +117,23 @@ export function CheckoutPage() {
     };
     addOrder(order);
     clear();
-    navigate(`/magazin/buyurtma/${order.orderNo}`);
+
+    // Onlayn to'lov: backend buyurtmani yaratgan va usul naqd EMAS bo'lsa,
+    // to'lovni boshlaymiz va provayder (Payme/Click) checkout sahifasiga yo'naltiramiz.
+    // Provayder o'chiq/sozlanmagan bo'lsa redirectUrl null -> tasdiq sahifasiga (PENDING).
+    if (serverCreated && form.payment !== 'cash') {
+      try {
+        const pay = await ordersApi.initiatePayment(orderNo);
+        if (pay.online && pay.redirectUrl) {
+          window.location.href = pay.redirectUrl;
+          return;
+        }
+      } catch {
+        // to'lov boshlanmadi — tasdiq sahifasiga o'tamiz
+      }
+    }
+
+    navigate(`/magazin/buyurtma/${orderNo}`);
   };
 
   const inputClass = (field: string) =>

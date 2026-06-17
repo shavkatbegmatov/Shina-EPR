@@ -66,6 +66,15 @@ public class ShopOrderService {
                     .filter(p -> Boolean.TRUE.equals(p.getActive()))
                     .orElseThrow(() -> new ResourceNotFoundException("Mahsulot", "id", reqItem.getProductId()));
 
+            // Stok rezervatsiya — zaxira yetarli bo'lsa kamaytiriladi.
+            // Product @Version optimistik qulf konkurent buyurtmalarni himoyalaydi.
+            if (product.getQuantity() < reqItem.getQuantity()) {
+                throw new BadRequestException("Zaxira yetarli emas: " + product.getName()
+                        + " (qoldiq: " + product.getQuantity() + ")");
+            }
+            product.setQuantity(product.getQuantity() - reqItem.getQuantity());
+            productRepository.save(product);
+
             BigDecimal unitPrice = product.getSellingPrice(); // SERVER narxi
             BigDecimal lineTotal = unitPrice.multiply(BigDecimal.valueOf(reqItem.getQuantity()));
             subtotal = subtotal.add(lineTotal);
