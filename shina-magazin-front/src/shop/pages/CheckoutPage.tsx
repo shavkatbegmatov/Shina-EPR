@@ -7,6 +7,7 @@ import { formatCurrency } from '../../config/constants';
 import { useCartStore, selectCartSubtotal } from '../store/cartStore';
 import { useOrderStore, generateOrderNo, calcDeliveryFee, type PaymentMethod, type DeliveryMethod } from '../store/orderStore';
 import { ProductImage } from '../components/ProductImage';
+import { ordersApi } from '../data/ordersApi';
 import { usePortalAuthStore } from '../../portal/store/portalAuthStore';
 
 const STEPS = ['contact', 'delivery', 'payment', 'review'] as const;
@@ -43,6 +44,7 @@ export function CheckoutPage() {
     email: '', deliveryMethod: 'delivery', address: '', note: '', payment: 'cash',
   });
   const [errors, setErrors] = useState<Record<string, string>>({});
+  const [submitting, setSubmitting] = useState(false);
 
   const set = (k: keyof CheckoutForm, v: string) => setForm((f) => ({ ...f, [k]: v }));
 
@@ -79,10 +81,31 @@ export function CheckoutPage() {
   const next = () => { if (validateStep(stepIdx)) setStepIdx((i) => Math.min(i + 1, STEPS.length - 1)); };
   const back = () => setStepIdx((i) => Math.max(i - 1, 0));
 
-  const submit = () => {
+  const submit = async () => {
     if (!validateStep(stepIdx)) return;
+    setSubmitting(true);
+
+    // Backendga yuborishga harakat (narx serverda hisoblanadi, rasmiy orderNo).
+    // Backend yo'q/xato bo'lsa client-side (demo) orderNo bilan davom etamiz.
+    let orderNo = generateOrderNo();
+    try {
+      const server = await ordersApi.create({
+        items: items.map((i) => ({ productId: i.product.id, quantity: i.qty })),
+        name: form.name.trim(),
+        phone: form.phone.trim(),
+        email: form.email.trim() || undefined,
+        deliveryMethod: form.deliveryMethod,
+        address: form.address.trim() || undefined,
+        note: form.note.trim() || undefined,
+        payment: form.payment,
+      });
+      orderNo = server.orderNo;
+    } catch {
+      // backend mavjud emas — client-side buyurtma (storefront offline ham ishlaydi)
+    }
+
     const order = {
-      orderNo: generateOrderNo(),
+      orderNo,
       createdAt: Date.now(),
       items,
       contact: { name: form.name.trim(), phone: form.phone.trim(), email: form.email.trim() || undefined },
@@ -236,7 +259,7 @@ export function CheckoutPage() {
             {stepIdx < STEPS.length - 1 ? (
               <Button onClick={next} className="gap-1">{t('shop.checkout.next')} <ChevronRight size={16} /></Button>
             ) : (
-              <Button variant="success" onClick={submit} className="gap-2"><Check size={18} /> {t('shop.checkout.placeOrder')}</Button>
+              <Button variant="success" onClick={submit} loading={submitting} disabled={submitting} className="gap-2"><Check size={18} /> {t('shop.checkout.placeOrder')}</Button>
             )}
           </div>
         </Card>
