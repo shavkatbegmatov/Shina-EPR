@@ -34,6 +34,8 @@
 
 **Tekshiruv holati:** frontend `npm run build`+`npm test` (44/44) yashil; backend `mvnw compile` EXIT=0. ⚠️ Backend **jonli DB'da ishga tushirib tekshirilmagan** (sandbox/DB yo'q edi).
 
+**Faza 6 / C guruhi (C1–C4, 18.06.2026, uy mashinasi):** ✅ bajarildi va `master`'ga push qilindi (batafsil — 4-bo'lim). Test **44 → 91/91** yashil, frontend build + backend `compile` EXIT=0. C5 hali ochiq (B4 qarorini kutadi).
+
 ---
 
 ## 2. 🔴 A) Faqat foydalanuvchi qila oladi (kod tayyor, bloklovchi)
@@ -63,18 +65,16 @@
 
 ## 4. 🟢 C) Hoziroq qilinadigan (qaror shart emas, to'liq tekshiriladigan)
 
-> Tavsiya: shulardan boshlash. Hammasi `npm test`/`npm run build`/preview bilan tekshiriladi.
+> ✅ **C1–C4 bajarildi** (18.06.2026, uy mashinasi). Har biri build+test yashil → alohida commit → push.
+> Yakuniy tekshiruv: frontend `npm test` **91/91** + `npm run build` yashil; backend `mvnw compile` EXIT=0.
 
-- [ ] **C1 — Test qamrovi.** Yangi do'kon kodi uchun unit testlar (hozir faqat `src/shop/components/ProductCard.test.tsx` bor):
+- [x] **C1 — Test qamrovi.** ✅ `a175ee7` — 40 yangi test (8 fayl):
   - `src/shop/store/`: `cartStore`, `wishlistStore`, `compareStore` (COMPARE_MAX), `orderStore` (`generateOrderNo`, `calcDeliveryFee`), `recentStore` (MAX 8).
-  - `src/shop/data/useCatalog.ts` (seam + fallback), `CheckoutPage` validatsiya logikasi.
-  - `src/pages/shop-orders/ShopOrdersPage.tsx` (status filtri + mutation) — react-query'ni mock qilib.
-  - Eslatma: testlar `pool: 'threads'` da ishlaydi (`vite.config.ts`) — Windows AV fork-timeout'i uchun.
-- [ ] **C2 — Yangi buyurtma → xodimga bildirishnoma.** Storefront buyurtma kelganda mavjud ERP notification tizimiga ulash:
-  - Backend: `ShopOrderService.createOrder` da `StaffNotification` yaratish (mavjud notification servisi/entity — V7 migratsiya, `staff_notifications`). Websocket orqali xodimga push.
-  - Frontend: ERP `notificationsStore` allaqachon bor — yangi tur (`SHOP_ORDER`) qo'shilsa, header bell'da ko'rinadi.
-- [ ] **C3 — Storefront SEO meta.** `ShopRouteEffects` (`src/shop/components/ShopRouteEffects.tsx`) sarlavhani o'rnatadi; `description` + `og:title/og:image` meta teglarni ham qo'shing (har route uchun). Katalog/PDP uchun mahsulotga mos meta.
-- [ ] **C4 — Buyurtma tasdiq sahifasi: real to'lov holati.** `OrderConfirmationPage` hozir client-side buyurtmani ko'rsatadi (PENDING). To'lovdan qaytgach `GET /v1/orders/{orderNo}` (yoki yangi public status endpoint) bilan real `paymentStatus`ni ko'rsatish (PAID/PENDING). Eslatma: GET hozir himoyalangan — guest uchun **public status-only endpoint** kerak (faqat orderNo+paymentStatus qaytaradi, shaxsiy ma'lumotsiz).
+  - `src/shop/data/useCatalog.ts` (seam + fallback), `CheckoutPage` validatsiya, `ShopOrdersPage` (status filtri + mutation, react-query mock).
+  - Testlar `pool: 'threads'` da ishlaydi (`vite.config.ts`).
+- [x] **C2 — Yangi buyurtma → xodimga bildirishnoma.** ✅ `957a3dc` — `ShopOrderService.createOrder` endi `StaffNotificationService.notifyNewShopOrder` ni chaqiradi (`StaffNotificationType.ORDER`, `referenceType "SHOP_ORDER"`); global bildirishnoma DB'ga yoziladi + WebSocket `/topic/staff/notifications` push (SaleService.notifyNewOrder bilan bir naqsh). Frontend `ORDER` turini allaqachon qo'llab-quvvatlaydi — o'zgarmadi. ⚠️ Jonli DB'da tekshirilmagan (A guruhi).
+- [x] **C3 — Storefront SEO meta.** ✅ `b1738c7` — `useDocumentMeta` hook (`document.title` + `description` + `og:*` upsert, react-helmet'siz); `ShopRouteEffects` route handle'dan default meta o'rnatadi; storefront route'larga `description` qo'shildi; PDP mahsulot yuklanganda nom/narx/rasm bilan override (`og:type=product`). 7 test.
+- [x] **C4 — Buyurtma tasdiq: real to'lov holati.** ✅ `1a025a0` — ommaviy `GET /v1/orders/{orderNo}/status` (`ShopOrderStatusResponse` — orderNo+status+paymentStatus, shaxsiy ma'lumotsiz; SecurityConfig permitAll); `OrderConfirmationPage` real `paymentStatus` badge ko'rsatadi va PENDING/PROCESSING bo'lsa 4s'da poll qiladi (webhook PAID qilguncha). i18n `shop.order.payStatus` (uz/ru). ⚠️ Jonli DB'da tekshirilmagan (A guruhi).
 - [ ] **C5 — Mahsulot rasm yuklash** (B4 qaror bo'lgach): ERP mahsulot sahifasida rasm upload + `Product.imageUrl` to'ldirish; storefront `ProductImage` real rasmni ko'rsatadi (kod tayyor — `src` bo'lsa rasmni, bo'lmasa SVG).
 
 ---
@@ -123,9 +123,9 @@ $env:JAVA_HOME="C:\Users\Sh.Begmatov\.jdks\ms-21.0.11"   # JBR 25 Lombok'ni buza
 
 ## 7. Tavsiya etilgan tartib
 
-1. **AV istisno** qo'shing (yuqorida) → lokal muhit barqaror bo'ladi.
-2. **C guruhi** (C1 test → C2 bildirishnoma → C3 SEO → C4 to'lov holati) — qaror shart emas, tekshiriladigan.
-3. **B guruhi** qarorlarini bering → tegishli ishlar (rasm yuklash, root routing, SSR).
-4. **A guruhi** — kreditsiallar bilan to'lovni jonli qiling + DB'da verify.
+1. **AV istisno** qo'shing (yuqorida) → lokal muhit barqaror bo'ladi. _(Uy mashinasida muammo kuzatilmadi.)_
+2. ✅ **C guruhi** (C1 test → C2 bildirishnoma → C3 SEO → C4 to'lov holati) — **bajarildi** (18.06.2026). C5 qoldi (B4 qarorga bog'liq).
+3. **B guruhi** qarorlarini bering → tegishli ishlar (rasm yuklash/C5, root routing, SSR). ← **keyingi qadam**
+4. **A guruhi** — kreditsiallar bilan to'lovni jonli qiling + DB'da verify (C2/C4'ni ham jonli sinash).
 
 > Har bosqichda: build + test yashil → commit → push (avvalgi uslub).
