@@ -1636,7 +1636,8 @@
       "catalog": "Katalog",
       "menu": "Menyu",
       "orders": "Buyurtmalarim",
-      "wishlist": "Saqlanganlar"
+      "wishlist": "Saqlanganlar",
+      "account": "Kabinet"
     },
     "search": {
       "placeholder": "Shina, brend yoki o'lcham (205/55 R16)...",
@@ -1788,7 +1789,9 @@
       "total": "Jami",
       "emptyTitle": "Savat bo'sh",
       "emptyHint": "Buyurtma berish uchun avval mahsulot qo'shing.",
-      "demoNote": "Diqqat: bu demo. Haqiqiy to'lov amalga oshmaydi — buyurtma faqat namoyish uchun saqlanadi."
+      "demoNote": "Diqqat: bu demo. Haqiqiy to'lov amalga oshmaydi — buyurtma faqat namoyish uchun saqlanadi.",
+      "loggedInAs": "Kabinet: {{name}}",
+      "haveAccount": "Kabinetingiz bormi? Kiring"
     },
     "order": {
       "success": "Buyurtma qabul qilindi!",
