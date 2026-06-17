@@ -15,6 +15,7 @@ import uz.shinamagazin.api.dto.request.CreateShopOrderRequest;
 import uz.shinamagazin.api.dto.response.ApiResponse;
 import uz.shinamagazin.api.dto.response.PagedResponse;
 import uz.shinamagazin.api.dto.response.ShopOrderResponse;
+import uz.shinamagazin.api.dto.response.ShopOrderStatusResponse;
 import uz.shinamagazin.api.enums.PermissionCode;
 import uz.shinamagazin.api.enums.ShopOrderStatus;
 import uz.shinamagazin.api.security.RequiresPermission;
@@ -55,6 +56,13 @@ public class ShopOrderController {
         String xff = req.getHeader("X-Forwarded-For");
         if (xff != null && !xff.isBlank()) return xff.split(",")[0].trim();
         return req.getRemoteAddr();
+    }
+
+    @GetMapping("/{orderNo}/status")
+    @Operation(summary = "Get order status (public)",
+            description = "Buyurtma holati — ommaviy, shaxsiy ma'lumotsiz (tasdiq sahifasi uchun)")
+    public ResponseEntity<ApiResponse<ShopOrderStatusResponse>> getOrderStatus(@PathVariable String orderNo) {
+        return ResponseEntity.ok(ApiResponse.success(shopOrderService.getStatusByOrderNo(orderNo)));
     }
 
     @GetMapping("/{orderNo}")

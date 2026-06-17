@@ -1833,7 +1833,16 @@
       "backHome": "Bosh sahifa",
       "continueShopping": "Xaridni davom ettirish",
       "notFound": "Buyurtma topilmadi",
-      "notFoundHint": "Bunday buyurtma mavjud emas yoki muddati o'tgan."
+      "notFoundHint": "Bunday buyurtma mavjud emas yoki muddati o'tgan.",
+      "paymentLabel": "To'lov holati",
+      "payStatus": {
+        "PENDING": "To'lov kutilmoqda",
+        "PROCESSING": "To'lov jarayonida",
+        "PAID": "To'langan",
+        "FAILED": "To'lov xato",
+        "CANCELLED": "Bekor qilingan",
+        "REFUNDED": "Qaytarilgan"
+      }
     },
     "orders": {
       "title": "Buyurtmalarim",

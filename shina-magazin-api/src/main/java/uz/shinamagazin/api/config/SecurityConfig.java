@@ -49,9 +49,11 @@ public class SecurityConfig {
                         // Ommaviy storefront katalogi — faqat O'QISH (GET). Yozish operatsiyalari
                         // /v1/products ostida himoyalangan bo'lib qoladi.
                         .requestMatchers(HttpMethod.GET, "/v1/catalog/**").permitAll()
-                        // Storefront guest checkout — FAQAT buyurtma yaratish (POST) ommaviy.
-                        // GET/PATCH /v1/orders/** xodim uchun himoyalangan (SALES_VIEW).
+                        // Storefront guest checkout — buyurtma yaratish (POST) va holat tekshirish
+                        // (GET .../status, shaxsiy ma'lumotsiz) ommaviy. Boshqa GET/PATCH
+                        // /v1/orders/** xodim uchun himoyalangan (SALES_VIEW).
                         .requestMatchers(HttpMethod.POST, "/v1/orders").permitAll()
+                        .requestMatchers(HttpMethod.GET, "/v1/orders/*/status").permitAll()
                         // To'lovni boshlash (guest) + provayder webhook'lari (Payme/Click)
                         .requestMatchers(HttpMethod.POST, "/v1/orders/*/pay").permitAll()
                         .requestMatchers("/v1/payments/**").permitAll()

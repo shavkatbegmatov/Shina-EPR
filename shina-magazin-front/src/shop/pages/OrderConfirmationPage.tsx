@@ -1,15 +1,41 @@
 import { Link, useParams } from 'react-router-dom';
+import { useQuery } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
 import { CheckCircle2, Package, Phone, MapPin, CreditCard } from 'lucide-react';
-import { Card, EmptyState, buttonVariants } from '@/ui';
+import { Card, Badge, EmptyState, buttonVariants } from '@/ui';
 import { formatCurrency } from '../../config/constants';
 import { useOrderStore } from '../store/orderStore';
+import { ordersApi } from '../data/ordersApi';
 import { ProductImage } from '../components/ProductImage';
+
+/** To'lov holati badge ranglari (ERP ShopOrdersPage bilan izchil). */
+const PAY_TONE: Record<string, 'warning' | 'info' | 'success' | 'error' | 'neutral'> = {
+  PENDING: 'warning',
+  PROCESSING: 'info',
+  PAID: 'success',
+  FAILED: 'error',
+  CANCELLED: 'neutral',
+  REFUNDED: 'neutral',
+};
 
 export function OrderConfirmationPage() {
   const { t } = useTranslation();
   const { orderNo } = useParams();
   const order = useOrderStore((s) => s.orders.find((o) => o.orderNo === orderNo));
+
+  // To'lovdan qaytgach real to'lov holatini ommaviy status endpoint'dan olamiz.
+  // PENDING/PROCESSING bo'lsa qisqa interval bilan yangilab turamiz — provayder
+  // webhook'i kelgach paymentStatus PAID bo'ladi va so'rov to'xtaydi.
+  const { data: serverStatus } = useQuery({
+    queryKey: ['shop-order-status', orderNo],
+    queryFn: () => ordersApi.getStatus(orderNo as string),
+    enabled: !!orderNo,
+    retry: false,
+    refetchInterval: (query) => {
+      const ps = query.state.data?.paymentStatus;
+      return ps === 'PENDING' || ps === 'PROCESSING' ? 4000 : false;
+    },
+  });
 
   if (!order) {
     return (
@@ -36,6 +62,13 @@ export function OrderConfirmationPage() {
         <p className="mt-3 inline-flex items-center gap-2 rounded-full bg-base-200 px-4 py-1.5 text-sm font-semibold">
           {t('shop.order.orderNo')}: <span className="font-mono text-primary">{order.orderNo}</span>
         </p>
+        {serverStatus?.paymentStatus && (
+          <p className="mt-3">
+            <Badge tone={PAY_TONE[serverStatus.paymentStatus] ?? 'neutral'}>
+              {t('shop.order.paymentLabel')}: {t(`shop.order.payStatus.${serverStatus.paymentStatus}`)}
+            </Badge>
+          </p>
+        )}
       </div>
 
       {/* Items */}

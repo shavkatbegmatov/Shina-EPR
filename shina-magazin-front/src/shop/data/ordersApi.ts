@@ -32,6 +32,13 @@ export interface PaymentInit {
   online: boolean;
 }
 
+/** Ommaviy buyurtma holati (ShopOrderStatusResponse) — shaxsiy ma'lumotsiz. */
+export interface OrderStatus {
+  orderNo: string;
+  status: string;
+  paymentStatus: string;
+}
+
 /**
  * Storefront buyurtma API klienti — backend `POST /v1/orders` (guest, auth'siz).
  * Backend narxni SERVERDA hisoblaydi va rasmiy orderNo qaytaradi.
@@ -45,6 +52,12 @@ export const ordersApi = {
   /** To'lovni boshlash — onlayn usul uchun provayder checkout URL qaytaradi. */
   initiatePayment: async (orderNo: string): Promise<PaymentInit> => {
     const res = await api.post<ApiResponse<PaymentInit>>(`/v1/orders/${encodeURIComponent(orderNo)}/pay`);
+    return res.data.data;
+  },
+
+  /** Ommaviy (guest) buyurtma holati — tasdiq sahifasida real to'lov holati uchun. */
+  getStatus: async (orderNo: string): Promise<OrderStatus> => {
+    const res = await api.get<ApiResponse<OrderStatus>>(`/v1/orders/${encodeURIComponent(orderNo)}/status`);
     return res.data.data;
   },
 };

@@ -7,6 +7,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import uz.shinamagazin.api.dto.request.CreateShopOrderRequest;
 import uz.shinamagazin.api.dto.response.ShopOrderResponse;
+import uz.shinamagazin.api.dto.response.ShopOrderStatusResponse;
 import uz.shinamagazin.api.entity.Product;
 import uz.shinamagazin.api.entity.ShopOrder;
 import uz.shinamagazin.api.entity.ShopOrderItem;
@@ -111,6 +112,14 @@ public class ShopOrderService {
         ShopOrder order = orderRepository.findByOrderNo(orderNo)
                 .orElseThrow(() -> new ResourceNotFoundException("Buyurtma", "orderNo", orderNo));
         return ShopOrderResponse.from(order);
+    }
+
+    /** Ommaviy (guest): buyurtma holati — shaxsiy ma'lumotsiz (tasdiq sahifasi uchun). */
+    @Transactional(readOnly = true)
+    public ShopOrderStatusResponse getStatusByOrderNo(String orderNo) {
+        ShopOrder order = orderRepository.findByOrderNo(orderNo)
+                .orElseThrow(() -> new ResourceNotFoundException("Buyurtma", "orderNo", orderNo));
+        return ShopOrderStatusResponse.from(order);
     }
 
     /** Xodim uchun: buyurtmalar ro'yxati (eng yangi birinchi), ixtiyoriy holat filtri. */
