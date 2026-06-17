@@ -11,6 +11,7 @@ import { RecentlyViewed } from '../components/RecentlyViewed';
 import { useProduct, useRelatedProducts } from '../data/useCatalog';
 import { useCartStore } from '../store/cartStore';
 import { useRecentStore } from '../store/recentStore';
+import { useDocumentMeta } from '../hooks/useDocumentMeta';
 
 export function ProductDetailPage() {
   const { t } = useTranslation();
@@ -26,6 +27,20 @@ export function ProductDetailPage() {
   useEffect(() => {
     if (product) addRecent(product.id);
   }, [product, addRecent]);
+
+  // SEO/OG: mahsulot yuklanganda route default meta'sini mahsulotga moslab override qiladi
+  const metaDescription = product
+    ? (product.description?.trim() ||
+        [product.brandName, product.sizeString, formatCurrency(product.sellingPrice)]
+          .filter(Boolean)
+          .join(' · '))
+    : undefined;
+  useDocumentMeta({
+    title: product?.name,
+    description: metaDescription,
+    image: product?.imageUrl,
+    type: 'product',
+  });
 
   if (!product) {
     return (

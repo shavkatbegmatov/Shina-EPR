@@ -428,47 +428,75 @@ export const router = createBrowserRouter([
       {
         index: true,
         element: <LazyRoute><ShopHomePage /></LazyRoute>,
-        handle: { title: 'Protektor — Magazin' },
+        handle: {
+          title: 'Protektor — Magazin',
+          description: "Protektor — shinalar onlayn do'koni. Eng yaxshi brendlar, qulay narxlar, o'lcham bo'yicha tanlash va tez yetkazib berish.",
+        },
       },
       {
         path: 'katalog',
         element: <LazyRoute><CatalogPage /></LazyRoute>,
-        handle: { title: 'Katalog' },
+        handle: {
+          title: 'Katalog',
+          description: "Shinalar katalogi — brend, o'lcham, mavsum va narx bo'yicha filtrlab kerakli shinani toping.",
+        },
       },
       {
         path: 'mahsulot/:id',
         element: <LazyRoute><ShopProductDetailPage /></LazyRoute>,
-        handle: { title: 'Mahsulot' },
+        // Aniq meta (nom, narx, rasm) PDP'da mahsulot yuklanganda o'rnatiladi.
+        handle: {
+          title: 'Mahsulot',
+          description: 'Shina tafsilotlari — narx, xususiyatlar va mavjudligi.',
+        },
       },
       {
         path: 'checkout',
         element: <LazyRoute><CheckoutPage /></LazyRoute>,
-        handle: { title: 'Buyurtma rasmiylashtirish' },
+        handle: {
+          title: 'Buyurtma rasmiylashtirish',
+          description: 'Buyurtmani rasmiylashtirish — yetkazib berish va to\'lov usulini tanlang.',
+        },
       },
       {
         path: 'buyurtma/:orderNo',
         element: <LazyRoute><OrderConfirmationPage /></LazyRoute>,
-        handle: { title: 'Buyurtma tasdig\'i' },
+        handle: {
+          title: 'Buyurtma tasdig\'i',
+          description: 'Buyurtmangiz qabul qilindi — holati va tafsilotlari.',
+        },
       },
       {
         path: 'buyurtmalarim',
         element: <LazyRoute><OrdersPage /></LazyRoute>,
-        handle: { title: 'Buyurtmalarim' },
+        handle: {
+          title: 'Buyurtmalarim',
+          description: 'Buyurtmalaringiz tarixi va holati.',
+        },
       },
       {
         path: 'saqlanganlar',
         element: <LazyRoute><WishlistPage /></LazyRoute>,
-        handle: { title: 'Saqlanganlar' },
+        handle: {
+          title: 'Saqlanganlar',
+          description: 'Saqlangan (sevimli) mahsulotlaringiz ro\'yxati.',
+        },
       },
       {
         path: 'solishtirish',
         element: <LazyRoute><ComparePage /></LazyRoute>,
-        handle: { title: 'Solishtirish' },
+        handle: {
+          title: 'Solishtirish',
+          description: 'Tanlangan shinalarni xususiyatlari bo\'yicha yonma-yon solishtiring.',
+        },
       },
       {
         path: '*',
         element: <LazyRoute><ShopNotFound /></LazyRoute>,
-        handle: { title: 'Topilmadi' },
+        handle: {
+          title: 'Topilmadi',
+          description: 'Siz qidirgan sahifa topilmadi.',
+        },
       },
     ],
   },
