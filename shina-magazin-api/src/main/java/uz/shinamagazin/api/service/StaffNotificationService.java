@@ -14,6 +14,7 @@ import uz.shinamagazin.api.exception.ResourceNotFoundException;
 import uz.shinamagazin.api.repository.StaffNotificationRepository;
 import uz.shinamagazin.api.repository.UserRepository;
 
+import java.math.BigDecimal;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -177,6 +178,21 @@ public class StaffNotificationService {
                 StaffNotificationType.ORDER,
                 "SALE",
                 saleId
+        );
+    }
+
+    /**
+     * Yangi storefront (do'kon) buyurtmasi bildirishnomasi.
+     * referenceType "SHOP_ORDER" — POS sotuvidan (notifyNewOrder, "SALE") farqlanadi,
+     * shunda header qo'ng'irog'idan bosilganda /shop-orders sahifasiga yo'naltirsa bo'ladi.
+     */
+    public void notifyNewShopOrder(String orderNo, String customerName, BigDecimal totalAmount, Long shopOrderId) {
+        createGlobalNotification(
+                "Yangi do'kon buyurtmasi",
+                String.format("%s — %,.0f so'm. Mijoz: %s", orderNo, totalAmount.doubleValue(), customerName),
+                StaffNotificationType.ORDER,
+                "SHOP_ORDER",
+                shopOrderId
         );
     }
 

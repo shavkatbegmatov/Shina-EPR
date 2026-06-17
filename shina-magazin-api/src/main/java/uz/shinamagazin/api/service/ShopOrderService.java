@@ -35,6 +35,7 @@ public class ShopOrderService {
 
     private final ShopOrderRepository orderRepository;
     private final ProductRepository productRepository;
+    private final StaffNotificationService staffNotificationService;
 
     private static final BigDecimal DELIVERY_FEE = new BigDecimal("30000");
     private static final BigDecimal FREE_DELIVERY_THRESHOLD = new BigDecimal("1000000");
@@ -95,7 +96,14 @@ public class ShopOrderService {
         order.setDeliveryFee(deliveryFee);
         order.setTotalAmount(subtotal.add(deliveryFee));
 
-        return ShopOrderResponse.from(orderRepository.save(order));
+        ShopOrder saved = orderRepository.save(order);
+
+        // Xodimlarga real-time bildirishnoma (header qo'ng'irog'i + WebSocket push).
+        // SaleService.notifyNewOrder bilan bir naqsh; referenceType "SHOP_ORDER".
+        staffNotificationService.notifyNewShopOrder(
+                saved.getOrderNo(), saved.getCustomerName(), saved.getTotalAmount(), saved.getId());
+
+        return ShopOrderResponse.from(saved);
     }
 
     @Transactional(readOnly = true)
