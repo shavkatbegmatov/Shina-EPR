@@ -17,6 +17,11 @@ export default defineConfig({
     setupFiles: ['./src/test/setup.ts'],
     css: false,
     include: ['src/**/*.{test,spec}.{ts,tsx}'],
+    // Default 'forks' pool ba'zi Windows mashinalarda (antivirus har bir node.exe
+    // spawn'ini ushlaganda) "Timeout starting forks runner" xatosini beradi —
+    // test fayllarning bir qismi ishga tushmaydi. 'threads' (worker_threads)
+    // jarayon yaratmaydi, yengilroq va ishonchliroq; Linux CI'da ham ishlaydi.
+    pool: 'threads',
   },
   define: {
     global: 'globalThis',
