@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { Link, NavLink } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
-import { ShoppingCart, Menu, X, Sun, Moon, Globe, Heart, Scale } from 'lucide-react';
+import { ShoppingCart, Menu, X, Sun, Moon, Globe, Heart, Scale, User } from 'lucide-react';
 import { Button, Badge, buttonVariants, cn } from '@/ui';
 import { useThemeStore } from '../../../shared/theme/themeStore';
 import { useCartStore, selectCartCount } from '../../store/cartStore';
@@ -58,6 +58,9 @@ export function ShopHeader({ onOpenCart }: ShopHeaderProps) {
           <Button variant="ghost" size="sm" iconOnly onClick={toggleTheme} title={t('shop.theme.toggle')} aria-label={t('shop.theme.toggle')}>
             {isDark ? <Moon size={18} /> : <Sun size={18} />}
           </Button>
+          <Link to="/kabinet" className={cn(buttonVariants({ variant: 'ghost', size: 'sm', iconOnly: true }), 'hidden sm:inline-flex')} title={t('shop.nav.account')} aria-label={t('shop.nav.account')}>
+            <User size={18} />
+          </Link>
           <Link to="/magazin/solishtirish" className={cn(buttonVariants({ variant: 'ghost', size: 'sm', iconOnly: true }), 'relative hidden sm:inline-flex')} title={t('shop.compare.title')} aria-label={t('shop.compare.title')}>
             <Scale size={18} />
             {compareCount > 0 && (
@@ -98,6 +101,7 @@ export function ShopHeader({ onOpenCart }: ShopHeaderProps) {
             <NavLink to="/magazin/saqlanganlar" onClick={() => setMenuOpen(false)} className="rounded-lg px-2 py-2.5 text-sm font-medium hover:bg-base-200">{t('shop.nav.wishlist')}</NavLink>
             <NavLink to="/magazin/solishtirish" onClick={() => setMenuOpen(false)} className="rounded-lg px-2 py-2.5 text-sm font-medium hover:bg-base-200">{t('shop.compare.title')}</NavLink>
             <NavLink to="/magazin/buyurtmalarim" onClick={() => setMenuOpen(false)} className="rounded-lg px-2 py-2.5 text-sm font-medium hover:bg-base-200">{t('shop.nav.orders')}</NavLink>
+            <Link to="/kabinet" onClick={() => setMenuOpen(false)} className="rounded-lg px-2 py-2.5 text-sm font-medium hover:bg-base-200">{t('shop.nav.account')}</Link>
           </nav>
         </div>
       )}

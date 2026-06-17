@@ -1,12 +1,13 @@
 import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
-import { Check, ChevronLeft, ChevronRight, Truck, Store, Banknote, CreditCard, Wallet, ShoppingBag } from 'lucide-react';
+import { Check, ChevronLeft, ChevronRight, Truck, Store, Banknote, CreditCard, Wallet, ShoppingBag, UserCheck } from 'lucide-react';
 import { Card, Button, EmptyState, buttonVariants, cn } from '@/ui';
 import { formatCurrency } from '../../config/constants';
 import { useCartStore, selectCartSubtotal } from '../store/cartStore';
 import { useOrderStore, generateOrderNo, calcDeliveryFee, type PaymentMethod, type DeliveryMethod } from '../store/orderStore';
 import { ProductImage } from '../components/ProductImage';
+import { usePortalAuthStore } from '../../portal/store/portalAuthStore';
 
 const STEPS = ['contact', 'delivery', 'payment', 'review'] as const;
 
@@ -32,10 +33,14 @@ export function CheckoutPage() {
   const subtotal = useCartStore(selectCartSubtotal);
   const clear = useCartStore((s) => s.clear);
   const addOrder = useOrderStore((s) => s.addOrder);
+  const portalCustomer = usePortalAuthStore((s) => s.customer);
+  const isPortalAuth = usePortalAuthStore((s) => s.isAuthenticated);
 
   const [stepIdx, setStepIdx] = useState(0);
   const [form, setForm] = useState<CheckoutForm>({
-    name: '', phone: '', email: '', deliveryMethod: 'delivery', address: '', note: '', payment: 'cash',
+    name: isPortalAuth && portalCustomer ? portalCustomer.fullName : '',
+    phone: isPortalAuth && portalCustomer ? portalCustomer.phone : '',
+    email: '', deliveryMethod: 'delivery', address: '', note: '', payment: 'cash',
   });
   const [errors, setErrors] = useState<Record<string, string>>({});
 
@@ -119,6 +124,16 @@ export function CheckoutPage() {
         <Card className="p-6">
           {stepIdx === 0 && (
             <div className="space-y-4">
+              {isPortalAuth && portalCustomer ? (
+                <div className="surface-soft flex items-center gap-2 rounded-xl p-3 text-sm">
+                  <UserCheck size={16} className="shrink-0 text-primary" />
+                  <span>{t('shop.checkout.loggedInAs', { name: portalCustomer.fullName })}</span>
+                </div>
+              ) : (
+                <Link to="/kabinet/kirish" className="inline-flex items-center gap-1.5 text-sm font-medium text-primary hover:underline">
+                  {t('shop.checkout.haveAccount')} <ChevronRight size={14} />
+                </Link>
+              )}
               <div>
                 <label className="mb-1 block text-sm font-medium">{t('shop.checkout.name')} *</label>
                 <input value={form.name} onChange={(e) => set('name', e.target.value)} className={inputClass('name')} placeholder={t('shop.checkout.namePlaceholder')} />
