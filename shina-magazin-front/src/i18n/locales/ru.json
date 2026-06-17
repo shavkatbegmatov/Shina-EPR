@@ -150,7 +150,8 @@
       "employees": "Сотрудники",
       "roles": "Роли",
       "auditLogs": "Журнал аудита",
-      "settings": "Настройки"
+      "settings": "Настройки",
+      "shopOrders": "Заказы магазина"
     },
     "header": {
       "home": "Главная",
@@ -1628,6 +1629,28 @@
       "subPurchases": "Документы прихода",
       "subWarehouse": "Контроль запасов",
       "subRoles": "Управление правами"
+    },
+    "shopOrders": {
+      "title": "Заказы магазина",
+      "subtitle": "Клиентские заказы из интернет-магазина",
+      "orderNo": "Заказ №",
+      "date": "Дата",
+      "customer": "Клиент",
+      "items": "Товары",
+      "itemsCount": "{{count}} шт",
+      "total": "Итого",
+      "statusLabel": "Статус",
+      "changeStatus": "Изменить статус",
+      "all": "Все",
+      "statusUpdated": "Статус обновлён",
+      "empty": "Заказов нет",
+      "emptyHint": "Пока нет заказов из магазина.",
+      "status": {
+        "NEW": "Новый",
+        "CONFIRMED": "Подтверждён",
+        "COMPLETED": "Завершён",
+        "CANCELLED": "Отменён"
+      }
     }
   },
   "shop": {

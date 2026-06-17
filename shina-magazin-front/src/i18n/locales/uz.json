@@ -150,7 +150,8 @@
       "employees": "Xodimlar",
       "roles": "Rollar",
       "auditLogs": "Audit Loglar",
-      "settings": "Sozlamalar"
+      "settings": "Sozlamalar",
+      "shopOrders": "Do'kon buyurtmalari"
     },
     "header": {
       "home": "Bosh sahifa",
@@ -1628,6 +1629,28 @@
       "subPurchases": "Kirim hujjatlari",
       "subWarehouse": "Zaxira nazorati",
       "subRoles": "Ruxsatlar boshqaruvi"
+    },
+    "shopOrders": {
+      "title": "Do'kon buyurtmalari",
+      "subtitle": "Storefront orqali kelgan mijoz buyurtmalari",
+      "orderNo": "Buyurtma №",
+      "date": "Sana",
+      "customer": "Mijoz",
+      "items": "Mahsulot",
+      "itemsCount": "{{count}} dona",
+      "total": "Jami",
+      "statusLabel": "Holat",
+      "changeStatus": "Holatni o'zgartirish",
+      "all": "Hammasi",
+      "statusUpdated": "Holat yangilandi",
+      "empty": "Buyurtmalar yo'q",
+      "emptyHint": "Hozircha storefront buyurtmasi kelmagan.",
+      "status": {
+        "NEW": "Yangi",
+        "CONFIRMED": "Tasdiqlangan",
+        "COMPLETED": "Yakunlangan",
+        "CANCELLED": "Bekor qilingan"
+      }
     }
   },
   "shop": {

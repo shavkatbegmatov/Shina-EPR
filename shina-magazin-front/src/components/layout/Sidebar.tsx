@@ -16,6 +16,7 @@ import {
   UserCog,
   Shield,
   FileText,
+  ClipboardList,
 } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { useAuthStore } from '../../store/authStore';
@@ -31,6 +32,7 @@ const menuItems = [
   { path: '/products', icon: Package, labelKey: 'erp.nav.products', permission: PermissionCode.PRODUCTS_VIEW },
   { path: '/pos', icon: ShoppingCart, labelKey: 'erp.nav.pos', permission: PermissionCode.SALES_CREATE },
   { path: '/sales', icon: CreditCard, labelKey: 'erp.nav.sales', permission: PermissionCode.SALES_VIEW },
+  { path: '/shop-orders', icon: ClipboardList, labelKey: 'erp.nav.shopOrders', permission: PermissionCode.SALES_VIEW },
   { path: '/customers', icon: Users, labelKey: 'erp.nav.customers', permission: PermissionCode.CUSTOMERS_VIEW },
   { path: '/debts', icon: CreditCard, labelKey: 'erp.nav.debts', permission: PermissionCode.DEBTS_VIEW },
   { path: '/warehouse', icon: Warehouse, labelKey: 'erp.nav.warehouse', permission: PermissionCode.WAREHOUSE_VIEW },

@@ -13,7 +13,9 @@ import uz.shinamagazin.api.dto.request.CreateShopOrderRequest;
 import uz.shinamagazin.api.dto.response.ApiResponse;
 import uz.shinamagazin.api.dto.response.PagedResponse;
 import uz.shinamagazin.api.dto.response.ShopOrderResponse;
+import uz.shinamagazin.api.enums.PermissionCode;
 import uz.shinamagazin.api.enums.ShopOrderStatus;
+import uz.shinamagazin.api.security.RequiresPermission;
 import uz.shinamagazin.api.service.ShopOrderService;
 
 /**
@@ -42,6 +44,7 @@ public class ShopOrderController {
 
     @GetMapping("/{orderNo}")
     @Operation(summary = "Get order", description = "Buyurtma raqami bo'yicha buyurtma")
+    @RequiresPermission(PermissionCode.SALES_VIEW)
     public ResponseEntity<ApiResponse<ShopOrderResponse>> getOrder(@PathVariable String orderNo) {
         return ResponseEntity.ok(ApiResponse.success(shopOrderService.getByOrderNo(orderNo)));
     }
@@ -50,6 +53,7 @@ public class ShopOrderController {
 
     @GetMapping
     @Operation(summary = "List orders (staff)", description = "Buyurtmalar ro'yxati — xodim uchun")
+    @RequiresPermission(PermissionCode.SALES_VIEW)
     public ResponseEntity<ApiResponse<PagedResponse<ShopOrderResponse>>> listOrders(
             @RequestParam(required = false) ShopOrderStatus status,
             @PageableDefault(size = 20) Pageable pageable) {
@@ -59,6 +63,7 @@ public class ShopOrderController {
 
     @PatchMapping("/{orderNo}/status")
     @Operation(summary = "Update order status (staff)", description = "Buyurtma holatini yangilash")
+    @RequiresPermission(PermissionCode.SALES_VIEW)
     public ResponseEntity<ApiResponse<ShopOrderResponse>> updateStatus(
             @PathVariable String orderNo,
             @RequestParam ShopOrderStatus status) {

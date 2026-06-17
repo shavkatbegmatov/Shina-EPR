@@ -33,6 +33,7 @@ const EmployeeDetailPage = lazy(() => import('../pages/employees/EmployeeDetailP
 const RolesPage = lazy(() => import('../pages/roles/RolesPage').then(m => ({ default: m.RolesPage })));
 const ProfilePage = lazy(() => import('../pages/profile/ProfilePage').then(m => ({ default: m.ProfilePage })));
 const AuditLogsPage = lazy(() => import('../pages/audit-logs/AuditLogsPage').then(m => ({ default: m.AuditLogsPage })));
+const ShopOrdersPage = lazy(() => import('../pages/shop-orders/ShopOrdersPage').then(m => ({ default: m.ShopOrdersPage })));
 
 // Lazy-loaded storefront (Protektor magazin) — ommaviy
 const ShopLayout = lazy(() => import('../shop/components/layout/ShopLayout'));
@@ -146,6 +147,17 @@ export const router = createBrowserRouter([
           </ProtectedRoute>
         ),
         handle: { title: 'Sotuv tafsiloti' },
+      },
+      {
+        path: 'shop-orders',
+        element: (
+          <ProtectedRoute permission={PermissionCode.SALES_VIEW}>
+            <LazyRoute>
+              <ShopOrdersPage />
+            </LazyRoute>
+          </ProtectedRoute>
+        ),
+        handle: { title: "Do'kon buyurtmalari" },
       },
       {
         path: 'customers',
