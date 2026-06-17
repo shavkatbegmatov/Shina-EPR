@@ -1,6 +1,8 @@
 package uz.shinamagazin.api.service;
 
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import uz.shinamagazin.api.dto.request.CreateShopOrderRequest;
@@ -92,6 +94,24 @@ public class ShopOrderService {
         ShopOrder order = orderRepository.findByOrderNo(orderNo)
                 .orElseThrow(() -> new ResourceNotFoundException("Buyurtma", "orderNo", orderNo));
         return ShopOrderResponse.from(order);
+    }
+
+    /** Xodim uchun: buyurtmalar ro'yxati (eng yangi birinchi), ixtiyoriy holat filtri. */
+    @Transactional(readOnly = true)
+    public Page<ShopOrderResponse> getOrders(ShopOrderStatus status, Pageable pageable) {
+        Page<ShopOrder> page = (status == null)
+                ? orderRepository.findAllByOrderByCreatedAtDesc(pageable)
+                : orderRepository.findByStatusOrderByCreatedAtDesc(status, pageable);
+        return page.map(ShopOrderResponse::from);
+    }
+
+    /** Xodim uchun: buyurtma holatini yangilash (tasdiqlash/bekor qilish/yakunlash). */
+    @Transactional
+    public ShopOrderResponse updateStatus(String orderNo, ShopOrderStatus status) {
+        ShopOrder order = orderRepository.findByOrderNo(orderNo)
+                .orElseThrow(() -> new ResourceNotFoundException("Buyurtma", "orderNo", orderNo));
+        order.setStatus(status);
+        return ShopOrderResponse.from(orderRepository.save(order));
     }
 
     private BigDecimal calcDeliveryFee(ShopDeliveryMethod method, BigDecimal subtotal) {

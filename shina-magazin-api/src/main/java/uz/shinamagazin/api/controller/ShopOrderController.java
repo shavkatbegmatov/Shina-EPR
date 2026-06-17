@@ -4,12 +4,16 @@ import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.web.PageableDefault;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import uz.shinamagazin.api.dto.request.CreateShopOrderRequest;
 import uz.shinamagazin.api.dto.response.ApiResponse;
+import uz.shinamagazin.api.dto.response.PagedResponse;
 import uz.shinamagazin.api.dto.response.ShopOrderResponse;
+import uz.shinamagazin.api.enums.ShopOrderStatus;
 import uz.shinamagazin.api.service.ShopOrderService;
 
 /**
@@ -40,5 +44,25 @@ public class ShopOrderController {
     @Operation(summary = "Get order", description = "Buyurtma raqami bo'yicha buyurtma")
     public ResponseEntity<ApiResponse<ShopOrderResponse>> getOrder(@PathVariable String orderNo) {
         return ResponseEntity.ok(ApiResponse.success(shopOrderService.getByOrderNo(orderNo)));
+    }
+
+    // --- Xodim (himoyalangan; permitAll EMAS) ---
+
+    @GetMapping
+    @Operation(summary = "List orders (staff)", description = "Buyurtmalar ro'yxati — xodim uchun")
+    public ResponseEntity<ApiResponse<PagedResponse<ShopOrderResponse>>> listOrders(
+            @RequestParam(required = false) ShopOrderStatus status,
+            @PageableDefault(size = 20) Pageable pageable) {
+        return ResponseEntity.ok(ApiResponse.success(
+                PagedResponse.from(shopOrderService.getOrders(status, pageable))));
+    }
+
+    @PatchMapping("/{orderNo}/status")
+    @Operation(summary = "Update order status (staff)", description = "Buyurtma holatini yangilash")
+    public ResponseEntity<ApiResponse<ShopOrderResponse>> updateStatus(
+            @PathVariable String orderNo,
+            @RequestParam ShopOrderStatus status) {
+        return ResponseEntity.ok(ApiResponse.success("Holat yangilandi",
+                shopOrderService.updateStatus(orderNo, status)));
     }
 }
