@@ -54,12 +54,18 @@
 
 ---
 
-## 3. 🟡 B) Qaror talab qiladi (avval tanlang, keyin Claude qiladi)
+## 3. 🟡 B) Qaror talab qiladi → ✅ QAROR QILINDI (18.06.2026)
 
-- [ ] **Karta-acquiring:** hozir `CARD → Payme`ga yo'naltirilgan (`ShopPaymentService.initiate`). Alohida karta provayderi (Uzcard/Humo acquiring) kerakmi yoki Payme/Click yetarlimi?
-- [ ] **Magazin manzili:** `/magazin`da qoladimi yoki **domen ildizida** (`/`)? (ERP'ni `/admin`ga ko'chirish kerak bo'ladi — `src/router/index.tsx`). SEO uchun muhim.
-- [ ] **SEO/SSR:** ommaviy katalog SPA — qidiruv tizimlari uchun SSR/prerender kerakmi (masalan Vite SSR yoki statik prerender)?
-- [ ] **Mahsulot rasmlari saqlash joyi:** server diski / S3 / CDN? Qaror bersangiz — yuklash oqimi quriladi (pastda #C4).
+- [x] **B1 — Karta-acquiring:** ✅ **Payme/Click yetarli** — karta to'lovi Payme/Click orqali (hozirgi `CARD → Payme` yo'naltirish to'g'ri). Alohida Uzcard/Humo acquiring shart emas. Kod o'zgarmaydi.
+- [x] **B2 — Magazin manzili:** ✅ **Do'kon domen ildizida (`/`)**, ERP `/admin/...` ga ko'chiriladi. SEO/ulashish uchun. → `src/router/index.tsx` + barcha ERP ichki havolalari + storefront `/magazin` → `/`.
+- [x] **B3 — SEO/SSR:** ✅ **Prerender (SSG)** kerak — storefront havolalari ijtimoiy tarmoqlarda (Telegram/Instagram) ulashiladi, link-preview (og:image/title) crawler'ga to'liq HTML kerak. To'liq SSR EMAS (Node server qimmat); Vite statik prerender (`vite-plugin-ssg`/`react-snap` kabi).
+- [x] **B4 — Mahsulot rasmlari:** ✅ **S3 / MinIO** (obyekt-saqlash). Rasm upload backend (presigned URL yoki proxy) + `Product.imageUrl` to'liq URL. og:image va C5 shunga tayanadi.
+
+**B-implement tartibi (bog'liqlik bo'yicha):**
+1. **B2 routing** — do'kon ildizga, ERP `/admin` (asos; prerender shunga tayanadi). Eng katta/xavfli — alohida bosqich, diqqat bilan.
+2. **B4 rasm (S3/MinIO) + C5 upload** — mahsulot rasmlari (og:image uchun ham kerak).
+3. **B3 prerender** — routing + rasm tayyor bo'lgach, `/` (do'kon) sahifalarini statik HTML'ga.
+4. **B1** — kod o'zgarmaydi (Payme/Click).
 
 ---
 
@@ -125,7 +131,7 @@ $env:JAVA_HOME="C:\Users\Sh.Begmatov\.jdks\ms-21.0.11"   # JBR 25 Lombok'ni buza
 
 1. **AV istisno** qo'shing (yuqorida) → lokal muhit barqaror bo'ladi. _(Uy mashinasida muammo kuzatilmadi.)_
 2. ✅ **C guruhi** (C1 test → C2 bildirishnoma → C3 SEO → C4 to'lov holati) — **bajarildi** (18.06.2026). C5 qoldi (B4 qarorga bog'liq).
-3. **B guruhi** qarorlarini bering → tegishli ishlar (rasm yuklash/C5, root routing, SSR). ← **keyingi qadam**
+3. ✅ **B guruhi** qarorlari berildi (3-bo'lim). Implement: **B2 routing → B4 rasm/C5 → B3 prerender** (B1 kod o'zgarmaydi). ← **keyingi qadam: B2 routing**
 4. **A guruhi** — kreditsiallar bilan to'lovni jonli qiling + DB'da verify (C2/C4'ni ham jonli sinash).
 
 > Har bosqichda: build + test yashil → commit → push (avvalgi uslub).
