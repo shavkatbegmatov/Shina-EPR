@@ -135,3 +135,65 @@ $env:JAVA_HOME="C:\Users\Sh.Begmatov\.jdks\ms-21.0.11"   # JBR 25 Lombok'ni buza
 4. **A guruhi** — kreditsiallar bilan to'lovni jonli qiling + DB'da verify (C2/C4'ni ham jonli sinash).
 
 > Har bosqichda: build + test yashil → commit → push (avvalgi uslub).
+
+---
+
+## 8. 🔨 Keyingi implement — B guruhi (batafsil; boshqa mashinada davom uchun)
+
+> **Holat (18.06.2026):** C1–C4 ✅ bajarildi va push qilindi; B1–B4 qaror ✅ qilindi (3-bo'lim).
+> `master` toza va `origin/master` bilan sinxron. **Endi implement bosqichi boshlanadi — hali kod yozilmagan.**
+>
+> **Boshlashdan oldin (yangi mashinada):**
+> 1. `git pull` (eng so'nggi `master`).
+> 2. `cd shina-magazin-front && npm install` (yangi paketlar bo'lishi mumkin).
+> 3. Baseline: `npm run build` + `npm test` (kutilgan: **91/91** yashil); backend `mvnw compile` (JDK 21).
+> 4. So'ng quyidagi tartib: **B2 → B4/C5 → B3**.
+
+### B2 — Routing: do'kon ildizga (`/`), ERP `/admin`ga  ← BIRINCHI, eng katta/xavfli
+
+**Maqsad:** `domen/` = do'kon (storefront), `domen/admin/...` = ERP. Portal `/kabinet/*` **o'zgarmaydi**.
+
+**Ko'lam (grep, 18.06.2026):** **92** ta mutlaq havola (`to=` / `navigate(`) **39 faylda**; **55** ta `/magazin` reference **17 faylda** (storefront).
+
+**O'zgarishlar:**
+1. **Router** (`src/router/index.tsx`):
+   - ERP: `path: '/'` (`MainLayout`) → `path: '/admin'`. `index` route → `dashboard` (yoki `/admin` → `/admin/dashboard` redirect).
+   - Storefront: `path: '/magazin'` (`ShopLayout`) → `path: '/'`. Ichki yo'llar (`katalog`, `mahsulot/:id`, `checkout`, `buyurtma/:orderNo`, `buyurtmalarim`, `saqlanganlar`, `solishtirish`) relativ — o'zgarmaydi.
+   - Oxirgi catch-all `<Navigate to="/" replace />` ni qayta ko'rib chiqish (endi `/` = do'kon).
+   - Auth route'lar (`/login`, `/register`, `/change-password`): tavsiya `/admin/login` ... (ERP auth) — yoki qoldirib, faqat redirect'larni moslash.
+   - **C3 route handle'lar** (title/description) shu faylda — storefront yo'llari o'zgarganda saqlanadi.
+2. **ERP ichki havolalar** `/...` → `/admin/...`: `components/layout/Sidebar.tsx`, `components/layout/Header.tsx` (5), va barcha `src/pages/**` (`to=` / `navigate()`). Maslahat: `adminPath()` helper yoki ehtiyotkor topib-almashtirish; har birini build bilan tekshirish.
+3. **Storefront havolalar** `/magazin/...` → `/...`: `src/shop/**` 17 fayl — `ShopHeader.tsx` (13), `ShopHomePage.tsx` (9), `ShopFooter.tsx`, `CheckoutPage`, `OrderConfirmationPage`, `ProductCard`, `QuickViewModal`, `ShopSearchBox`, `TireSizeFinder`, `CartDrawer`, `ComparePage`, `OrdersPage`, `WishlistPage`, `ShopNotFound`.
+4. **Auth oqimi:** `pages/auth/LoginPage.tsx` (kirgach redirect), `components/common/ProtectedRoute`, `hooks/useSessionMonitor.ts` + `useCrossTabSync.ts` (`navigate('/login')`), `AccessDenied.tsx`.
+5. **Backend:** o'zgarmaydi (API yo'llari `/v1/...` bir xil; `vite.config.ts` proxy `/api` ham o'sha). Faqat frontend routing.
+
+**Xavf:** bitta havola o'tkazib yuborilsa → 404. **Tekshiruv:** `npm run build` (TS) + `npm test` + qo'lda: do'kon `/`, ERP `/admin` (login→dashboard), portal `/kabinet`, 404.
+**Tavsiya bosqichlar:** (a) router struktura → (b) storefront `/magazin`→`/` → (c) ERP havolalar `/admin` → (d) auth redirect → (e) build+test+qo'lda klik. Har bosqich build yashil → commit.
+
+### B4 — Mahsulot rasmlari: S3 / MinIO  +  C5 upload oqimi
+
+**Backend (`shina-magazin-api`):**
+- Obyekt-saqlash klienti: AWS S3 SDK yoki MinIO Java client. Config `application.yml` → masalan `shop.storage.{endpoint,bucket,accessKey,secretKey,publicBaseUrl}`. Dev uchun lokal **MinIO** (docker) qulay.
+- Upload endpoint: tavsiya **backend proxy** — `POST /v1/products/{id}/image` (`MultipartFile` → S3'ga yuklaydi → `Product.imageUrl` ni to'liq public URL bilan to'ldiradi). Himoya: `PRODUCTS_EDIT`. (Muqobil: presigned PUT URL — frontend to'g'ridan S3'ga; keyinroq.)
+- `Product.imageUrl` ustuni **allaqachon bor** (entity + DTO + `ProductRequest`). Faqat to'ldirish kerak.
+- Rasm o'qish ommaviy bo'lsin (S3 bucket public-read yoki CDN/`publicBaseUrl`).
+
+**Frontend (`shina-magazin-front`):**
+- ERP `src/pages/products/ProductDetailPage.tsx` / `ProductsPage.tsx` ga rasm upload UI (drag-drop yoki tugma → `POST .../image`).
+- Storefront `src/shop/components/ProductImage.tsx` — **kod tayyor**: `src` bo'lsa rasm, bo'lmasa SVG placeholder. Real `imageUrl` kelishi bilan ishlaydi.
+- Bu C5 ni ham yopadi.
+
+### B3 — Prerender (SSG) — B2 va B4 dan KEYIN
+
+**Maqsad:** do'kon sahifalarini (`/`, `/katalog`, `/mahsulot/:id`...) build vaqtida statik HTML'ga "pishirish" → Google + Telegram/Instagram link-preview boshlang'ich HTML'da to'liq kontent (C3 meta teglari + og:image) ni ko'radi.
+- **Vosita:** boshlash uchun **`react-snap`** (build'dan keyin puppeteer snapshot — SPA'ga minimal o'zgarish) yoki kuchliroq `vike`/`vite-plugin-ssg`. Tavsiya: avval `react-snap`.
+- **Bog'liqlik:** B2 (qaysi yo'llar — `/`, `/katalog`, ...) + B4 (og:image real S3 rasm).
+- **Dinamik `/mahsulot/:id`:** build vaqtida katalog API'dan ID ro'yxatini olib, har mahsulotga statik sahifa kerak (mahsulot ko'p bo'lsa — hammasi yoki top N + qolganlari CSR). Bu qadam alohida rejalashtiriladi.
+- **Eslatma:** prerender CSR'ni almashtirmaydi — ustiga qo'shadi (hydration). C3 `useDocumentMeta` mantiqi saqlanadi.
+
+### B1 — Acquiring: kod o'zgarmaydi
+Payme/Click yetarli (qaror B1). Karta to'lovi Payme/Click orqali. Jonli sozlash **A guruhida** (kreditsiallar + webhook URL + DB verify).
+
+---
+
+> **Qisqacha keyingi qadam:** `git pull` → `npm install` → baseline yashil → **B2 routing** (router struktura'dan boshlang, bosqichma-bosqich, har qadamda build).
