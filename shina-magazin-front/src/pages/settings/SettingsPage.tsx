@@ -26,6 +26,7 @@ import { useThemeStore } from '../../shared/theme/themeStore';
 import { PermissionCode } from '../../hooks/usePermission';
 import { PermissionGate } from '../../components/common/PermissionGate';
 import { Button } from '@/ui';
+import { ProductImage } from '../../shop/components/ProductImage';
 import type { Brand, Category } from '../../types';
 
 type Tab = 'appearance' | 'brands' | 'categories' | 'debts';
@@ -71,6 +72,7 @@ export function SettingsPage() {
 
   // Debt settings
   const [debtDueDays, setDebtDueDays] = useState(DEFAULT_DEBT_DUE_DAYS);
+  const [imageFallback, setImageFallback] = useState<'SVG' | 'PHOTO'>('SVG');
   const [settingsLoading, setSettingsLoading] = useState(true);
   const [settingsSaving, setSettingsSaving] = useState(false);
 
@@ -79,6 +81,7 @@ export function SettingsPage() {
     try {
       const data = await settingsApi.get();
       setDebtDueDays(data.debtDueDays);
+      setImageFallback(data.imageFallback === 'PHOTO' ? 'PHOTO' : 'SVG');
     } catch (error) {
       console.error('Failed to load settings:', error);
     } finally {
@@ -247,8 +250,9 @@ export function SettingsPage() {
   const handleSaveSettings = async () => {
     setSettingsSaving(true);
     try {
-      const data = await settingsApi.update({ debtDueDays });
+      const data = await settingsApi.update({ debtDueDays, imageFallback });
       setDebtDueDays(data.debtDueDays);
+      setImageFallback(data.imageFallback === 'PHOTO' ? 'PHOTO' : 'SVG');
       toast.success(t('erp.settings.settingsSavedToast'));
     } catch (error) {
       console.error('Failed to save settings:', error);
@@ -387,6 +391,61 @@ export function SettingsPage() {
                   <span className="badge badge-primary badge-sm">{t('erp.settings.themeSelected')}</span>
                 )}
               </button>
+            </div>
+          </div>
+
+          {/* Storefront rasm ko'rinishi (rasmsiz mahsulotlar) */}
+          <div className="surface-card p-6">
+            <h2 className="text-lg font-semibold mb-1">{t('erp.settings.imageFallbackTitle')}</h2>
+            <p className="text-sm text-base-content/60 mb-6">{t('erp.settings.imageFallbackSubtitle')}</p>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <button
+                type="button"
+                className={clsx(
+                  'flex flex-col items-center gap-3 p-6 rounded-2xl border-2 transition-all',
+                  imageFallback === 'SVG'
+                    ? 'border-primary bg-primary/5 shadow-lg'
+                    : 'border-base-300 hover:border-primary/50 hover:bg-base-200/50'
+                )}
+                onClick={() => setImageFallback('SVG')}
+              >
+                <div className="h-20 w-20 overflow-hidden rounded-xl border border-base-300">
+                  <ProductImage alt="SVG" fallback="svg" />
+                </div>
+                <div className="text-center">
+                  <p className="font-semibold">{t('erp.settings.imageFallbackSvg')}</p>
+                  <p className="text-xs text-base-content/50">{t('erp.settings.imageFallbackSvgDesc')}</p>
+                </div>
+                {imageFallback === 'SVG' && (
+                  <span className="badge badge-primary badge-sm">{t('erp.settings.themeSelected')}</span>
+                )}
+              </button>
+              <button
+                type="button"
+                className={clsx(
+                  'flex flex-col items-center gap-3 p-6 rounded-2xl border-2 transition-all',
+                  imageFallback === 'PHOTO'
+                    ? 'border-primary bg-primary/5 shadow-lg'
+                    : 'border-base-300 hover:border-primary/50 hover:bg-base-200/50'
+                )}
+                onClick={() => setImageFallback('PHOTO')}
+              >
+                <div className="h-20 w-20 overflow-hidden rounded-xl border border-base-300">
+                  <ProductImage alt="PHOTO" fallback="photo" />
+                </div>
+                <div className="text-center">
+                  <p className="font-semibold">{t('erp.settings.imageFallbackPhoto')}</p>
+                  <p className="text-xs text-base-content/50">{t('erp.settings.imageFallbackPhotoDesc')}</p>
+                </div>
+                {imageFallback === 'PHOTO' && (
+                  <span className="badge badge-primary badge-sm">{t('erp.settings.themeSelected')}</span>
+                )}
+              </button>
+            </div>
+            <div className="mt-6 flex justify-end">
+              <Button variant="primary" onClick={handleSaveSettings} disabled={settingsSaving}>
+                {settingsSaving ? <span className="loading loading-spinner loading-sm" /> : t('common.save')}
+              </Button>
             </div>
           </div>
         </div>

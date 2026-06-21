@@ -693,6 +693,12 @@
       "debtDueDaysHint": "Masalan: 30 kun. Bu qiymat faqat yangi qarzlar uchun ishlaydi.",
       "settingsSavedToast": "Sozlamalar yangilandi",
       "settingsSaveError": "Sozlamalarni saqlashda xatolik",
+      "imageFallbackTitle": "Rasmsiz mahsulot ko'rinishi",
+      "imageFallbackSubtitle": "Magazinda rasmi yo'q mahsulotlar qanday ko'rsatiladi",
+      "imageFallbackSvg": "Vektor (SVG)",
+      "imageFallbackSvgDesc": "Yengil, doim ishlaydi",
+      "imageFallbackPhoto": "Shina fotosi",
+      "imageFallbackPhotoDesc": "\"Rasm mavjud emas\" yorlig'i bilan",
       "editBrandTitle": "Brendni tahrirlash",
       "editBrandSubtitle": "Brend ma'lumotlarini yangilang",
       "newBrandSubtitle": "Yangi brend qo'shing",
@@ -1745,7 +1751,8 @@
       "sku": "Artikul (SKU)",
       "specs": "Xususiyatlar",
       "backToCatalog": "Katalogga qaytish",
-      "related": "O'xshash mahsulotlar"
+      "related": "O'xshash mahsulotlar",
+      "noImage": "Rasm mavjud emas"
     },
     "cart": {
       "title": "Savat",

@@ -693,6 +693,12 @@
       "debtDueDaysHint": "Например: 30 дней. Это значение применяется только к новым долгам.",
       "settingsSavedToast": "Настройки обновлены",
       "settingsSaveError": "Ошибка при сохранении настроек",
+      "imageFallbackTitle": "Вид товара без фото",
+      "imageFallbackSubtitle": "Как показываются товары без изображения в магазине",
+      "imageFallbackSvg": "Вектор (SVG)",
+      "imageFallbackSvgDesc": "Лёгкий, всегда работает",
+      "imageFallbackPhoto": "Фото шины",
+      "imageFallbackPhotoDesc": "С пометкой «нет фото»",
       "editBrandTitle": "Редактировать бренд",
       "editBrandSubtitle": "Обновите данные бренда",
       "newBrandSubtitle": "Добавьте новый бренд",
@@ -1745,7 +1751,8 @@
       "sku": "Артикул (SKU)",
       "specs": "Характеристики",
       "backToCatalog": "Вернуться в каталог",
-      "related": "Похожие товары"
+      "related": "Похожие товары",
+      "noImage": "Изображение отсутствует"
     },
     "cart": {
       "title": "Корзина",

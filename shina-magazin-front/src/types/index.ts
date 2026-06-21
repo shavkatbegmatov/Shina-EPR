@@ -41,10 +41,12 @@ export interface CredentialsInfo {
 // Settings Types
 export interface AppSettings {
   debtDueDays: number;
+  imageFallback?: string; // 'SVG' | 'PHOTO' — storefront rasmsiz mahsulot ko'rinishi
 }
 
 export interface SettingsUpdateRequest {
   debtDueDays: number;
+  imageFallback?: string; // 'SVG' | 'PHOTO'
 }
 
 // Permission Types

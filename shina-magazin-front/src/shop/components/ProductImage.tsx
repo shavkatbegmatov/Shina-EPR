@@ -1,17 +1,32 @@
+import { useTranslation } from 'react-i18next';
 import { cn } from '@/ui';
+import { useStorefrontImageFallback } from '../data/useStorefrontImageFallback';
+
+/** Rasm bo'lmaganda ko'rsatiladigan fallback turi (adminkadan sozlanadi). */
+export type ImageFallbackMode = 'svg' | 'photo';
 
 interface ProductImageProps {
   src?: string;
   alt: string;
   className?: string;
+  /** Fallback: 'svg' (vektor pleysxolder) yoki 'photo' (shina rasmi + "rasm mavjud emas" yorlig'i). */
+  fallback?: ImageFallbackMode;
 }
 
+/** Rasmsiz mahsulot uchun lokal shina fotosi (public/) — offline ham ishlaydi. */
+const NO_IMAGE_PHOTO = '/no-image-tire.png';
+
 /**
- * Mahsulot rasmi. Rasm bo'lsa uni ko'rsatadi, aks holda brendga mos
- * shina SVG pleysxolderi (teal halqa + protektor tishlari). Tashqi
- * tarmoqqa bog'liq emas — offline ham to'g'ri ko'rinadi.
+ * Mahsulot rasmi. Rasm bo'lsa uni ko'rsatadi; aks holda adminkada tanlangan
+ * fallback'ni: 'svg' — brendga mos vektor pleysxolder (tashqi tarmoqqa bog'liq emas),
+ * 'photo' — lokal shina fotosi + "Rasm mavjud emas" yorlig'i.
  */
-export function ProductImage({ src, alt, className }: ProductImageProps) {
+export function ProductImage({ src, alt, className, fallback }: ProductImageProps) {
+  const { t } = useTranslation();
+  // Rejim: prop berilsa o'sha (override/test), aks holda adminka sozlamasi (public settings).
+  const settingsFallback = useStorefrontImageFallback();
+  const mode = fallback ?? settingsFallback;
+
   if (src) {
     return (
       <img
@@ -20,6 +35,27 @@ export function ProductImage({ src, alt, className }: ProductImageProps) {
         loading="lazy"
         className={cn('h-full w-full object-cover', className)}
       />
+    );
+  }
+
+  if (mode === 'photo') {
+    return (
+      <div
+        role="img"
+        aria-label={alt}
+        className={cn('relative grid h-full w-full place-items-center overflow-hidden bg-base-200/60', className)}
+      >
+        <img
+          src={NO_IMAGE_PHOTO}
+          alt=""
+          aria-hidden="true"
+          loading="lazy"
+          className="h-full w-full object-cover"
+        />
+        <span className="absolute inset-x-0 bottom-0 bg-base-content/55 px-2 py-1 text-center text-[11px] font-medium text-base-100 backdrop-blur-sm">
+          {t('shop.product.noImage')}
+        </span>
+      </div>
     );
   }
 

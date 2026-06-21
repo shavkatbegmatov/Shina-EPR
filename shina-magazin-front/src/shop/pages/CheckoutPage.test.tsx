@@ -1,5 +1,6 @@
 import { describe, it, expect, beforeEach } from 'vitest';
 import { render, screen, fireEvent } from '@testing-library/react';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { MemoryRouter } from 'react-router-dom';
 import '../../i18n'; // global i18n instance (useTranslation uchun)
 import { CheckoutPage } from './CheckoutPage';
@@ -12,10 +13,13 @@ const P1: Product = {
 };
 
 function renderCheckout() {
+  const qc = new QueryClient({ defaultOptions: { queries: { retry: false } } });
   return render(
-    <MemoryRouter>
-      <CheckoutPage />
-    </MemoryRouter>
+    <QueryClientProvider client={qc}>
+      <MemoryRouter>
+        <CheckoutPage />
+      </MemoryRouter>
+    </QueryClientProvider>
   );
 }
 

@@ -16,4 +16,7 @@ import uz.shinamagazin.api.annotation.ExportEntity;
 public class SettingsResponse {
     @ExportColumn(header = "Qarz muddati (kunlar)", order = 1, type = ColumnType.NUMBER)
     private Integer debtDueDays;
+
+    @ExportColumn(header = "Rasmsiz mahsulot ko'rinishi", order = 2)
+    private String imageFallback;
 }

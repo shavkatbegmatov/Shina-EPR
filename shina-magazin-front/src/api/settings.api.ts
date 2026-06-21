@@ -8,6 +8,12 @@ export const settingsApi = {
     return response.data.data;
   },
 
+  /** Storefront (guest) uchun ommaviy sozlamalar — auth talab qilmaydi. */
+  getPublic: async (): Promise<{ imageFallback: string }> => {
+    const response = await api.get<ApiResponse<{ imageFallback: string }>>('/v1/settings/public');
+    return response.data.data;
+  },
+
   update: async (data: SettingsUpdateRequest): Promise<AppSettings> => {
     const response = await api.put<ApiResponse<AppSettings>>('/v1/settings', data);
     return response.data.data;

@@ -18,6 +18,7 @@ import org.springframework.core.io.ByteArrayResource;
 import org.springframework.core.io.Resource;
 import uz.shinamagazin.api.dto.request.SettingsUpdateRequest;
 import uz.shinamagazin.api.dto.response.ApiResponse;
+import uz.shinamagazin.api.dto.response.PublicSettingsResponse;
 import uz.shinamagazin.api.dto.response.SettingsResponse;
 import uz.shinamagazin.api.service.SettingsService;
 import uz.shinamagazin.api.service.export.GenericExportService;
@@ -40,6 +41,13 @@ public class SettingsController {
     @Operation(summary = "Get settings", description = "Tizim sozlamalarini olish")
     public ResponseEntity<ApiResponse<SettingsResponse>> getSettings() {
         return ResponseEntity.ok(ApiResponse.success(settingsService.getSettings()));
+    }
+
+    @GetMapping("/public")
+    @Operation(summary = "Get public settings",
+            description = "Storefront uchun ommaviy sozlamalar (auth talab qilmaydi)")
+    public ResponseEntity<ApiResponse<PublicSettingsResponse>> getPublicSettings() {
+        return ResponseEntity.ok(ApiResponse.success(settingsService.getPublicSettings()));
     }
 
     @GetMapping("/export")

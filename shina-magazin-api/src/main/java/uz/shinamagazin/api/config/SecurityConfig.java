@@ -49,6 +49,8 @@ public class SecurityConfig {
                         // Ommaviy storefront katalogi — faqat O'QISH (GET). Yozish operatsiyalari
                         // /v1/products ostida himoyalangan bo'lib qoladi.
                         .requestMatchers(HttpMethod.GET, "/v1/catalog/**").permitAll()
+                        // Storefront ommaviy sozlamalari (rasm fallback) — guest o'qiydi
+                        .requestMatchers(HttpMethod.GET, "/v1/settings/public").permitAll()
                         // Storefront guest checkout — buyurtma yaratish (POST) va holat tekshirish
                         // (GET .../status, shaxsiy ma'lumotsiz) ommaviy. Boshqa GET/PATCH
                         // /v1/orders/** xodim uchun himoyalangan (SALES_VIEW).
