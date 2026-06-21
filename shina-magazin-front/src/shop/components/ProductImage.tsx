@@ -1,4 +1,5 @@
 import { useTranslation } from 'react-i18next';
+import { ImageOff } from 'lucide-react';
 import { cn } from '@/ui';
 import { useStorefrontImageFallback } from '../data/useStorefrontImageFallback';
 
@@ -43,16 +44,20 @@ export function ProductImage({ src, alt, className, fallback }: ProductImageProp
       <div
         role="img"
         aria-label={alt}
-        className={cn('relative grid h-full w-full place-items-center overflow-hidden bg-base-200/60', className)}
+        className={cn('relative grid h-full w-full place-items-center overflow-hidden bg-base-200', className)}
       >
+        {/* Generik shina fotosi — xira + grayscale, haqiqiy mahsulot rasmi bilan
+            adashtirilmasligi uchun (bu shunchaki to'ldiruvchi ekani aniq ko'rinadi). */}
         <img
           src={NO_IMAGE_PHOTO}
           alt=""
           aria-hidden="true"
           loading="lazy"
-          className="h-full w-full object-cover"
+          className="absolute inset-0 h-full w-full object-cover opacity-40 grayscale"
         />
-        <span className="absolute inset-x-0 bottom-0 bg-base-content/55 px-2 py-1 text-center text-[11px] font-medium text-base-100 backdrop-blur-sm">
+        {/* Aniq markaziy yorliq */}
+        <span className="relative flex items-center gap-1.5 rounded-full bg-base-100/95 px-3 py-1.5 text-xs font-semibold text-base-content/70 shadow-sm ring-1 ring-base-300">
+          <ImageOff size={14} className="shrink-0" />
           {t('shop.product.noImage')}
         </span>
       </div>
