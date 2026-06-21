@@ -94,6 +94,16 @@ export const useAuthStore = create<AuthState>()(
           if (Array.isArray(state.roles)) {
             state.roles = new Set(state.roles as unknown as string[]);
           }
+          // Muvofiqlik: token alohida (localStorage), holat esa auth-storage'da saqlanadi.
+          // Agar isAuthenticated:true bo'lsa-yu accessToken yo'q bo'lsa — bu "soxta auth"
+          // (token muddati o'tgan/tozalangan). Uni tiklash 401→/login→Dashboard loop'ini
+          // keltirib chiqaradi, shuning uchun holatni tozalaymiz (foydalanuvchi qayta kiradi).
+          if (state.isAuthenticated && !localStorage.getItem('accessToken')) {
+            state.isAuthenticated = false;
+            state.user = null;
+            state.permissions = new Set<string>();
+            state.roles = new Set<string>();
+          }
         }
       },
     }

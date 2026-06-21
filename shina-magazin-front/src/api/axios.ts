@@ -1,6 +1,7 @@
 import axios from 'axios';
 import toast from 'react-hot-toast';
 import { API_BASE_URL } from '../config/constants';
+import { useAuthStore } from '../store/authStore';
 
 const api = axios.create({
   baseURL: API_BASE_URL,
@@ -49,10 +50,10 @@ api.interceptors.response.use(
           originalRequest.headers.Authorization = `Bearer ${accessToken}`;
           return api(originalRequest);
         } catch (refreshError) {
-          // Refresh failed, session was likely revoked - clear storage and redirect
-          localStorage.removeItem('accessToken');
-          localStorage.removeItem('refreshToken');
-          localStorage.removeItem('user');
+          // Refresh failed, session was likely revoked.
+          // MUHIM: logout() zustand auth holatini ham tozalaydi (isAuthenticated=false) —
+          // shusiz LoginPage isAuthenticated:true ni ko'rib Dashboard'ga qaytaradi va 401 loop boshlanadi.
+          useAuthStore.getState().logout();
 
           // Only redirect if not already on login page
           if (!window.location.pathname.includes('/login')) {
@@ -64,10 +65,8 @@ api.interceptors.response.use(
           return Promise.reject(refreshError);
         }
       } else {
-        // No refresh token or already trying to refresh - clear and redirect
-        localStorage.removeItem('accessToken');
-        localStorage.removeItem('refreshToken');
-        localStorage.removeItem('user');
+        // No refresh token or already retrying — clear auth (zustand + tokens) and redirect.
+        useAuthStore.getState().logout();
 
         if (!window.location.pathname.includes('/login')) {
           window.location.href = '/login';
