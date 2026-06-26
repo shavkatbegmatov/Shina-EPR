@@ -50,7 +50,6 @@ const ShopLoginPage = lazy(() => import('../shop/pages/ShopLoginPage').then(m =>
 
 // Lazy-loaded portal pages
 const PortalLayout = lazy(() => import('../portal/components/layout/PortalLayout'));
-const PortalLoginPage = lazy(() => import('../portal/pages/LoginPage'));
 const PortalDashboardPage = lazy(() => import('../portal/pages/DashboardPage'));
 const PortalPurchasesPage = lazy(() => import('../portal/pages/PurchasesPage'));
 const PortalPurchaseDetailPage = lazy(() => import('../portal/pages/PurchaseDetailPage'));
@@ -347,16 +346,7 @@ export const router = createBrowserRouter([
       },
     ],
   },
-  // Customer Portal Routes
-  {
-    path: '/hisob/kirish',
-    element: (
-      <LazyRoute>
-        <PortalLoginPage />
-      </LazyRoute>
-    ),
-    handle: { title: 'Mijoz Portali - Kirish' },
-  },
+  // Customer Portal Routes — yagona login storefront /kirish'da (PortalLayout guard yo'naltiradi)
   {
     path: '/hisob',
     element: (

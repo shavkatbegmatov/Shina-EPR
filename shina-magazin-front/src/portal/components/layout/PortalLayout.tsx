@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { Outlet, Navigate } from 'react-router-dom';
+import { Outlet, Navigate, useLocation } from 'react-router-dom';
 import { usePortalAuthStore } from '../../store/portalAuthStore';
 import { portalApiClient } from '../../api/portal.api';
 import { portalWebSocketService } from '../../services/portalWebSocket';
@@ -8,6 +8,7 @@ import BottomNav from './BottomNav';
 // Tema globalda App.tsx useTheme() orqali qo'llanadi (yagona themeStore).
 export default function PortalLayout() {
   const { isAuthenticated } = usePortalAuthStore();
+  const location = useLocation();
   const [unreadCount, setUnreadCount] = useState(0);
   const [newNotificationTrigger, setNewNotificationTrigger] = useState(0);
 
@@ -40,7 +41,7 @@ export default function PortalLayout() {
   }, [isAuthenticated]);
 
   if (!isAuthenticated) {
-    return <Navigate to="/hisob/kirish" replace />;
+    return <Navigate to={`/kirish?redirect=${encodeURIComponent(location.pathname)}`} replace />;
   }
 
   return (

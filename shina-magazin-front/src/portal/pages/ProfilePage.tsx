@@ -50,7 +50,7 @@ export default function PortalProfilePage() {
       // Ignore
     }
     logout();
-    navigate('/hisob/kirish');
+    navigate('/');
     toast.success(t('auth.logout'));
   };
 

@@ -51,10 +51,10 @@ portalApi.interceptors.response.use(
           // Refresh failed, logout
           localStorage.removeItem('portalAccessToken');
           localStorage.removeItem('portalRefreshToken');
-          window.location.href = '/hisob/kirish';
+          window.location.href = '/kirish';
         }
       } else {
-        window.location.href = '/hisob/kirish';
+        window.location.href = '/kirish';
       }
     }
 
