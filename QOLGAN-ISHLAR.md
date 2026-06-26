@@ -58,7 +58,7 @@
 
 - [x] **B1 — Karta-acquiring:** ✅ **Payme/Click yetarli** — karta to'lovi Payme/Click orqali (hozirgi `CARD → Payme` yo'naltirish to'g'ri). Alohida Uzcard/Humo acquiring shart emas. Kod o'zgarmaydi.
 - [x] **B2 — Magazin manzili:** ✅ **Do'kon domen ildizida (`/`)**, ERP `/admin/...` ga ko'chiriladi. SEO/ulashish uchun. → `src/router/index.tsx` + barcha ERP ichki havolalari + storefront `/magazin` → `/`.
-- [x] **B3 — SEO/SSR:** ✅ **Prerender (SSG)** kerak — storefront havolalari ijtimoiy tarmoqlarda (Telegram/Instagram) ulashiladi, link-preview (og:image/title) crawler'ga to'liq HTML kerak. To'liq SSR EMAS (Node server qimmat); Vite statik prerender (`vite-plugin-ssg`/`react-snap` kabi).
+- [x] **B3 — SEO/SSR:** ✅ **Prerender (SSG)** kerak — storefront havolalari ijtimoiy tarmoqlarda (Telegram/Instagram) ulashiladi, link-preview (og:image/title) crawler'ga to'liq HTML kerak. To'liq SSR EMAS (Node server qimmat); Vite statik prerender (`vite-plugin-ssg`/`react-snap` kabi). → **Implementatsiya (26.06.2026): yengil SEO** (OG/Twitter meta + og-cover + sitemap/robots) tanlandi; to'liq per-sahifa prerender keyinroq.
 - [x] **B4 — Mahsulot rasmlari:** ✅ obyekt-saqlash. → **Implementatsiya (26.06.2026): lokal-fayl tizimi + interfeys** (Coolify deploy uchun; S3/MinIO o'rniga persistent volume). Rasm upload backend proxy + `Product.imageUrl`. og:image va C5 shunga tayanadi.
 
 **B-implement tartibi (bog'liqlik bo'yicha):**
@@ -131,7 +131,7 @@ $env:JAVA_HOME="C:\Users\Sh.Begmatov\.jdks\ms-21.0.11"   # JBR 25 Lombok'ni buza
 
 1. **AV istisno** qo'shing (yuqorida) → lokal muhit barqaror bo'ladi. _(Uy mashinasida muammo kuzatilmadi.)_
 2. ✅ **C guruhi** (C1 test → C2 bildirishnoma → C3 SEO → C4 to'lov holati) — **bajarildi** (18.06.2026). C5 qoldi (B4 qarorga bog'liq).
-3. ✅ **B guruhi** qarorlari berildi (3-bo'lim). Implement: **B2 routing → B4 rasm/C5 → B3 prerender** (B1 kod o'zgarmaydi). ✅ **B2 routing + B4 rasm/C5 BAJARILDI (26.06.2026)** — do'kon ildizda (`/`), ERP `/admin`da; mahsulot rasm upload (lokal-FS storage). ← **keyingi qadam: B3 prerender (SSG)**
+3. ✅ **B guruhi** qarorlari berildi (3-bo'lim). Implement: **B2 routing → B4 rasm/C5 → B3 prerender** (B1 kod o'zgarmaydi). ✅ **B2 + B4/C5 + B3 (yengil SEO) BAJARILDI (26.06.2026)** — B-guruhi implement yakunlandi (B1 kod o'zgarmaydi). ← **keyingi: A-guruhi (deploy/kreditsiallar) yoki D / Faza 6 (ixtiyoriy)**
 4. **A guruhi** — kreditsiallar bilan to'lovni jonli qiling + DB'da verify (C2/C4'ni ham jonli sinash).
 
 > Har bosqichda: build + test yashil → commit → push (avvalgi uslub).
@@ -209,7 +209,20 @@ $env:JAVA_HOME="C:\Users\Sh.Begmatov\.jdks\ms-21.0.11"   # JBR 25 Lombok'ni buza
 - Storefront `src/shop/components/ProductImage.tsx` — **kod tayyor**: `src` bo'lsa rasm, bo'lmasa SVG placeholder. Real `imageUrl` kelishi bilan ishlaydi.
 - Bu C5 ni ham yopadi.
 
-### B3 — Prerender (SSG) — B2 va B4 dan KEYIN
+### B3 — SEO  ✅ BAJARILDI (yengil variant, 26.06.2026)
+
+> ✅ **Bajarildi va push qilindi (26.06.2026, `27b2d9b`):** To'liq prerender o'rniga
+> **yengil SEO** tanlandi (Coolify-friendly, risksiz, build/Docker o'zgarmaydi, Chromium yo'q):
+> - `index.html`: Open Graph + Twitter Card teglar (Telegram/IG/FB/WhatsApp link-preview);
+>   `og:image=/og-cover.jpg`, absolyut uchun `%VITE_SITE_URL%` (Vite HTML env).
+> - `public/og-cover.jpg` (1200×630 brendli karta, SVG→canvas raster) + `og-cover.svg` manba.
+> - `scripts/gen-seo.mjs` + `prebuild`: build-vaqtida `robots.txt` (/admin,/kabinet disallow)
+>   + `sitemap.xml` (storefront marshrutlari) — `VITE_SITE_URL`'dan (generatsiya .gitignore'da).
+> - build + test (94/94) yashil; `dist`da og-cover.jpg/robots.txt/sitemap.xml tasdiqlandi.
+> - **🔴 Coolify (A-guruhi):** build env'da `VITE_SITE_URL=https://<domen>` bering → OG va
+>   sitemap absolyut URL bo'ladi (Facebook to'liq qo'llab-quvvatlashi + sitemap uchun shart).
+> - **⏳ Qoldi (kelajak):** to'liq per-sahifa prerender (per-mahsulot og:image) — react-snap
+>   yoki vite-react-ssg bilan; quyidagi asl reja shu uchun tarixiy ma'lumot sifatida saqlanadi.
 
 **Maqsad:** do'kon sahifalarini (`/`, `/katalog`, `/mahsulot/:id`...) build vaqtida statik HTML'ga "pishirish" → Google + Telegram/Instagram link-preview boshlang'ich HTML'da to'liq kontent (C3 meta teglari + og:image) ni ko'radi.
 - **Vosita:** boshlash uchun **`react-snap`** (build'dan keyin puppeteer snapshot — SPA'ga minimal o'zgarish) yoki kuchliroq `vike`/`vite-plugin-ssg`. Tavsiya: avval `react-snap`.
@@ -222,4 +235,4 @@ Payme/Click yetarli (qaror B1). Karta to'lovi Payme/Click orqali. Jonli sozlash 
 
 ---
 
-> **Qisqacha keyingi qadam:** B2 routing ✅ + B4 rasm/C5 ✅ bajarildi (26.06.2026). Keyingi: **B3 prerender (SSG)** — do'kon sahifalarini statik HTML'ga (SEO + Telegram/Instagram link-preview). Boshlashdan: `git pull` → `npm install` → baseline yashil.
+> **Qisqacha holat (26.06.2026):** B2 routing ✅ + B4 rasm/C5 ✅ + B3 yengil SEO ✅ — **B-guruhi implement yakunlandi**. Qolgan: **A-guruhi** (jonli to'lov kreditsiallari + webhook + DB verify + **Coolify deploy**: rasm storage volume, `VITE_SITE_URL`) — foydalanuvchi qiladi; ixtiyoriy **D / Faza 6**; va to'liq per-sahifa prerender (kelajak).
