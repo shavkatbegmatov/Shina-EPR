@@ -59,7 +59,7 @@
 - [x] **B1 — Karta-acquiring:** ✅ **Payme/Click yetarli** — karta to'lovi Payme/Click orqali (hozirgi `CARD → Payme` yo'naltirish to'g'ri). Alohida Uzcard/Humo acquiring shart emas. Kod o'zgarmaydi.
 - [x] **B2 — Magazin manzili:** ✅ **Do'kon domen ildizida (`/`)**, ERP `/admin/...` ga ko'chiriladi. SEO/ulashish uchun. → `src/router/index.tsx` + barcha ERP ichki havolalari + storefront `/magazin` → `/`.
 - [x] **B3 — SEO/SSR:** ✅ **Prerender (SSG)** kerak — storefront havolalari ijtimoiy tarmoqlarda (Telegram/Instagram) ulashiladi, link-preview (og:image/title) crawler'ga to'liq HTML kerak. To'liq SSR EMAS (Node server qimmat); Vite statik prerender (`vite-plugin-ssg`/`react-snap` kabi).
-- [x] **B4 — Mahsulot rasmlari:** ✅ **S3 / MinIO** (obyekt-saqlash). Rasm upload backend (presigned URL yoki proxy) + `Product.imageUrl` to'liq URL. og:image va C5 shunga tayanadi.
+- [x] **B4 — Mahsulot rasmlari:** ✅ obyekt-saqlash. → **Implementatsiya (26.06.2026): lokal-fayl tizimi + interfeys** (Coolify deploy uchun; S3/MinIO o'rniga persistent volume). Rasm upload backend proxy + `Product.imageUrl`. og:image va C5 shunga tayanadi.
 
 **B-implement tartibi (bog'liqlik bo'yicha):**
 1. **B2 routing** — do'kon ildizga, ERP `/admin` (asos; prerender shunga tayanadi). Eng katta/xavfli — alohida bosqich, diqqat bilan.
@@ -81,7 +81,7 @@
 - [x] **C2 — Yangi buyurtma → xodimga bildirishnoma.** ✅ `957a3dc` — `ShopOrderService.createOrder` endi `StaffNotificationService.notifyNewShopOrder` ni chaqiradi (`StaffNotificationType.ORDER`, `referenceType "SHOP_ORDER"`); global bildirishnoma DB'ga yoziladi + WebSocket `/topic/staff/notifications` push (SaleService.notifyNewOrder bilan bir naqsh). Frontend `ORDER` turini allaqachon qo'llab-quvvatlaydi — o'zgarmadi. ⚠️ Jonli DB'da tekshirilmagan (A guruhi).
 - [x] **C3 — Storefront SEO meta.** ✅ `b1738c7` — `useDocumentMeta` hook (`document.title` + `description` + `og:*` upsert, react-helmet'siz); `ShopRouteEffects` route handle'dan default meta o'rnatadi; storefront route'larga `description` qo'shildi; PDP mahsulot yuklanganda nom/narx/rasm bilan override (`og:type=product`). 7 test.
 - [x] **C4 — Buyurtma tasdiq: real to'lov holati.** ✅ `1a025a0` — ommaviy `GET /v1/orders/{orderNo}/status` (`ShopOrderStatusResponse` — orderNo+status+paymentStatus, shaxsiy ma'lumotsiz; SecurityConfig permitAll); `OrderConfirmationPage` real `paymentStatus` badge ko'rsatadi va PENDING/PROCESSING bo'lsa 4s'da poll qiladi (webhook PAID qilguncha). i18n `shop.order.payStatus` (uz/ru). ⚠️ Jonli DB'da tekshirilmagan (A guruhi).
-- [ ] **C5 — Mahsulot rasm yuklash** (B4 qaror bo'lgach): ERP mahsulot sahifasida rasm upload + `Product.imageUrl` to'ldirish; storefront `ProductImage` real rasmni ko'rsatadi (kod tayyor — `src` bo'lsa rasmni, bo'lmasa SVG).
+- [x] **C5 — Mahsulot rasm yuklash** ✅ **BAJARILDI (26.06.2026, B4 bilan)**: ERP mahsulot formasida rasm upload (fayl → `POST /v1/products/image` → `imageUrl`); storefront `ProductImage` real rasmni ko'rsatadi.
 
 ---
 
@@ -131,7 +131,7 @@ $env:JAVA_HOME="C:\Users\Sh.Begmatov\.jdks\ms-21.0.11"   # JBR 25 Lombok'ni buza
 
 1. **AV istisno** qo'shing (yuqorida) → lokal muhit barqaror bo'ladi. _(Uy mashinasida muammo kuzatilmadi.)_
 2. ✅ **C guruhi** (C1 test → C2 bildirishnoma → C3 SEO → C4 to'lov holati) — **bajarildi** (18.06.2026). C5 qoldi (B4 qarorga bog'liq).
-3. ✅ **B guruhi** qarorlari berildi (3-bo'lim). Implement: **B2 routing → B4 rasm/C5 → B3 prerender** (B1 kod o'zgarmaydi). ✅ **B2 routing BAJARILDI (26.06.2026)** — do'kon ildizda (`/`), ERP `/admin`da. ← **keyingi qadam: B4 rasm (S3/MinIO) + C5**
+3. ✅ **B guruhi** qarorlari berildi (3-bo'lim). Implement: **B2 routing → B4 rasm/C5 → B3 prerender** (B1 kod o'zgarmaydi). ✅ **B2 routing + B4 rasm/C5 BAJARILDI (26.06.2026)** — do'kon ildizda (`/`), ERP `/admin`da; mahsulot rasm upload (lokal-FS storage). ← **keyingi qadam: B3 prerender (SSG)**
 4. **A guruhi** — kreditsiallar bilan to'lovni jonli qiling + DB'da verify (C2/C4'ni ham jonli sinash).
 
 > Har bosqichda: build + test yashil → commit → push (avvalgi uslub).
@@ -141,7 +141,7 @@ $env:JAVA_HOME="C:\Users\Sh.Begmatov\.jdks\ms-21.0.11"   # JBR 25 Lombok'ni buza
 ## 8. 🔨 Keyingi implement — B guruhi (batafsil; boshqa mashinada davom uchun)
 
 > **Holat (26.06.2026):** C1–C4 ✅ + **B2 routing ✅** bajarildi va push qilindi; B1–B4 qaror ✅ qilindi (3-bo'lim).
-> `master` toza va `origin/master` bilan sinxron. **Keyingi implement: B4 rasm (S3/MinIO) + C5.**
+> `master` toza va `origin/master` bilan sinxron. **Keyingi implement: B3 prerender (SSG).**
 >
 > **Boshlashdan oldin (yangi mashinada):**
 > 1. `git pull` (eng so'nggi `master`).
@@ -179,7 +179,24 @@ $env:JAVA_HOME="C:\Users\Sh.Begmatov\.jdks\ms-21.0.11"   # JBR 25 Lombok'ni buza
 **Xavf:** bitta havola o'tkazib yuborilsa → 404. **Tekshiruv:** `npm run build` (TS) + `npm test` + qo'lda: do'kon `/`, ERP `/admin` (login→dashboard), portal `/kabinet`, 404.
 **Tavsiya bosqichlar:** (a) router struktura → (b) storefront `/magazin`→`/` → (c) ERP havolalar `/admin` → (d) auth redirect → (e) build+test+qo'lda klik. Har bosqich build yashil → commit.
 
-### B4 — Mahsulot rasmlari: S3 / MinIO  +  C5 upload oqimi
+### B4 — Mahsulot rasmlari  ✅ BAJARILDI (26.06.2026)
+
+> ✅ **Bajarildi va push qilindi (26.06.2026):** Coolify deploy hisobga olinib,
+> S3/MinIO o'rniga **lokal-fayl tizimi + `StorageService` interfeysi** tanlandi
+> (interfeys tufayli kelajakda S3/MinIO qo'shsa bo'ladi — controller/servis o'zgarmaydi).
+> - Backend `23fa58a`: `StorageService`/`LocalStorageService` + `StorageProperties`
+>   (`shop.storage.*`); `WebConfig` `/uploads/**` resource handler; `SecurityConfig`
+>   permitAll GET `/uploads/**`; `POST /v1/products/image` (`@RequiresPermission
+>   PRODUCTS_UPDATE`) → `{url}`. Multipart 6MB. (+ B2 leftover: `return-url` /magazin→/.)
+> - Frontend `99233a6` (C5): `products.api.uploadImage` + ProductsPage forma rasm
+>   upload (preview + tugma + olib tashlash) + i18n uz/ru. Storefront `ProductImage` o'zgarmadi.
+> - **Uchidan-uchiga verify (PG + backend run):** upload→`{url}` ✅ · GET URL→200 image/png ✅ ·
+>   auth'siz→401 ✅ · .txt→400 ✅ · fayl `uploads/products/` da ✅. compile + build + test (94/94).
+> - **🔴 Coolify deploy (A-guruhi, foydalanuvchi):** `dir`ni **persistent volume**'ga mount qiling
+>   (`SHOP_STORAGE_DIR=/data/uploads` + Coolify volume `/data`) — aks holda har deploy'da
+>   yuklangan rasmlar yo'qoladi. Backend alohida domenda bo'lsa `SHOP_STORAGE_PUBLIC_BASE_URL`
+>   to'liq URL bering (default same-origin `/api/uploads`).
+> - Quyidagi asl reja (S3/MinIO) — tarixiy ma'lumot; kerak bo'lsa interfeysga implementatsiya qo'shiladi.
 
 **Backend (`shina-magazin-api`):**
 - Obyekt-saqlash klienti: AWS S3 SDK yoki MinIO Java client. Config `application.yml` → masalan `shop.storage.{endpoint,bucket,accessKey,secretKey,publicBaseUrl}`. Dev uchun lokal **MinIO** (docker) qulay.
@@ -205,4 +222,4 @@ Payme/Click yetarli (qaror B1). Karta to'lovi Payme/Click orqali. Jonli sozlash 
 
 ---
 
-> **Qisqacha keyingi qadam:** `git pull` → `npm install` → baseline yashil → **B2 routing** (router struktura'dan boshlang, bosqichma-bosqich, har qadamda build).
+> **Qisqacha keyingi qadam:** B2 routing ✅ + B4 rasm/C5 ✅ bajarildi (26.06.2026). Keyingi: **B3 prerender (SSG)** — do'kon sahifalarini statik HTML'ga (SEO + Telegram/Instagram link-preview). Boshlashdan: `git pull` → `npm install` → baseline yashil.
