@@ -108,7 +108,7 @@ export default function PortalPurchasesPage() {
             {purchases.map((purchase) => (
               <Link
                 key={purchase.id}
-                to={`/kabinet/xaridlar/${purchase.id}`}
+                to={`/hisob/xaridlar/${purchase.id}`}
                 className="card bg-base-100 shadow-sm hover:shadow-md transition-shadow"
               >
                 <div className="card-body p-4">

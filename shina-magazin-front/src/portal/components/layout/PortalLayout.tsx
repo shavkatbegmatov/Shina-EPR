@@ -40,7 +40,7 @@ export default function PortalLayout() {
   }, [isAuthenticated]);
 
   if (!isAuthenticated) {
-    return <Navigate to="/kabinet/kirish" replace />;
+    return <Navigate to="/hisob/kirish" replace />;
   }
 
   return (

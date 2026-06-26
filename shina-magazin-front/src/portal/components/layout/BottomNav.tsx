@@ -10,11 +10,11 @@ interface NavItem {
 }
 
 const navItems: NavItem[] = [
-  { path: '/kabinet', icon: <Home size={22} />, labelKey: 'nav.home' },
-  { path: '/kabinet/xaridlar', icon: <ShoppingBag size={22} />, labelKey: 'nav.purchases' },
-  { path: '/kabinet/qarzlar', icon: <CreditCard size={22} />, labelKey: 'nav.debts' },
-  { path: '/kabinet/bildirishnomalar', icon: <Bell size={22} />, labelKey: 'nav.notifications' },
-  { path: '/kabinet/profil', icon: <User size={22} />, labelKey: 'nav.profile' },
+  { path: '/hisob', icon: <Home size={22} />, labelKey: 'nav.home' },
+  { path: '/hisob/xaridlar', icon: <ShoppingBag size={22} />, labelKey: 'nav.purchases' },
+  { path: '/hisob/qarzlar', icon: <CreditCard size={22} />, labelKey: 'nav.debts' },
+  { path: '/hisob/bildirishnomalar', icon: <Bell size={22} />, labelKey: 'nav.notifications' },
+  { path: '/hisob/profil', icon: <User size={22} />, labelKey: 'nav.profile' },
 ];
 
 interface BottomNavProps {
@@ -30,7 +30,7 @@ export default function BottomNav({ unreadCount = 0 }: BottomNavProps) {
         <NavLink
           key={item.path}
           to={item.path}
-          end={item.path === '/kabinet'}
+          end={item.path === '/hisob'}
           className={({ isActive }) =>
             clsx(
               'flex flex-col items-center justify-center gap-0.5 transition-colors',

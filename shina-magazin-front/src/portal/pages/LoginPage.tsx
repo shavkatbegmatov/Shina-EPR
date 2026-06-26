@@ -51,7 +51,7 @@ export default function PortalLoginPage() {
       setAuth(response.customer, response.accessToken, response.refreshToken);
       i18n.changeLanguage(response.customer.preferredLanguage || 'uz');
       toast.success(t('auth.welcome'));
-      navigate('/kabinet');
+      navigate('/hisob');
     } catch (err: unknown) {
       const error = err as { response?: { data?: { message?: string } } };
       const message = error.response?.data?.message || t('auth.invalidCredentials');
@@ -62,7 +62,7 @@ export default function PortalLoginPage() {
   };
 
   if (isAuthenticated) {
-    return <Navigate to="/kabinet" replace />;
+    return <Navigate to="/hisob" replace />;
   }
 
   return (

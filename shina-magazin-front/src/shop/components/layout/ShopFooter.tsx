@@ -22,7 +22,7 @@ export function ShopFooter() {
           <ul className="space-y-2 text-sm text-base-content/70">
             <li><Link to="/" className="hover:text-primary">{t('shop.nav.home')}</Link></li>
             <li><Link to="/katalog" className="hover:text-primary">{t('shop.nav.catalog')}</Link></li>
-            <li><Link to="/kabinet" className="hover:text-primary">{t('shop.footer.account')}</Link></li>
+            <li><Link to="/hisob" className="hover:text-primary">{t('shop.footer.account')}</Link></li>
           </ul>
         </div>
 

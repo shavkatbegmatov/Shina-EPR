@@ -349,7 +349,7 @@ export const router = createBrowserRouter([
   },
   // Customer Portal Routes
   {
-    path: '/kabinet/kirish',
+    path: '/hisob/kirish',
     element: (
       <LazyRoute>
         <PortalLoginPage />
@@ -358,7 +358,7 @@ export const router = createBrowserRouter([
     handle: { title: 'Mijoz Portali - Kirish' },
   },
   {
-    path: '/kabinet',
+    path: '/hisob',
     element: (
       <LazyRoute>
         <PortalLayout />

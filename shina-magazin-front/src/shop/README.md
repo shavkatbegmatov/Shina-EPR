@@ -1,6 +1,6 @@
 # Protektor Storefront (`/`)
 
-Ommaviy internet-magazin (auth talab qilmaydi). ERP (`/admin`) va B2B portal (`/kabinet`)
+Ommaviy internet-magazin (auth talab qilmaydi). ERP (`/admin`) va B2B portal (`/hisob`)
 yonida uchinchi mustaqil sirt. Dizayn-tizim ustida qurilgan (`@/ui` primitivlar,
 `surface-card`/token CSS, DaisyUI `shina`/`shina-dark` mavzular), to'liq uz/ru i18n,
 responsiv (mobil hamburger → desktop nav), `data-app="shop"`.

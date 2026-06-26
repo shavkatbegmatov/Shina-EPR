@@ -110,7 +110,7 @@ export default function PortalDashboardPage() {
                 <p className="text-xl font-bold">{stats?.totalPurchases || 0}</p>
               </div>
               {stats?.hasDebt && (
-                <Link to="/kabinet/qarzlar" className={buttonVariants({ variant: "danger", size: "sm" })}>
+                <Link to="/hisob/qarzlar" className={buttonVariants({ variant: "danger", size: "sm" })}>
                   {t('dashboard.hasDebt')}
                 </Link>
               )}
@@ -123,7 +123,7 @@ export default function PortalDashboardPage() {
           <div className="card-body p-4">
             <div className="flex items-center justify-between mb-3">
               <h3 className="font-semibold">{t('dashboard.recentPurchases')}</h3>
-              <Link to="/kabinet/xaridlar" className="text-primary text-sm flex items-center gap-1">
+              <Link to="/hisob/xaridlar" className="text-primary text-sm flex items-center gap-1">
                 {t('dashboard.viewAll')}
                 <ChevronRight size={16} />
               </Link>
@@ -136,7 +136,7 @@ export default function PortalDashboardPage() {
                 {recentPurchases.map((purchase) => (
                   <Link
                     key={purchase.id}
-                    to={`/kabinet/xaridlar/${purchase.id}`}
+                    to={`/hisob/xaridlar/${purchase.id}`}
                     className="flex items-center justify-between p-3 bg-base-200 rounded-lg hover:bg-base-300 transition-colors"
                   >
                     <div>
