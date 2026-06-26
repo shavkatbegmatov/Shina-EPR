@@ -15,7 +15,7 @@ describe('compareStore', () => {
     expect(useCompareStore.getState().ids).toEqual([]);
   });
 
-  it(`MAX (${COMPARE_MAX}) dan oshganda qo\'shmaydi va false qaytaradi`, () => {
+  it(`MAX (${COMPARE_MAX}) dan oshganda qo'shmaydi va false qaytaradi`, () => {
     const { toggle } = useCompareStore.getState();
     for (let i = 1; i <= COMPARE_MAX; i++) toggle(i);
     expect(useCompareStore.getState().ids).toHaveLength(COMPARE_MAX);

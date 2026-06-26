@@ -29,6 +29,13 @@ export default tseslint.config(
     },
   },
   {
+    // Node build skriptlari (scripts/*.mjs, masalan gen-seo.mjs) — Node globallari (process, console)
+    files: ['scripts/**/*.{js,mjs}'],
+    languageOptions: {
+      globals: globals.node,
+    },
+  },
+  {
     // UI primitiv kutubxonasi (src/ui) — komponent + cva variantlari bir faylda
     // co-located bo'lishi standart (shadcn pattern). Fast-refresh granularligi
     // dizayn-tizim qatlami uchun muhim emas.
