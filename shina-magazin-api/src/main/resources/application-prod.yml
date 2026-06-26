@@ -1,0 +1,33 @@
+# Production profil (Coolify). Faollashtirish: SPRING_PROFILES_ACTIVE=prod (env).
+# Barcha ulanish/sirlar ENV'dan — qattiq yozilgan kreditsial YO'Q (fail-fast: env yo'q bo'lsa boot xato).
+# Boshqa shop.* (storage/payment/notify) va jwt sozlamalari base application.yml'da env-driven.
+spring:
+  datasource:
+    url: ${SPRING_DATASOURCE_URL}
+    username: ${SPRING_DATASOURCE_USERNAME}
+    password: ${SPRING_DATASOURCE_PASSWORD}
+    driver-class-name: org.postgresql.Driver
+
+  jpa:
+    hibernate:
+      ddl-auto: validate
+    show-sql: false
+    properties:
+      hibernate:
+        format_sql: false
+
+  # Tashqi Vault yo'q — Coolify env ishlatiladi (foydalanuvchi afzalligi)
+  cloud:
+    vault:
+      enabled: false
+    compatibility-verifier:
+      enabled: false
+
+# Flyway base application.yml'da yoqilgan (migratsiyalar startup'da avtomatik).
+
+logging:
+  level:
+    root: INFO
+    uz.shinamagazin: INFO
+    org.springframework.security: WARN
+    org.hibernate.SQL: WARN
