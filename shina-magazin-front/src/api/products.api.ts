@@ -58,6 +58,16 @@ export const productsApi = {
     return response.data.data;
   },
 
+  // Rasm yuklash (multipart) -> ommaviy URL qaytaradi (imageUrl uchun)
+  uploadImage: async (file: File): Promise<string> => {
+    const form = new FormData();
+    form.append('file', file);
+    const response = await api.post<ApiResponse<{ url: string }>>('/v1/products/image', form, {
+      headers: { 'Content-Type': 'multipart/form-data' },
+    });
+    return response.data.data.url;
+  },
+
   // Export functionality
   export: createExportApi('/v1/products'),
 };

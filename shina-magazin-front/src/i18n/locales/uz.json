@@ -212,7 +212,11 @@
       "fieldMinStock": "Min zaxira",
       "fieldDescription": "Tavsif",
       "descriptionPlaceholder": "Mahsulot haqida qo'shimcha ma'lumot...",
-      "fieldImageUrl": "Rasm URL"
+      "fieldImageUrl": "Rasm URL",
+      "uploadImage": "Rasm yuklash",
+      "imageRemove": "Olib tashlash",
+      "imageUploadSuccess": "Rasm yuklandi",
+      "imageUploadError": "Rasm yuklashda xatolik"
     },
     "customers": {
       "title": "Mijozlar",

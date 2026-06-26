@@ -212,7 +212,11 @@
       "fieldMinStock": "Мин. остаток",
       "fieldDescription": "Описание",
       "descriptionPlaceholder": "Дополнительная информация о товаре...",
-      "fieldImageUrl": "URL изображения"
+      "fieldImageUrl": "URL изображения",
+      "uploadImage": "Загрузить фото",
+      "imageRemove": "Убрать",
+      "imageUploadSuccess": "Фото загружено",
+      "imageUploadError": "Ошибка загрузки фото"
     },
     "customers": {
       "title": "Клиенты",

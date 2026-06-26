@@ -1,6 +1,7 @@
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Plus, Package, BadgeCheck, AlertTriangle, X } from 'lucide-react';
+import toast from 'react-hot-toast';
+import { Plus, Package, BadgeCheck, AlertTriangle, X, Upload, Image as ImageIcon } from 'lucide-react';
 import clsx from 'clsx';
 import { productsApi, brandsApi, categoriesApi } from '../../api/products.api';
 import { formatCurrency, SEASONS } from '../../config/constants';
@@ -45,6 +46,8 @@ export function ProductsPage() {
   const [editingProductId, setEditingProductId] = useState<number | null>(null);
   const [formData, setFormData] = useState<ProductRequest>(emptyFormData);
   const [saving, setSaving] = useState(false);
+  const [uploadingImage, setUploadingImage] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const { notifications } = useNotificationsStore();
   const { highlightId, clearHighlight } = useHighlight();
@@ -230,6 +233,20 @@ export function ProductsPage() {
 
   const handleFormChange = (field: keyof ProductRequest, value: string | number | undefined) => {
     setFormData((prev) => ({ ...prev, [field]: value }));
+  };
+
+  const handleImageUpload = async (file: File) => {
+    setUploadingImage(true);
+    try {
+      const url = await productsApi.uploadImage(file);
+      setFormData((prev) => ({ ...prev, imageUrl: url }));
+      toast.success(t('erp.products.imageUploadSuccess'));
+    } catch (error) {
+      console.error('Failed to upload image:', error);
+      toast.error(t('erp.products.imageUploadError'));
+    } finally {
+      setUploadingImage(false);
+    }
   };
 
   const handleSaveProduct = async () => {
@@ -558,10 +575,43 @@ export function ProductsPage() {
                 <textarea className="textarea textarea-bordered w-full" rows={2} value={formData.description || ''} onChange={(e) => handleFormChange('description', e.target.value || undefined)} placeholder={t('erp.products.descriptionPlaceholder')} />
               </label>
 
-              <label className="form-control">
+              <div className="form-control">
                 <span className="label-text mb-1 text-xs font-semibold uppercase tracking-[0.18em] text-base-content/50">{t('erp.products.fieldImageUrl')}</span>
-                <input type="text" className="input input-bordered w-full" value={formData.imageUrl || ''} onChange={(e) => handleFormChange('imageUrl', e.target.value || undefined)} placeholder="https://..." />
-              </label>
+                <div className="flex items-start gap-3">
+                  <div className="grid h-20 w-20 shrink-0 place-items-center overflow-hidden rounded-xl border border-base-300 bg-base-200">
+                    {formData.imageUrl ? (
+                      <img src={formData.imageUrl} alt="" className="h-full w-full object-cover" />
+                    ) : (
+                      <ImageIcon className="h-6 w-6 text-base-content/30" />
+                    )}
+                  </div>
+                  <div className="flex-1 space-y-2">
+                    <input type="text" className="input input-bordered w-full" value={formData.imageUrl || ''} onChange={(e) => handleFormChange('imageUrl', e.target.value || undefined)} placeholder="https://..." />
+                    <div className="flex items-center gap-2">
+                      <input
+                        ref={fileInputRef}
+                        type="file"
+                        accept="image/*"
+                        className="hidden"
+                        onChange={(e) => {
+                          const f = e.target.files?.[0];
+                          if (f) void handleImageUpload(f);
+                          e.target.value = '';
+                        }}
+                      />
+                      <Button type="button" variant="outline" size="sm" onClick={() => fileInputRef.current?.click()} disabled={uploadingImage}>
+                        {uploadingImage ? <span className="loading loading-spinner loading-xs" /> : <Upload className="h-4 w-4" />}
+                        {t('erp.products.uploadImage')}
+                      </Button>
+                      {formData.imageUrl && (
+                        <Button type="button" variant="ghost" size="sm" onClick={() => handleFormChange('imageUrl', undefined)}>
+                          {t('erp.products.imageRemove')}
+                        </Button>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              </div>
             </div>
 
             <div className="mt-6 flex justify-end gap-2">
