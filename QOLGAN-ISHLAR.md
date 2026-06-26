@@ -49,7 +49,7 @@
   - Payme: `https://<domen>/api/v1/payments/payme`
   - Click: `https://<domen>/api/v1/payments/click/prepare` va `.../complete`
 - [ ] **Sandbox'da** Payme/Click protokollarini tasdiqlang (kod spec bo'yicha, lekin sandbox'siz sinaб bo'lmadi). Payme uchun to'liq muvofiqlik uchun alohida `payme_transactions` jadvali kerak bo'lishi mumkin.
-- [ ] **Jonli DB verify:** `shina_epr_db` bilan backendni ishga tushirib **V23/V24 migratsiya** muammosiz o'tishini + barcha `/v1/catalog`, `/v1/orders`, `/v1/payments/*` endpointlarini sinab ko'ring.
+- [~] **Jonli DB verify:** ✅ **Storefront oqimi tasdiqlandi (26.06.2026, dev DB):** V23/V24 migratsiya OK; `/v1/catalog` (ro'yxat+detal), guest `POST /v1/orders` (narx SERVERDA: 2×1.2M=2.4M), **stok rezervatsiya** (20→18), public `/status`, xodim ro'yxat + auth(401) + PATCH holat, **C2 bildirishnoma** (ORDER/SHOP_ORDER) + rasm upload (B4) — hammasi ishladi. ⏳ Qoldi: `/v1/payments/*` JONLI (Payme/Click kreditsial + webhook — A guruhi). _(Test buyurtma `PR-MQUR3PGI` dev DB'da qoldi — ERP `/admin/shop-orders`'dan o'chirsa bo'ladi; stok tiklangan.)_
 - [ ] **CI** (GitHub Actions) yashilligini tekshiring.
 
 ---
@@ -78,9 +78,9 @@
   - `src/shop/store/`: `cartStore`, `wishlistStore`, `compareStore` (COMPARE_MAX), `orderStore` (`generateOrderNo`, `calcDeliveryFee`), `recentStore` (MAX 8).
   - `src/shop/data/useCatalog.ts` (seam + fallback), `CheckoutPage` validatsiya, `ShopOrdersPage` (status filtri + mutation, react-query mock).
   - Testlar `pool: 'threads'` da ishlaydi (`vite.config.ts`).
-- [x] **C2 — Yangi buyurtma → xodimga bildirishnoma.** ✅ `957a3dc` — `ShopOrderService.createOrder` endi `StaffNotificationService.notifyNewShopOrder` ni chaqiradi (`StaffNotificationType.ORDER`, `referenceType "SHOP_ORDER"`); global bildirishnoma DB'ga yoziladi + WebSocket `/topic/staff/notifications` push (SaleService.notifyNewOrder bilan bir naqsh). Frontend `ORDER` turini allaqachon qo'llab-quvvatlaydi — o'zgarmadi. ⚠️ Jonli DB'da tekshirilmagan (A guruhi).
+- [x] **C2 — Yangi buyurtma → xodimga bildirishnoma.** ✅ `957a3dc` — `ShopOrderService.createOrder` endi `StaffNotificationService.notifyNewShopOrder` ni chaqiradi (`StaffNotificationType.ORDER`, `referenceType "SHOP_ORDER"`); global bildirishnoma DB'ga yoziladi + WebSocket `/topic/staff/notifications` push (SaleService.notifyNewOrder bilan bir naqsh). Frontend `ORDER` turini allaqachon qo'llab-quvvatlaydi — o'zgarmadi. ✅ **Jonli DB'da tasdiqlandi (26.06.2026):** buyurtma yaratilganda "Yangi do'kon buyurtmasi" bildirishnomasi DB'ga yozildi.
 - [x] **C3 — Storefront SEO meta.** ✅ `b1738c7` — `useDocumentMeta` hook (`document.title` + `description` + `og:*` upsert, react-helmet'siz); `ShopRouteEffects` route handle'dan default meta o'rnatadi; storefront route'larga `description` qo'shildi; PDP mahsulot yuklanganda nom/narx/rasm bilan override (`og:type=product`). 7 test.
-- [x] **C4 — Buyurtma tasdiq: real to'lov holati.** ✅ `1a025a0` — ommaviy `GET /v1/orders/{orderNo}/status` (`ShopOrderStatusResponse` — orderNo+status+paymentStatus, shaxsiy ma'lumotsiz; SecurityConfig permitAll); `OrderConfirmationPage` real `paymentStatus` badge ko'rsatadi va PENDING/PROCESSING bo'lsa 4s'da poll qiladi (webhook PAID qilguncha). i18n `shop.order.payStatus` (uz/ru). ⚠️ Jonli DB'da tekshirilmagan (A guruhi).
+- [x] **C4 — Buyurtma tasdiq: real to'lov holati.** ✅ `1a025a0` — ommaviy `GET /v1/orders/{orderNo}/status` (`ShopOrderStatusResponse` — orderNo+status+paymentStatus, shaxsiy ma'lumotsiz; SecurityConfig permitAll); `OrderConfirmationPage` real `paymentStatus` badge ko'rsatadi va PENDING/PROCESSING bo'lsa 4s'da poll qiladi (webhook PAID qilguncha). i18n `shop.order.payStatus` (uz/ru). ✅ **`/status` jonli tasdiqlandi (26.06.2026):** orderNo/status/paymentStatus(PENDING) qaytaradi; PENDING→PAID o'tishi jonli to'lovni kutadi (A guruhi).
 - [x] **C5 — Mahsulot rasm yuklash** ✅ **BAJARILDI (26.06.2026, B4 bilan)**: ERP mahsulot formasida rasm upload (fayl → `POST /v1/products/image` → `imageUrl`); storefront `ProductImage` real rasmni ko'rsatadi.
 
 ---
