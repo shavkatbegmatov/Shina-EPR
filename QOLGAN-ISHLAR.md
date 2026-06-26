@@ -131,7 +131,7 @@ $env:JAVA_HOME="C:\Users\Sh.Begmatov\.jdks\ms-21.0.11"   # JBR 25 Lombok'ni buza
 
 1. **AV istisno** qo'shing (yuqorida) → lokal muhit barqaror bo'ladi. _(Uy mashinasida muammo kuzatilmadi.)_
 2. ✅ **C guruhi** (C1 test → C2 bildirishnoma → C3 SEO → C4 to'lov holati) — **bajarildi** (18.06.2026). C5 qoldi (B4 qarorga bog'liq).
-3. ✅ **B guruhi** qarorlari berildi (3-bo'lim). Implement: **B2 routing → B4 rasm/C5 → B3 prerender** (B1 kod o'zgarmaydi). ← **keyingi qadam: B2 routing**
+3. ✅ **B guruhi** qarorlari berildi (3-bo'lim). Implement: **B2 routing → B4 rasm/C5 → B3 prerender** (B1 kod o'zgarmaydi). ✅ **B2 routing BAJARILDI (26.06.2026)** — do'kon ildizda (`/`), ERP `/admin`da. ← **keyingi qadam: B4 rasm (S3/MinIO) + C5**
 4. **A guruhi** — kreditsiallar bilan to'lovni jonli qiling + DB'da verify (C2/C4'ni ham jonli sinash).
 
 > Har bosqichda: build + test yashil → commit → push (avvalgi uslub).
@@ -140,8 +140,8 @@ $env:JAVA_HOME="C:\Users\Sh.Begmatov\.jdks\ms-21.0.11"   # JBR 25 Lombok'ni buza
 
 ## 8. 🔨 Keyingi implement — B guruhi (batafsil; boshqa mashinada davom uchun)
 
-> **Holat (18.06.2026):** C1–C4 ✅ bajarildi va push qilindi; B1–B4 qaror ✅ qilindi (3-bo'lim).
-> `master` toza va `origin/master` bilan sinxron. **Endi implement bosqichi boshlanadi — hali kod yozilmagan.**
+> **Holat (26.06.2026):** C1–C4 ✅ + **B2 routing ✅** bajarildi va push qilindi; B1–B4 qaror ✅ qilindi (3-bo'lim).
+> `master` toza va `origin/master` bilan sinxron. **Keyingi implement: B4 rasm (S3/MinIO) + C5.**
 >
 > **Boshlashdan oldin (yangi mashinada):**
 > 1. `git pull` (eng so'nggi `master`).
@@ -149,7 +149,16 @@ $env:JAVA_HOME="C:\Users\Sh.Begmatov\.jdks\ms-21.0.11"   # JBR 25 Lombok'ni buza
 > 3. Baseline: `npm run build` + `npm test` (kutilgan: **91/91** yashil); backend `mvnw compile` (JDK 21).
 > 4. So'ng quyidagi tartib: **B2 → B4/C5 → B3**.
 
-### B2 — Routing: do'kon ildizga (`/`), ERP `/admin`ga  ← BIRINCHI, eng katta/xavfli
+### B2 — Routing: do'kon ildizga (`/`), ERP `/admin`ga  ✅ BAJARILDI (26.06.2026)
+
+> ✅ **Bajarildi va push qilindi (26.06.2026, 5 commit):**
+> - B2.1 `2d467cd` router strukturasi · B2.2 `4674371` storefront havolalar /magazin→/ ·
+>   B2.3 `edf84ff` ERP havolalar /→/admin · B2.4 `5825032` auth redirectlari /admin/login ·
+>   B2.3-fix `e677dd2` audit-log-extractors havolalari.
+> - Auth route'lar: `/admin/login`, `/admin/register`, `/admin/change-password` (tanlangan variant).
+> - **Runtime verify (preview :5183):** `/`=do'kon · `/admin`→`/admin/login` · `/kabinet`→`/kabinet/kirish`
+>   (portal o'zgarmagan) · noma'lum yo'l→ShopNotFound. Build + test (**94/94**) yashil.
+> - Quyidagi reja tarixiy ma'lumot uchun saqlanadi.
 
 **Maqsad:** `domen/` = do'kon (storefront), `domen/admin/...` = ERP. Portal `/kabinet/*` **o'zgarmaydi**.
 

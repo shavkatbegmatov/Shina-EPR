@@ -1,6 +1,6 @@
-# Protektor Storefront (`/magazin`)
+# Protektor Storefront (`/`)
 
-Ommaviy internet-magazin (auth talab qilmaydi). ERP (`/`) va B2B portal (`/kabinet`)
+Ommaviy internet-magazin (auth talab qilmaydi). ERP (`/admin`) va B2B portal (`/kabinet`)
 yonida uchinchi mustaqil sirt. Dizayn-tizim ustida qurilgan (`@/ui` primitivlar,
 `surface-card`/token CSS, DaisyUI `shina`/`shina-dark` mavzular), to'liq uz/ru i18n,
 responsiv (mobil hamburger → desktop nav), `data-app="shop"`.
@@ -9,13 +9,14 @@ responsiv (mobil hamburger → desktop nav), `data-app="shop"`.
 
 | Path | Sahifa | Izoh |
 |------|--------|------|
-| `/magazin` | `ShopHomePage` | hero, o'lcham qidiruvchi, kategoriya, tanlangan, why-us, CTA |
-| `/magazin/katalog` | `CatalogPage` | qidiruv + brend/mavsum/saralash + o'lcham filtri; `?q= &brand= &season= &width= &profile= &diameter=` |
-| `/magazin/mahsulot/:id` | `ProductDetailPage` | xususiyatlar, savatga, o'xshash mahsulotlar |
-| `/magazin/checkout` | `CheckoutPage` | 4-bosqich: aloqa → yetkazish → to'lov → tasdiq |
-| `/magazin/buyurtma/:orderNo` | `OrderConfirmationPage` | muvaffaqiyat + buyurtma tafsiloti |
-| `/magazin/buyurtmalarim` | `OrdersPage` | client-side buyurtma tarixi |
-| `/magazin/*` | `ShopNotFound` | do'kon ichidagi 404 (ERP'ga sakramaydi) |
+| `/` | `ShopHomePage` | hero, o'lcham qidiruvchi, kategoriya, tanlangan, why-us, CTA |
+| `/katalog` | `CatalogPage` | qidiruv + brend/mavsum/saralash + o'lcham filtri; `?q= &brand= &season= &width= &profile= &diameter=` |
+| `/mahsulot/:id` | `ProductDetailPage` | xususiyatlar, savatga, o'xshash mahsulotlar |
+| `/checkout` | `CheckoutPage` | 4-bosqich: aloqa → yetkazish → to'lov → tasdiq |
+| `/buyurtma/:orderNo` | `OrderConfirmationPage` | muvaffaqiyat + buyurtma tafsiloti |
+| `/buyurtmalarim` | `OrdersPage` | client-side buyurtma tarixi |
+| `/saqlanganlar` · `/solishtirish` | `WishlistPage` · `ComparePage` | saqlangan / solishtirish |
+| `/*` | `ShopNotFound` | do'kon ichidagi 404 |
 
 `ShopLayout` = `ShopHeader` + `<Outlet/>` + `ShopFooter` + `CartDrawer` + `ShopRouteEffects`
 (skroll-yuqoriga + `document.title`).
@@ -67,7 +68,7 @@ export function useCatalogProducts() {
 - **To'lov provayderi**: Payme / Click / karta-acquiring — qaysi(lar)i? (UI'da 4 usul tayyor turibdi)
 - **UZ fiskalizatsiya** (soliq cheki) integratsiyasi
 - **SEO/SSR**: SPA katalog qidiruv tizimlari uchun yetarli emas — SSR/prerender kerakmi?
-- **Ildiz marshrut**: magazin `/magazin`da qoladimi yoki domen ildizi (`/`) bo'ladimi? (ERP'ni ko'chirish kerak bo'ladi)
+- ~~**Ildiz marshrut**: magazin `/magazin`da qoladimi yoki domen ildizi (`/`) bo'ladimi?~~ ✅ **HAL QILINDI (26.06.2026): do'kon ildizda (`/`), ERP `/admin`da (B2).**
 - **Ommaviy katalog xavfsizligi**: narx/zaxira ommaviy ko'rinsinmi (B2C ha, lekin tasdiqlang)
 
 ## i18n
