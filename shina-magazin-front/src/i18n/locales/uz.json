@@ -1672,6 +1672,16 @@
     }
   },
   "shop": {
+    "account": {
+      "loginTitle": "Akkauntga kirish",
+      "loginSubtitle": "Buyurtmalaringizni kuzatish uchun telefon va PIN bilan kiring",
+      "login": "Kirish",
+      "logout": "Chiqish",
+      "myOrders": "Buyurtmalarim",
+      "greeting": "Salom, {{name}}",
+      "loginPrompt": "Buyurtmalaringizni ko'rish uchun akkauntga kiring",
+      "loginCta": "Kirish"
+    },
     "nav": {
       "home": "Bosh sahifa",
       "catalog": "Katalog",

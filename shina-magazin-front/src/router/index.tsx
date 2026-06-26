@@ -46,6 +46,7 @@ const OrdersPage = lazy(() => import('../shop/pages/OrdersPage').then(m => ({ de
 const WishlistPage = lazy(() => import('../shop/pages/WishlistPage').then(m => ({ default: m.WishlistPage })));
 const ComparePage = lazy(() => import('../shop/pages/ComparePage').then(m => ({ default: m.ComparePage })));
 const ShopNotFound = lazy(() => import('../shop/pages/ShopNotFound').then(m => ({ default: m.ShopNotFound })));
+const ShopLoginPage = lazy(() => import('../shop/pages/ShopLoginPage').then(m => ({ default: m.ShopLoginPage })));
 
 // Lazy-loaded portal pages
 const PortalLayout = lazy(() => import('../portal/components/layout/PortalLayout'));
@@ -435,6 +436,14 @@ export const router = createBrowserRouter([
         handle: {
           title: 'Protektor — Magazin',
           description: "Protektor — shinalar onlayn do'koni. Eng yaxshi brendlar, qulay narxlar, o'lcham bo'yicha tanlash va tez yetkazib berish.",
+        },
+      },
+      {
+        path: 'kirish',
+        element: <LazyRoute><ShopLoginPage /></LazyRoute>,
+        handle: {
+          title: 'Kirish',
+          description: "Protektor mijoz akkauntiga kirish.",
         },
       },
       {
