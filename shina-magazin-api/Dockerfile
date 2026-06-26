@@ -1,21 +1,36 @@
-# Backend (Spring Boot, JDK 21) — Coolify Dockerfile deploy.
-# Build: Maven; Run: JRE 21. Prod profil + lokal storage /data/uploads (Coolify volume).
-
-# --- Build ---
-FROM maven:3.9-eclipse-temurin-21 AS build
+# ========== BUILD STAGE ==========
+FROM maven:3.9-eclipse-temurin-17-alpine AS build
 WORKDIR /app
+
+# Avval dependency'lar (cache qatlami uchun)
 COPY pom.xml .
-COPY src ./src
-RUN mvn -B -ntp -DskipTests clean package
+RUN mvn dependency:go-offline -B
 
-# --- Run ---
-FROM eclipse-temurin:21-jre AS run
+# Source + build
+COPY src ./src
+RUN mvn clean package -DskipTests -B
+
+# ========== RUN STAGE ==========
+FROM eclipse-temurin:17-jre-alpine
 WORKDIR /app
+
+# Timezone
+RUN apk add --no-cache tzdata
+ENV TZ=Asia/Tashkent
+
 # Yuklangan mahsulot rasmlari papkasi — Coolify PERSISTENT VOLUME shu yerga mount qilinadi
-# (aks holda har deploy'da rasmlar yo'qoladi).
 RUN mkdir -p /data/uploads
-ENV SPRING_PROFILES_ACTIVE=prod \
-    SHOP_STORAGE_DIR=/data/uploads
+ENV SHOP_STORAGE_DIR=/data/uploads
+
 COPY --from=build /app/target/shina_magazin_api.jar app.jar
+
+HEALTHCHECK --interval=30s --timeout=10s --start-period=60s --retries=3 \
+    CMD wget --no-verbose --tries=1 --spider http://localhost:8183/api/actuator/health || exit 1
+
 EXPOSE 8183
-ENTRYPOINT ["java", "-jar", "app.jar"]
+
+ENTRYPOINT ["java", "-jar", \
+    "-Dspring.profiles.active=prod", \
+    "-Djava.security.egd=file:/dev/./urandom", \
+    "-Xms256m", "-Xmx512m", \
+    "app.jar"]

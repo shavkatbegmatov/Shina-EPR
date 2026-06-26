@@ -1,0 +1,56 @@
+services:
+  db:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: ${DB_NAME:-shina_epr_db}
+      POSTGRES_USER: ${DB_USERNAME:-shina_epr_user}
+      POSTGRES_PASSWORD: ${DB_PASSWORD:?DB_PASSWORD is required}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${DB_USERNAME:-shina_epr_user} -d ${DB_NAME:-shina_epr_db}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  backend:
+    image: ghcr.io/shavkatbegmatov/shina-epr-api:latest
+    restart: unless-stopped
+    environment:
+      DB_HOST: db
+      DB_NAME: ${DB_NAME:-shina_epr_db}
+      DB_USERNAME: ${DB_USERNAME:-shina_epr_user}
+      DB_PASSWORD: ${DB_PASSWORD:?DB_PASSWORD is required}
+      JWT_SECRET: ${JWT_SECRET:?JWT_SECRET is required}
+      # Rasm storage — quyidagi volume'ga yoziladi (deploy'da yo'qolmasligi uchun)
+      SHOP_STORAGE_DIR: /data/uploads
+      # To'lov (jonli qilganda) — Coolify env'dan
+      PAYME_ENABLED: ${PAYME_ENABLED:-false}
+      PAYME_MERCHANT_ID: ${PAYME_MERCHANT_ID:-}
+      PAYME_KEY: ${PAYME_KEY:-}
+      CLICK_ENABLED: ${CLICK_ENABLED:-false}
+      CLICK_MERCHANT_ID: ${CLICK_MERCHANT_ID:-}
+      CLICK_SERVICE_ID: ${CLICK_SERVICE_ID:-}
+      CLICK_SECRET_KEY: ${CLICK_SECRET_KEY:-}
+      SHOP_RETURN_URL: ${SHOP_RETURN_URL:-}
+      # Xabarnoma (jonli qilganda)
+      SHOP_NOTIFY_SMS: ${SHOP_NOTIFY_SMS:-false}
+      SHOP_NOTIFY_EMAIL: ${SHOP_NOTIFY_EMAIL:-false}
+    volumes:
+      - uploads_data:/data/uploads
+    depends_on:
+      db:
+        condition: service_healthy
+
+  frontend:
+    image: ghcr.io/shavkatbegmatov/shina-epr-front:latest
+    restart: unless-stopped
+    ports:
+      - "80:80"
+    depends_on:
+      - backend
+
+volumes:
+  postgres_data:
+  uploads_data:

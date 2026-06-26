@@ -1,20 +1,21 @@
-# Frontend (Vite + React) -> nginx static — Coolify Dockerfile deploy.
-# nginx /api'ni backend'ga proxy qiladi (same-origin) + SPA history fallback.
-
-# --- Build ---
+# ========== BUILD STAGE ==========
 FROM node:20-alpine AS build
 WORKDIR /app
-COPY package*.json ./
+
+# Dependency'lar (cache qatlami uchun)
+COPY package.json package-lock.json ./
 RUN npm ci
+
+# Source + build. OG/Twitter va sitemap ABSOLYUT URL uchun VITE_SITE_URL build-arg
+# (bo'sh = relativ). Coolify build-arg: VITE_SITE_URL=https://<domen>
 COPY . .
-# OG/Twitter va sitemap ABSOLYUT URL uchun (bo'sh = relativ). Coolify'da build-arg bering:
-#   VITE_SITE_URL=https://<domen>
 ARG VITE_SITE_URL=
 ENV VITE_SITE_URL=$VITE_SITE_URL
 RUN npm run build
 
-# --- Run (nginx) ---
-FROM nginx:1.27-alpine AS run
-COPY --from=build /app/dist /usr/share/nginx/html
+# ========== RUN STAGE ==========
+FROM nginx:alpine
 COPY nginx.conf /etc/nginx/conf.d/default.conf
+COPY --from=build /app/dist /usr/share/nginx/html
 EXPOSE 80
+CMD ["nginx", "-g", "daemon off;"]
