@@ -1,0 +1,86 @@
+name: Release
+
+# `v*` ko'rinishidagi teg push qilinganda GitHub Release avtomatik yaratiladi.
+# Izoh matni CHANGELOG.md ning shu versiyaga oid bo'limidan olinadi (bo'lmasa fallback).
+# Maxfiy kalit shart emas — o'rnatilgan GITHUB_TOKEN ishlatiladi.
+#
+# Oqim: package.json versiyasini oshiring -> CHANGELOG.md ga bo'lim qo'shing ->
+#       git push (master -> CI/CD) -> git tag vX.Y.Z && git push origin vX.Y.Z (-> relizni yaratadi)
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+permissions:
+  contents: write
+
+concurrency:
+  group: release-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  release:
+    name: Create GitHub Release
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Extract release notes from CHANGELOG.md
+        id: notes
+        run: |
+          python3 - "$GITHUB_REF_NAME" <<'PY'
+          import sys, re, os
+
+          tag = sys.argv[1]
+          version = tag[1:] if tag.startswith('v') else tag
+
+          try:
+              text = open('CHANGELOG.md', encoding='utf-8').read()
+          except FileNotFoundError:
+              text = ''
+
+          body = ''
+          m = re.search(r'^## \[' + re.escape(version) + r'\].*$', text, re.M)
+          if m:
+              start = m.end()
+              nxt = re.search(r'^(## \[|\[[^\]]+\]:\s+https?://)', text[start:], re.M)
+              section = text[start: start + nxt.start()] if nxt else text[start:]
+              section = section.strip()
+              section = re.sub(r'(\n*\s*---\s*)+$', '', section).strip()
+              body = section
+
+          if not body:
+              body = ("Ushbu versiya uchun CHANGELOG.md da alohida yozuv topilmadi. "
+                      "Reliz teg push orqali avtomatik yaratildi.")
+
+          prerelease = 'true' if (version.startswith('0.') or '-' in version) else 'false'
+          make_latest = 'false' if prerelease == 'true' else 'true'
+
+          repo = os.environ.get('GITHUB_REPOSITORY', '')
+          footer = ("\n\n---\n"
+                    "\U0001F4C4 To'liq o'zgarishlar tarixi: "
+                    f"[CHANGELOG.md](https://github.com/{repo}/blob/master/CHANGELOG.md)")
+
+          with open('release-notes.md', 'w', encoding='utf-8') as f:
+              f.write(body + footer)
+
+          with open(os.environ['GITHUB_OUTPUT'], 'a', encoding='utf-8') as f:
+              f.write(f"version={version}\n")
+              f.write(f"prerelease={prerelease}\n")
+              f.write(f"make_latest={make_latest}\n")
+
+          print(f"version={version} | prerelease={prerelease} | make_latest={make_latest}")
+          PY
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          name: ${{ github.ref_name }}
+          body_path: release-notes.md
+          prerelease: ${{ steps.notes.outputs.prerelease }}
+          make_latest: ${{ steps.notes.outputs.make_latest }}
+          fail_on_unmatched_files: false
