@@ -350,7 +350,7 @@ export function SalesPage() {
             loading={refreshing}
           />
           <PermissionGate permission={PermissionCode.SALES_CREATE}>
-            <Link to="/pos" className={buttonVariants({ variant: "primary" })}>
+            <Link to="/admin/pos" className={buttonVariants({ variant: "primary" })}>
               <ShoppingCart className="h-5 w-5" />
               {t('erp.sales.posButton')}
             </Link>

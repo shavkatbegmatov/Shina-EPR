@@ -68,7 +68,7 @@ export function CustomerDetailPage() {
       <div className="text-center py-12">
         <AlertCircle className="h-12 w-12 mx-auto text-error mb-4" />
         <h2 className="text-xl font-semibold">{t('erp.customerDetail.notFound')}</h2>
-        <Button variant="primary" className="mt-4" onClick={() => navigate('/customers')}>
+        <Button variant="primary" className="mt-4" onClick={() => navigate('/admin/customers')}>
           {t('common.back')}
         </Button>
       </div>
@@ -83,7 +83,7 @@ export function CustomerDetailPage() {
           <Button
             variant="ghost"
             size="sm"
-            onClick={() => navigate('/customers')}
+            onClick={() => navigate('/admin/customers')}
           >
             <ArrowLeft className="h-5 w-5" />
           </Button>
@@ -300,7 +300,7 @@ export function CustomerDetailPage() {
 
       {/* Back Button */}
       <div className="flex justify-start">
-        <Button variant="ghost" onClick={() => navigate('/customers')}>
+        <Button variant="ghost" onClick={() => navigate('/admin/customers')}>
           <ArrowLeft className="h-4 w-4" />
           {t('erp.customerDetail.backToList')}
         </Button>

@@ -59,7 +59,7 @@ export function SupplierDetailPage() {
       <div className="text-center py-12">
         <AlertCircle className="h-12 w-12 mx-auto text-error mb-4" />
         <h2 className="text-xl font-semibold">{t('erp.supplierDetail.notFound')}</h2>
-        <Button variant="primary" className="mt-4" onClick={() => navigate('/suppliers')}>
+        <Button variant="primary" className="mt-4" onClick={() => navigate('/admin/suppliers')}>
           {t('common.back')}
         </Button>
       </div>
@@ -74,7 +74,7 @@ export function SupplierDetailPage() {
           <Button
             variant="ghost"
             size="sm"
-            onClick={() => navigate('/suppliers')}
+            onClick={() => navigate('/admin/suppliers')}
           >
             <ArrowLeft className="h-5 w-5" />
           </Button>
@@ -302,7 +302,7 @@ export function SupplierDetailPage() {
 
       {/* Back Button */}
       <div className="flex justify-start">
-        <Button variant="ghost" onClick={() => navigate('/suppliers')}>
+        <Button variant="ghost" onClick={() => navigate('/admin/suppliers')}>
           <ArrowLeft className="h-4 w-4" />
           {t('erp.supplierDetail.backToList')}
         </Button>

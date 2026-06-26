@@ -76,19 +76,19 @@ const PAGE_ICONS: Record<string, LucideIcon> = {
 
 function getQuickActions(t: (key: string) => string): SearchResult[] {
   return [
-    { id: 'page-dashboard', type: 'page', title: t('erp.nav.dashboard'), href: '/' },
-    { id: 'page-pos', type: 'page', title: t('erp.nav.pos'), subtitle: t('erp.search.subPos'), href: '/pos' },
-    { id: 'page-products', type: 'page', title: t('erp.nav.products'), href: '/products' },
-    { id: 'page-customers', type: 'page', title: t('erp.nav.customers'), href: '/customers' },
-    { id: 'page-sales', type: 'page', title: t('erp.nav.sales'), href: '/sales' },
-    { id: 'page-debts', type: 'page', title: t('erp.nav.debts'), subtitle: t('erp.search.subDebts'), href: '/debts' },
-    { id: 'page-purchases', type: 'page', title: t('erp.nav.purchases'), subtitle: t('erp.search.subPurchases'), href: '/purchases' },
-    { id: 'page-suppliers', type: 'page', title: t('erp.nav.suppliers'), href: '/suppliers' },
-    { id: 'page-warehouse', type: 'page', title: t('erp.nav.warehouse'), subtitle: t('erp.search.subWarehouse'), href: '/warehouse' },
-    { id: 'page-employees', type: 'page', title: t('erp.nav.employees'), href: '/employees' },
-    { id: 'page-roles', type: 'page', title: t('erp.nav.roles'), subtitle: t('erp.search.subRoles'), href: '/roles' },
-    { id: 'page-reports', type: 'page', title: t('erp.nav.reports'), href: '/reports' },
-    { id: 'page-settings', type: 'page', title: t('erp.nav.settings'), href: '/settings' },
+    { id: 'page-dashboard', type: 'page', title: t('erp.nav.dashboard'), href: '/admin' },
+    { id: 'page-pos', type: 'page', title: t('erp.nav.pos'), subtitle: t('erp.search.subPos'), href: '/admin/pos' },
+    { id: 'page-products', type: 'page', title: t('erp.nav.products'), href: '/admin/products' },
+    { id: 'page-customers', type: 'page', title: t('erp.nav.customers'), href: '/admin/customers' },
+    { id: 'page-sales', type: 'page', title: t('erp.nav.sales'), href: '/admin/sales' },
+    { id: 'page-debts', type: 'page', title: t('erp.nav.debts'), subtitle: t('erp.search.subDebts'), href: '/admin/debts' },
+    { id: 'page-purchases', type: 'page', title: t('erp.nav.purchases'), subtitle: t('erp.search.subPurchases'), href: '/admin/purchases' },
+    { id: 'page-suppliers', type: 'page', title: t('erp.nav.suppliers'), href: '/admin/suppliers' },
+    { id: 'page-warehouse', type: 'page', title: t('erp.nav.warehouse'), subtitle: t('erp.search.subWarehouse'), href: '/admin/warehouse' },
+    { id: 'page-employees', type: 'page', title: t('erp.nav.employees'), href: '/admin/employees' },
+    { id: 'page-roles', type: 'page', title: t('erp.nav.roles'), subtitle: t('erp.search.subRoles'), href: '/admin/roles' },
+    { id: 'page-reports', type: 'page', title: t('erp.nav.reports'), href: '/admin/reports' },
+    { id: 'page-settings', type: 'page', title: t('erp.nav.settings'), href: '/admin/settings' },
   ];
 }
 
@@ -239,7 +239,7 @@ export function SearchCommand() {
           type: 'product',
           title: product.name,
           subtitle: product.sku,
-          href: `/products?highlight=${product.id}`,
+          href: `/admin/products?highlight=${product.id}`,
           meta: formatCurrency(product.sellingPrice),
         });
       });
@@ -251,7 +251,7 @@ export function SearchCommand() {
           type: 'customer',
           title: customer.fullName,
           subtitle: customer.phone,
-          href: `/customers?highlight=${customer.id}`,
+          href: `/admin/customers?highlight=${customer.id}`,
           meta: customer.balance < 0 ? `Qarz: ${formatCurrency(Math.abs(customer.balance))}` : undefined,
         });
       });
@@ -265,7 +265,7 @@ export function SearchCommand() {
             type: 'sale',
             title: sale.invoiceNumber,
             subtitle: sale.customerName || "Noma'lum mijoz",
-            href: `/sales?highlight=${sale.id}`,
+            href: `/admin/sales?highlight=${sale.id}`,
             meta: formatCurrency(sale.totalAmount),
           });
         });
@@ -282,7 +282,7 @@ export function SearchCommand() {
             type: 'debt',
             title: debt.customerName,
             subtitle: debt.invoiceNumber || debt.customerPhone,
-            href: `/debts?highlight=${debt.id}`,
+            href: `/admin/debts?highlight=${debt.id}`,
             meta: `Qarz: ${formatCurrency(debt.remainingAmount)}`,
           });
         });
@@ -299,7 +299,7 @@ export function SearchCommand() {
             type: 'purchase',
             title: purchase.orderNumber || `Xarid #${purchase.id}`,
             subtitle: purchase.supplierName || "Noma'lum ta'minotchi",
-            href: `/purchases?highlight=${purchase.id}`,
+            href: `/admin/purchases?highlight=${purchase.id}`,
             meta: formatCurrency(purchase.totalAmount),
           });
         });
@@ -311,7 +311,7 @@ export function SearchCommand() {
           type: 'supplier',
           title: supplier.name,
           subtitle: supplier.phone || supplier.contactPerson,
-          href: `/suppliers?highlight=${supplier.id}`,
+          href: `/admin/suppliers?highlight=${supplier.id}`,
         });
       });
 
@@ -322,7 +322,7 @@ export function SearchCommand() {
           type: 'employee',
           title: employee.fullName,
           subtitle: employee.phone || employee.position,
-          href: `/employees?highlight=${employee.id}`,
+          href: `/admin/employees?highlight=${employee.id}`,
         });
       });
 

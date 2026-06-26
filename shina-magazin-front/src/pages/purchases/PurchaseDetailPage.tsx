@@ -287,7 +287,7 @@ export function PurchaseDetailPage() {
       <div className="text-center py-12">
         <AlertCircle className="h-12 w-12 mx-auto text-error mb-4" />
         <h2 className="text-xl font-semibold">{t('erp.purchaseDetail.notFound')}</h2>
-        <Button variant="primary" className="mt-4" onClick={() => navigate('/purchases')}>
+        <Button variant="primary" className="mt-4" onClick={() => navigate('/admin/purchases')}>
           {t('erp.purchaseDetail.goBack')}
         </Button>
       </div>
@@ -310,7 +310,7 @@ export function PurchaseDetailPage() {
           <Button
             variant="ghost"
             size="sm"
-            onClick={() => navigate('/purchases')}
+            onClick={() => navigate('/admin/purchases')}
           >
             <ArrowLeft className="h-5 w-5" />
           </Button>

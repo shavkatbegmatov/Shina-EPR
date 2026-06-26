@@ -361,7 +361,7 @@ export function PurchasesPage() {
 
   // Navigate to detail page
   const handleRowClick = (purchase: PurchaseOrder) => {
-    navigate(`/purchases/${purchase.id}`);
+    navigate(`/admin/purchases/${purchase.id}`);
   };
 
   // Table columns

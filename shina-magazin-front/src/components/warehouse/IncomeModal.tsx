@@ -364,7 +364,7 @@ export function IncomeModal({ isOpen, onClose, onSuccess }: IncomeModalProps) {
               variant="outline"
               size="sm"
               className="h-12"
-              onClick={() => navigate('/suppliers')}
+              onClick={() => navigate('/admin/suppliers')}
               title={t('erp.incomeModal.addSupplier')}
             >
               <ExternalLink className="h-4 w-4" />

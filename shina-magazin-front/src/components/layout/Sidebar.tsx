@@ -28,22 +28,22 @@ import clsx from 'clsx';
 
 // Menu items with permission-based visibility (labelKey -> i18n)
 const menuItems = [
-  { path: '/', icon: LayoutDashboard, labelKey: 'erp.nav.dashboard', permission: PermissionCode.DASHBOARD_VIEW },
-  { path: '/products', icon: Package, labelKey: 'erp.nav.products', permission: PermissionCode.PRODUCTS_VIEW },
-  { path: '/pos', icon: ShoppingCart, labelKey: 'erp.nav.pos', permission: PermissionCode.SALES_CREATE },
-  { path: '/sales', icon: CreditCard, labelKey: 'erp.nav.sales', permission: PermissionCode.SALES_VIEW },
-  { path: '/shop-orders', icon: ClipboardList, labelKey: 'erp.nav.shopOrders', permission: PermissionCode.SALES_VIEW },
-  { path: '/customers', icon: Users, labelKey: 'erp.nav.customers', permission: PermissionCode.CUSTOMERS_VIEW },
-  { path: '/debts', icon: CreditCard, labelKey: 'erp.nav.debts', permission: PermissionCode.DEBTS_VIEW },
-  { path: '/warehouse', icon: Warehouse, labelKey: 'erp.nav.warehouse', permission: PermissionCode.WAREHOUSE_VIEW },
-  { path: '/suppliers', icon: TruckIcon, labelKey: 'erp.nav.suppliers', permission: PermissionCode.SUPPLIERS_VIEW },
-  { path: '/purchases', icon: ShoppingBag, labelKey: 'erp.nav.purchases', permission: PermissionCode.PURCHASES_VIEW },
-  { path: '/reports', icon: BarChart3, labelKey: 'erp.nav.reports', permission: PermissionCode.REPORTS_VIEW_SALES },
-  { path: '/notifications', icon: Bell, labelKey: 'erp.nav.notifications', permission: PermissionCode.NOTIFICATIONS_VIEW },
-  { path: '/employees', icon: UserCog, labelKey: 'erp.nav.employees', permission: PermissionCode.EMPLOYEES_VIEW },
-  { path: '/roles', icon: Shield, labelKey: 'erp.nav.roles', permission: PermissionCode.ROLES_VIEW },
-  { path: '/audit-logs', icon: FileText, labelKey: 'erp.nav.auditLogs', permission: PermissionCode.SETTINGS_VIEW },
-  { path: '/settings', icon: Settings, labelKey: 'erp.nav.settings', permission: PermissionCode.SETTINGS_VIEW },
+  { path: '/admin', icon: LayoutDashboard, labelKey: 'erp.nav.dashboard', permission: PermissionCode.DASHBOARD_VIEW },
+  { path: '/admin/products', icon: Package, labelKey: 'erp.nav.products', permission: PermissionCode.PRODUCTS_VIEW },
+  { path: '/admin/pos', icon: ShoppingCart, labelKey: 'erp.nav.pos', permission: PermissionCode.SALES_CREATE },
+  { path: '/admin/sales', icon: CreditCard, labelKey: 'erp.nav.sales', permission: PermissionCode.SALES_VIEW },
+  { path: '/admin/shop-orders', icon: ClipboardList, labelKey: 'erp.nav.shopOrders', permission: PermissionCode.SALES_VIEW },
+  { path: '/admin/customers', icon: Users, labelKey: 'erp.nav.customers', permission: PermissionCode.CUSTOMERS_VIEW },
+  { path: '/admin/debts', icon: CreditCard, labelKey: 'erp.nav.debts', permission: PermissionCode.DEBTS_VIEW },
+  { path: '/admin/warehouse', icon: Warehouse, labelKey: 'erp.nav.warehouse', permission: PermissionCode.WAREHOUSE_VIEW },
+  { path: '/admin/suppliers', icon: TruckIcon, labelKey: 'erp.nav.suppliers', permission: PermissionCode.SUPPLIERS_VIEW },
+  { path: '/admin/purchases', icon: ShoppingBag, labelKey: 'erp.nav.purchases', permission: PermissionCode.PURCHASES_VIEW },
+  { path: '/admin/reports', icon: BarChart3, labelKey: 'erp.nav.reports', permission: PermissionCode.REPORTS_VIEW_SALES },
+  { path: '/admin/notifications', icon: Bell, labelKey: 'erp.nav.notifications', permission: PermissionCode.NOTIFICATIONS_VIEW },
+  { path: '/admin/employees', icon: UserCog, labelKey: 'erp.nav.employees', permission: PermissionCode.EMPLOYEES_VIEW },
+  { path: '/admin/roles', icon: Shield, labelKey: 'erp.nav.roles', permission: PermissionCode.ROLES_VIEW },
+  { path: '/admin/audit-logs', icon: FileText, labelKey: 'erp.nav.auditLogs', permission: PermissionCode.SETTINGS_VIEW },
+  { path: '/admin/settings', icon: Settings, labelKey: 'erp.nav.settings', permission: PermissionCode.SETTINGS_VIEW },
 ];
 
 export function Sidebar() {
@@ -112,7 +112,7 @@ export function Sidebar() {
               >
                 <NavLink
                   to={item.path}
-                  end={item.path === '/'}
+                  end={item.path === '/admin'}
                   title={t(item.labelKey)}
                   className={({ isActive }) =>
                     clsx(

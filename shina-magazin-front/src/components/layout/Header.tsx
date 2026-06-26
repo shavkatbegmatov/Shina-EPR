@@ -235,7 +235,7 @@ export function Header() {
           {/* Page title with breadcrumb style */}
           <div className="flex items-center gap-2">
             <div className="hidden sm:flex items-center gap-2 text-sm text-base-content/50">
-              <Link to="/" className="hover:text-primary transition-colors">
+              <Link to="/admin" className="hover:text-primary transition-colors">
                 {t('erp.header.home')}
               </Link>
               <span>/</span>
@@ -384,7 +384,7 @@ export function Header() {
                   className="w-full"
                   onClick={() => {
                     setNotifDropdownOpen(false);
-                    navigate('/notifications');
+                    navigate('/admin/notifications');
                   }}
                 >
                   {t('erp.header.allNotifications')}
@@ -469,7 +469,7 @@ export function Header() {
               {/* Menu items */}
               <div className="p-2">
                 <Link
-                  to="/profile"
+                  to="/admin/profile"
                   className="flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-sm transition-colors hover:bg-base-200/70"
                   onClick={() => setUserDropdownOpen(false)}
                 >
@@ -477,7 +477,7 @@ export function Header() {
                   <span>{t('erp.header.profileSettings')}</span>
                 </Link>
                 <Link
-                  to="/settings"
+                  to="/admin/settings"
                   className="flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-sm transition-colors hover:bg-base-200/70"
                   onClick={() => setUserDropdownOpen(false)}
                 >

@@ -89,7 +89,7 @@ export function EmployeeDetailPage() {
       <div className="text-center py-12">
         <AlertCircle className="h-12 w-12 mx-auto text-error mb-4" />
         <h2 className="text-xl font-semibold">{t('erp.employeeDetail.notFound')}</h2>
-        <Button variant="primary" className="mt-4" onClick={() => navigate('/employees')}>
+        <Button variant="primary" className="mt-4" onClick={() => navigate('/admin/employees')}>
           {t('common.back')}
         </Button>
       </div>
@@ -104,7 +104,7 @@ export function EmployeeDetailPage() {
           <Button
             variant="ghost"
             size="sm"
-            onClick={() => navigate('/employees')}
+            onClick={() => navigate('/admin/employees')}
           >
             <ArrowLeft className="h-5 w-5" />
           </Button>
@@ -373,7 +373,7 @@ export function EmployeeDetailPage() {
 
       {/* Back Button */}
       <div className="flex justify-start">
-        <Button variant="ghost" onClick={() => navigate('/employees')}>
+        <Button variant="ghost" onClick={() => navigate('/admin/employees')}>
           <ArrowLeft className="h-4 w-4" />
           {t('erp.employeeDetail.backToList')}
         </Button>

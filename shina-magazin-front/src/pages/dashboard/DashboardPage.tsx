@@ -219,7 +219,7 @@ export function DashboardPage() {
               30 kun
             </Button>
           </div>
-          <Link to="/pos" className={buttonVariants({ variant: 'primary' })}>
+          <Link to="/admin/pos" className={buttonVariants({ variant: 'primary' })}>
             <ShoppingCart className="h-4 w-4" />
             Yangi sotuv
           </Link>
@@ -536,19 +536,19 @@ export function DashboardPage() {
       <div className="surface-card p-5">
         <h3 className="mb-4 font-semibold">Tez havolalar</h3>
         <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
-          <Link to="/pos" className={buttonVariants({ variant: 'primary' })}>
+          <Link to="/admin/pos" className={buttonVariants({ variant: 'primary' })}>
             <ShoppingCart className="h-4 w-4" />
             Kassa
           </Link>
-          <Link to="/products" className={buttonVariants({ variant: 'outline' })}>
+          <Link to="/admin/products" className={buttonVariants({ variant: 'outline' })}>
             <Package className="h-4 w-4" />
             Mahsulotlar
           </Link>
-          <Link to="/customers" className={buttonVariants({ variant: 'outline' })}>
+          <Link to="/admin/customers" className={buttonVariants({ variant: 'outline' })}>
             <Users className="h-4 w-4" />
             Mijozlar
           </Link>
-          <Link to="/reports" className={buttonVariants({ variant: 'outline' })}>
+          <Link to="/admin/reports" className={buttonVariants({ variant: 'outline' })}>
             <BarChart3 className="h-4 w-4" />
             Hisobotlar
           </Link>
