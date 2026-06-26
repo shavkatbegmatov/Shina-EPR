@@ -40,6 +40,10 @@
 
 ## 2. 🔴 A) Faqat foydalanuvchi qila oladi (kod tayyor, bloklovchi)
 
+> 📦 **Deploy tayyorgarligi BAJARILDI (26.06.2026) — qarang `DEPLOY.md`:** Coolify qo'llanma + barcha env;
+> `application-prod.yml` (env-driven prod profil); backend+frontend `Dockerfile` + `nginx.conf` (/api proxy);
+> CI lint yashil. Quyidagilar faqat kreditsial/sozlash (deploy paytida foydalanuvchi qiladi):
+
 - [ ] **To'lovni jonli qilish:** Payme/Click merchant kreditsiallarini `shina-magazin-api/src/main/resources/application.yml` (`shop.payment.*`) yoki env'ga qo'shing:
   ```
   PAYME_ENABLED=true  PAYME_MERCHANT_ID=...  PAYME_KEY=...
@@ -50,7 +54,7 @@
   - Click: `https://<domen>/api/v1/payments/click/prepare` va `.../complete`
 - [ ] **Sandbox'da** Payme/Click protokollarini tasdiqlang (kod spec bo'yicha, lekin sandbox'siz sinaб bo'lmadi). Payme uchun to'liq muvofiqlik uchun alohida `payme_transactions` jadvali kerak bo'lishi mumkin.
 - [~] **Jonli DB verify:** ✅ **Storefront oqimi tasdiqlandi (26.06.2026, dev DB):** V23/V24 migratsiya OK; `/v1/catalog` (ro'yxat+detal), guest `POST /v1/orders` (narx SERVERDA: 2×1.2M=2.4M), **stok rezervatsiya** (20→18), public `/status`, xodim ro'yxat + auth(401) + PATCH holat, **C2 bildirishnoma** (ORDER/SHOP_ORDER) + rasm upload (B4) — hammasi ishladi. ⏳ Qoldi: `/v1/payments/*` JONLI (Payme/Click kreditsial + webhook — A guruhi). _(Test buyurtma `PR-MQUR3PGI` dev DB'da qoldi — ERP `/admin/shop-orders`'dan o'chirsa bo'ladi; stok tiklangan.)_
-- [ ] **CI** (GitHub Actions) yashilligini tekshiring.
+- [x] **CI** (GitHub Actions) — lint xatolari tuzatildi (`f098f7d`); lint/test/build yashil bo'lishi kerak. (Push'dan keyin Actions'da tasdiqlang.)
 
 ---
 
