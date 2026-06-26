@@ -9,6 +9,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.web.PageableDefault;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.server.ResponseStatusException;
 import uz.shinamagazin.api.dto.request.CreateShopOrderRequest;
@@ -18,6 +19,7 @@ import uz.shinamagazin.api.dto.response.ShopOrderResponse;
 import uz.shinamagazin.api.dto.response.ShopOrderStatusResponse;
 import uz.shinamagazin.api.enums.PermissionCode;
 import uz.shinamagazin.api.enums.ShopOrderStatus;
+import uz.shinamagazin.api.security.CustomerUserDetails;
 import uz.shinamagazin.api.security.RequiresPermission;
 import uz.shinamagazin.api.security.SimpleRateLimiter;
 import uz.shinamagazin.api.service.ShopOrderService;
@@ -42,12 +44,16 @@ public class ShopOrderController {
     @Operation(summary = "Create order", description = "Storefront buyurtma yaratish (narx serverda hisoblanadi)")
     public ResponseEntity<ApiResponse<ShopOrderResponse>> createOrder(
             @Valid @RequestBody CreateShopOrderRequest request,
-            HttpServletRequest httpRequest) {
+            HttpServletRequest httpRequest,
+            @AuthenticationPrincipal Object principal) {
         if (!rateLimiter.allow("order:" + clientIp(httpRequest))) {
             throw new ResponseStatusException(HttpStatus.TOO_MANY_REQUESTS,
                     "Juda ko'p so'rov yuborildi. Birozdan keyin urinib ko'ring.");
         }
-        ShopOrderResponse order = shopOrderService.createOrder(request);
+        // permitAll endpoint, lekin JWT filter token bo'lsa principalni o'rnatadi:
+        // mijoz token -> buyurtma akkauntiga bog'lanadi; guest/staff -> null (guest).
+        Long customerId = (principal instanceof CustomerUserDetails c) ? c.getId() : null;
+        ShopOrderResponse order = shopOrderService.createOrder(request, customerId);
         return ResponseEntity.status(HttpStatus.CREATED)
                 .body(ApiResponse.success("Buyurtma qabul qilindi", order));
     }

@@ -8,6 +8,7 @@ import org.springframework.transaction.annotation.Transactional;
 import uz.shinamagazin.api.dto.request.CreateShopOrderRequest;
 import uz.shinamagazin.api.dto.response.ShopOrderResponse;
 import uz.shinamagazin.api.dto.response.ShopOrderStatusResponse;
+import uz.shinamagazin.api.entity.Customer;
 import uz.shinamagazin.api.entity.Product;
 import uz.shinamagazin.api.entity.ShopOrder;
 import uz.shinamagazin.api.entity.ShopOrderItem;
@@ -15,6 +16,7 @@ import uz.shinamagazin.api.enums.ShopDeliveryMethod;
 import uz.shinamagazin.api.enums.ShopOrderStatus;
 import uz.shinamagazin.api.exception.BadRequestException;
 import uz.shinamagazin.api.exception.ResourceNotFoundException;
+import uz.shinamagazin.api.repository.CustomerRepository;
 import uz.shinamagazin.api.repository.ProductRepository;
 import uz.shinamagazin.api.repository.ShopOrderRepository;
 
@@ -36,19 +38,25 @@ public class ShopOrderService {
 
     private final ShopOrderRepository orderRepository;
     private final ProductRepository productRepository;
+    private final CustomerRepository customerRepository;
     private final StaffNotificationService staffNotificationService;
 
     private static final BigDecimal DELIVERY_FEE = new BigDecimal("30000");
     private static final BigDecimal FREE_DELIVERY_THRESHOLD = new BigDecimal("1000000");
 
     @Transactional
-    public ShopOrderResponse createOrder(CreateShopOrderRequest req) {
+    public ShopOrderResponse createOrder(CreateShopOrderRequest req, Long customerId) {
         if (req.getItems() == null || req.getItems().isEmpty()) {
             throw new BadRequestException("Buyurtma bo'sh bo'lishi mumkin emas");
         }
 
+        // Mijoz login qilgan bo'lsa buyurtma uning akkauntiga bog'lanadi (ixtiyoriy; guest'da null).
+        Customer customer = (customerId != null)
+                ? customerRepository.findById(customerId).orElse(null) : null;
+
         ShopOrder order = ShopOrder.builder()
                 .orderNo(generateOrderNo())
+                .customer(customer)
                 .customerName(req.getName().trim())
                 .customerPhone(req.getPhone().trim())
                 .customerEmail(req.getEmail() != null && !req.getEmail().isBlank() ? req.getEmail().trim() : null)
