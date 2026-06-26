@@ -32,7 +32,7 @@ export function TireSizeFinder({ className }: { className?: string }) {
     if (profile) params.set('profile', profile);
     if (diameter) params.set('diameter', diameter);
     const qs = params.toString();
-    navigate(`/magazin/katalog${qs ? `?${qs}` : ''}`);
+    navigate(`/katalog${qs ? `?${qs}` : ''}`);
   };
 
   const selectClass = 'h-12 w-full rounded-xl border border-base-300 bg-base-100 px-3 text-sm outline-none transition focus:border-primary';

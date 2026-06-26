@@ -28,7 +28,7 @@ export function ProductCard({ product }: ProductCardProps) {
   const [justAdded, setJustAdded] = useState(false);
 
   const outOfStock = product.quantity <= 0;
-  const href = `/magazin/mahsulot/${product.id}`;
+  const href = `/mahsulot/${product.id}`;
 
   const handleAdd = () => {
     add(product);

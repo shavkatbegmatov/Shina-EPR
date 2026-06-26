@@ -10,10 +10,10 @@ import { TireSizeFinder } from '../components/TireSizeFinder';
 import { useCatalogProducts } from '../data/useCatalog';
 
 const CATEGORIES = [
-  { key: 'passenger', icon: Car, to: '/magazin/katalog' },
-  { key: 'suv', icon: Mountain, to: '/magazin/katalog' },
-  { key: 'sport', icon: Gauge, to: '/magazin/katalog' },
-  { key: 'winter', icon: Snowflake, to: '/magazin/katalog?season=WINTER' },
+  { key: 'passenger', icon: Car, to: '/katalog' },
+  { key: 'suv', icon: Mountain, to: '/katalog' },
+  { key: 'sport', icon: Gauge, to: '/katalog' },
+  { key: 'winter', icon: Snowflake, to: '/katalog?season=WINTER' },
 ] as const;
 
 const WHY = [
@@ -53,10 +53,10 @@ export function ShopHomePage() {
             {t('shop.hero.subtitle')}
           </p>
           <div className="mt-8 flex flex-wrap gap-3">
-            <Link to="/magazin/katalog" className={cn(buttonVariants({ variant: 'secondary', size: 'lg' }), 'gap-2')}>
+            <Link to="/katalog" className={cn(buttonVariants({ variant: 'secondary', size: 'lg' }), 'gap-2')}>
               {t('shop.hero.ctaPrimary')} <ArrowRight size={18} />
             </Link>
-            <Link to="/magazin/katalog?season=WINTER" className={buttonVariants({ variant: 'outline', size: 'lg' }) + ' border-primary-content/40 text-primary-content hover:bg-primary-content/10'}>
+            <Link to="/katalog?season=WINTER" className={buttonVariants({ variant: 'outline', size: 'lg' }) + ' border-primary-content/40 text-primary-content hover:bg-primary-content/10'}>
               {t('shop.hero.ctaSecondary')}
             </Link>
           </div>
@@ -90,7 +90,7 @@ export function ShopHomePage() {
         <h2 className="section-title mb-6">{t('shop.home.brands')}</h2>
         <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6">
           {brandCounts.map(([brand, count]) => (
-            <Link key={brand} to={`/magazin/katalog?brand=${encodeURIComponent(brand)}`}>
+            <Link key={brand} to={`/katalog?brand=${encodeURIComponent(brand)}`}>
               <Card className="flex h-full flex-col items-center justify-center gap-1 p-4 text-center transition-shadow hover:border-primary/40 hover:shadow-strong">
                 <span className="font-bold">{brand}</span>
                 <span className="text-xs text-base-content/50">{t('shop.home.brandCount', { count })}</span>
@@ -104,7 +104,7 @@ export function ShopHomePage() {
       <section className="mx-auto max-w-7xl px-4 pt-12 sm:px-6">
         <div className="mb-6 flex items-end justify-between">
           <h2 className="section-title">{t('shop.home.featured')}</h2>
-          <Link to="/magazin/katalog" className="inline-flex items-center gap-1 text-sm font-medium text-primary hover:underline">
+          <Link to="/katalog" className="inline-flex items-center gap-1 text-sm font-medium text-primary hover:underline">
             {t('shop.home.viewAll')} <ArrowRight size={15} />
           </Link>
         </div>
@@ -140,7 +140,7 @@ export function ShopHomePage() {
             <h3 className="text-xl font-bold">{t('shop.home.ctaTitle')}</h3>
             <p className="mt-1 text-sm text-base-content/70">{t('shop.home.ctaText')}</p>
           </div>
-          <Link to="/magazin/katalog" className={cn(buttonVariants({ variant: 'primary', size: 'lg' }), 'gap-2 shrink-0')}>
+          <Link to="/katalog" className={cn(buttonVariants({ variant: 'primary', size: 'lg' }), 'gap-2 shrink-0')}>
             {t('shop.home.ctaButton')} <ArrowRight size={18} />
           </Link>
         </Card>

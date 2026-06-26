@@ -12,8 +12,8 @@ export function ShopNotFound() {
       <h1 className="mt-2 text-2xl font-bold">{t('shop.notFound.title')}</h1>
       <p className="mt-2 text-base-content/60">{t('shop.notFound.hint')}</p>
       <div className="mt-8 flex flex-wrap justify-center gap-3">
-        <Link to="/magazin" className={buttonVariants({ variant: 'primary' })}>{t('shop.nav.home')}</Link>
-        <Link to="/magazin/katalog" className={buttonVariants({ variant: 'outline' })}>{t('shop.nav.catalog')}</Link>
+        <Link to="/" className={buttonVariants({ variant: 'primary' })}>{t('shop.nav.home')}</Link>
+        <Link to="/katalog" className={buttonVariants({ variant: 'outline' })}>{t('shop.nav.catalog')}</Link>
       </div>
     </div>
   );

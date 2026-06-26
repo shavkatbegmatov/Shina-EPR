@@ -29,7 +29,7 @@ export function ComparePage() {
           icon={Scale}
           title={t('shop.compare.empty')}
           description={t('shop.compare.emptyHint')}
-          action={<Link to="/magazin/katalog" className={buttonVariants({ variant: 'primary' })}>{t('shop.nav.catalog')}</Link>}
+          action={<Link to="/katalog" className={buttonVariants({ variant: 'primary' })}>{t('shop.nav.catalog')}</Link>}
         />
       </div>
     );
@@ -82,7 +82,7 @@ export function ComparePage() {
                     >
                       <X size={14} />
                     </button>
-                    <Link to={`/magazin/mahsulot/${p.id}`} className="block">
+                    <Link to={`/mahsulot/${p.id}`} className="block">
                       <div className="mx-auto h-28 w-28 overflow-hidden rounded-xl border border-base-200">
                         <ProductImage src={p.imageUrl} alt={p.name} />
                       </div>

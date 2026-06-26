@@ -25,7 +25,7 @@ export function WishlistPage() {
           icon={Heart}
           title={t('shop.wishlist.empty')}
           description={t('shop.wishlist.emptyHint')}
-          action={<Link to="/magazin/katalog" className={buttonVariants({ variant: 'primary' })}>{t('shop.nav.catalog')}</Link>}
+          action={<Link to="/katalog" className={buttonVariants({ variant: 'primary' })}>{t('shop.nav.catalog')}</Link>}
         />
       </div>
     );

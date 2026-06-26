@@ -44,7 +44,7 @@ export function OrderConfirmationPage() {
           icon={Package}
           title={t('shop.order.notFound')}
           description={t('shop.order.notFoundHint')}
-          action={<Link to="/magazin" className={buttonVariants({ variant: 'primary' })}>{t('shop.nav.home')}</Link>}
+          action={<Link to="/" className={buttonVariants({ variant: 'primary' })}>{t('shop.nav.home')}</Link>}
         />
       </div>
     );
@@ -124,9 +124,9 @@ export function OrderConfirmationPage() {
       </div>
 
       <div className="flex flex-wrap justify-center gap-3">
-        <Link to="/magazin/buyurtmalarim" className={buttonVariants({ variant: 'outline' })}>{t('shop.nav.orders')}</Link>
-        <Link to="/magazin/katalog" className={buttonVariants({ variant: 'outline' })}>{t('shop.order.continueShopping')}</Link>
-        <Link to="/magazin" className={buttonVariants({ variant: 'primary' })}>{t('shop.order.backHome')}</Link>
+        <Link to="/buyurtmalarim" className={buttonVariants({ variant: 'outline' })}>{t('shop.nav.orders')}</Link>
+        <Link to="/katalog" className={buttonVariants({ variant: 'outline' })}>{t('shop.order.continueShopping')}</Link>
+        <Link to="/" className={buttonVariants({ variant: 'primary' })}>{t('shop.order.backHome')}</Link>
       </div>
     </div>
   );

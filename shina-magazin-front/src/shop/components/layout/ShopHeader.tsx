@@ -33,7 +33,7 @@ export function ShopHeader({ onOpenCart }: ShopHeaderProps) {
     <header className="sticky top-0 z-40 border-b border-base-200 bg-base-100/90 backdrop-blur">
       <div className="mx-auto flex h-16 max-w-7xl items-center gap-3 px-4 sm:px-6">
         {/* Logo */}
-        <Link to="/magazin" className="flex shrink-0 items-center gap-2" aria-label="Protektor">
+        <Link to="/" className="flex shrink-0 items-center gap-2" aria-label="Protektor">
           <ShopLogo className="h-9 w-9" />
           <span className="text-lg font-extrabold tracking-tight">
             Protektor
@@ -42,9 +42,9 @@ export function ShopHeader({ onOpenCart }: ShopHeaderProps) {
 
         {/* Desktop nav */}
         <nav className="ml-4 hidden items-center gap-6 md:flex">
-          <NavLink to="/magazin" end className={navLinkClass}>{t('shop.nav.home')}</NavLink>
-          <NavLink to="/magazin/katalog" className={navLinkClass}>{t('shop.nav.catalog')}</NavLink>
-          <NavLink to="/magazin/buyurtmalarim" className={navLinkClass}>{t('shop.nav.orders')}</NavLink>
+          <NavLink to="/" end className={navLinkClass}>{t('shop.nav.home')}</NavLink>
+          <NavLink to="/katalog" className={navLinkClass}>{t('shop.nav.catalog')}</NavLink>
+          <NavLink to="/buyurtmalarim" className={navLinkClass}>{t('shop.nav.orders')}</NavLink>
         </nav>
 
         {/* Desktop search (jonli takliflar) */}
@@ -61,7 +61,7 @@ export function ShopHeader({ onOpenCart }: ShopHeaderProps) {
           <Link to="/kabinet" className={cn(buttonVariants({ variant: 'ghost', size: 'sm', iconOnly: true }), 'hidden sm:inline-flex')} title={t('shop.nav.account')} aria-label={t('shop.nav.account')}>
             <User size={18} />
           </Link>
-          <Link to="/magazin/solishtirish" className={cn(buttonVariants({ variant: 'ghost', size: 'sm', iconOnly: true }), 'relative hidden sm:inline-flex')} title={t('shop.compare.title')} aria-label={t('shop.compare.title')}>
+          <Link to="/solishtirish" className={cn(buttonVariants({ variant: 'ghost', size: 'sm', iconOnly: true }), 'relative hidden sm:inline-flex')} title={t('shop.compare.title')} aria-label={t('shop.compare.title')}>
             <Scale size={18} />
             {compareCount > 0 && (
               <Badge tone="primary" className="absolute -right-1 -top-1 min-w-5 justify-center px-1 py-0 text-[10px] font-bold">
@@ -69,7 +69,7 @@ export function ShopHeader({ onOpenCart }: ShopHeaderProps) {
               </Badge>
             )}
           </Link>
-          <Link to="/magazin/saqlanganlar" className={cn(buttonVariants({ variant: 'ghost', size: 'sm', iconOnly: true }), 'relative')} title={t('shop.nav.wishlist')} aria-label={t('shop.nav.wishlist')}>
+          <Link to="/saqlanganlar" className={cn(buttonVariants({ variant: 'ghost', size: 'sm', iconOnly: true }), 'relative')} title={t('shop.nav.wishlist')} aria-label={t('shop.nav.wishlist')}>
             <Heart size={18} />
             {wishlistCount > 0 && (
               <Badge tone="error" className="absolute -right-1 -top-1 min-w-5 justify-center px-1 py-0 text-[10px] font-bold">
@@ -96,11 +96,11 @@ export function ShopHeader({ onOpenCart }: ShopHeaderProps) {
         <div className="border-t border-base-200 bg-base-100 px-4 py-4 md:hidden">
           <ShopSearchBox className="mb-3" onNavigate={() => setMenuOpen(false)} />
           <nav className="flex flex-col">
-            <NavLink to="/magazin" end onClick={() => setMenuOpen(false)} className="rounded-lg px-2 py-2.5 text-sm font-medium hover:bg-base-200">{t('shop.nav.home')}</NavLink>
-            <NavLink to="/magazin/katalog" onClick={() => setMenuOpen(false)} className="rounded-lg px-2 py-2.5 text-sm font-medium hover:bg-base-200">{t('shop.nav.catalog')}</NavLink>
-            <NavLink to="/magazin/saqlanganlar" onClick={() => setMenuOpen(false)} className="rounded-lg px-2 py-2.5 text-sm font-medium hover:bg-base-200">{t('shop.nav.wishlist')}</NavLink>
-            <NavLink to="/magazin/solishtirish" onClick={() => setMenuOpen(false)} className="rounded-lg px-2 py-2.5 text-sm font-medium hover:bg-base-200">{t('shop.compare.title')}</NavLink>
-            <NavLink to="/magazin/buyurtmalarim" onClick={() => setMenuOpen(false)} className="rounded-lg px-2 py-2.5 text-sm font-medium hover:bg-base-200">{t('shop.nav.orders')}</NavLink>
+            <NavLink to="/" end onClick={() => setMenuOpen(false)} className="rounded-lg px-2 py-2.5 text-sm font-medium hover:bg-base-200">{t('shop.nav.home')}</NavLink>
+            <NavLink to="/katalog" onClick={() => setMenuOpen(false)} className="rounded-lg px-2 py-2.5 text-sm font-medium hover:bg-base-200">{t('shop.nav.catalog')}</NavLink>
+            <NavLink to="/saqlanganlar" onClick={() => setMenuOpen(false)} className="rounded-lg px-2 py-2.5 text-sm font-medium hover:bg-base-200">{t('shop.nav.wishlist')}</NavLink>
+            <NavLink to="/solishtirish" onClick={() => setMenuOpen(false)} className="rounded-lg px-2 py-2.5 text-sm font-medium hover:bg-base-200">{t('shop.compare.title')}</NavLink>
+            <NavLink to="/buyurtmalarim" onClick={() => setMenuOpen(false)} className="rounded-lg px-2 py-2.5 text-sm font-medium hover:bg-base-200">{t('shop.nav.orders')}</NavLink>
             <Link to="/kabinet" onClick={() => setMenuOpen(false)} className="rounded-lg px-2 py-2.5 text-sm font-medium hover:bg-base-200">{t('shop.nav.account')}</Link>
           </nav>
         </div>

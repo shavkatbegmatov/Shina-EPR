@@ -84,7 +84,7 @@ export function QuickViewModal() {
                 </Button>
                 <WishlistButton productId={product.id} variant="inline" />
               </div>
-              <Link to={`/magazin/mahsulot/${product.id}`} onClick={close} className={cn(buttonVariants({ variant: 'ghost', size: 'sm' }), 'mt-3 w-full gap-1')}>
+              <Link to={`/mahsulot/${product.id}`} onClick={close} className={cn(buttonVariants({ variant: 'ghost', size: 'sm' }), 'mt-3 w-full gap-1')}>
                 {t('shop.quickView.details')} <ArrowRight size={15} />
               </Link>
             </div>

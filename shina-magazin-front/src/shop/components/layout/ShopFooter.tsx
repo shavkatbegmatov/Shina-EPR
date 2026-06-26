@@ -20,8 +20,8 @@ export function ShopFooter() {
         <div>
           <h3 className="mb-3 text-sm font-semibold">{t('shop.footer.links')}</h3>
           <ul className="space-y-2 text-sm text-base-content/70">
-            <li><Link to="/magazin" className="hover:text-primary">{t('shop.nav.home')}</Link></li>
-            <li><Link to="/magazin/katalog" className="hover:text-primary">{t('shop.nav.catalog')}</Link></li>
+            <li><Link to="/" className="hover:text-primary">{t('shop.nav.home')}</Link></li>
+            <li><Link to="/katalog" className="hover:text-primary">{t('shop.nav.catalog')}</Link></li>
             <li><Link to="/kabinet" className="hover:text-primary">{t('shop.footer.account')}</Link></li>
           </ul>
         </div>

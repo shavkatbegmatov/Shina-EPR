@@ -45,13 +45,13 @@ export function ShopSearchBox({ className, onNavigate }: ShopSearchBoxProps) {
   }, []);
 
   const submitSearch = () => {
-    navigate(`/magazin/katalog${query.trim() ? `?q=${encodeURIComponent(query.trim())}` : ''}`);
+    navigate(`/katalog${query.trim() ? `?q=${encodeURIComponent(query.trim())}` : ''}`);
     setOpen(false);
     onNavigate?.();
   };
 
   const goProduct = (id: number) => {
-    navigate(`/magazin/mahsulot/${id}`);
+    navigate(`/mahsulot/${id}`);
     setOpen(false);
     setQuery('');
     onNavigate?.();

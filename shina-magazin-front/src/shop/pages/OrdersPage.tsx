@@ -22,7 +22,7 @@ export function OrdersPage() {
           icon={Package}
           title={t('shop.orders.empty')}
           description={t('shop.orders.emptyHint')}
-          action={<Link to="/magazin/katalog" className={buttonVariants({ variant: 'primary' })}>{t('shop.nav.catalog')}</Link>}
+          action={<Link to="/katalog" className={buttonVariants({ variant: 'primary' })}>{t('shop.nav.catalog')}</Link>}
         />
       </div>
     );
@@ -37,7 +37,7 @@ export function OrdersPage() {
           const firstNames = o.items.map((i) => i.product.name).slice(0, 2).join(', ');
           return (
             <li key={o.orderNo}>
-              <Link to={`/magazin/buyurtma/${o.orderNo}`}>
+              <Link to={`/buyurtma/${o.orderNo}`}>
                 <Card className="flex items-center gap-4 p-5 transition-shadow hover:shadow-strong">
                   <span className="grid h-12 w-12 shrink-0 place-items-center rounded-2xl bg-primary/10 text-primary">
                     <Package size={22} />

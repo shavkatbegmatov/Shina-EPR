@@ -86,7 +86,7 @@ export function CartDrawer({ open, onClose }: CartDrawerProps) {
                 </div>
                 <Button
                   block
-                  onClick={() => { onClose(); navigate('/magazin/checkout'); }}
+                  onClick={() => { onClose(); navigate('/checkout'); }}
                 >
                   {t('shop.cart.checkout')}
                 </Button>

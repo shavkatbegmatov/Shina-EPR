@@ -58,7 +58,7 @@ export function CheckoutPage() {
           icon={ShoppingBag}
           title={t('shop.checkout.emptyTitle')}
           description={t('shop.checkout.emptyHint')}
-          action={<Link to="/magazin/katalog" className={buttonVariants({ variant: 'primary' })}>{t('shop.nav.catalog')}</Link>}
+          action={<Link to="/katalog" className={buttonVariants({ variant: 'primary' })}>{t('shop.nav.catalog')}</Link>}
         />
       </div>
     );
@@ -133,7 +133,7 @@ export function CheckoutPage() {
       }
     }
 
-    navigate(`/magazin/buyurtma/${orderNo}`);
+    navigate(`/buyurtma/${orderNo}`);
   };
 
   const inputClass = (field: string) =>
@@ -272,7 +272,7 @@ export function CheckoutPage() {
             {stepIdx > 0 ? (
               <Button variant="ghost" onClick={back} className="gap-1"><ChevronLeft size={16} /> {t('shop.checkout.back')}</Button>
             ) : (
-              <Link to="/magazin/katalog" className={cn(buttonVariants({ variant: 'ghost' }), 'gap-1')}><ChevronLeft size={16} /> {t('shop.nav.catalog')}</Link>
+              <Link to="/katalog" className={cn(buttonVariants({ variant: 'ghost' }), 'gap-1')}><ChevronLeft size={16} /> {t('shop.nav.catalog')}</Link>
             )}
             {stepIdx < STEPS.length - 1 ? (
               <Button onClick={next} className="gap-1">{t('shop.checkout.next')} <ChevronRight size={16} /></Button>

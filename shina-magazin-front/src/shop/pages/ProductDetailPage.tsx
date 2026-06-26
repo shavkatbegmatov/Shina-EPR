@@ -48,7 +48,7 @@ export function ProductDetailPage() {
         <EmptyState
           title={t('shop.product.notFound')}
           description={t('shop.product.notFoundHint')}
-          action={<Link to="/magazin/katalog" className={buttonVariants({ variant: 'primary' })}>{t('shop.nav.catalog')}</Link>}
+          action={<Link to="/katalog" className={buttonVariants({ variant: 'primary' })}>{t('shop.nav.catalog')}</Link>}
         />
       </div>
     );
@@ -74,7 +74,7 @@ export function ProductDetailPage() {
     <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6">
       {/* Breadcrumb */}
       <nav className="mb-6 flex items-center gap-1 text-sm text-base-content/50">
-        <Link to="/magazin/katalog" className="hover:text-primary">{t('shop.nav.catalog')}</Link>
+        <Link to="/katalog" className="hover:text-primary">{t('shop.nav.catalog')}</Link>
         <ChevronRight size={14} />
         <span className="truncate text-base-content/80">{product.name}</span>
       </nav>
@@ -142,7 +142,7 @@ export function ProductDetailPage() {
             </dl>
           </Card>
 
-          <Link to="/magazin/katalog" className={cn(buttonVariants({ variant: 'ghost', size: 'sm' }), 'mt-6 gap-1')}>
+          <Link to="/katalog" className={cn(buttonVariants({ variant: 'ghost', size: 'sm' }), 'mt-6 gap-1')}>
             <ArrowLeft size={15} /> {t('shop.product.backToCatalog')}
           </Link>
         </div>
