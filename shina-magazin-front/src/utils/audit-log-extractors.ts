@@ -106,7 +106,7 @@ function extractDebtPaymentDetail(group: AuditLogGroup): AuditLogGroupDetail {
       label: 'Mijoz',
       value: customerName,
       icon: '👤',
-      link: customerId ? `/customers/${customerId}` : undefined,
+      link: customerId ? `/admin/customers/${customerId}` : undefined,
     });
   }
 
@@ -121,7 +121,7 @@ function extractDebtPaymentDetail(group: AuditLogGroup): AuditLogGroupDetail {
       label: 'Faktura raqami',
       value: invoiceNumber,
       icon: '📄',
-      link: saleId ? `/sales/${saleId}` : undefined,
+      link: saleId ? `/admin/sales/${saleId}` : undefined,
     });
   }
 
@@ -189,7 +189,7 @@ function extractDebtPaymentDetail(group: AuditLogGroup): AuditLogGroupDetail {
     operationLabel: "Qarz to'lash",
     timestamp: formatTimestamp(group.timestamp),
     operatorUsername: group.username || 'Noma\'lum',
-    operatorLink: group.logs[0]?.userId ? `/employees?userId=${group.logs[0].userId}` : undefined,
+    operatorLink: group.logs[0]?.userId ? `/admin/employees?userId=${group.logs[0].userId}` : undefined,
     details,
     logs: group.logs,
   };
@@ -214,7 +214,7 @@ function extractSaleCreateDetail(group: AuditLogGroup): AuditLogGroupDetail {
       label: 'Faktura raqami',
       value: invoiceNumber,
       icon: '📄',
-      link: saleLog?.entityId ? `/sales/${saleLog.entityId}` : undefined,
+      link: saleLog?.entityId ? `/admin/sales/${saleLog.entityId}` : undefined,
     });
   }
 
@@ -227,7 +227,7 @@ function extractSaleCreateDetail(group: AuditLogGroup): AuditLogGroupDetail {
       label: 'Mijoz',
       value: customerName,
       icon: '👤',
-      link: customerId ? `/customers/${customerId}` : undefined,
+      link: customerId ? `/admin/customers/${customerId}` : undefined,
     });
   }
 
@@ -287,7 +287,7 @@ function extractSaleCreateDetail(group: AuditLogGroup): AuditLogGroupDetail {
     operationLabel: 'Sotuv yaratish',
     timestamp: formatTimestamp(group.timestamp),
     operatorUsername: group.username || 'Noma\'lum',
-    operatorLink: group.logs[0]?.userId ? `/employees?userId=${group.logs[0].userId}` : undefined,
+    operatorLink: group.logs[0]?.userId ? `/admin/employees?userId=${group.logs[0].userId}` : undefined,
     details,
     logs: group.logs,
   };
@@ -318,7 +318,7 @@ function extractGenericDetail(group: AuditLogGroup): AuditLogGroupDetail {
     operationLabel: group.primaryAction,
     timestamp: formatTimestamp(group.timestamp),
     operatorUsername: group.username || 'Noma\'lum',
-    operatorLink: group.logs[0]?.userId ? `/employees?userId=${group.logs[0].userId}` : undefined,
+    operatorLink: group.logs[0]?.userId ? `/admin/employees?userId=${group.logs[0].userId}` : undefined,
     details,
     logs: group.logs,
   };
