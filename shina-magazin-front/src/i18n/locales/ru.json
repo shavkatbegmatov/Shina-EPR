@@ -1870,7 +1870,14 @@
       "empty": "Заказов нет",
       "emptyHint": "Вы ещё не оформляли заказы.",
       "statusAccepted": "Принят",
-      "itemsCount": "Товаров: {{count}}"
+      "itemsCount": "Товаров: {{count}}",
+      "loading": "Загрузка заказов…",
+      "status": {
+        "NEW": "Новый",
+        "CONFIRMED": "Подтверждён",
+        "CANCELLED": "Отменён",
+        "COMPLETED": "Завершён"
+      }
     },
     "notFound": {
       "title": "Страница не найдена",

@@ -171,7 +171,7 @@ export function CheckoutPage() {
                   <span>{t('shop.checkout.loggedInAs', { name: portalCustomer.fullName })}</span>
                 </div>
               ) : (
-                <Link to="/kabinet/kirish" className="inline-flex items-center gap-1.5 text-sm font-medium text-primary hover:underline">
+                <Link to="/kirish?redirect=/checkout" className="inline-flex items-center gap-1.5 text-sm font-medium text-primary hover:underline">
                   {t('shop.checkout.haveAccount')} <ChevronRight size={14} />
                 </Link>
               )}

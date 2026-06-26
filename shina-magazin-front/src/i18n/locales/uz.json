@@ -1870,7 +1870,14 @@
       "empty": "Buyurtmalar yo'q",
       "emptyHint": "Hali buyurtma bermagansiz.",
       "statusAccepted": "Qabul qilingan",
-      "itemsCount": "{{count}} ta mahsulot"
+      "itemsCount": "{{count}} ta mahsulot",
+      "loading": "Buyurtmalar yuklanmoqda…",
+      "status": {
+        "NEW": "Yangi",
+        "CONFIRMED": "Tasdiqlangan",
+        "CANCELLED": "Bekor qilingan",
+        "COMPLETED": "Yakunlangan"
+      }
     },
     "notFound": {
       "title": "Sahifa topilmadi",
