@@ -255,7 +255,7 @@ export const useNotificationsStore = create<NotificationsState>((set, get) => ({
               const { useAuthStore } = await import('./authStore');
               setTimeout(() => {
                 useAuthStore.getState().logout();
-                window.location.href = '/login';
+                window.location.href = '/admin/login';
               }, 1500);
 
               return; // Don't dispatch event if we're logging out

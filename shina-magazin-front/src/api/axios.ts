@@ -56,10 +56,10 @@ api.interceptors.response.use(
           useAuthStore.getState().logout();
 
           // Only redirect if not already on login page
-          if (!window.location.pathname.includes('/login')) {
+          if (!window.location.pathname.includes('/admin/login')) {
             toast.error('Sessioningiz tugadi. Qayta kiring.');
             setTimeout(() => {
-              window.location.href = '/login';
+              window.location.href = '/admin/login';
             }, 1000);
           }
           return Promise.reject(refreshError);
@@ -68,8 +68,8 @@ api.interceptors.response.use(
         // No refresh token or already retrying — clear auth (zustand + tokens) and redirect.
         useAuthStore.getState().logout();
 
-        if (!window.location.pathname.includes('/login')) {
-          window.location.href = '/login';
+        if (!window.location.pathname.includes('/admin/login')) {
+          window.location.href = '/admin/login';
         }
         return Promise.reject(error);
       }

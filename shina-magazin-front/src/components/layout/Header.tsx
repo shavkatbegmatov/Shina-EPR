@@ -179,7 +179,7 @@ export function Header() {
     } finally {
       // Clear frontend state and redirect
       logout();
-      navigate('/login');
+      navigate('/admin/login');
     }
   };
 

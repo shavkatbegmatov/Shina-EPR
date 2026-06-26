@@ -38,7 +38,7 @@ export function useCrossTabSync() {
         // Small delay to show toast before redirect
         setTimeout(() => {
           logout();
-          navigate('/login', { replace: true });
+          navigate('/admin/login', { replace: true });
         }, 500);
       }
 
@@ -48,7 +48,7 @@ export function useCrossTabSync() {
 
         setTimeout(() => {
           logout();
-          navigate('/login', { replace: true });
+          navigate('/admin/login', { replace: true });
         }, 500);
       }
 
@@ -62,7 +62,7 @@ export function useCrossTabSync() {
 
         setTimeout(() => {
           logout();
-          navigate('/login', { replace: true });
+          navigate('/admin/login', { replace: true });
         }, 500);
       }
 

@@ -58,7 +58,7 @@ export function useSessionMonitor(options: UseSessionMonitorOptions = {}) {
         // Clear auth state and redirect to login
         setTimeout(() => {
           logout();
-          navigate('/login', { replace: true });
+          navigate('/admin/login', { replace: true });
         }, 1000);
       }
     } catch (error: unknown) {

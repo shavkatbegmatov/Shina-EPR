@@ -74,7 +74,7 @@ export function ChangePasswordPage() {
 
       // Force re-login after password change
       logout();
-      navigate('/login');
+      navigate('/admin/login');
     } catch (error: unknown) {
       const err = error as { response?: { data?: { message?: string } } };
       toast.error(err.response?.data?.message || t('erp.changePassword.toastError'));

@@ -57,7 +57,7 @@ export function SessionsTab() {
         toast.error(t('erp.sessions.revokedFromAnotherDevice'));
         setTimeout(() => {
           logout();
-          navigate('/login');
+          navigate('/admin/login');
         }, 1500);
       } else {
         toast.error(t('erp.sessions.loadError'));
@@ -95,7 +95,7 @@ export function SessionsTab() {
           toast.error(t('erp.sessions.revokedFromAnotherDevice'));
           setTimeout(() => {
             logout();
-            navigate('/login');
+            navigate('/admin/login');
           }, 1500);
         } else {
           // Another device logged out - just refresh the session list
@@ -144,7 +144,7 @@ export function SessionsTab() {
         toast.error(t('erp.sessions.sessionInvalid'));
         setTimeout(() => {
           logout();
-          navigate('/login');
+          navigate('/admin/login');
         }, 1500);
       } else {
         toast.error(t('erp.sessions.revokeError'));
@@ -169,7 +169,7 @@ export function SessionsTab() {
         toast.error(t('erp.sessions.sessionInvalid'));
         setTimeout(() => {
           logout();
-          navigate('/login');
+          navigate('/admin/login');
         }, 1500);
       } else {
         toast.error(t('erp.sessions.revokeAllError'));

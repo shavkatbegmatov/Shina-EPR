@@ -92,7 +92,7 @@ export function AccessDenied({
               {t("common.back")}
             </Button>
           ) : null}
-          <Link to="/" className={buttonVariants({ variant: "primary", className: "gap-2" })}>
+          <Link to="/admin" className={buttonVariants({ variant: "primary", className: "gap-2" })}>
             <Home className="h-4 w-4" />
             {t("erp.accessDenied.goHome")}
           </Link>

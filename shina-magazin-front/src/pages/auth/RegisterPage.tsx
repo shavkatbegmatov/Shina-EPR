@@ -136,7 +136,7 @@ export function RegisterPage() {
 
           <div className="mt-6 text-center text-xs text-base-content/60">
             {t('erp.register.haveAccount')}{' '}
-            <Link to="/login" className="link link-primary">
+            <Link to="/admin/login" className="link link-primary">
               {t('erp.register.login')}
             </Link>
           </div>

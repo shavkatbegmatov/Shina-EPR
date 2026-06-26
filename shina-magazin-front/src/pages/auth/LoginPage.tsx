@@ -27,9 +27,9 @@ export function LoginPage() {
 
   const redirectTo = useMemo(() => {
     const from = (location.state as { from?: { pathname?: string; search?: string; hash?: string } } | null)?.from;
-    const path = from?.pathname ? `${from.pathname}${from.search || ''}${from.hash || ''}` : '/';
-    if (path.startsWith('/login') || path.startsWith('/register')) {
-      return '/';
+    const path = from?.pathname ? `${from.pathname}${from.search || ''}${from.hash || ''}` : '/admin';
+    if (path.startsWith('/admin/login') || path.startsWith('/admin/register')) {
+      return '/admin';
     }
     return path;
   }, [location.state]);
@@ -225,7 +225,7 @@ export function LoginPage() {
 
             <div className="mt-4 text-center text-xs text-base-content/60">
               {t('erp.login.noAccount')}{' '}
-              <Link to="/register" className="link link-primary">
+              <Link to="/admin/register" className="link link-primary">
                 {t('erp.login.register')}
               </Link>
             </div>

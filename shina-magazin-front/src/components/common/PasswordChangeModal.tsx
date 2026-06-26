@@ -93,7 +93,7 @@ export function PasswordChangeModal({ isOpen, onClose }: PasswordChangeModalProp
       // Force re-login after password change
       setTimeout(() => {
         logout();
-        navigate('/login');
+        navigate('/admin/login');
       }, 1500);
     } catch (error: unknown) {
       const err = error as { response?: { data?: { message?: string } } };
