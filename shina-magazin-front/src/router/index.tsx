@@ -56,6 +56,7 @@ const PortalPurchaseDetailPage = lazy(() => import('../portal/pages/PurchaseDeta
 const PortalDebtsPage = lazy(() => import('../portal/pages/DebtsPage'));
 const PortalProfilePage = lazy(() => import('../portal/pages/ProfilePage'));
 const PortalNotificationsPage = lazy(() => import('../portal/pages/NotificationsPage'));
+const PortalShopOrdersPage = lazy(() => import('../portal/pages/ShopOrdersPage'));
 
 // Helper component for lazy routes with Suspense
 function LazyRoute({ children }: { children: React.ReactNode }) {
@@ -408,6 +409,15 @@ export const router = createBrowserRouter([
           </LazyRoute>
         ),
         handle: { title: 'Profil' },
+      },
+      {
+        path: 'buyurtmalar',
+        element: (
+          <LazyRoute>
+            <PortalShopOrdersPage />
+          </LazyRoute>
+        ),
+        handle: { title: "Do'kon buyurtmalari" },
       },
     ],
   },

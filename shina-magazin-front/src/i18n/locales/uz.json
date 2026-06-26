@@ -62,7 +62,8 @@
     "recentPurchases": "So'nggi xaridlar",
     "viewAll": "Hammasini ko'rish",
     "noDebt": "Qarzingiz yo'q",
-    "hasDebt": "Sizda qarz mavjud"
+    "hasDebt": "Sizda qarz mavjud",
+    "shopOrders": "Do'kon buyurtmalari"
   },
   "purchases": {
     "title": "Xaridlar tarixi",

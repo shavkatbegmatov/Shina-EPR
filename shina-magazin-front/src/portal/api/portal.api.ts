@@ -8,6 +8,7 @@ import type {
   PortalNotification,
   PortalSale,
 } from '../types/portal.types';
+import type { AccountOrder } from '../../shop/data/accountApi';
 
 export const portalApiClient = {
   // Profile
@@ -42,6 +43,15 @@ export const portalApiClient = {
 
   getPurchaseDetails: async (id: number): Promise<PortalSale> => {
     const response = await portalApi.get<ApiResponse<PortalSale>>(`/v1/portal/purchases/${id}`);
+    return response.data.data;
+  },
+
+  // Storefront do'kon buyurtmalari (Faza 6 endpoint, portal token bilan)
+  getShopOrders: async (page = 0, size = 10): Promise<PagedResponse<AccountOrder>> => {
+    const response = await portalApi.get<ApiResponse<PagedResponse<AccountOrder>>>(
+      '/v1/account/orders',
+      { params: { page, size } }
+    );
     return response.data.data;
   },
 

@@ -118,6 +118,17 @@ export default function PortalDashboardPage() {
           </div>
         </div>
 
+        {/* Do'kon buyurtmalari (storefront) */}
+        <Link to="/hisob/buyurtmalar" className="card bg-base-100 shadow-sm hover:shadow-md transition-shadow">
+          <div className="card-body p-4 flex-row items-center justify-between">
+            <div className="flex items-center gap-2 font-medium">
+              <ShoppingBag size={18} className="text-primary" />
+              {t('dashboard.shopOrders')}
+            </div>
+            <ChevronRight className="text-base-content/40" />
+          </div>
+        </Link>
+
         {/* Recent Purchases */}
         <div className="card bg-base-100 shadow-sm">
           <div className="card-body p-4">
