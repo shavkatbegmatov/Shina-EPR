@@ -10,9 +10,12 @@ import uz.shinamagazin.api.config.NotificationProperties;
 import uz.shinamagazin.api.entity.ShopOrder;
 
 /**
- * Mijozga buyurtma xabarnomalari (SMS asosiy, email ixtiyoriy). Config-gated
+ * Mijozga buyurtma tasdig'i xabarnomalari (SMS asosiy, email ixtiyoriy). Config-gated
  * (`shop.notify.*`, default O'CHIQ). Har kanal alohida try/catch bilan — xabarnoma
  * xatosi buyurtma yaratishni BUZMAYDI.
+ *
+ * Eslatma: mavjud {@code service.NotificationService} (mijoz in-app bildirishnomalari) va
+ * {@code StaffNotificationService} (xodimga)dan ALOHIDA — bu storefront buyurtma SMS/email'i.
  *
  * Jonli sozlash A-guruhida: SMS uchun provider impl + kreditsial; email uchun
  * `spring.mail.*` (host/user/pass) — JavaMailSender sozlanmagan bo'lsa email skip qilinadi.
@@ -20,7 +23,7 @@ import uz.shinamagazin.api.entity.ShopOrder;
 @Service
 @RequiredArgsConstructor
 @Slf4j
-public class NotificationService {
+public class OrderNotificationService {
 
     private final NotificationProperties props;
     private final SmsSender smsSender;

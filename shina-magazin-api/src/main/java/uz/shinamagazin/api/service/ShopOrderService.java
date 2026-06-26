@@ -20,7 +20,7 @@ import uz.shinamagazin.api.exception.ResourceNotFoundException;
 import uz.shinamagazin.api.repository.CustomerRepository;
 import uz.shinamagazin.api.repository.ProductRepository;
 import uz.shinamagazin.api.repository.ShopOrderRepository;
-import uz.shinamagazin.api.service.notify.NotificationService;
+import uz.shinamagazin.api.service.notify.OrderNotificationService;
 
 import java.math.BigDecimal;
 
@@ -43,7 +43,7 @@ public class ShopOrderService {
     private final ProductRepository productRepository;
     private final CustomerRepository customerRepository;
     private final StaffNotificationService staffNotificationService;
-    private final NotificationService notificationService;
+    private final OrderNotificationService orderNotificationService;
 
     private static final BigDecimal DELIVERY_FEE = new BigDecimal("30000");
     private static final BigDecimal FREE_DELIVERY_THRESHOLD = new BigDecimal("1000000");
@@ -118,7 +118,7 @@ public class ShopOrderService {
 
         // Mijozga buyurtma tasdig'i (SMS/email — config-gated; xatolar yutiladi, buyurtmani buzmaydi)
         try {
-            notificationService.sendOrderConfirmation(saved);
+            orderNotificationService.sendOrderConfirmation(saved);
         } catch (Exception e) {
             log.warn("Mijoz xabarnomasi xatosi ({}): {}", saved.getOrderNo(), e.getMessage());
         }
