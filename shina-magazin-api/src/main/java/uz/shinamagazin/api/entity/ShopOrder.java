@@ -14,9 +14,9 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
- * Storefront (`/magazin`) mijoz buyurtmasi — guest checkout (auth shart emas).
- * ERP `Sale`'dan alohida bounded-context: mijoz aloqasi embed qilingan
- * (Customer FK yo'q), narx serverda hisoblanadi.
+ * Storefront mijoz buyurtmasi — guest checkout (auth shart emas).
+ * ERP `Sale`'dan alohida bounded-context: mijoz aloqasi embed qilingan;
+ * mijoz login qilgan bo'lsa ixtiyoriy `customer` FK to'ladi (Faza 6). Narx serverda hisoblanadi.
  */
 @Entity
 @Table(name = "shop_orders")
@@ -39,6 +39,11 @@ public class ShopOrder extends BaseEntity {
 
     @Column(name = "customer_email", length = 120)
     private String customerEmail;
+
+    /** Ixtiyoriy mijoz akkaunti (login bo'lsa to'ladi); guest checkout'da null. */
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "customer_id")
+    private Customer customer;
 
     // Yetkazib berish
     @Enumerated(EnumType.STRING)
