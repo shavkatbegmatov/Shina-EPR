@@ -87,7 +87,7 @@
 
 ## 5. 📋 D) Asl rejadagi Faza 6 (kattaroq, ixtiyoriy)
 
-- [ ] Portal `/kabinet` → `/hisob` marshrutlarini birlashtirish + B2B/B2C uyg'unligi.
+- [x] **Portal `/kabinet` → `/hisob` + B2B/B2C uyg'unligi** ✅ **BAJARILDI (26.06.2026):** to'liq birlashuv — `/kabinet`→`/hisob` rename; YAGONA login `/kirish` (portal login sahifasi olib tashlandi, `/hisob` guard auth'siz → `/kirish?redirect=`); `/hisob` hub ERP xaridlar (Sale) + do'kon buyurtmalari (ShopOrder, Faza 6 `/v1/account/orders` reuse) — dashboard karta + `/hisob/buyurtmalar` sahifa; storefront↔hisob cross-linklar. Commitlar `986984b..b16ac0c`. Preview verify: `/hisob`→`/kirish?redirect` ✅; build+test (94/94).
 - [x] **Storefront mijoz akkaunti** ✅ **BAJARILDI (26.06.2026):** mijoz storefront'da login qiladi (portal telefon+PIN auth qayta ishlatiladi — bitta mijoz akkaunti); login bo'lsa buyurtma `shop_orders.customer_id`ga bog'lanadi (V25 migratsiya); "Buyurtmalarim" backend'dan (`GET /v1/account/orders` — customerId YOKI telefon bo'yicha, login'gacha guest buyurtmalarni ham qamraydi). Login sahifa `/kirish`, header akkaunt menyusi (ism + Chiqish). Commitlar `2370903..33f0273`. Uchidan-uchiga verify (jonli DB): customerId bog'lanishi ✅, telefon-moslik ✅, guest bog'lanmasligi ✅, staff bloklandi ✅. ⏳ Qoldi: portal `/kabinet`↔storefront marshrut birlashuvi (item 1) va email/SMS (item 3).
 - [ ] Email/SMS xabarnomalar (buyurtma tasdig'i mijozga) — **SMTP/SMS provider kerak** (kreditsial/qaror).
 
