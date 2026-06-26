@@ -17,7 +17,7 @@ import org.springframework.stereotype.Component;
 public class PaymentProperties {
 
     /** Frontend buyurtma tasdiq sahifasi (provayderdan qaytish uchun) */
-    private String returnUrl = "http://localhost:5183/magazin/buyurtma";
+    private String returnUrl = "http://localhost:5183/buyurtma";
 
     private Payme payme = new Payme();
     private Click click = new Click();

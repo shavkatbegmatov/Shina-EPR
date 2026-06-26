@@ -8,6 +8,9 @@
 # Maven
 shina-magazin-api/target/
 
+# Yuklangan mahsulot rasmlari (lokal storage; prod = Coolify persistent volume)
+shina-magazin-api/uploads/
+
 # Node
 shina-magazin-front/node_modules/
 shina-magazin-front/dist/

@@ -15,6 +15,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 import uz.shinamagazin.api.dto.request.ProductRequest;
 import uz.shinamagazin.api.dto.response.ApiResponse;
 import uz.shinamagazin.api.dto.response.PagedResponse;
@@ -24,10 +25,12 @@ import uz.shinamagazin.api.enums.Season;
 import uz.shinamagazin.api.security.RequiresPermission;
 import uz.shinamagazin.api.service.ProductService;
 import uz.shinamagazin.api.service.export.GenericExportService;
+import uz.shinamagazin.api.service.storage.StorageService;
 
 import java.io.ByteArrayOutputStream;
 import java.time.LocalDate;
 import java.util.List;
+import java.util.Map;
 
 @RestController
 @RequestMapping("/v1/products")
@@ -37,6 +40,7 @@ public class ProductController {
 
     private final ProductService productService;
     private final GenericExportService genericExportService;
+    private final StorageService storageService;
 
     @GetMapping
     @Operation(summary = "Get all products", description = "Barcha mahsulotlarni olish")
@@ -112,6 +116,15 @@ public class ProductController {
             @RequestParam int adjustment) {
         ProductResponse product = productService.adjustStock(id, adjustment);
         return ResponseEntity.ok(ApiResponse.success("Zaxira yangilandi", product));
+    }
+
+    @PostMapping("/image")
+    @Operation(summary = "Upload product image", description = "Mahsulot rasmini storage'ga yuklaydi va URL qaytaradi")
+    @RequiresPermission(PermissionCode.PRODUCTS_UPDATE)
+    public ResponseEntity<ApiResponse<Map<String, String>>> uploadProductImage(
+            @RequestParam("file") MultipartFile file) {
+        String url = storageService.store(file, "products");
+        return ResponseEntity.ok(ApiResponse.success("Rasm yuklandi", Map.of("url", url)));
     }
 
     @GetMapping("/export")

@@ -26,6 +26,12 @@ spring:
     baseline-on-migrate: true
     locations: classpath:db/migration
 
+  # Multipart (rasm upload) — shop.storage.max-size-bytes bilan mos bo'lsin
+  servlet:
+    multipart:
+      max-file-size: 6MB
+      max-request-size: 6MB
+
 server:
   port: 8183
   servlet:
@@ -54,14 +60,20 @@ logging:
     org.springframework.security.web.access: DEBUG
     org.springframework.security.access: DEBUG
 
-# Storefront (/magazin) to'lov sozlamalari. DEFAULT: O'CHIQ (enabled=false).
+# Storefront (/) to'lov sozlamalari. DEFAULT: O'CHIQ (enabled=false).
 # Yoqish: tegishli provayder merchant kreditsiallarini env yoki shu yerga qo'ying
 # va enabled=true qiling. Webhook URL'lari (provayder kabinetida ro'yxatdan o'tkazing):
 #   Payme:  https://<domain>/api/v1/payments/payme
 #   Click:  https://<domain>/api/v1/payments/click/prepare  va  .../complete
 shop:
+  # Mahsulot rasm saqlash (lokal-fayl tizimi). Coolify: `dir`ni persistent volume'ga
+  # mount qiling (env SHOP_STORAGE_DIR) — aks holda deploy'da yuklangan rasmlar yo'qoladi.
+  storage:
+    dir: ${SHOP_STORAGE_DIR:./uploads}
+    public-base-url: ${SHOP_STORAGE_PUBLIC_BASE_URL:/api/uploads}
+    max-size-bytes: ${SHOP_STORAGE_MAX_SIZE:5242880}
   payment:
-    return-url: ${SHOP_RETURN_URL:http://localhost:5183/magazin/buyurtma}
+    return-url: ${SHOP_RETURN_URL:http://localhost:5183/buyurtma}
     payme:
       enabled: ${PAYME_ENABLED:false}
       merchant-id: ${PAYME_MERCHANT_ID:}
