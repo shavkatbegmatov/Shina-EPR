@@ -66,6 +66,16 @@ logging:
 #   Payme:  https://<domain>/api/v1/payments/payme
 #   Click:  https://<domain>/api/v1/payments/click/prepare  va  .../complete
 shop:
+  # Mijozga buyurtma xabarnomalari (SMS asosiy, email ixtiyoriy). DEFAULT: O'CHIQ.
+  # Jonli: SMS uchun provider impl + kreditsial; email uchun spring.mail.* (env) + email.enabled (A-guruhi).
+  notify:
+    sms:
+      enabled: ${SHOP_NOTIFY_SMS:false}
+      provider: ${SHOP_NOTIFY_SMS_PROVIDER:log}
+    email:
+      enabled: ${SHOP_NOTIFY_EMAIL:false}
+      from: ${SHOP_NOTIFY_EMAIL_FROM:Protektor <no-reply@protektor.uz>}
+      subject-prefix: "Protektor — buyurtma"
   # Mahsulot rasm saqlash (lokal-fayl tizimi). Coolify: `dir`ni persistent volume'ga
   # mount qiling (env SHOP_STORAGE_DIR) — aks holda deploy'da yuklangan rasmlar yo'qoladi.
   storage:

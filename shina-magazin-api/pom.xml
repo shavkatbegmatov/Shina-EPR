@@ -37,6 +37,12 @@
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-validation</artifactId>
         </dependency>
+        <!-- Email xabarnomalari (JavaMailSender). JavaMailSender beani faqat spring.mail.host
+             sozlangandagina yaratiladi — aks holda NotificationService email'ni skip qiladi. -->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-mail</artifactId>
+        </dependency>
 
         <!-- Spring Data JPA - BU KERAK! @Entity, @MappedSuperclass uchun -->
         <dependency>

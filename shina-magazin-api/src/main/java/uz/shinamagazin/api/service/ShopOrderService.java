@@ -1,6 +1,7 @@
 package uz.shinamagazin.api.service;
 
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
@@ -19,6 +20,7 @@ import uz.shinamagazin.api.exception.ResourceNotFoundException;
 import uz.shinamagazin.api.repository.CustomerRepository;
 import uz.shinamagazin.api.repository.ProductRepository;
 import uz.shinamagazin.api.repository.ShopOrderRepository;
+import uz.shinamagazin.api.service.notify.NotificationService;
 
 import java.math.BigDecimal;
 
@@ -34,12 +36,14 @@ import java.math.BigDecimal;
  */
 @Service
 @RequiredArgsConstructor
+@Slf4j
 public class ShopOrderService {
 
     private final ShopOrderRepository orderRepository;
     private final ProductRepository productRepository;
     private final CustomerRepository customerRepository;
     private final StaffNotificationService staffNotificationService;
+    private final NotificationService notificationService;
 
     private static final BigDecimal DELIVERY_FEE = new BigDecimal("30000");
     private static final BigDecimal FREE_DELIVERY_THRESHOLD = new BigDecimal("1000000");
@@ -111,6 +115,13 @@ public class ShopOrderService {
         // SaleService.notifyNewOrder bilan bir naqsh; referenceType "SHOP_ORDER".
         staffNotificationService.notifyNewShopOrder(
                 saved.getOrderNo(), saved.getCustomerName(), saved.getTotalAmount(), saved.getId());
+
+        // Mijozga buyurtma tasdig'i (SMS/email — config-gated; xatolar yutiladi, buyurtmani buzmaydi)
+        try {
+            notificationService.sendOrderConfirmation(saved);
+        } catch (Exception e) {
+            log.warn("Mijoz xabarnomasi xatosi ({}): {}", saved.getOrderNo(), e.getMessage());
+        }
 
         return ShopOrderResponse.from(saved);
     }
