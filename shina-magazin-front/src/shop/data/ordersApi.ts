@@ -1,4 +1,4 @@
-import api from '../../api/axios';
+import api from './shopAccountAxios';
 import type { ApiResponse } from '../../types';
 import type { DeliveryMethod, PaymentMethod } from '../store/orderStore';
 
