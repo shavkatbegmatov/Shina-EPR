@@ -18,4 +18,8 @@ public interface ShopOrderRepository extends JpaRepository<ShopOrder, Long> {
     Page<ShopOrder> findAllByOrderByCreatedAtDesc(Pageable pageable);
     Page<ShopOrder> findByStatusOrderByCreatedAtDesc(ShopOrderStatus status, Pageable pageable);
     long countByStatus(ShopOrderStatus status);
+
+    // Mijoz akkaunti: o'z buyurtmalari — customer.id YOKI telefon (login'gacha guest) bo'yicha.
+    Page<ShopOrder> findByCustomerIdOrCustomerPhoneOrderByCreatedAtDesc(
+            Long customerId, String customerPhone, Pageable pageable);
 }

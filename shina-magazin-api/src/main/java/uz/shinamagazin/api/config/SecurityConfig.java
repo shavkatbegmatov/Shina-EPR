@@ -68,6 +68,8 @@ public class SecurityConfig {
 
                         // Customer Portal - faqat CUSTOMER roli uchun (saqlanadi)
                         .requestMatchers("/v1/portal/**").hasRole("CUSTOMER")
+                        // Storefront mijoz akkaunti (B2C buyurtmalar) — CUSTOMER roli
+                        .requestMatchers("/v1/account/**").hasRole("CUSTOMER")
 
                         // All other requests require authentication
                         // Permissions checked at method level via @RequiresPermission

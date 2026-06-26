@@ -139,6 +139,15 @@ public class ShopOrderService {
         return page.map(ShopOrderResponse::from);
     }
 
+    /** Mijoz akkaunti: o'z storefront buyurtmalari (customerId YOKI telefon bo'yicha —
+     * login'dan oldingi guest buyurtmalarni ham qamraydi). */
+    @Transactional(readOnly = true)
+    public Page<ShopOrderResponse> getCustomerOrders(Long customerId, String phone, Pageable pageable) {
+        return orderRepository
+                .findByCustomerIdOrCustomerPhoneOrderByCreatedAtDesc(customerId, phone, pageable)
+                .map(ShopOrderResponse::from);
+    }
+
     /** Xodim uchun: buyurtma holatini yangilash (tasdiqlash/bekor qilish/yakunlash). */
     @Transactional
     public ShopOrderResponse updateStatus(String orderNo, ShopOrderStatus status) {
