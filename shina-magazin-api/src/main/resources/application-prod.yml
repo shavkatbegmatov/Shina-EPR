@@ -1,33 +1,35 @@
-# Production profil (Coolify). Faollashtirish: SPRING_PROFILES_ACTIVE=prod (env).
-# Barcha ulanish/sirlar ENV'dan — qattiq yozilgan kreditsial YO'Q (fail-fast: env yo'q bo'lsa boot xato).
-# Boshqa shop.* (storage/payment/notify) va jwt sozlamalari base application.yml'da env-driven.
+# Production profil (Coolify). Faollashtirish: Dockerfile ENTRYPOINT'da
+# -Dspring.profiles.active=prod (yoki SPRING_PROFILES_ACTIVE=prod env).
+# Barcha ulanish/sirlar ENV'dan — qattiq yozilgan kreditsial YO'Q.
+# Boshqa shop.* (storage/payment/notify) va jwt base application.yml'da env-driven.
 spring:
   datasource:
-    url: ${SPRING_DATASOURCE_URL}
-    username: ${SPRING_DATASOURCE_USERNAME}
-    password: ${SPRING_DATASOURCE_PASSWORD}
+    url: jdbc:postgresql://${DB_HOST:localhost}:${DB_PORT:5432}/${DB_NAME:shina_epr_db}
+    username: ${DB_USERNAME:shina_epr_user}
+    password: ${DB_PASSWORD}
     driver-class-name: org.postgresql.Driver
+    hikari:
+      maximum-pool-size: 20
+      minimum-idle: 5
+      idle-timeout: 300000
+      connection-timeout: 20000
 
   jpa:
+    show-sql: false
     hibernate:
       ddl-auto: validate
-    show-sql: false
-    properties:
-      hibernate:
-        format_sql: false
 
-  # Tashqi Vault yo'q — Coolify env ishlatiladi (foydalanuvchi afzalligi)
+  # Vault va Cloud tekshiruvlarini o'chirish (Coolify env ishlatiladi, tashqi Vault yo'q)
   cloud:
     vault:
       enabled: false
     compatibility-verifier:
       enabled: false
 
-# Flyway base application.yml'da yoqilgan (migratsiyalar startup'da avtomatik).
-
+# Production logging — faqat muhim loglar
 logging:
   level:
-    root: INFO
+    root: WARN
     uz.shinamagazin: INFO
     org.springframework.security: WARN
     org.hibernate.SQL: WARN
