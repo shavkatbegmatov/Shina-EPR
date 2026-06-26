@@ -63,7 +63,8 @@
     "viewAll": "Hammasini ko'rish",
     "noDebt": "Qarzingiz yo'q",
     "hasDebt": "Sizda qarz mavjud",
-    "shopOrders": "Do'kon buyurtmalari"
+    "shopOrders": "Do'kon buyurtmalari",
+    "backToShop": "Do'konga qaytish"
   },
   "purchases": {
     "title": "Xaridlar tarixi",

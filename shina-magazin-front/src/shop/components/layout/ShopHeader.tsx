@@ -76,6 +76,7 @@ export function ShopHeader({ onOpenCart }: ShopHeaderProps) {
                 <span className="hidden max-w-24 truncate text-sm lg:inline">{customer?.fullName}</span>
               </Button>
               <ul tabIndex={0} className="dropdown-content menu z-50 mt-2 w-48 rounded-xl border border-base-200 bg-base-100 p-2 shadow-xl">
+                <li><Link to="/hisob">{t('shop.nav.account')}</Link></li>
                 <li><Link to="/buyurtmalarim">{t('shop.account.myOrders')}</Link></li>
                 <li><button onClick={handleLogout}><LogOut size={16} />{t('shop.account.logout')}</button></li>
               </ul>
@@ -126,9 +127,12 @@ export function ShopHeader({ onOpenCart }: ShopHeaderProps) {
             <NavLink to="/solishtirish" onClick={() => setMenuOpen(false)} className="rounded-lg px-2 py-2.5 text-sm font-medium hover:bg-base-200">{t('shop.compare.title')}</NavLink>
             <NavLink to="/buyurtmalarim" onClick={() => setMenuOpen(false)} className="rounded-lg px-2 py-2.5 text-sm font-medium hover:bg-base-200">{t('shop.nav.orders')}</NavLink>
             {isAuthenticated ? (
-              <button onClick={handleLogout} className="flex items-center gap-2 rounded-lg px-2 py-2.5 text-left text-sm font-medium hover:bg-base-200">
-                <LogOut size={16} />{t('shop.account.logout')}
-              </button>
+              <>
+                <NavLink to="/hisob" onClick={() => setMenuOpen(false)} className="rounded-lg px-2 py-2.5 text-sm font-medium hover:bg-base-200">{t('shop.nav.account')}</NavLink>
+                <button onClick={handleLogout} className="flex items-center gap-2 rounded-lg px-2 py-2.5 text-left text-sm font-medium hover:bg-base-200">
+                  <LogOut size={16} />{t('shop.account.logout')}
+                </button>
+              </>
             ) : (
               <Link to="/kirish" onClick={() => setMenuOpen(false)} className="rounded-lg px-2 py-2.5 text-sm font-medium hover:bg-base-200">{t('shop.account.login')}</Link>
             )}

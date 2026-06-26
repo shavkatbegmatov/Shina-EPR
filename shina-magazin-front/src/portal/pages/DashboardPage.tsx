@@ -1,7 +1,7 @@
 import { useEffect, useState, useCallback } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Link, useOutletContext } from 'react-router-dom';
-import { Wallet, AlertTriangle, ShoppingBag, ChevronRight } from 'lucide-react';
+import { Wallet, AlertTriangle, ShoppingBag, ChevronRight, ArrowLeft } from 'lucide-react';
 import { usePortalAuthStore } from '../store/portalAuthStore';
 import { portalApiClient } from '../api/portal.api';
 import PortalHeader from '../components/layout/PortalHeader';
@@ -68,6 +68,9 @@ export default function PortalDashboardPage() {
             <h2 className="text-lg">
               {t('dashboard.greeting')}, <span className="font-bold">{customer?.fullName}</span>! 👋
             </h2>
+            <Link to="/" className="mt-1 inline-flex w-fit items-center gap-1 text-sm text-primary-content/80 hover:text-primary-content">
+              <ArrowLeft size={14} /> {t('dashboard.backToShop')}
+            </Link>
           </div>
         </div>
 
