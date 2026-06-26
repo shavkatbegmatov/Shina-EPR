@@ -64,22 +64,22 @@ function LazyRoute({ children }: { children: React.ReactNode }) {
 
 export const router = createBrowserRouter([
   {
-    path: '/login',
+    path: '/admin/login',
     element: <LoginPage />,
     handle: { title: 'Kirish' },
   },
   {
-    path: '/register',
+    path: '/admin/register',
     element: <RegisterPage />,
     handle: { title: "Ro'yxatdan o'tish" },
   },
   {
-    path: '/change-password',
+    path: '/admin/change-password',
     element: <ChangePasswordPage />,
     handle: { title: "Parolni o'zgartirish" },
   },
   {
-    path: '/',
+    path: '/admin',
     element: <MainLayout />,
     children: [
       {
@@ -340,6 +340,10 @@ export const router = createBrowserRouter([
         ),
         handle: { title: 'Profil' },
       },
+      {
+        path: '*',
+        element: <Navigate to="/admin" replace />,
+      },
     ],
   },
   // Customer Portal Routes
@@ -416,9 +420,9 @@ export const router = createBrowserRouter([
       },
     ],
   },
-  // Storefront (Protektor magazin) — ommaviy, auth talab qilmaydi
+  // Storefront (Protektor magazin) — ildizda (/), ommaviy, auth talab qilmaydi
   {
-    path: '/magazin',
+    path: '/',
     element: (
       <LazyRoute>
         <ShopLayout />
@@ -499,9 +503,5 @@ export const router = createBrowserRouter([
         },
       },
     ],
-  },
-  {
-    path: '*',
-    element: <Navigate to="/" replace />,
   },
 ]);
