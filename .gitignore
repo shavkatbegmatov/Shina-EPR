@@ -17,6 +17,10 @@ shina-magazin-front/dist/
 shina-magazin-front/.vite/
 *.tsbuildinfo
 
+# Build-vaqtida hosil qilinadigan SEO fayllar (scripts/gen-seo.mjs)
+shina-magazin-front/public/robots.txt
+shina-magazin-front/public/sitemap.xml
+
 ### Mac OS ###
 .DS_Store
 /spring-boot-log.txt
