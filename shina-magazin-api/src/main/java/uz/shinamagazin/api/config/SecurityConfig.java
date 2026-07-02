@@ -51,6 +51,8 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.GET, "/v1/catalog/**").permitAll()
                         // Storefront ommaviy sozlamalari (rasm fallback) — guest o'qiydi
                         .requestMatchers(HttpMethod.GET, "/v1/settings/public").permitAll()
+                        // Storefront link-preview meta (crawler) — ommaviy server-meta HTML
+                        .requestMatchers(HttpMethod.GET, "/v1/seo/**").permitAll()
                         // Yuklangan rasmlar (lokal storage) — ommaviy o'qish
                         .requestMatchers(HttpMethod.GET, "/uploads/**").permitAll()
                         // Storefront guest checkout — buyurtma yaratish (POST) va holat tekshirish
