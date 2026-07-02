@@ -7,6 +7,7 @@
     "dev": "vite",
     "prebuild": "node scripts/gen-seo.mjs",
     "build": "tsc -b && vite build",
+    "postbuild": "node scripts/gen-prerender.mjs",
     "lint": "eslint .",
     "preview": "vite preview",
     "test": "vitest run",
