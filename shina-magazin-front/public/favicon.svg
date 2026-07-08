@@ -1,6 +1,6 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48" fill="none">
-  <!-- Protektor brand mark: teal rounded square + tire ring + tread + orange contact patch -->
-  <rect width="48" height="48" rx="11" fill="#0f766e"/>
+  <!-- Protektor brand mark: kobalt rounded square + tire ring + tread + orange contact patch -->
+  <rect width="48" height="48" rx="11" fill="#2451e6"/>
   <circle cx="24" cy="24" r="14" stroke="#fbfcfe" stroke-width="3.5"/>
   <g fill="#fbfcfe">
     <rect x="22.7" y="3.4" width="2.6" height="5" rx="1.3" transform="rotate(0 24 24)"/>
@@ -12,5 +12,5 @@
     <rect x="22.7" y="3.4" width="2.6" height="5" rx="1.3" transform="rotate(270 24 24)"/>
     <rect x="22.7" y="3.4" width="2.6" height="5" rx="1.3" transform="rotate(315 24 24)"/>
   </g>
-  <circle cx="24" cy="24" r="6" fill="#ea580c"/>
+  <circle cx="24" cy="24" r="6" fill="#fb923c"/>
 </svg>

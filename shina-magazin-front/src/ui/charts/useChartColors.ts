@@ -31,12 +31,12 @@ function resolve(): ChartColors {
     series: Array.from({ length: 8 }, (_, i) => readVar(`--chart-${i + 1}`, fb[i])),
     primary: readVar('--chart-primary', fb[0]),
     secondary: readVar('--chart-secondary', fb[1]),
-    success: readVar('--chart-success', isDark ? '#4ade80' : '#16a34a'),
-    warning: readVar('--chart-warning', isDark ? '#fbbf24' : '#f59e0b'),
+    success: readVar('--chart-success', isDark ? '#34d399' : '#059669'),
+    warning: readVar('--chart-warning', isDark ? '#fbbf24' : '#d97706'),
     error: readVar('--chart-error', isDark ? '#f87171' : '#dc2626'),
-    info: readVar('--chart-info', isDark ? '#38bdf8' : '#0284c7'),
-    grid: readVar('--chart-grid', isDark ? 'rgba(226,232,240,0.10)' : 'rgba(15,23,42,0.08)'),
-    cursor: readVar('--chart-cursor', isDark ? 'rgba(148,163,184,0.18)' : 'rgba(148,163,184,0.12)'),
+    info: readVar('--chart-info', isDark ? '#38bdf8' : '#0369a1'),
+    grid: readVar('--chart-grid', isDark ? 'rgba(228,234,247,0.10)' : 'rgba(15,23,46,0.08)'),
+    cursor: readVar('--chart-cursor', isDark ? 'rgba(125,155,255,0.14)' : 'rgba(100,116,139,0.12)'),
   };
 }
 

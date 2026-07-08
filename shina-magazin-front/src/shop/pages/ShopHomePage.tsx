@@ -37,26 +37,31 @@ export function ShopHomePage() {
 
   return (
     <div>
-      {/* Hero */}
-      <section className="relative overflow-hidden bg-primary text-primary-content">
-        <div className="absolute -right-16 -top-16 opacity-10">
+      {/* Hero — "tungi trassa": ikkala temada ham qorong'i asfalt sahna.
+          data-theme="shina-dark" scope tokenlarni dark variantga o'tkazadi. */}
+      <section data-theme="shina-dark" className="relative overflow-hidden bg-base-100 text-base-content">
+        {/* Fara glowlari: kobalt (chap-tepa) + amber signal (o'ng-past) */}
+        <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_at_top_left,oklch(var(--p)/0.22),transparent_55%),radial-gradient(ellipse_at_bottom_right,oklch(var(--s)/0.16),transparent_55%)]" />
+        {/* Yo'l qirrasi — pastki gradient chiziq */}
+        <div className="pointer-events-none absolute inset-x-0 bottom-0 h-px bg-gradient-to-r from-transparent via-primary/50 to-transparent" />
+        <div className="absolute -right-16 -top-16 opacity-[0.08]">
           <ShopLogo className="h-96 w-96" />
         </div>
         <div className="relative mx-auto max-w-7xl px-4 py-16 sm:px-6 md:py-24">
-          <span className="inline-flex items-center gap-2 rounded-full bg-primary-content/15 px-3 py-1 text-xs font-semibold uppercase tracking-wide">
+          <span className="inline-flex items-center gap-2 rounded-full border border-primary/30 bg-primary/10 px-3 py-1 text-xs font-semibold uppercase tracking-wide text-primary">
             {t('shop.hero.badge')}
           </span>
           <h1 className="mt-4 max-w-2xl text-4xl font-extrabold leading-tight tracking-tight md:text-5xl">
             {t('shop.hero.title')}
           </h1>
-          <p className="mt-4 max-w-xl text-base text-primary-content/80 md:text-lg">
+          <p className="mt-4 max-w-xl text-base text-base-content/70 md:text-lg">
             {t('shop.hero.subtitle')}
           </p>
           <div className="mt-8 flex flex-wrap gap-3">
-            <Link to="/katalog" className={cn(buttonVariants({ variant: 'secondary', size: 'lg' }), 'gap-2')}>
+            <Link to="/katalog" className={cn(buttonVariants({ variant: 'secondary', size: 'lg' }), 'gap-2 shadow-[var(--glow-secondary)]')}>
               {t('shop.hero.ctaPrimary')} <ArrowRight size={18} />
             </Link>
-            <Link to="/katalog?season=WINTER" className={buttonVariants({ variant: 'outline', size: 'lg' }) + ' border-primary-content/40 text-primary-content hover:bg-primary-content/10'}>
+            <Link to="/katalog?season=WINTER" className={buttonVariants({ variant: 'outline', size: 'lg' }) + ' border-base-content/30 text-base-content hover:bg-base-content/10'}>
               {t('shop.hero.ctaSecondary')}
             </Link>
           </div>
@@ -133,14 +138,18 @@ export function ShopHomePage() {
         </div>
       </section>
 
-      {/* CTA band */}
+      {/* CTA band — hero bilan hamohang "tungi" karta */}
       <section className="mx-auto max-w-7xl px-4 pb-4 sm:px-6">
-        <Card className="flex flex-col items-center justify-between gap-4 bg-gradient-to-r from-primary/10 to-secondary/10 p-8 text-center sm:flex-row sm:text-left">
-          <div>
+        <Card
+          data-theme="shina-dark"
+          className="relative flex flex-col items-center justify-between gap-4 overflow-hidden border-primary/20 bg-base-100 p-8 text-center text-base-content sm:flex-row sm:text-left"
+        >
+          <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_at_top_left,oklch(var(--p)/0.2),transparent_60%),radial-gradient(ellipse_at_bottom_right,oklch(var(--s)/0.16),transparent_55%)]" />
+          <div className="relative">
             <h3 className="text-xl font-bold">{t('shop.home.ctaTitle')}</h3>
             <p className="mt-1 text-sm text-base-content/70">{t('shop.home.ctaText')}</p>
           </div>
-          <Link to="/katalog" className={cn(buttonVariants({ variant: 'primary', size: 'lg' }), 'gap-2 shrink-0')}>
+          <Link to="/katalog" className={cn(buttonVariants({ variant: 'secondary', size: 'lg' }), 'relative gap-2 shrink-0 shadow-[var(--glow-secondary)]')}>
             {t('shop.home.ctaButton')} <ArrowRight size={18} />
           </Link>
         </Card>

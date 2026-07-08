@@ -7,8 +7,11 @@ export function ShopFooter() {
   const { t } = useTranslation();
 
   return (
-    <footer className="mt-16 border-t border-base-200 bg-base-100">
-      <div className="mx-auto grid max-w-7xl gap-8 px-4 py-12 sm:px-6 md:grid-cols-3">
+    // Asfalt footer — hero bilan bookend: ikkala temada ham tungi panel.
+    <footer data-theme="shina-dark" className="relative mt-16 overflow-hidden bg-base-100 text-base-content">
+      <div className="signal-bar" aria-hidden="true" />
+      <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_at_top_right,oklch(var(--p)/0.10),transparent_55%)]" />
+      <div className="relative mx-auto grid max-w-7xl gap-8 px-4 py-12 sm:px-6 md:grid-cols-3">
         <div>
           <div className="flex items-center gap-2">
             <ShopLogo className="h-9 w-9" />
@@ -36,7 +39,7 @@ export function ShopFooter() {
         </div>
       </div>
 
-      <div className="border-t border-base-200">
+      <div className="relative border-t border-base-300/40">
         <div className="mx-auto flex max-w-7xl flex-col items-center justify-between gap-2 px-4 py-4 text-xs text-base-content/50 sm:flex-row sm:px-6">
           <span>© 2026 Protektor. {t('shop.footer.rights')}</span>
           <span>{t('shop.footer.madeIn')}</span>

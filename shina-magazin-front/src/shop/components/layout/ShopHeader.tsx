@@ -42,6 +42,8 @@ export function ShopHeader({ onOpenCart }: ShopHeaderProps) {
 
   return (
     <header className="sticky top-0 z-40 border-b border-base-200 bg-base-100/90 backdrop-blur">
+      {/* Brend imzosi — kobalt→cyan→amber signal chizig'i */}
+      <div className="signal-bar" aria-hidden="true" />
       <div className="mx-auto flex h-16 max-w-7xl items-center gap-3 px-4 sm:px-6">
         {/* Logo */}
         <Link to="/" className="flex shrink-0 items-center gap-2" aria-label="Protektor">

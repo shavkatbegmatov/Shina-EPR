@@ -1,42 +1,47 @@
 <svg xmlns="http://www.w3.org/2000/svg" width="1200" height="630" viewBox="0 0 1200 630">
   <defs>
     <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
-      <stop offset="0" stop-color="#0f766e"/>
-      <stop offset="1" stop-color="#0b3b38"/>
+      <stop offset="0" stop-color="#0a1122"/>
+      <stop offset="1" stop-color="#101d4a"/>
     </linearGradient>
     <radialGradient id="glow" cx="0.78" cy="0.28" r="0.75">
-      <stop offset="0" stop-color="#14b8a6" stop-opacity="0.38"/>
-      <stop offset="1" stop-color="#14b8a6" stop-opacity="0"/>
+      <stop offset="0" stop-color="#7d9bff" stop-opacity="0.34"/>
+      <stop offset="1" stop-color="#7d9bff" stop-opacity="0"/>
+    </radialGradient>
+    <radialGradient id="glow2" cx="0.12" cy="0.9" r="0.6">
+      <stop offset="0" stop-color="#fb923c" stop-opacity="0.22"/>
+      <stop offset="1" stop-color="#fb923c" stop-opacity="0"/>
     </radialGradient>
   </defs>
 
   <rect width="1200" height="630" fill="url(#bg)"/>
   <rect width="1200" height="630" fill="url(#glow)"/>
+  <rect width="1200" height="630" fill="url(#glow2)"/>
 
   <!-- Tire / disk motif -->
   <g transform="translate(905,315)">
-    <circle r="212" fill="#0a2e2b"/>
-    <circle r="212" fill="none" stroke="#0d4f49" stroke-width="6"/>
-    <circle r="196" fill="none" stroke="#115e57" stroke-width="30" stroke-dasharray="11 17"/>
-    <circle r="150" fill="none" stroke="#0d4f49" stroke-width="4"/>
-    <circle r="122" fill="#0f766e"/>
-    <circle r="122" fill="none" stroke="#2dd4bf" stroke-width="6"/>
-    <g stroke="#2dd4bf" stroke-width="11" stroke-linecap="round">
+    <circle r="212" fill="#0b1631"/>
+    <circle r="212" fill="none" stroke="#1a2b5e" stroke-width="6"/>
+    <circle r="196" fill="none" stroke="#24418f" stroke-width="30" stroke-dasharray="11 17"/>
+    <circle r="150" fill="none" stroke="#1a2b5e" stroke-width="4"/>
+    <circle r="122" fill="#2451e6"/>
+    <circle r="122" fill="none" stroke="#7d9bff" stroke-width="6"/>
+    <g stroke="#7d9bff" stroke-width="11" stroke-linecap="round">
       <line x1="0" y1="0" x2="0" y2="-104"/>
       <line x1="0" y1="0" x2="99" y2="32"/>
       <line x1="0" y1="0" x2="61" y2="84"/>
       <line x1="0" y1="0" x2="-61" y2="84"/>
       <line x1="0" y1="0" x2="-99" y2="32"/>
     </g>
-    <circle r="44" fill="#0a2e2b"/>
-    <circle r="44" fill="none" stroke="#2dd4bf" stroke-width="6"/>
+    <circle r="44" fill="#0b1631"/>
+    <circle r="44" fill="none" stroke="#fb923c" stroke-width="6"/>
   </g>
 
   <!-- Wordmark + tagline -->
   <text x="92" y="252" font-family="Arial, Helvetica, sans-serif" font-size="116" font-weight="800" fill="#ffffff" letter-spacing="-2">Protektor</text>
-  <text x="96" y="324" font-family="Arial, Helvetica, sans-serif" font-size="42" font-weight="600" fill="#99f6e4">Shinalar onlayn do&#8216;koni</text>
-  <text x="96" y="384" font-family="Arial, Helvetica, sans-serif" font-size="30" fill="#ccfbf1">Yetakchi brendlar &#183; asl mahsulot &#183; tez yetkazib berish</text>
+  <text x="96" y="324" font-family="Arial, Helvetica, sans-serif" font-size="42" font-weight="600" fill="#aebfff">Shinalar onlayn do&#8216;koni</text>
+  <text x="96" y="384" font-family="Arial, Helvetica, sans-serif" font-size="30" fill="#dbe3fa">Yetakchi brendlar &#183; asl mahsulot &#183; tez yetkazib berish</text>
 
-  <rect x="94" y="430" width="250" height="58" rx="29" fill="#14b8a6"/>
-  <text x="219" y="468" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="27" font-weight="700" fill="#04211f">Onlayn do&#8216;kon</text>
+  <rect x="94" y="430" width="250" height="58" rx="29" fill="#fb923c"/>
+  <text x="219" y="468" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="27" font-weight="700" fill="#211003">Onlayn do&#8216;kon</text>
 </svg>

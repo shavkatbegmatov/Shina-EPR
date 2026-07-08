@@ -1,6 +1,7 @@
 import { describe, it, expect, beforeEach } from "vitest";
 import { render, screen } from "@testing-library/react";
 import { useChartColors } from "@/ui";
+import { CHART_SERIES } from "@/ui/tokens/colors";
 
 /**
  * jsdom'da haqiqiy CSS yo'q — getComputedStyle().getPropertyValue() bo'sh string
@@ -39,24 +40,24 @@ describe("useChartColors", () => {
   it("falls back to the light CHART_SERIES palette under data-theme=shina", () => {
     document.documentElement.dataset.theme = "shina";
     render(<Probe />);
-    // Light fallback: series[0] === primary === '#0f766e' (teal).
-    expect(screen.getByTestId("series-0")).toHaveTextContent("#0f766e");
-    expect(screen.getByTestId("primary")).toHaveTextContent("#0f766e");
+    // Light fallback: series[0] === primary === CHART_SERIES.light[0] (kobalt).
+    expect(screen.getByTestId("series-0")).toHaveTextContent(CHART_SERIES.light[0]);
+    expect(screen.getByTestId("primary")).toHaveTextContent(CHART_SERIES.light[0]);
   });
 
   it("uses the dark CHART_SERIES palette under data-theme=shina-dark", () => {
     document.documentElement.dataset.theme = "shina-dark";
     render(<Probe />);
-    // Dark fallback: series[0] === primary === '#2dd4bf'.
-    expect(screen.getByTestId("series-0")).toHaveTextContent("#2dd4bf");
-    expect(screen.getByTestId("primary")).toHaveTextContent("#2dd4bf");
+    // Dark fallback: series[0] === primary === CHART_SERIES.dark[0].
+    expect(screen.getByTestId("series-0")).toHaveTextContent(CHART_SERIES.dark[0]);
+    expect(screen.getByTestId("primary")).toHaveTextContent(CHART_SERIES.dark[0]);
   });
 
   it("maps secondary to the second palette entry in light theme", () => {
     document.documentElement.dataset.theme = "shina";
     render(<Probe />);
-    // Light fallback: secondary === series[1] === '#ea580c' (orange).
-    expect(screen.getByTestId("secondary")).toHaveTextContent("#ea580c");
+    // Light fallback: secondary === series[1] (signal-orange).
+    expect(screen.getByTestId("secondary")).toHaveTextContent(CHART_SERIES.light[1]);
   });
 
   it("returns all series entries as non-empty strings", () => {

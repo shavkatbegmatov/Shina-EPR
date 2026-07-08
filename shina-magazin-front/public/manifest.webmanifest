@@ -4,8 +4,8 @@
   "description": "Protektor — shinalar onlayn do'koni va boshqaruv tizimi.",
   "start_url": "/",
   "display": "standalone",
-  "background_color": "#fbfcfe",
-  "theme_color": "#0f766e",
+  "background_color": "#f7f8fc",
+  "theme_color": "#2451e6",
   "lang": "uz",
   "icons": [
     {

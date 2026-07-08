@@ -68,18 +68,24 @@ export function Sidebar() {
         />
       )}
 
-      {/* Sidebar */}
+      {/* Sidebar — "cockpit": ikkala temada ham tungi-asfalt panel.
+          data-theme="shina-dark" nested scope DaisyUI tokenlarini qorong'i
+          variantga almashtiradi, shuning uchun ichidagi barcha semantik
+          klasslar (bg-base-*, text-primary...) avtomatik moslashadi. */}
       <aside
+        data-theme="shina-dark"
         className={clsx(
-          'fixed left-0 top-0 z-50 flex h-screen w-72 flex-col bg-base-100/95 backdrop-blur transition-[transform,width] md:sticky md:w-16 md:translate-x-0 lg:w-72',
-          'border-r border-base-200 shadow-[var(--shadow-soft)]',
+          'fixed left-0 top-0 z-50 flex h-screen w-72 flex-col bg-base-100 text-base-content transition-[transform,width] md:sticky md:w-16 md:translate-x-0 lg:w-72',
+          'border-r border-base-300/40 shadow-[var(--shadow-strong)]',
           sidebarOpen ? 'translate-x-0' : '-translate-x-full'
         )}
       >
-        <div className="relative flex h-16 items-center justify-between overflow-hidden border-b border-base-200 px-4 md:px-2 lg:px-4">
-          <div className="pointer-events-none absolute inset-0 bg-gradient-to-br from-primary/15 via-transparent to-secondary/10" />
+        {/* Fara glow — panel tepasidagi kobalt nur (DaisyUI v4 oklch tokenlari) */}
+        <div className="pointer-events-none absolute inset-x-0 top-0 h-48 bg-[radial-gradient(ellipse_at_top,oklch(var(--p)/0.18),transparent_65%)]" />
+        <div className="relative flex h-16 items-center justify-between overflow-hidden border-b border-base-300/40 px-4 md:px-2 lg:px-4">
+          <div className="pointer-events-none absolute inset-0 bg-gradient-to-br from-primary/20 via-transparent to-secondary/10" />
           <div className="relative flex items-center gap-3 md:justify-center lg:justify-start">
-            <div className="grid h-9 w-9 shrink-0 place-items-center rounded-xl bg-primary/15 text-primary shadow-sm">
+            <div className="grid h-9 w-9 shrink-0 place-items-center rounded-xl bg-primary/20 text-primary shadow-[var(--glow-primary)] ring-1 ring-primary/30">
               <Logo variant="mark" tone="erp" className="h-6 w-6" />
             </div>
             <div className="md:hidden lg:block">
@@ -116,21 +122,25 @@ export function Sidebar() {
                   title={t(item.labelKey)}
                   className={({ isActive }) =>
                     clsx(
-                      'group flex items-center gap-3 rounded-xl border px-3 py-2.5 text-sm font-medium transition md:justify-center md:px-0 lg:justify-start lg:px-3',
+                      'group relative flex items-center gap-3 rounded-xl border px-3 py-2.5 text-sm font-medium transition md:justify-center md:px-0 lg:justify-start lg:px-3',
                       isActive
-                        ? 'border-base-300 bg-base-200 text-base-content shadow-sm'
-                        : 'border-transparent text-base-content/70 hover:border-base-300 hover:bg-base-200/70 hover:text-base-content'
+                        ? 'border-primary/25 bg-primary/10 text-base-content shadow-[var(--glow-primary)]'
+                        : 'border-transparent text-base-content/60 hover:border-base-300/50 hover:bg-base-200/70 hover:text-base-content'
                     )
                   }
                   onClick={() => setSidebarOpen(false)}
                 >
                   {({ isActive }) => (
                     <>
+                      {/* Aktiv indikator — chap "yo'l chizig'i" */}
+                      {isActive && (
+                        <span className="absolute -left-px top-1/2 h-6 w-1 -translate-y-1/2 rounded-full bg-gradient-to-b from-primary to-accent md:hidden lg:block" />
+                      )}
                       <span
                         className={clsx(
                           'grid h-9 w-9 place-items-center rounded-lg transition',
                           isActive
-                            ? 'bg-primary/10 text-primary'
+                            ? 'bg-primary text-primary-content shadow-sm'
                             : 'bg-base-200/70 text-base-content/50 group-hover:text-primary'
                         )}
                       >
