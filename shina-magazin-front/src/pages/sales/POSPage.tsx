@@ -279,7 +279,8 @@ export function POSPage() {
                     {product.name}
                   </h3>
                   <p className="mt-1 text-xs text-base-content/60">
-                    {product.sizeString || t('erp.pos.noSize')}
+                    {/* Universal mahsulotda o'lcham o'rniga kategoriya ko'rsatiladi */}
+                    {product.sizeString || product.categoryName || '—'}
                   </p>
                 </div>
                 <div className="mt-3 flex items-center justify-between">

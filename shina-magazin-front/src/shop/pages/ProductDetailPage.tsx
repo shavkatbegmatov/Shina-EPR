@@ -110,7 +110,9 @@ export function ProductDetailPage() {
         <div>
           <span className="text-sm font-medium uppercase tracking-wide text-base-content/50">{product.brandName}</span>
           <h1 className="mt-1 text-2xl font-bold md:text-3xl">{product.name}</h1>
-          <p className="mt-1 font-mono text-base-content/70">{product.sizeString}</p>
+          {product.sizeString && (
+            <p className="mt-1 font-mono text-base-content/70">{product.sizeString}</p>
+          )}
 
           <div className="mt-5 flex items-center gap-3">
             <span className="text-3xl font-extrabold text-primary">{formatCurrency(product.sellingPrice)}</span>

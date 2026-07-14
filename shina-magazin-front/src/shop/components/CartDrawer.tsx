@@ -57,7 +57,9 @@ export function CartDrawer({ open, onClose }: CartDrawerProps) {
                       </div>
                       <div className="flex min-w-0 flex-1 flex-col">
                         <span className="truncate text-sm font-semibold">{product.name}</span>
-                        <span className="font-mono text-xs text-base-content/60">{product.sizeString}</span>
+                        {product.sizeString && (
+                          <span className="font-mono text-xs text-base-content/60">{product.sizeString}</span>
+                        )}
                         <span className="mt-0.5 text-sm font-bold text-primary">{formatCurrency(product.sellingPrice)}</span>
                         <div className="mt-auto flex items-center gap-2 pt-2">
                           <div className="flex items-center rounded-lg border border-base-300">

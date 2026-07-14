@@ -39,9 +39,17 @@ interface CategoryFormState {
   description: string;
   parentId?: number;
   icon?: string;
+  /** '' = universal mahsulot; 'TIRE' = shina o'lcham maydonlari */
+  template: '' | 'TIRE';
 }
 
-const emptyForm: CategoryFormState = { name: '', description: '', parentId: undefined, icon: undefined };
+const emptyForm: CategoryFormState = {
+  name: '',
+  description: '',
+  parentId: undefined,
+  icon: undefined,
+  template: '',
+};
 
 /** Bitta bog'lanish qatori (modal ichidagi atributlar bo'limi) */
 interface BindingRow {
@@ -123,6 +131,7 @@ export function CategoriesPage() {
       description: category.description ?? '',
       parentId: category.parentId,
       icon: category.icon,
+      template: category.template ?? '',
     });
     setAttrToAdd('');
     try {
@@ -169,6 +178,7 @@ export function CategoriesPage() {
         description: form.description.trim() || undefined,
         parentId: form.parentId,
         icon: form.icon,
+        template: form.template || null,
       };
       const saved = editingId
         ? await categoriesApi.update(editingId, payload)
@@ -451,6 +461,20 @@ export function CategoriesPage() {
               placeholder={t('erp.categories.descriptionPlaceholder')}
             />
           </label>
+
+          {/* Forma shabloni — maxsus maydonlar to'plami (bola kategoriyalarga meros) */}
+          <div>
+            <Select
+              label={t('erp.categories.fieldTemplate')}
+              value={form.template}
+              onChange={(value) => setForm((prev) => ({ ...prev, template: (value as '' | 'TIRE') || '' }))}
+              options={[
+                { value: '', label: t('erp.categories.templateNone') },
+                { value: 'TIRE', label: t('erp.categories.templateTire') },
+              ]}
+            />
+            <p className="mt-1 text-xs text-base-content/50">{t('erp.categories.templateHint')}</p>
+          </div>
 
           {/* Ikonka tanlash */}
           <div className="form-control">

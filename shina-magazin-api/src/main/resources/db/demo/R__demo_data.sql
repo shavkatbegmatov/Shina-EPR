@@ -689,3 +689,36 @@ INSERT INTO product_attribute_values (product_id, attribute_id, value_number)
   JOIN products p ON p.sku=t.sku
   JOIN attributes a ON a.code=t.code
   WHERE NOT EXISTS (SELECT 1 FROM product_attribute_values v WHERE v.product_id=p.id AND v.attribute_id=a.id);
+
+-- ═══════════════ 7-QISM: UNIVERSAL MAGAZIN (idempotent) ═══════════════
+-- Kategoriya shabloni: shina bo'limlari TIRE shablonini oladi (o'lcham
+-- maydonlari faqat ularda ko'rinadi); aksessuar/disk — universal mahsulotlar.
+
+UPDATE categories SET template='TIRE'
+  WHERE name IN ('Shinalar', 'Sport / UHP shinalari', 'Elektromobil (EV) shinalari')
+    AND template IS NULL;
+
+-- ─── Universal (shinadan boshqa) demo mahsulotlar — aksessuarlar ───
+INSERT INTO products (sku, name, category_id, purchase_price, selling_price, quantity, min_stock_level, description, active, created_by)
+  SELECT 'AKS-DMK-2T', 'Gidravlik domkrat 2 tonna', (SELECT id FROM categories WHERE name='Ballon kalitlari va domkratlar'), 180000, 265000, 14, 4, 'Ixcham gidravlik domkrat — yengil avtomobillar uchun, 2t yuk ko''tarish.', true, 1
+  WHERE NOT EXISTS (SELECT 1 FROM products WHERE sku='AKS-DMK-2T');
+INSERT INTO products (sku, name, category_id, purchase_price, selling_price, quantity, min_stock_level, description, active, created_by)
+  SELECT 'AKS-BKL-KREST', 'Krestovina ballon kaliti 17/19/21/23', (SELECT id FROM categories WHERE name='Ballon kalitlari va domkratlar'), 55000, 89000, 26, 6, 'To''rt o''lchamli krestovina kalit — barcha mashhur gaykalar uchun.', true, 1
+  WHERE NOT EXISTS (SELECT 1 FROM products WHERE sku='AKS-BKL-KREST');
+INSERT INTO products (sku, name, category_id, purchase_price, selling_price, quantity, min_stock_level, description, active, created_by)
+  SELECT 'AKS-BOLT-M12', 'G''ildirak bolti M12x1.5 (20 dona)', (SELECT id FROM categories WHERE name='G''ildirak boltlari va gaykalari'), 60000, 95000, 40, 10, 'Xromlangan po''lat boltlar to''plami, konus o''tirg''ichli.', true, 1
+  WHERE NOT EXISTS (SELECT 1 FROM products WHERE sku='AKS-BOLT-M12');
+
+-- Aksessuarlar root'iga "Kafolat" atributi
+INSERT INTO category_attributes (category_id, attribute_id, required, sort_order)
+  SELECT c.id, a.id, false, 0 FROM categories c JOIN attributes a ON a.code='warranty'
+  WHERE c.name='Aksessuarlar'
+    AND NOT EXISTS (SELECT 1 FROM category_attributes ca WHERE ca.category_id=c.id AND ca.attribute_id=a.id);
+
+-- Aksessuar mahsulotlariga kafolat qiymatlari
+INSERT INTO product_attribute_values (product_id, attribute_id, value_number)
+  SELECT p.id, a.id, t.val FROM
+    (VALUES ('AKS-DMK-2T', 12), ('AKS-BKL-KREST', 6)) AS t(sku, val)
+  JOIN products p ON p.sku=t.sku
+  JOIN attributes a ON a.code='warranty'
+  WHERE NOT EXISTS (SELECT 1 FROM product_attribute_values v WHERE v.product_id=p.id AND v.attribute_id=a.id);

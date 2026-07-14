@@ -50,7 +50,9 @@ export function QuickViewModal() {
           <div className="flex flex-col">
             <span className="text-xs font-medium uppercase tracking-wide text-base-content/50">{product.brandName}</span>
             <h2 className="mt-1 text-xl font-bold leading-tight">{product.name}</h2>
-            <p className="mt-0.5 font-mono text-sm text-base-content/70">{product.sizeString}</p>
+            {product.sizeString && (
+              <p className="mt-0.5 font-mono text-sm text-base-content/70">{product.sizeString}</p>
+            )}
 
             <div className="mt-3 flex flex-wrap items-center gap-2">
               <span className="text-2xl font-extrabold text-primary">{formatCurrency(product.sellingPrice)}</span>

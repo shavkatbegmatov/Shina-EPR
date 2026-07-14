@@ -68,6 +68,7 @@ public class CategoryService {
                 .name(request.getName().trim())
                 .description(request.getDescription())
                 .icon(request.getIcon())
+                .template(request.getTemplate())
                 .active(true)
                 .build();
 
@@ -88,6 +89,7 @@ public class CategoryService {
         category.setName(request.getName().trim());
         category.setDescription(request.getDescription());
         category.setIcon(request.getIcon());
+        category.setTemplate(request.getTemplate());
         if (request.getSortOrder() != null) {
             category.setSortOrder(request.getSortOrder());
         }

@@ -25,6 +25,9 @@ public class CategoryRequest {
     @Size(max = 50, message = "Ikonka nomi 50 ta belgidan oshmasligi kerak")
     private String icon;
 
+    // Forma shabloni (null = universal mahsulot, TIRE = shina o'lcham maydonlari)
+    private uz.shinamagazin.api.enums.CategoryTemplate template;
+
     private Integer sortOrder;
 
     private Boolean active;

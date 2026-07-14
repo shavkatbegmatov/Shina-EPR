@@ -1,12 +1,14 @@
 import type { ReactNode } from 'react';
 import { Link } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
+import { useQuery } from '@tanstack/react-query';
 import { Scale, Trash2, ShoppingCart, X } from 'lucide-react';
 import { EmptyState, Button, Badge, buttonVariants } from '@/ui';
 import type { Product } from '../../types';
 import { formatCurrency } from '../../config/constants';
 import { useCompareStore } from '../store/compareStore';
 import { useCatalogProducts } from '../data/useCatalog';
+import { catalogApi } from '../data/catalogApi';
 import { useCartStore } from '../store/cartStore';
 import { ProductImage } from '../components/ProductImage';
 
@@ -17,6 +19,21 @@ export function ComparePage() {
   const clear = useCompareStore((s) => s.clear);
   const { products } = useCatalogProducts();
   const add = useCartStore((s) => s.add);
+
+  // Xususiyatlar (atributlar) faqat bitta-mahsulot endpoint'ida keladi —
+  // solishtirilayotganlar uchun alohida yuklaymiz (backend yo'q bo'lsa jim o'tadi)
+  const { data: fullProducts } = useQuery({
+    queryKey: ['compare-attributes', ids],
+    queryFn: async () => {
+      const loaded = await Promise.all(
+        ids.map((id) => catalogApi.getById(id).catch(() => null))
+      );
+      return loaded.filter((p): p is Product => Boolean(p));
+    },
+    enabled: ids.length > 0,
+    staleTime: 5 * 60 * 1000,
+    retry: false,
+  });
 
   const items = ids
     .map((id) => products.find((p) => p.id === id))
@@ -35,11 +52,39 @@ export function ComparePage() {
     );
   }
 
+  // Atributlar bo'yicha qatorlar: solishtirilayotganlarda uchraydigan barcha
+  // xususiyatlar birlashmasi (WB-uslub — jadval mahsulotlarga moslashadi)
+  const attributesByProduct = new Map<number, NonNullable<Product['attributes']>>(
+    (fullProducts ?? []).map((p) => [p.id, p.attributes ?? []])
+  );
+  const attributeRows: Array<{ id: number; name: string }> = [];
+  (fullProducts ?? []).forEach((p) =>
+    (p.attributes ?? []).forEach((attr) => {
+      if (!attributeRows.some((row) => row.id === attr.attributeId)) {
+        attributeRows.push({ id: attr.attributeId, name: attr.name });
+      }
+    })
+  );
+
   const rows: Array<{ label: string; render: (p: Product) => ReactNode }> = [
     { label: t('shop.product.brand'), render: (p) => p.brandName ?? '—' },
-    { label: t('shop.product.size'), render: (p) => <span className="font-mono">{p.sizeString}</span> },
-    { label: t('shop.product.season'), render: (p) => (p.season ? t(`shop.season.${p.season}`) : '—') },
-    { label: t('shop.product.loadSpeed'), render: (p) => `${p.loadIndex ?? ''}${p.speedRating ?? ''}` || '—' },
+    // Shina qatorlari faqat kamida bitta mahsulotda qiymat bo'lsa ko'rinadi
+    ...(items.some((p) => p.sizeString)
+      ? [{ label: t('shop.product.size'), render: (p: Product) => <span className="font-mono">{p.sizeString ?? '—'}</span> }]
+      : []),
+    ...(items.some((p) => p.season)
+      ? [{ label: t('shop.product.season'), render: (p: Product) => (p.season ? t(`shop.season.${p.season}`) : '—') }]
+      : []),
+    ...(items.some((p) => p.loadIndex || p.speedRating)
+      ? [{ label: t('shop.product.loadSpeed'), render: (p: Product) => `${p.loadIndex ?? ''}${p.speedRating ?? ''}` || '—' }]
+      : []),
+    ...attributeRows.map((row) => ({
+      label: row.name,
+      render: (p: Product) => {
+        const value = attributesByProduct.get(p.id)?.find((a) => a.attributeId === row.id);
+        return value?.values.join(', ') || '—';
+      },
+    })),
     {
       label: t('shop.compare.priceRow'),
       render: (p) => <span className="font-bold text-primary">{formatCurrency(p.sellingPrice)}</span>,

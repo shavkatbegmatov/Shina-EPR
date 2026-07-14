@@ -7,6 +7,7 @@ import type { Product, Season } from '../../types';
 import { ProductCard } from '../components/ProductCard';
 import { TireSizeFinder } from '../components/TireSizeFinder';
 import { CatalogFilterPanel } from '../components/CatalogFilterPanel';
+import { getEffectiveTemplate } from '../../utils/categoryTree';
 import {
   useCatalogProducts,
   useCatalogBrands,
@@ -72,6 +73,15 @@ export function CatalogPage() {
   // Facetlar va server tomonda filtrlangan ro'yxat. Backend bo'lmasa facets
   // undefined qoladi va mahsulotlar demo ro'yxatdan client-side filtrlaniladi.
   const { facets } = useCatalogFacets(categoryId);
+
+  // Shina konteksti: kategoriya tanlanmagan (aralash vitrina, shina — asosiy biznes)
+  // yoki tanlangan kategoriya TIRE shablonli. Boshqa kategoriyalarda (aksessuar,
+  // disk...) shinaga xos vidjetlar (o'lcham qidiruvchi, mavsum) yashirinadi.
+  const isTireContext = useMemo(() => {
+    if (!categoryId) return true;
+    if (!facets) return true; // demo rejim — shina do'koni default
+    return getEffectiveTemplate(facets.categories, categoryId) === 'TIRE';
+  }, [facets, categoryId]);
   const serverParams = useMemo(
     () => ({
       categoryId,
@@ -144,6 +154,10 @@ export function CatalogPage() {
       else next.delete('cat');
       next.delete('attrs'); // kategoriya almashsa atribut tanlovlari eskiradi
     });
+    // Shinaga tegishli bo'lmagan kategoriyaga o'tilsa mavsum filtri eskiradi
+    if (id && facets && getEffectiveTemplate(facets.categories, id) !== 'TIRE') {
+      setSeason('');
+    }
   };
 
   const handlePriceChange = (min?: number, max?: number) => {
@@ -233,7 +247,8 @@ export function CatalogPage() {
         {t('shop.catalog.results', { count: results.length })}
       </p>
 
-      <TireSizeFinder className="mb-6" />
+      {/* Shina o'lcham qidiruvchisi — faqat shina kontekstida */}
+      {isTireContext && <TireSizeFinder className="mb-6" />}
 
       {/* Tezkor filtrlar qatori */}
       <div className="mb-6 flex flex-wrap items-center gap-3">
@@ -264,10 +279,12 @@ export function CatalogPage() {
           <option value="">{t('shop.catalog.allBrands')}</option>
           {brands.map((b) => <option key={b} value={b}>{b}</option>)}
         </select>
-        <select value={season} onChange={(e) => setSeason(e.target.value)} aria-label={t('shop.catalog.season')} className={selectClass}>
-          <option value="">{t('shop.catalog.allSeasons')}</option>
-          {SEASONS.map((s) => <option key={s} value={s}>{t(`shop.season.${s}`)}</option>)}
-        </select>
+        {isTireContext && (
+          <select value={season} onChange={(e) => setSeason(e.target.value)} aria-label={t('shop.catalog.season')} className={selectClass}>
+            <option value="">{t('shop.catalog.allSeasons')}</option>
+            {SEASONS.map((s) => <option key={s} value={s}>{t(`shop.season.${s}`)}</option>)}
+          </select>
+        )}
         <select value={sort} onChange={(e) => setSort(e.target.value as SortKey)} aria-label={t('shop.catalog.sortBy')} className={selectClass}>
           <option value="new">{t('shop.catalog.sortNew')}</option>
           <option value="price-asc">{t('shop.catalog.sortPriceAsc')}</option>

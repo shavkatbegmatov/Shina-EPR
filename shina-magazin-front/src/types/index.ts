@@ -149,6 +149,13 @@ export interface Brand {
   active: boolean;
 }
 
+/**
+ * Kategoriya forma shabloni: qaysi maxsus (built-in) maydonlar ko'rsatilishini
+ * belgilaydi. null/undefined = universal mahsulot (faqat atributlar),
+ * TIRE = shina o'lcham maydonlari. Bola kategoriyalarga meros bo'ladi.
+ */
+export type CategoryTemplate = 'TIRE';
+
 export interface Category {
   id: number;
   name: string;
@@ -157,6 +164,7 @@ export interface Category {
   parentName?: string;
   children?: Category[];
   icon?: string;
+  template?: CategoryTemplate | null;
   sortOrder?: number;
   /** Shu kategoriyaning o'zidagi faol mahsulotlar soni (bolalarisiz) */
   productCount?: number;
@@ -168,6 +176,7 @@ export interface CategoryRequest {
   description?: string;
   parentId?: number;
   icon?: string;
+  template?: CategoryTemplate | null;
   sortOrder?: number;
   active?: boolean;
 }

@@ -184,14 +184,14 @@
     },
     "products": {
       "title": "Mahsulotlar",
-      "subtitle": "Shina katalogi",
+      "subtitle": "Mahsulotlar katalogi",
       "clearFilters": "Filtrlarni tozalash",
       "newProduct": "Yangi mahsulot",
       "filters": "Filtrlar",
       "filtersSelected": "{{count}} ta filter tanlangan",
       "allShown": "Barcha mahsulotlar ko'rsatilmoqda",
       "productCount": "{{count}} ta mahsulot",
-      "searchPlaceholder": "SKU, nom yoki o'lcham...",
+      "searchPlaceholder": "SKU yoki nom bo‘yicha qidirish...",
       "colBrand": "Brend",
       "colSize": "O'lcham",
       "colSeason": "Mavsum",
@@ -210,7 +210,7 @@
       "inStock": "Yetarli",
       "speedLoad": "Tezlik / Yuk",
       "editTitle": "Mahsulotni tahrirlash",
-      "newSubtitle": "Yangi shina qo'shish",
+      "newSubtitle": "Katalogga yangi mahsulot qo'shish",
       "editSubtitle": "Mahsulot ma'lumotlarini yangilash",
       "fieldName": "Nomi *",
       "selectPlaceholder": "Tanlang...",
@@ -1720,7 +1720,11 @@
       "moveDown": "Pastga",
       "addChild": "Ichki kategoriya qo'shish",
       "emptyTitle": "Kategoriyalar hali yo'q",
-      "emptyDescription": "Katalogni tashkil qilish uchun birinchi kategoriyani yarating"
+      "emptyDescription": "Katalogni tashkil qilish uchun birinchi kategoriyani yarating",
+      "fieldTemplate": "Forma shabloni",
+      "templateNone": "Oddiy mahsulot (universal)",
+      "templateTire": "Shina — o'lcham maydonlari (eni/profil/diametr, mavsum)",
+      "templateHint": "Shablon mahsulot formasida qaysi maxsus maydonlar chiqishini belgilaydi va bola kategoriyalarga meros bo'ladi. Qolgan barcha xususiyatlar atributlar orqali qo'shiladi."
     },
     "attributes": {
       "title": "Xususiyatlar",
@@ -1801,7 +1805,7 @@
       "account": "Kabinet"
     },
     "search": {
-      "placeholder": "Shina, brend yoki o'lcham (205/55 R16)...",
+      "placeholder": "Mahsulot, brend yoki o'lcham (205/55 R16)...",
       "allResults": "Barcha natijalar"
     },
     "season": {

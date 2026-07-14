@@ -14,7 +14,7 @@ import { DataTable, Column } from '../../components/ui/DataTable';
 import { ModalPortal } from '../../components/common/Modal';
 import { ExportButtons } from '../../components/common/ExportButtons';
 import { AttributeValueInputs, type AttributeValueMap } from '../../components/catalog/AttributeValueInputs';
-import { flattenCategoryTree, indentLabel } from '../../utils/categoryTree';
+import { flattenCategoryTree, getEffectiveTemplate, indentLabel } from '../../utils/categoryTree';
 import { useNotificationsStore } from '../../store/notificationsStore';
 import { PermissionCode } from '../../hooks/usePermission';
 import { PermissionGate } from '../../components/common/PermissionGate';
@@ -81,6 +81,13 @@ export function ProductsPage() {
   const { notifications } = useNotificationsStore();
   const { highlightId, clearHighlight } = useHighlight();
 
+  // Ro'yxat konteksti tanlangan kategoriyaga moslashadi: shinaga tegishli
+  // bo'lmagan kategoriya tanlansa Mavsum filtri va O'lcham/Mavsum ustunlari yashirinadi
+  const isTireContext = useMemo(
+    () => !categoryFilter || getEffectiveTemplate(categoryTree, Number(categoryFilter)) === 'TIRE',
+    [categoryTree, categoryFilter]
+  );
+
   const activeFilters = useMemo(() => {
     let count = 0;
     if (search.trim()) count += 1;
@@ -90,7 +97,7 @@ export function ProductsPage() {
     return count;
   }, [brandFilter, categoryFilter, search, seasonFilter]);
 
-  // Table columns definition
+  // Table columns definition — shina ustunlari (o'lcham/mavsum) kontekstga qarab
   const columns: Column<Product>[] = useMemo(() => [
     {
       key: 'sku',
@@ -112,19 +119,23 @@ export function ProductsPage() {
       header: t('erp.products.colBrand'),
       render: (product) => product.brandName || '—',
     },
-    {
-      key: 'sizeString',
-      header: t('erp.products.colSize'),
-      render: (product) => product.sizeString || '—',
-    },
-    {
-      key: 'season',
-      header: t('erp.products.colSeason'),
-      render: (product) =>
-        product.season ? (
-          <span className="badge badge-outline badge-sm">{enumLabel('season', product.season)}</span>
-        ) : null,
-    },
+    ...(isTireContext
+      ? ([
+          {
+            key: 'sizeString',
+            header: t('erp.products.colSize'),
+            render: (product) => product.sizeString || '—',
+          },
+          {
+            key: 'season',
+            header: t('erp.products.colSeason'),
+            render: (product) =>
+              product.season ? (
+                <span className="badge badge-outline badge-sm">{enumLabel('season', product.season)}</span>
+              ) : null,
+          },
+        ] as Column<Product>[])
+      : []),
     {
       key: 'sellingPrice',
       header: t('erp.products.colPrice'),
@@ -154,7 +165,15 @@ export function ProductsPage() {
         </div>
       ),
     },
-  ], [t]);
+  ], [t, isTireContext]);
+
+  // Shinaga tegishli bo'lmagan kategoriya tanlanganda mavsum filtri eskiradi
+  useEffect(() => {
+    if (!isTireContext && seasonFilter) {
+      setSeasonFilter('');
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isTireContext]);
 
   const loadData = useCallback(async () => {
     try {
@@ -178,6 +197,10 @@ export function ProductsPage() {
       })),
     [categoryTree]
   );
+
+  // Formada tanlangan kategoriyaning shabloni: TIRE bo'lsagina shina o'lcham
+  // maydonlari ko'rinadi — universal magazin (WB) yondashuvi
+  const isTireForm = getEffectiveTemplate(categoryTree, formData.categoryId) === 'TIRE';
 
   // Tanlangan kategoriyaning effektiv atributlarini yuklash
   const loadFormAttributes = useCallback(async (categoryId?: number) => {
@@ -346,6 +369,16 @@ export function ProductsPage() {
     setSaving(true);
     try {
       const payload: ProductRequest = { ...formData, attributes };
+      if (!isTireForm) {
+        // Universal mahsulot: shina maydonlari yuborilmaydi (kategoriya
+        // almashtirilganda eski shina qiymatlari ham tozalanadi)
+        payload.width = undefined;
+        payload.profile = undefined;
+        payload.diameter = undefined;
+        payload.loadIndex = undefined;
+        payload.speedRating = undefined;
+        payload.season = undefined;
+      }
       if (editingProductId) {
         await productsApi.update(editingProductId, payload);
       } else {
@@ -449,13 +482,15 @@ export function ProductsPage() {
             options={categoryOptions}
           />
 
-          <Select
-            label={t('erp.products.colSeason')}
-            value={seasonFilter}
-            onChange={(value) => { setSeasonFilter(value as Season | ''); setPage(0); }}
-            placeholder={t('erp.products.allSeasons')}
-            options={Object.entries(SEASONS).map(([key, { label }]) => ({ value: key, label }))}
-          />
+          {isTireContext && (
+            <Select
+              label={t('erp.products.colSeason')}
+              value={seasonFilter}
+              onChange={(value) => { setSeasonFilter(value as Season | ''); setPage(0); }}
+              placeholder={t('erp.products.allSeasons')}
+              options={Object.entries(SEASONS).map(([key, { label }]) => ({ value: key, label }))}
+            />
+          )}
         </div>
       </div>
 
@@ -492,7 +527,7 @@ export function ProductsPage() {
               <div>
                 <p className="text-sm font-semibold">{product.name}</p>
                 <p className="text-xs text-base-content/60">SKU: {product.sku}</p>
-                <p className="text-xs text-base-content/60">{product.sizeString || t('erp.products.noSize')}</p>
+                {product.sizeString && <p className="text-xs text-base-content/60">{product.sizeString}</p>}
               </div>
               <span className={clsx('badge badge-sm', product.lowStock ? 'badge-error' : 'badge-success')}>
                 {product.quantity}
@@ -576,16 +611,23 @@ export function ProductsPage() {
                     </div>
                   </div>
 
-                  <div className="grid grid-cols-2 gap-3 text-sm text-base-content/70">
-                    <div>
-                      <p className="text-xs uppercase tracking-[0.2em] text-base-content/40">{t('erp.products.colSize')}</p>
-                      <p className="font-medium">{selectedProduct.sizeString || '—'}</p>
+                  {/* Shina o'lchamlari — faqat qiymat mavjud bo'lsa (universal mahsulotlarda chiqmaydi) */}
+                  {(selectedProduct.sizeString || selectedProduct.speedRating || selectedProduct.loadIndex) && (
+                    <div className="grid grid-cols-2 gap-3 text-sm text-base-content/70">
+                      {selectedProduct.sizeString && (
+                        <div>
+                          <p className="text-xs uppercase tracking-[0.2em] text-base-content/40">{t('erp.products.colSize')}</p>
+                          <p className="font-medium">{selectedProduct.sizeString}</p>
+                        </div>
+                      )}
+                      {(selectedProduct.speedRating || selectedProduct.loadIndex) && (
+                        <div>
+                          <p className="text-xs uppercase tracking-[0.2em] text-base-content/40">{t('erp.products.speedLoad')}</p>
+                          <p className="font-medium">{selectedProduct.speedRating || '—'} / {selectedProduct.loadIndex || '—'}</p>
+                        </div>
+                      )}
                     </div>
-                    <div>
-                      <p className="text-xs uppercase tracking-[0.2em] text-base-content/40">{t('erp.products.speedLoad')}</p>
-                      <p className="font-medium">{selectedProduct.speedRating || '—'} / {selectedProduct.loadIndex || '—'}</p>
-                    </div>
-                  </div>
+                  )}
 
                   {selectedProduct.description && (
                     <div className="surface-soft rounded-lg p-3 text-sm text-base-content/70">
@@ -659,26 +701,29 @@ export function ProductsPage() {
                 />
               </div>
 
-              <div className="grid grid-cols-3 gap-4 sm:grid-cols-6">
-                <NumberInput label={t('erp.products.fieldWidth')} value={formData.width ?? ''} onChange={(val) => handleFormChange('width', val === '' ? undefined : Number(val))} placeholder="205" showButtons={false} min={100} max={400} />
-                <NumberInput label={t('erp.products.fieldProfile')} value={formData.profile ?? ''} onChange={(val) => handleFormChange('profile', val === '' ? undefined : Number(val))} placeholder="55" showButtons={false} min={10} max={100} />
-                <NumberInput label={t('erp.products.fieldDiameter')} value={formData.diameter ?? ''} onChange={(val) => handleFormChange('diameter', val === '' ? undefined : Number(val))} placeholder="16" showButtons={false} min={10} max={30} />
-                <label className="form-control">
-                  <span className="label-text mb-1 text-xs font-semibold uppercase tracking-[0.18em] text-base-content/50">{t('erp.products.fieldLoadIndex')}</span>
-                  <input type="text" className="input input-bordered w-full" value={formData.loadIndex || ''} onChange={(e) => handleFormChange('loadIndex', e.target.value || undefined)} placeholder="91" />
-                </label>
-                <label className="form-control">
-                  <span className="label-text mb-1 text-xs font-semibold uppercase tracking-[0.18em] text-base-content/50">{t('erp.products.fieldSpeed')}</span>
-                  <input type="text" className="input input-bordered w-full" value={formData.speedRating || ''} onChange={(e) => handleFormChange('speedRating', e.target.value || undefined)} placeholder="V" />
-                </label>
-                <Select
-                  label={t('erp.products.colSeason')}
-                  value={formData.season || ''}
-                  onChange={(value) => handleFormChange('season', value as Season || undefined)}
-                  placeholder="—"
-                  options={Object.entries(SEASONS).map(([key, { label }]) => ({ value: key, label }))}
-                />
-              </div>
+              {/* Shina o'lcham maydonlari — faqat TIRE shablonli kategoriyada (universal magazin) */}
+              {isTireForm && (
+                <div className="grid grid-cols-3 gap-4 sm:grid-cols-6">
+                  <NumberInput label={t('erp.products.fieldWidth')} value={formData.width ?? ''} onChange={(val) => handleFormChange('width', val === '' ? undefined : Number(val))} placeholder="205" showButtons={false} min={100} max={400} />
+                  <NumberInput label={t('erp.products.fieldProfile')} value={formData.profile ?? ''} onChange={(val) => handleFormChange('profile', val === '' ? undefined : Number(val))} placeholder="55" showButtons={false} min={10} max={100} />
+                  <NumberInput label={t('erp.products.fieldDiameter')} value={formData.diameter ?? ''} onChange={(val) => handleFormChange('diameter', val === '' ? undefined : Number(val))} placeholder="16" showButtons={false} min={10} max={30} />
+                  <label className="form-control">
+                    <span className="label-text mb-1 text-xs font-semibold uppercase tracking-[0.18em] text-base-content/50">{t('erp.products.fieldLoadIndex')}</span>
+                    <input type="text" className="input input-bordered w-full" value={formData.loadIndex || ''} onChange={(e) => handleFormChange('loadIndex', e.target.value || undefined)} placeholder="91" />
+                  </label>
+                  <label className="form-control">
+                    <span className="label-text mb-1 text-xs font-semibold uppercase tracking-[0.18em] text-base-content/50">{t('erp.products.fieldSpeed')}</span>
+                    <input type="text" className="input input-bordered w-full" value={formData.speedRating || ''} onChange={(e) => handleFormChange('speedRating', e.target.value || undefined)} placeholder="V" />
+                  </label>
+                  <Select
+                    label={t('erp.products.colSeason')}
+                    value={formData.season || ''}
+                    onChange={(value) => handleFormChange('season', value as Season || undefined)}
+                    placeholder="—"
+                    options={Object.entries(SEASONS).map(([key, { label }]) => ({ value: key, label }))}
+                  />
+                </div>
+              )}
 
               {/* Kategoriya xususiyatlari (dinamik, merosi bilan) */}
               {formData.categoryId && formAttributes.length > 0 && (

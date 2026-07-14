@@ -1,5 +1,5 @@
 import { icons, Folder, type LucideIcon } from 'lucide-react';
-import type { Category } from '../types';
+import type { Category, CategoryTemplate } from '../types';
 
 export interface FlatCategory {
   id: number;
@@ -40,6 +40,33 @@ export function collectSubtreeIds(tree: Category[], rootId: number): Set<number>
 /** Select uchun "— " prefiksli variant nomi. */
 export function indentLabel(name: string, depth: number): string {
   return depth > 0 ? `${'   '.repeat(depth)}└ ${name}` : name;
+}
+
+// Ichki sentinel: "topilmadi"ni "shablonsiz topildi"dan farqlash uchun
+const NOT_FOUND = '__not_found__' as unknown as CategoryTemplate;
+
+/**
+ * Kategoriyaning EFFEKTIV forma shabloni — o'ziniki yoki eng yaqin ota
+ * kategoriyaniki (meros). Shablon topilmasa undefined (universal mahsulot).
+ */
+export function getEffectiveTemplate(
+  tree: Category[],
+  categoryId?: number
+): CategoryTemplate | undefined {
+  if (!categoryId) return undefined;
+  const walk = (nodes: Category[], inherited?: CategoryTemplate): CategoryTemplate | undefined => {
+    for (const node of nodes) {
+      const current = node.template ?? inherited ?? undefined;
+      if (node.id === categoryId) return current;
+      if (node.children?.length) {
+        const found = walk(node.children, current);
+        if (found !== NOT_FOUND) return found;
+      }
+    }
+    return NOT_FOUND;
+  };
+  const result = walk(tree, undefined);
+  return result === NOT_FOUND ? undefined : result;
 }
 
 /** DB'da saqlanadigan kebab-case lucide ikonka nomini komponentga aylantiradi. */

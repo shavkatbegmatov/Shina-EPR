@@ -36,6 +36,9 @@ public class CategoryResponse {
 
     private String icon; // Lucide ikonka nomi (not exported)
 
+    // Forma shabloni (bola kategoriyalarga meros — effektivini frontend daraxtdan hisoblaydi)
+    private uz.shinamagazin.api.enums.CategoryTemplate template; // Not exported
+
     private Integer sortOrder; // Not exported
 
     // Shu kategoriyaning O'ZIDAGI faol mahsulotlar soni (bolalarisiz);
@@ -63,6 +66,7 @@ public class CategoryResponse {
                                 .map(child -> CategoryResponse.from(child, productCounts))
                                 .collect(Collectors.toList()) : null)
                 .icon(category.getIcon())
+                .template(category.getTemplate())
                 .sortOrder(category.getSortOrder())
                 .productCount(productCounts != null ? productCounts.getOrDefault(category.getId(), 0L) : null)
                 .active(category.getActive())

@@ -43,6 +43,11 @@ public class Category extends BaseEntity implements Auditable {
     @Column(length = 50)
     private String icon;
 
+    // Forma shabloni (NULL = universal mahsulot); bola kategoriyalarga meros bo'ladi
+    @Enumerated(EnumType.STRING)
+    @Column(length = 20)
+    private uz.shinamagazin.api.enums.CategoryTemplate template;
+
     @Column(name = "sort_order", nullable = false)
     @Builder.Default
     private Integer sortOrder = 0;
@@ -68,6 +73,7 @@ public class Category extends BaseEntity implements Auditable {
         map.put("name", this.name);
         map.put("description", this.description);
         map.put("icon", this.icon);
+        map.put("template", this.template);
         map.put("sortOrder", this.sortOrder);
         map.put("active", this.active);
 
