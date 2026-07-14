@@ -1,8 +1,8 @@
 import { useMemo } from 'react';
-import { useQuery } from '@tanstack/react-query';
-import type { Product } from '../../types';
+import { keepPreviousData, useQuery } from '@tanstack/react-query';
+import type { CatalogFacets, Product } from '../../types';
 import { DEMO_PRODUCTS, DEMO_BRANDS } from './demoProducts';
-import { catalogApi } from './catalogApi';
+import { catalogApi, type CatalogFilterParams } from './catalogApi';
 
 /**
  * Katalog ma'lumotlari uchun YAGONA seam (ulanish nuqtasi).
@@ -60,4 +60,39 @@ export function useCatalogBrands(): string[] {
     if (!list.length) return DEMO_BRANDS;
     return [...new Set(list.map((p) => p.brandName).filter((b): b is string => Boolean(b)))].sort();
   }, [list]);
+}
+
+/**
+ * Filtr paneli facetlari (kategoriya daraxti, narx diapazoni, atribut filtrlari).
+ * Backend yo'q bo'lsa `data` undefined qoladi — panel server bo'limlarini yashiradi
+ * (vitrina demo rejimda ham ishlashda davom etadi).
+ */
+export function useCatalogFacets(categoryId?: number): { facets: CatalogFacets | undefined; isLoading: boolean } {
+  const { data, isLoading } = useQuery({
+    queryKey: ['catalog-facets', categoryId ?? null],
+    queryFn: () => catalogApi.facets(categoryId),
+    staleTime: 5 * 60 * 1000,
+    retry: false,
+  });
+  return { facets: data, isLoading };
+}
+
+/**
+ * Server tomonda filtrlangan katalog (kategoriya subtree + narx + atributlar).
+ * Backend xatosida `serverMode=false` — sahifa demo ro'yxat ustidan client-side
+ * filtrlashga tushadi (mavjud xatti-harakat saqlanadi).
+ */
+export function useFilteredCatalog(params: CatalogFilterParams): {
+  products: Product[] | undefined;
+  isLoading: boolean;
+  serverMode: boolean;
+} {
+  const { data, isLoading, isError } = useQuery({
+    queryKey: ['catalog-filtered', params],
+    queryFn: () => catalogApi.listFiltered(params),
+    staleTime: 60 * 1000,
+    retry: false,
+    placeholderData: keepPreviousData,
+  });
+  return { products: data, isLoading, serverMode: !isError };
 }

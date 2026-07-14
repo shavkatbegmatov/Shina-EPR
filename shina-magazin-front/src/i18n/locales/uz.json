@@ -1858,7 +1858,16 @@
       "sortPriceDesc": "Narx: qimmatdan",
       "clear": "Tozalash",
       "empty": "Mahsulot topilmadi",
-      "emptyHint": "Filtrlarni o'zgartirib qayta urinib ko'ring."
+      "emptyHint": "Filtrlarni o'zgartirib qayta urinib ko'ring.",
+      "filtersTitle": "Filtrlar",
+      "closeFilters": "Filtrlarni yopish",
+      "categoriesTitle": "Kategoriyalar",
+      "allCategories": "Barcha kategoriyalar",
+      "priceTitle": "Narx (so'm)",
+      "priceFrom": "dan",
+      "priceTo": "gacha",
+      "inStockOnly": "Faqat sotuvda borlar",
+      "clearAll": "Filtrlarni tozalash"
     },
     "product": {
       "addToCart": "Savatga",

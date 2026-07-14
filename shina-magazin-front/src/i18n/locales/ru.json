@@ -1858,7 +1858,16 @@
       "sortPriceDesc": "Цена: по убыванию",
       "clear": "Сбросить",
       "empty": "Товары не найдены",
-      "emptyHint": "Измените фильтры и попробуйте снова."
+      "emptyHint": "Измените фильтры и попробуйте снова.",
+      "filtersTitle": "Фильтры",
+      "closeFilters": "Закрыть фильтры",
+      "categoriesTitle": "Категории",
+      "allCategories": "Все категории",
+      "priceTitle": "Цена (сум)",
+      "priceFrom": "от",
+      "priceTo": "до",
+      "inStockOnly": "Только в наличии",
+      "clearAll": "Сбросить фильтры"
     },
     "product": {
       "addToCart": "В корзину",

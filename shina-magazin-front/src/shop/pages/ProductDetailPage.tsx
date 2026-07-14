@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { Link, useParams } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
+import { useQuery } from '@tanstack/react-query';
 import { ChevronRight, Minus, Plus, ShoppingCart, Check, ArrowLeft } from 'lucide-react';
 import { Card, Badge, Button, EmptyState, buttonVariants, cn } from '@/ui';
 import { formatCurrency } from '../../config/constants';
@@ -9,6 +10,7 @@ import { ProductCard } from '../components/ProductCard';
 import { WishlistButton } from '../components/WishlistButton';
 import { RecentlyViewed } from '../components/RecentlyViewed';
 import { useProduct, useRelatedProducts } from '../data/useCatalog';
+import { catalogApi } from '../data/catalogApi';
 import { useCartStore } from '../store/cartStore';
 import { useRecentStore } from '../store/recentStore';
 import { useDocumentMeta } from '../hooks/useDocumentMeta';
@@ -23,6 +25,16 @@ export function ProductDetailPage() {
   const { product } = useProduct(id);
   const related = useRelatedProducts(product);
   const addRecent = useRecentStore((s) => s.add);
+
+  // Dinamik xususiyatlar (atributlar) faqat bitta-mahsulot endpoint'ida keladi —
+  // ro'yxat keshiga tegmasdan alohida so'raymiz (backend yo'q bo'lsa jim o'tadi)
+  const { data: fullProduct } = useQuery({
+    queryKey: ['catalog-product', product?.id],
+    queryFn: () => catalogApi.getById(product!.id),
+    enabled: Boolean(product),
+    staleTime: 5 * 60 * 1000,
+    retry: false,
+  });
 
   useEffect(() => {
     if (product) addRecent(product.id);
@@ -68,6 +80,10 @@ export function ProductDetailPage() {
     [t('shop.product.brand'), product.brandName],
     [t('shop.product.category'), product.categoryName],
     [t('shop.product.sku'), product.sku],
+    // Kategoriya xususiyatlari (atributlar) — WB-uslub xususiyatlar shajarasidan
+    ...((fullProduct?.attributes ?? []).map(
+      (attr) => [attr.name, attr.values.join(', ') || undefined] as [string, string | undefined]
+    )),
   ];
 
   return (

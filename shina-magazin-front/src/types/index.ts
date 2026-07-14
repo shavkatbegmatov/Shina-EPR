@@ -252,6 +252,29 @@ export interface ProductAttributeValueRequest {
   valueBool?: boolean;
 }
 
+// ─── Storefront katalog facetlari (filtr paneli) ───
+export interface CatalogOptionFacet {
+  id: number;
+  value: string;
+  count: number;
+}
+
+export interface CatalogAttributeFacet {
+  id: number;
+  name: string;
+  code: string;
+  type: AttributeType;
+  unit?: string;
+  options: CatalogOptionFacet[];
+}
+
+export interface CatalogFacets {
+  categories: Category[];
+  priceMin?: number;
+  priceMax?: number;
+  attributes: CatalogAttributeFacet[];
+}
+
 export interface Product {
   id: number;
   sku: string;
