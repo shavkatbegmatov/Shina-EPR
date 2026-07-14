@@ -211,18 +211,17 @@ export function SettingsPage() {
     setCategorySaving(true);
     try {
       if (editingCategory) {
-        await categoriesApi.update(
-          editingCategory.id,
-          categoryForm.name,
-          categoryForm.description || undefined,
-          categoryForm.parentId || undefined
-        );
+        await categoriesApi.update(editingCategory.id, {
+          name: categoryForm.name,
+          description: categoryForm.description || undefined,
+          parentId: categoryForm.parentId || undefined,
+        });
       } else {
-        await categoriesApi.create(
-          categoryForm.name,
-          categoryForm.description || undefined,
-          categoryForm.parentId || undefined
-        );
+        await categoriesApi.create({
+          name: categoryForm.name,
+          description: categoryForm.description || undefined,
+          parentId: categoryForm.parentId || undefined,
+        });
       }
       handleCloseCategoryModal();
       void loadCategories();

@@ -1,5 +1,6 @@
 package uz.shinamagazin.api.dto.request;
 
+import jakarta.validation.Valid;
 import jakarta.validation.constraints.*;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -59,4 +60,8 @@ public class ProductRequest {
 
     private String description;
     private String imageUrl;
+
+    // Dinamik xususiyatlar (atributlar). null -> tegilmaydi, bo'sh ro'yxat -> tozalanadi.
+    @Valid
+    private java.util.List<ProductAttributeValueRequest> attributes;
 }

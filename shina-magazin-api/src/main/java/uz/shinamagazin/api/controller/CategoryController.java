@@ -2,6 +2,7 @@ package uz.shinamagazin.api.controller;
 
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
@@ -10,7 +11,10 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.core.io.ByteArrayResource;
 import org.springframework.core.io.Resource;
+import uz.shinamagazin.api.dto.request.CategoryAttributeBindingRequest;
+import uz.shinamagazin.api.dto.request.CategoryRequest;
 import uz.shinamagazin.api.dto.response.ApiResponse;
+import uz.shinamagazin.api.dto.response.CategoryAttributeResponse;
 import uz.shinamagazin.api.dto.response.CategoryResponse;
 import uz.shinamagazin.api.enums.PermissionCode;
 import uz.shinamagazin.api.security.RequiresPermission;
@@ -89,10 +93,8 @@ public class CategoryController {
     @Operation(summary = "Create category", description = "Yangi kategoriya yaratish")
     @RequiresPermission(PermissionCode.PRODUCTS_CREATE)
     public ResponseEntity<ApiResponse<CategoryResponse>> createCategory(
-            @RequestParam String name,
-            @RequestParam(required = false) String description,
-            @RequestParam(required = false) Long parentId) {
-        CategoryResponse category = categoryService.createCategory(name, description, parentId);
+            @Valid @RequestBody CategoryRequest request) {
+        CategoryResponse category = categoryService.createCategory(request);
         return ResponseEntity.status(HttpStatus.CREATED)
                 .body(ApiResponse.success("Kategoriya yaratildi", category));
     }
@@ -102,18 +104,50 @@ public class CategoryController {
     @RequiresPermission(PermissionCode.PRODUCTS_UPDATE)
     public ResponseEntity<ApiResponse<CategoryResponse>> updateCategory(
             @PathVariable Long id,
-            @RequestParam String name,
-            @RequestParam(required = false) String description,
-            @RequestParam(required = false) Long parentId) {
-        CategoryResponse category = categoryService.updateCategory(id, name, description, parentId);
+            @Valid @RequestBody CategoryRequest request) {
+        CategoryResponse category = categoryService.updateCategory(id, request);
         return ResponseEntity.ok(ApiResponse.success("Kategoriya yangilandi", category));
     }
 
+    @PatchMapping("/{id}/move")
+    @Operation(summary = "Move category", description = "Kategoriyani aka-ukalari ichida yuqoriga/pastga siljitish")
+    @RequiresPermission(PermissionCode.PRODUCTS_UPDATE)
+    public ResponseEntity<ApiResponse<List<CategoryResponse>>> moveCategory(
+            @PathVariable Long id,
+            @RequestParam String direction) {
+        return ResponseEntity.ok(ApiResponse.success("Kategoriya siljitildi",
+                categoryService.moveCategory(id, direction)));
+    }
+
     @DeleteMapping("/{id}")
-    @Operation(summary = "Delete category", description = "Kategoriyani o'chirish")
+    @Operation(summary = "Delete category", description = "Kategoriyani (bolalari bilan) o'chirish")
     @RequiresPermission(PermissionCode.PRODUCTS_DELETE)
     public ResponseEntity<ApiResponse<Void>> deleteCategory(@PathVariable Long id) {
         categoryService.deleteCategory(id);
         return ResponseEntity.ok(ApiResponse.success("Kategoriya o'chirildi"));
+    }
+
+    // ============================================
+    // Kategoriya atributlari (xususiyatlar shajarasi)
+    // ============================================
+
+    @GetMapping("/{id}/attributes")
+    @Operation(summary = "Get category attributes",
+            description = "Kategoriyaning effektiv atributlari (ota kategoriyalardan meros bilan)")
+    @RequiresPermission(PermissionCode.PRODUCTS_VIEW)
+    public ResponseEntity<ApiResponse<List<CategoryAttributeResponse>>> getCategoryAttributes(
+            @PathVariable Long id) {
+        return ResponseEntity.ok(ApiResponse.success(categoryService.getEffectiveAttributes(id)));
+    }
+
+    @PutMapping("/{id}/attributes")
+    @Operation(summary = "Update category attributes",
+            description = "Kategoriyaning o'z atribut bog'lanishlarini to'liq almashtirish")
+    @RequiresPermission(PermissionCode.PRODUCTS_UPDATE)
+    public ResponseEntity<ApiResponse<List<CategoryAttributeResponse>>> updateCategoryAttributes(
+            @PathVariable Long id,
+            @Valid @RequestBody List<CategoryAttributeBindingRequest> bindings) {
+        return ResponseEntity.ok(ApiResponse.success("Atributlar yangilandi",
+                categoryService.updateCategoryAttributes(id, bindings)));
     }
 }

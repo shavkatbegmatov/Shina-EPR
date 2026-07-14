@@ -13,10 +13,13 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import uz.shinamagazin.api.dto.response.ApiResponse;
+import uz.shinamagazin.api.dto.response.CatalogFacetsResponse;
 import uz.shinamagazin.api.dto.response.CatalogProductResponse;
 import uz.shinamagazin.api.dto.response.PagedResponse;
 import uz.shinamagazin.api.enums.Season;
 import uz.shinamagazin.api.service.CatalogService;
+
+import java.math.BigDecimal;
 
 /**
  * Ommaviy storefront katalogi (`/magazin`) uchun. Auth talab qilmaydi —
@@ -32,17 +35,31 @@ public class CatalogController {
     private final CatalogService catalogService;
 
     @GetMapping
-    @Operation(summary = "Public catalog", description = "Ommaviy katalog — faol mahsulotlar (filtrlar bilan)")
+    @Operation(summary = "Public catalog", description = "Ommaviy katalog — faol mahsulotlar (filtrlar bilan). " +
+            "attrs formati: attributeId:optionId,optionId;attributeId:optionId")
     public ResponseEntity<ApiResponse<PagedResponse<CatalogProductResponse>>> getCatalog(
             @RequestParam(required = false) Long brandId,
             @RequestParam(required = false) Long categoryId,
             @RequestParam(required = false) Season season,
             @RequestParam(required = false) String search,
+            @RequestParam(required = false) BigDecimal priceMin,
+            @RequestParam(required = false) BigDecimal priceMax,
+            @RequestParam(required = false) Boolean inStock,
+            @RequestParam(required = false) String attrs,
             @PageableDefault(size = 24) Pageable pageable) {
 
         Page<CatalogProductResponse> page = catalogService.getCatalog(
-                brandId, categoryId, season, search, pageable);
+                brandId, categoryId, season, search, priceMin, priceMax, inStock,
+                CatalogService.parseAttributeFilters(attrs), pageable);
         return ResponseEntity.ok(ApiResponse.success(PagedResponse.from(page)));
+    }
+
+    @GetMapping("/facets")
+    @Operation(summary = "Catalog facets", description = "Filtr paneli uchun facetlar: kategoriya daraxti, " +
+            "narx diapazoni va tanlangan kategoriyaning atribut filtrlari (variant hisoblagichlari bilan)")
+    public ResponseEntity<ApiResponse<CatalogFacetsResponse>> getFacets(
+            @RequestParam(required = false) Long categoryId) {
+        return ResponseEntity.ok(ApiResponse.success(catalogService.getFacets(categoryId)));
     }
 
     @GetMapping("/{id}")

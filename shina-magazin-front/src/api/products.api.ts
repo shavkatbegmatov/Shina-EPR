@@ -1,5 +1,18 @@
 import api from './axios';
-import type { ApiResponse, Brand, Category, PagedResponse, Product, ProductRequest, Season } from '../types';
+import type {
+  ApiResponse,
+  Attribute,
+  AttributeRequest,
+  Brand,
+  Category,
+  CategoryAttribute,
+  CategoryAttributeBinding,
+  CategoryRequest,
+  PagedResponse,
+  Product,
+  ProductRequest,
+  Season,
+} from '../types';
 import { createExportApi } from './export.utils';
 
 export interface ProductFilters {
@@ -111,19 +124,22 @@ export const categoriesApi = {
     return response.data.data;
   },
 
-  create: async (name: string, description?: string, parentId?: number): Promise<Category> => {
-    const params = new URLSearchParams({ name });
-    if (description) params.append('description', description);
-    if (parentId) params.append('parentId', parentId.toString());
-    const response = await api.post<ApiResponse<Category>>(`/v1/categories?${params}`);
+  create: async (data: CategoryRequest): Promise<Category> => {
+    const response = await api.post<ApiResponse<Category>>('/v1/categories', data);
     return response.data.data;
   },
 
-  update: async (id: number, name: string, description?: string, parentId?: number): Promise<Category> => {
-    const params = new URLSearchParams({ name });
-    if (description) params.append('description', description);
-    if (parentId) params.append('parentId', parentId.toString());
-    const response = await api.put<ApiResponse<Category>>(`/v1/categories/${id}?${params}`);
+  update: async (id: number, data: CategoryRequest): Promise<Category> => {
+    const response = await api.put<ApiResponse<Category>>(`/v1/categories/${id}`, data);
+    return response.data.data;
+  },
+
+  move: async (id: number, direction: 'up' | 'down'): Promise<Category[]> => {
+    const response = await api.patch<ApiResponse<Category[]>>(
+      `/v1/categories/${id}/move`,
+      null,
+      { params: { direction } }
+    );
     return response.data.data;
   },
 
@@ -131,6 +147,44 @@ export const categoriesApi = {
     await api.delete(`/v1/categories/${id}`);
   },
 
+  // Kategoriyaning effektiv atributlari (ota kategoriyalardan meros bilan)
+  getAttributes: async (id: number): Promise<CategoryAttribute[]> => {
+    const response = await api.get<ApiResponse<CategoryAttribute[]>>(`/v1/categories/${id}/attributes`);
+    return response.data.data;
+  },
+
+  // Kategoriyaning o'z atribut bog'lanishlarini to'liq almashtirish
+  updateAttributes: async (id: number, bindings: CategoryAttributeBinding[]): Promise<CategoryAttribute[]> => {
+    const response = await api.put<ApiResponse<CategoryAttribute[]>>(`/v1/categories/${id}/attributes`, bindings);
+    return response.data.data;
+  },
+
   // Export functionality
   export: createExportApi('/v1/categories'),
+};
+
+export const attributesApi = {
+  getAll: async (): Promise<Attribute[]> => {
+    const response = await api.get<ApiResponse<Attribute[]>>('/v1/attributes');
+    return response.data.data;
+  },
+
+  getById: async (id: number): Promise<Attribute> => {
+    const response = await api.get<ApiResponse<Attribute>>(`/v1/attributes/${id}`);
+    return response.data.data;
+  },
+
+  create: async (data: AttributeRequest): Promise<Attribute> => {
+    const response = await api.post<ApiResponse<Attribute>>('/v1/attributes', data);
+    return response.data.data;
+  },
+
+  update: async (id: number, data: AttributeRequest): Promise<Attribute> => {
+    const response = await api.put<ApiResponse<Attribute>>(`/v1/attributes/${id}`, data);
+    return response.data.data;
+  },
+
+  delete: async (id: number): Promise<void> => {
+    await api.delete(`/v1/attributes/${id}`);
+  },
 };

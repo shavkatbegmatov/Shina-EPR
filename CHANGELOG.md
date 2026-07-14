@@ -5,6 +5,7 @@ Format [Keep a Changelog](https://keepachangelog.com/) asosida; versiyalar [SemV
 
 ## [Unreleased]
 ### Added
+- Katalog xususiyatlar shajarasi (WB-uslub): kategoriya daraxti (icon/tartib, subtree filtri) + atributlar (SELECT/MULTI_SELECT/NUMBER/BOOLEAN/TEXT, variantlar) + kategoriya-atribut merosi + mahsulot atribut qiymatlari (V26). Admin: Kategoriyalar/Xususiyatlar/Brendlar sahifalari, mahsulot formasida dinamik xususiyatlar (majburiylik nazorati), guruhlangan sidebar. Ommaviy API: `GET /v1/catalog/facets` (kategoriya daraxti + narx diapazoni + variant hisoblagichli filtrlar) va `GET /v1/catalog?attrs=attrId:optId,...;...&priceMin&priceMax&inStock` filtrlash.
 - Storefront mijoz akkaunti (telefon+PIN, buyurtma tarixi backend'dan) — Faza 6.
 - Mijoz kabineti birlashuvi: `/hisob` (yagona login `/kirish`, ERP xaridlar + do'kon buyurtmalari) — D1.
 - Buyurtma xabarnoma poydevori (email SMTP + SMS-stub, config-gated) — F7.

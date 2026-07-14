@@ -42,6 +42,9 @@ public class CatalogProductResponse {
     private String description;
     private String imageUrl;
 
+    // Xususiyatlar — faqat bitta mahsulot so'ralganda to'ldiriladi (ro'yxatda null)
+    private java.util.List<ProductAttributeValueResponse> attributes;
+
     public static CatalogProductResponse from(Product product) {
         return CatalogProductResponse.builder()
                 .id(product.getId())

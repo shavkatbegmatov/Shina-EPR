@@ -80,6 +80,10 @@ public class ProductResponse {
     private String description; // Not exported
     private String imageUrl; // Not exported
 
+    // Dinamik xususiyatlar — faqat bitta mahsulot so'ralganda to'ldiriladi
+    // (ro'yxatlarda N+1 bo'lmasligi uchun null qoladi). Not exported.
+    private java.util.List<ProductAttributeValueResponse> attributes;
+
     @ExportColumn(header = "Faol", order = 18, type = ColumnType.BOOLEAN)
     private Boolean active;
 

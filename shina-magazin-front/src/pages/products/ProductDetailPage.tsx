@@ -275,6 +275,23 @@ export function ProductDetailPage() {
                 {t('erp.productDetail.noSpecs')}
               </p>
             )}
+
+            {/* Dinamik xususiyatlar (kategoriya atributlari) */}
+            {product.attributes && product.attributes.length > 0 && (
+              <div className="border-t border-base-200 pt-4">
+                <p className="mb-2 text-xs font-semibold uppercase tracking-[0.15em] text-base-content/50">
+                  {t('erp.products.characteristics')}
+                </p>
+                <dl className="divide-y divide-base-200 overflow-hidden rounded-lg border border-base-200 text-sm">
+                  {product.attributes.map((attr) => (
+                    <div key={attr.attributeId} className="flex items-center justify-between gap-4 px-3 py-2">
+                      <dt className="text-base-content/60">{attr.name}</dt>
+                      <dd className="text-right font-medium">{attr.values.join(', ') || '—'}</dd>
+                    </div>
+                  ))}
+                </dl>
+              </div>
+            )}
           </div>
         </div>
 

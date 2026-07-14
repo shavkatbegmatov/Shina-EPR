@@ -156,7 +156,100 @@ export interface Category {
   parentId?: number;
   parentName?: string;
   children?: Category[];
+  icon?: string;
+  sortOrder?: number;
+  /** Shu kategoriyaning o'zidagi faol mahsulotlar soni (bolalarisiz) */
+  productCount?: number;
   active: boolean;
+}
+
+export interface CategoryRequest {
+  name: string;
+  description?: string;
+  parentId?: number;
+  icon?: string;
+  sortOrder?: number;
+  active?: boolean;
+}
+
+// ─── Mahsulot xususiyatlari (atributlar) ───
+export type AttributeType = 'TEXT' | 'NUMBER' | 'SELECT' | 'MULTI_SELECT' | 'BOOLEAN';
+
+export interface AttributeOption {
+  id: number;
+  value: string;
+  sortOrder: number;
+}
+
+export interface Attribute {
+  id: number;
+  name: string;
+  code: string;
+  type: AttributeType;
+  unit?: string;
+  filterable: boolean;
+  sortOrder: number;
+  active: boolean;
+  options: AttributeOption[];
+  /** Nechta kategoriyaga biriktirilgan */
+  categoryCount?: number;
+  /** Nechta mahsulot qiymatida ishlatilgan */
+  valueCount?: number;
+}
+
+export interface AttributeOptionRequest {
+  id?: number;
+  value: string;
+  sortOrder?: number;
+}
+
+export interface AttributeRequest {
+  name: string;
+  code?: string;
+  type: AttributeType;
+  unit?: string;
+  filterable?: boolean;
+  sortOrder?: number;
+  options?: AttributeOptionRequest[];
+}
+
+/** Kategoriyaning effektiv (merosi bilan) atributi */
+export interface CategoryAttribute {
+  attribute: Attribute;
+  required: boolean;
+  sortOrder: number;
+  inherited: boolean;
+  sourceCategoryId: number;
+  sourceCategoryName: string;
+}
+
+export interface CategoryAttributeBinding {
+  attributeId: number;
+  required?: boolean;
+  sortOrder?: number;
+}
+
+/** Mahsulotning bitta atribut bo'yicha jamlangan qiymati */
+export interface ProductAttributeValue {
+  attributeId: number;
+  name: string;
+  code: string;
+  type: AttributeType;
+  unit?: string;
+  optionIds: number[];
+  valueText?: string;
+  valueNumber?: number;
+  valueBool?: boolean;
+  /** Ko'rsatishga tayyor qiymat(lar) */
+  values: string[];
+}
+
+export interface ProductAttributeValueRequest {
+  attributeId: number;
+  optionIds?: number[];
+  valueText?: string;
+  valueNumber?: number;
+  valueBool?: boolean;
 }
 
 export interface Product {
@@ -181,6 +274,8 @@ export interface Product {
   lowStock: boolean;
   description?: string;
   imageUrl?: string;
+  /** Dinamik xususiyatlar — faqat bitta mahsulot so'ralganda keladi */
+  attributes?: ProductAttributeValue[];
   active: boolean;
 }
 
@@ -201,6 +296,8 @@ export interface ProductRequest {
   minStockLevel?: number;
   description?: string;
   imageUrl?: string;
+  /** Dinamik xususiyat qiymatlari (null -> tegilmaydi) */
+  attributes?: ProductAttributeValueRequest[];
 }
 
 // Customer Types

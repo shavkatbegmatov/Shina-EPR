@@ -35,8 +35,17 @@ public class Category extends BaseEntity implements Auditable {
     private Category parent;
 
     @OneToMany(mappedBy = "parent", cascade = CascadeType.ALL)
+    @OrderBy("sortOrder ASC, id ASC")
     @Builder.Default
     private List<Category> children = new ArrayList<>();
+
+    // Lucide ikonka nomi (admin/storefront menyusi uchun), masalan "car"
+    @Column(length = 50)
+    private String icon;
+
+    @Column(name = "sort_order", nullable = false)
+    @Builder.Default
+    private Integer sortOrder = 0;
 
     @Column(nullable = false)
     @Builder.Default
@@ -58,6 +67,8 @@ public class Category extends BaseEntity implements Auditable {
         map.put("id", getId());
         map.put("name", this.name);
         map.put("description", this.description);
+        map.put("icon", this.icon);
+        map.put("sortOrder", this.sortOrder);
         map.put("active", this.active);
 
         // Avoid lazy loading

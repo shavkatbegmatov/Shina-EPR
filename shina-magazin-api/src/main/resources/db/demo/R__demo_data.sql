@@ -494,3 +494,198 @@ END $seed$;
 INSERT INTO app_settings (setting_key, setting_value, description)
   SELECT 'DEMO_SEED_VERSION', '1', 'Protektor demo ma''lumotlari versiyasi (faqat dev)'
   WHERE NOT EXISTS (SELECT 1 FROM app_settings WHERE setting_key='DEMO_SEED_VERSION');
+
+-- ═══════════════ 6-QISM: KATALOG SHAJARASI VA XUSUSIYATLAR (idempotent) ═══════════════
+-- Wildberries uslubidagi ko'p bosqichli kategoriya daraxti + kategoriyaga
+-- bog'langan (bola kategoriyalarga meros bo'ladigan) atributlar namoyishi.
+
+-- ─── Root kategoriyalar ───
+INSERT INTO categories (name, description, icon, sort_order, active)
+  SELECT 'Shinalar', 'Barcha turdagi avtomobil shinalari', 'circle-dot', 0, true
+  WHERE NOT EXISTS (SELECT 1 FROM categories WHERE name='Shinalar');
+INSERT INTO categories (name, description, icon, sort_order, active)
+  SELECT 'Disklar', 'Avtomobil g''ildirak disklari', 'disc', 1, true
+  WHERE NOT EXISTS (SELECT 1 FROM categories WHERE name='Disklar');
+INSERT INTO categories (name, description, icon, sort_order, active)
+  SELECT 'Aksessuarlar', 'Shina va g''ildirak aksessuarlari', 'wrench', 2, true
+  WHERE NOT EXISTS (SELECT 1 FROM categories WHERE name='Aksessuarlar');
+
+-- ─── Mavjud shina kategoriyalarini "Shinalar" ostiga ko'chirish ───
+UPDATE categories SET parent_id=(SELECT id FROM categories WHERE name='Shinalar'), sort_order=0, icon='car'
+  WHERE name='Yengil avtomobil shinalari' AND parent_id IS NULL;
+UPDATE categories SET parent_id=(SELECT id FROM categories WHERE name='Shinalar'), sort_order=1, icon='car-front'
+  WHERE name='SUV va Crossover shinalari' AND parent_id IS NULL;
+UPDATE categories SET parent_id=(SELECT id FROM categories WHERE name='Shinalar'), sort_order=2, icon='truck'
+  WHERE name='Yuk mashinasi shinalari' AND parent_id IS NULL;
+UPDATE categories SET parent_id=(SELECT id FROM categories WHERE name='Shinalar'), sort_order=3, icon='bike'
+  WHERE name='Mototsikl shinalari' AND parent_id IS NULL;
+UPDATE categories SET parent_id=(SELECT id FROM categories WHERE name='Shinalar'), sort_order=4, icon='gauge'
+  WHERE name='Sport / UHP shinalari' AND parent_id IS NULL;
+UPDATE categories SET parent_id=(SELECT id FROM categories WHERE name='Shinalar'), sort_order=5, icon='zap'
+  WHERE name='Elektromobil (EV) shinalari' AND parent_id IS NULL;
+
+-- ─── Disklar bolalari ───
+INSERT INTO categories (name, description, parent_id, icon, sort_order, active)
+  SELECT 'Quyma disklar', 'Yengil alyuminiy quyma disklar', (SELECT id FROM categories WHERE name='Disklar'), 'disc', 0, true
+  WHERE NOT EXISTS (SELECT 1 FROM categories WHERE name='Quyma disklar');
+INSERT INTO categories (name, description, parent_id, icon, sort_order, active)
+  SELECT 'Shtamplangan disklar', 'Po''lat shtamplangan disklar', (SELECT id FROM categories WHERE name='Disklar'), 'disc', 1, true
+  WHERE NOT EXISTS (SELECT 1 FROM categories WHERE name='Shtamplangan disklar');
+
+-- ─── Aksessuarlar bolalari ───
+INSERT INTO categories (name, description, parent_id, icon, sort_order, active)
+  SELECT 'Ballon kalitlari va domkratlar', 'G''ildirak almashtirish asboblari', (SELECT id FROM categories WHERE name='Aksessuarlar'), 'wrench', 0, true
+  WHERE NOT EXISTS (SELECT 1 FROM categories WHERE name='Ballon kalitlari va domkratlar');
+INSERT INTO categories (name, description, parent_id, icon, sort_order, active)
+  SELECT 'G''ildirak boltlari va gaykalari', 'Krepej elementlari', (SELECT id FROM categories WHERE name='Aksessuarlar'), 'settings', 1, true
+  WHERE NOT EXISTS (SELECT 1 FROM categories WHERE name='G''ildirak boltlari va gaykalari');
+
+-- ─── Atributlar ───
+INSERT INTO attributes (name, code, type, unit, filterable, sort_order, active)
+  SELECT 'Yo''l turi', 'road_type', 'SELECT', NULL, true, 0, true
+  WHERE NOT EXISTS (SELECT 1 FROM attributes WHERE code='road_type');
+INSERT INTO attributes (name, code, type, unit, filterable, sort_order, active)
+  SELECT 'Protektor turi', 'tread_type', 'SELECT', NULL, true, 1, true
+  WHERE NOT EXISTS (SELECT 1 FROM attributes WHERE code='tread_type');
+INSERT INTO attributes (name, code, type, unit, filterable, sort_order, active)
+  SELECT 'RunFlat', 'run_flat', 'BOOLEAN', NULL, true, 2, true
+  WHERE NOT EXISTS (SELECT 1 FROM attributes WHERE code='run_flat');
+INSERT INTO attributes (name, code, type, unit, filterable, sort_order, active)
+  SELECT 'Shipli', 'studded', 'BOOLEAN', NULL, true, 3, true
+  WHERE NOT EXISTS (SELECT 1 FROM attributes WHERE code='studded');
+INSERT INTO attributes (name, code, type, unit, filterable, sort_order, active)
+  SELECT 'Kafolat', 'warranty', 'NUMBER', 'oy', false, 4, true
+  WHERE NOT EXISTS (SELECT 1 FROM attributes WHERE code='warranty');
+INSERT INTO attributes (name, code, type, unit, filterable, sort_order, active)
+  SELECT 'Ishlab chiqarilgan yil', 'production_year', 'NUMBER', NULL, false, 5, true
+  WHERE NOT EXISTS (SELECT 1 FROM attributes WHERE code='production_year');
+INSERT INTO attributes (name, code, type, unit, filterable, sort_order, active)
+  SELECT 'Disk materiali', 'rim_material', 'SELECT', NULL, true, 6, true
+  WHERE NOT EXISTS (SELECT 1 FROM attributes WHERE code='rim_material');
+INSERT INTO attributes (name, code, type, unit, filterable, sort_order, active)
+  SELECT 'Disk diametri', 'rim_diameter', 'SELECT', 'dyuym', true, 7, true
+  WHERE NOT EXISTS (SELECT 1 FROM attributes WHERE code='rim_diameter');
+INSERT INTO attributes (name, code, type, unit, filterable, sort_order, active)
+  SELECT 'Krepej (PCD)', 'pcd', 'SELECT', NULL, true, 8, true
+  WHERE NOT EXISTS (SELECT 1 FROM attributes WHERE code='pcd');
+
+-- ─── Atribut variantlari ───
+INSERT INTO attribute_options (attribute_id, value, sort_order, active)
+  SELECT a.id, v.val, v.ord, true FROM attributes a,
+    (VALUES ('Asfalt',0),('Universal',1),('Off-road',2)) AS v(val,ord)
+  WHERE a.code='road_type'
+    AND NOT EXISTS (SELECT 1 FROM attribute_options o WHERE o.attribute_id=a.id AND o.value=v.val);
+INSERT INTO attribute_options (attribute_id, value, sort_order, active)
+  SELECT a.id, v.val, v.ord, true FROM attributes a,
+    (VALUES ('Simmetrik',0),('Asimmetrik',1),('Yo''nalishli',2)) AS v(val,ord)
+  WHERE a.code='tread_type'
+    AND NOT EXISTS (SELECT 1 FROM attribute_options o WHERE o.attribute_id=a.id AND o.value=v.val);
+INSERT INTO attribute_options (attribute_id, value, sort_order, active)
+  SELECT a.id, v.val, v.ord, true FROM attributes a,
+    (VALUES ('Quyma (alyuminiy)',0),('Po''lat (shtamplangan)',1),('Kovanniy',2)) AS v(val,ord)
+  WHERE a.code='rim_material'
+    AND NOT EXISTS (SELECT 1 FROM attribute_options o WHERE o.attribute_id=a.id AND o.value=v.val);
+INSERT INTO attribute_options (attribute_id, value, sort_order, active)
+  SELECT a.id, v.val, v.ord, true FROM attributes a,
+    (VALUES ('R14',0),('R15',1),('R16',2),('R17',3),('R18',4),('R19',5)) AS v(val,ord)
+  WHERE a.code='rim_diameter'
+    AND NOT EXISTS (SELECT 1 FROM attribute_options o WHERE o.attribute_id=a.id AND o.value=v.val);
+INSERT INTO attribute_options (attribute_id, value, sort_order, active)
+  SELECT a.id, v.val, v.ord, true FROM attributes a,
+    (VALUES ('4x100',0),('5x112',1),('5x114.3',2),('5x120',3)) AS v(val,ord)
+  WHERE a.code='pcd'
+    AND NOT EXISTS (SELECT 1 FROM attribute_options o WHERE o.attribute_id=a.id AND o.value=v.val);
+
+-- ─── Kategoriya-atribut bog'lanishlari ───
+-- "Shinalar" root: barcha shina bolalariga meros bo'ladi
+INSERT INTO category_attributes (category_id, attribute_id, required, sort_order)
+  SELECT c.id, a.id, b.req, b.ord FROM categories c
+  JOIN (VALUES ('road_type',true,0),('tread_type',false,1),('run_flat',false,2),
+               ('studded',false,3),('warranty',false,4),('production_year',false,5)) AS b(code,req,ord) ON true
+  JOIN attributes a ON a.code=b.code
+  WHERE c.name='Shinalar'
+    AND NOT EXISTS (SELECT 1 FROM category_attributes ca WHERE ca.category_id=c.id AND ca.attribute_id=a.id);
+-- "Disklar" root
+INSERT INTO category_attributes (category_id, attribute_id, required, sort_order)
+  SELECT c.id, a.id, b.req, b.ord FROM categories c
+  JOIN (VALUES ('rim_material',true,0),('rim_diameter',true,1),('pcd',false,2),('warranty',false,3)) AS b(code,req,ord) ON true
+  JOIN attributes a ON a.code=b.code
+  WHERE c.name='Disklar'
+    AND NOT EXISTS (SELECT 1 FROM category_attributes ca WHERE ca.category_id=c.id AND ca.attribute_id=a.id);
+
+-- ─── Demo mahsulotlarga atribut qiymatlari ───
+-- SELECT qiymatlar (variant orqali)
+INSERT INTO product_attribute_values (product_id, attribute_id, option_id)
+  SELECT p.id, a.id, o.id FROM
+    (VALUES
+      ('MCH-205-55-R16-S','road_type','Asfalt'),
+      ('MCH-205-55-R16-S','tread_type','Asimmetrik'),
+      ('BRD-225-45-R17-W','road_type','Asfalt'),
+      ('BRD-225-45-R17-W','tread_type','Yo''nalishli'),
+      ('CNT-195-65-R15-A','road_type','Universal'),
+      ('CNT-195-65-R15-A','tread_type','Simmetrik'),
+      ('GDY-235-60-R18-S','road_type','Universal'),
+      ('GDY-235-60-R18-S','tread_type','Asimmetrik'),
+      ('PIR-255-50-R19-S','road_type','Asfalt'),
+      ('PIR-255-50-R19-S','tread_type','Asimmetrik'),
+      ('HNK-185-60-R14-S','road_type','Asfalt'),
+      ('HNK-185-60-R14-S','tread_type','Simmetrik'),
+      ('YKH-215-55-R17-W','road_type','Asfalt'),
+      ('YKH-215-55-R17-W','tread_type','Yo''nalishli'),
+      ('DLP-205-60-R16-A','road_type','Universal'),
+      ('DLP-205-60-R16-A','tread_type','Simmetrik'),
+      ('NKN-225-50-R17-W','road_type','Asfalt'),
+      ('NKN-225-50-R17-W','tread_type','Yo''nalishli'),
+      ('TYO-265-70-R17-S','road_type','Off-road'),
+      ('TYO-265-70-R17-S','tread_type','Simmetrik'),
+      ('MCH-ENS-1856515','road_type','Asfalt'),
+      ('MCH-ENS-1856515','tread_type','Simmetrik'),
+      ('BRD-TUR-2055516','road_type','Asfalt'),
+      ('BRD-TUR-2055516','tread_type','Asimmetrik'),
+      ('CNT-PC6-2255017','road_type','Asfalt'),
+      ('CNT-PC6-2255017','tread_type','Asimmetrik'),
+      ('GDY-EFG-1956015','road_type','Universal'),
+      ('GDY-EFG-1956015','tread_type','Simmetrik'),
+      ('HNK-VP3-2155516','road_type','Asfalt'),
+      ('HNK-VP3-2155516','tread_type','Asimmetrik')
+    ) AS t(sku, code, opt)
+  JOIN products p ON p.sku=t.sku
+  JOIN attributes a ON a.code=t.code
+  JOIN attribute_options o ON o.attribute_id=a.id AND o.value=t.opt
+  WHERE NOT EXISTS (SELECT 1 FROM product_attribute_values v WHERE v.product_id=p.id AND v.attribute_id=a.id);
+
+-- BOOLEAN qiymatlar
+INSERT INTO product_attribute_values (product_id, attribute_id, value_bool)
+  SELECT p.id, a.id, t.val FROM
+    (VALUES
+      ('MCH-205-55-R16-S','run_flat',false),
+      ('BRD-225-45-R17-W','run_flat',false),
+      ('BRD-225-45-R17-W','studded',false),
+      ('YKH-215-55-R17-W','studded',true),
+      ('NKN-225-50-R17-W','studded',true),
+      ('PIR-255-50-R19-S','run_flat',true),
+      ('CNT-PC6-2255017','run_flat',true)
+    ) AS t(sku, code, val)
+  JOIN products p ON p.sku=t.sku
+  JOIN attributes a ON a.code=t.code
+  WHERE NOT EXISTS (SELECT 1 FROM product_attribute_values v WHERE v.product_id=p.id AND v.attribute_id=a.id);
+
+-- NUMBER qiymatlar
+INSERT INTO product_attribute_values (product_id, attribute_id, value_number)
+  SELECT p.id, a.id, t.val FROM
+    (VALUES
+      ('MCH-205-55-R16-S','warranty',24),
+      ('BRD-225-45-R17-W','warranty',24),
+      ('CNT-195-65-R15-A','warranty',36),
+      ('PIR-255-50-R19-S','warranty',24),
+      ('MCH-ENS-1856515','warranty',36),
+      ('BRD-TUR-2055516','warranty',24),
+      ('MCH-205-55-R16-S','production_year',2025),
+      ('BRD-225-45-R17-W','production_year',2025),
+      ('CNT-195-65-R15-A','production_year',2024),
+      ('MCH-ENS-1856515','production_year',2026),
+      ('BRD-TUR-2055516','production_year',2025)
+    ) AS t(sku, code, val)
+  JOIN products p ON p.sku=t.sku
+  JOIN attributes a ON a.code=t.code
+  WHERE NOT EXISTS (SELECT 1 FROM product_attribute_values v WHERE v.product_id=p.id AND v.attribute_id=a.id);

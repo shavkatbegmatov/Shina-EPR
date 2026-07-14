@@ -13,11 +13,22 @@ import { SearchInput } from '../../components/ui/SearchInput';
 import { DataTable, Column } from '../../components/ui/DataTable';
 import { ModalPortal } from '../../components/common/Modal';
 import { ExportButtons } from '../../components/common/ExportButtons';
+import { AttributeValueInputs, type AttributeValueMap } from '../../components/catalog/AttributeValueInputs';
+import { flattenCategoryTree, indentLabel } from '../../utils/categoryTree';
 import { useNotificationsStore } from '../../store/notificationsStore';
 import { PermissionCode } from '../../hooks/usePermission';
 import { PermissionGate } from '../../components/common/PermissionGate';
 import { useHighlight } from '../../hooks/useHighlight';
-import type { Product, Brand, Category, Season, ProductRequest } from '../../types';
+import type {
+  Product,
+  Brand,
+  Category,
+  CategoryAttribute,
+  ProductAttributeValue,
+  ProductAttributeValueRequest,
+  Season,
+  ProductRequest,
+} from '../../types';
 import { Button } from '@/ui';
 
 const emptyFormData: ProductRequest = {
@@ -26,11 +37,29 @@ const emptyFormData: ProductRequest = {
   sellingPrice: 0,
 };
 
+/** Mahsulot javobidagi atribut qiymatlarini forma xaritasiga aylantiradi */
+function toValueMap(attrs?: ProductAttributeValue[]): AttributeValueMap {
+  const map: AttributeValueMap = {};
+  attrs?.forEach((v) => {
+    map[v.attributeId] = {
+      attributeId: v.attributeId,
+      optionIds: v.optionIds.length ? v.optionIds : undefined,
+      valueText: v.valueText,
+      valueNumber: v.valueNumber,
+      valueBool: v.valueBool,
+    };
+  });
+  return map;
+}
+
 export function ProductsPage() {
   const { t } = useTranslation();
   const [products, setProducts] = useState<Product[]>([]);
   const [brands, setBrands] = useState<Brand[]>([]);
-  const [categories, setCategories] = useState<Category[]>([]);
+  const [categoryTree, setCategoryTree] = useState<Category[]>([]);
+  // Kategoriyaning effektiv (merosi bilan) atributlari — forma uchun
+  const [formAttributes, setFormAttributes] = useState<CategoryAttribute[]>([]);
+  const [attrValues, setAttrValues] = useState<AttributeValueMap>({});
   const [initialLoading, setInitialLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [search, setSearch] = useState('');
@@ -116,7 +145,7 @@ export function ProductsPage() {
       sortable: false,
       render: (product) => (
         <div className="space-x-2">
-          <Button variant="ghost" size="sm" onClick={(e) => { e.stopPropagation(); setSelectedProduct(product); }}>
+          <Button variant="ghost" size="sm" onClick={(e) => { e.stopPropagation(); handleShowDetails(product); }}>
             {t('erp.products.details')}
           </Button>
           <PermissionGate permission={PermissionCode.PRODUCTS_UPDATE}>
@@ -129,14 +158,38 @@ export function ProductsPage() {
 
   const loadData = useCallback(async () => {
     try {
-      const [brandsData, categoriesData] = await Promise.all([
+      const [brandsData, treeData] = await Promise.all([
         brandsApi.getAll(),
-        categoriesApi.getAll(),
+        categoriesApi.getTree(),
       ]);
       setBrands(brandsData);
-      setCategories(categoriesData);
+      setCategoryTree(treeData);
     } catch (error) {
       console.error('Failed to load data:', error);
+    }
+  }, []);
+
+  // Daraxt bo'yicha indentli variantlar (filtr va forma selectlari uchun)
+  const categoryOptions = useMemo(
+    () =>
+      flattenCategoryTree(categoryTree).map((c) => ({
+        value: c.id,
+        label: indentLabel(c.name, c.depth),
+      })),
+    [categoryTree]
+  );
+
+  // Tanlangan kategoriyaning effektiv atributlarini yuklash
+  const loadFormAttributes = useCallback(async (categoryId?: number) => {
+    if (!categoryId) {
+      setFormAttributes([]);
+      return;
+    }
+    try {
+      setFormAttributes(await categoriesApi.getAttributes(categoryId));
+    } catch (error) {
+      console.error('Failed to load category attributes:', error);
+      setFormAttributes([]);
     }
   }, []);
 
@@ -199,6 +252,8 @@ export function ProductsPage() {
 
   const handleOpenNewProductModal = () => {
     setFormData(emptyFormData);
+    setFormAttributes([]);
+    setAttrValues({});
     setShowNewProductModal(true);
   };
 
@@ -206,6 +261,8 @@ export function ProductsPage() {
     setShowNewProductModal(false);
     setEditingProductId(null);
     setFormData(emptyFormData);
+    setFormAttributes([]);
+    setAttrValues({});
   };
 
   const handleEditProduct = (product: Product) => {
@@ -228,11 +285,30 @@ export function ProductsPage() {
       description: product.description,
       imageUrl: product.imageUrl,
     });
+    setAttrValues({});
+    void loadFormAttributes(product.categoryId);
+    // Ro'yxat javobida atribut qiymatlari yo'q — to'liq mahsulotni olib kelamiz
+    productsApi
+      .getById(product.id)
+      .then((full) => setAttrValues(toValueMap(full.attributes)))
+      .catch((error) => console.error('Failed to load product attributes:', error));
     setShowNewProductModal(true);
   };
 
   const handleFormChange = (field: keyof ProductRequest, value: string | number | undefined) => {
     setFormData((prev) => ({ ...prev, [field]: value }));
+    if (field === 'categoryId') {
+      void loadFormAttributes(typeof value === 'number' ? value : undefined);
+    }
+  };
+
+  const handleAttrValueChange = (attributeId: number, value?: ProductAttributeValueRequest) => {
+    setAttrValues((prev) => {
+      const next = { ...prev };
+      if (value) next[attributeId] = value;
+      else delete next[attributeId];
+      return next;
+    });
   };
 
   const handleImageUpload = async (file: File) => {
@@ -253,12 +329,27 @@ export function ProductsPage() {
     if (!formData.sku.trim() || !formData.name.trim() || formData.sellingPrice <= 0) {
       return;
     }
+
+    // Majburiy atributlar tekshiruvi
+    const missing = formAttributes.filter((ca) => ca.required && !attrValues[ca.attribute.id]);
+    if (missing.length > 0) {
+      toast.error(
+        t('erp.products.attrRequired', { names: missing.map((ca) => ca.attribute.name).join(', ') })
+      );
+      return;
+    }
+
+    // Faqat joriy kategoriya (effektiv) atributlariga tegishli qiymatlar yuboriladi
+    const allowedIds = new Set(formAttributes.map((ca) => ca.attribute.id));
+    const attributes = Object.values(attrValues).filter((v) => allowedIds.has(v.attributeId));
+
     setSaving(true);
     try {
+      const payload: ProductRequest = { ...formData, attributes };
       if (editingProductId) {
-        await productsApi.update(editingProductId, formData);
+        await productsApi.update(editingProductId, payload);
       } else {
-        await productsApi.create(formData);
+        await productsApi.create(payload);
       }
       handleCloseNewProductModal();
       void loadProducts();
@@ -267,6 +358,15 @@ export function ProductsPage() {
     } finally {
       setSaving(false);
     }
+  };
+
+  // Tafsilot modalida atribut qiymatlarini ham ko'rsatish uchun to'liq mahsulotni yuklaymiz
+  const handleShowDetails = (product: Product) => {
+    setSelectedProduct(product);
+    productsApi
+      .getById(product.id)
+      .then((full) => setSelectedProduct((prev) => (prev && prev.id === full.id ? full : prev)))
+      .catch((error) => console.error('Failed to load product details:', error));
   };
 
   const handleExport = async (format: 'excel' | 'pdf') => {
@@ -346,7 +446,7 @@ export function ProductsPage() {
             value={categoryFilter}
             onChange={(value) => { setCategoryFilter(value ? Number(value) : ''); setPage(0); }}
             placeholder={t('erp.products.allCategories')}
-            options={categories.map((category) => ({ value: category.id, label: category.name }))}
+            options={categoryOptions}
           />
 
           <Select
@@ -406,7 +506,7 @@ export function ProductsPage() {
             <div className="flex items-center justify-between">
               <span className="text-sm font-semibold text-primary">{formatCurrency(product.sellingPrice)}</span>
               <div className="flex items-center gap-2">
-                <Button variant="ghost" size="sm" className="min-h-[44px]" onClick={() => setSelectedProduct(product)}>
+                <Button variant="ghost" size="sm" className="min-h-[44px]" onClick={() => handleShowDetails(product)}>
                   {t('erp.products.details')}
                 </Button>
                 <PermissionGate permission={PermissionCode.PRODUCTS_UPDATE}>
@@ -492,6 +592,23 @@ export function ProductsPage() {
                       {selectedProduct.description}
                     </div>
                   )}
+
+                  {/* Xususiyatlar (atributlar) */}
+                  {selectedProduct.attributes && selectedProduct.attributes.length > 0 && (
+                    <div>
+                      <p className="mb-2 text-xs uppercase tracking-[0.2em] text-base-content/40">
+                        {t('erp.products.characteristics')}
+                      </p>
+                      <dl className="divide-y divide-base-200 overflow-hidden rounded-lg border border-base-200 text-sm">
+                        {selectedProduct.attributes.map((attr) => (
+                          <div key={attr.attributeId} className="flex items-center justify-between gap-4 px-3 py-2">
+                            <dt className="text-base-content/60">{attr.name}</dt>
+                            <dd className="text-right font-medium">{attr.values.join(', ') || '—'}</dd>
+                          </div>
+                        ))}
+                      </dl>
+                    </div>
+                  )}
                 </div>
               </div>
             </div>
@@ -538,7 +655,7 @@ export function ProductsPage() {
                   value={formData.categoryId || ''}
                   onChange={(value) => handleFormChange('categoryId', value ? Number(value) : undefined)}
                   placeholder={t('erp.products.selectPlaceholder')}
-                  options={categories.map((category) => ({ value: category.id, label: category.name }))}
+                  options={categoryOptions}
                 />
               </div>
 
@@ -562,6 +679,19 @@ export function ProductsPage() {
                   options={Object.entries(SEASONS).map(([key, { label }]) => ({ value: key, label }))}
                 />
               </div>
+
+              {/* Kategoriya xususiyatlari (dinamik, merosi bilan) */}
+              {formData.categoryId && formAttributes.length > 0 && (
+                <div className="rounded-xl border border-base-300 p-4">
+                  <h4 className="mb-1 text-sm font-semibold">{t('erp.products.attributesSection')}</h4>
+                  <p className="mb-3 text-xs text-base-content/60">{t('erp.products.attributesSectionHint')}</p>
+                  <AttributeValueInputs
+                    attributes={formAttributes}
+                    values={attrValues}
+                    onChange={handleAttrValueChange}
+                  />
+                </div>
+              )}
 
               <div className="grid grid-cols-2 gap-4 sm:grid-cols-4">
                 <CurrencyInput label={t('erp.products.fieldPurchasePrice')} value={formData.purchasePrice ?? 0} onChange={(val) => handleFormChange('purchasePrice', val || undefined)} min={0} />

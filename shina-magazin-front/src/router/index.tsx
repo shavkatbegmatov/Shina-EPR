@@ -14,6 +14,9 @@ import { ChangePasswordPage } from '../pages/auth/ChangePasswordPage';
 const DashboardPage = lazy(() => import('../pages/dashboard/DashboardPage').then(m => ({ default: m.DashboardPage })));
 const ProductsPage = lazy(() => import('../pages/products/ProductsPage').then(m => ({ default: m.ProductsPage })));
 const ProductDetailPage = lazy(() => import('../pages/products/ProductDetailPage').then(m => ({ default: m.ProductDetailPage })));
+const CategoriesPage = lazy(() => import('../pages/catalog/CategoriesPage').then(m => ({ default: m.CategoriesPage })));
+const AttributesPage = lazy(() => import('../pages/catalog/AttributesPage').then(m => ({ default: m.AttributesPage })));
+const BrandsPage = lazy(() => import('../pages/catalog/BrandsPage').then(m => ({ default: m.BrandsPage })));
 const CustomersPage = lazy(() => import('../pages/customers/CustomersPage').then(m => ({ default: m.CustomersPage })));
 const CustomerDetailPage = lazy(() => import('../pages/customers/CustomerDetailPage').then(m => ({ default: m.CustomerDetailPage })));
 const POSPage = lazy(() => import('../pages/sales/POSPage').then(m => ({ default: m.POSPage })));
@@ -115,6 +118,39 @@ export const router = createBrowserRouter([
           </ProtectedRoute>
         ),
         handle: { title: 'Mahsulot tafsiloti' },
+      },
+      {
+        path: 'categories',
+        element: (
+          <ProtectedRoute permission={PermissionCode.PRODUCTS_VIEW}>
+            <LazyRoute>
+              <CategoriesPage />
+            </LazyRoute>
+          </ProtectedRoute>
+        ),
+        handle: { title: 'Kategoriyalar' },
+      },
+      {
+        path: 'attributes',
+        element: (
+          <ProtectedRoute permission={PermissionCode.PRODUCTS_VIEW}>
+            <LazyRoute>
+              <AttributesPage />
+            </LazyRoute>
+          </ProtectedRoute>
+        ),
+        handle: { title: 'Xususiyatlar' },
+      },
+      {
+        path: 'brands',
+        element: (
+          <ProtectedRoute permission={PermissionCode.PRODUCTS_VIEW}>
+            <LazyRoute>
+              <BrandsPage />
+            </LazyRoute>
+          </ProtectedRoute>
+        ),
+        handle: { title: 'Brendlar' },
       },
       {
         path: 'pos',
