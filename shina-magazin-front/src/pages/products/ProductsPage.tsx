@@ -37,14 +37,15 @@ const emptyFormData: ProductRequest = {
   sellingPrice: 0,
 };
 
-/** Forma bo'lim sarlavhasi — ingichka chiziqli ajratgich bilan */
+/** Forma bo'lim sarlavhasi — brend aksent belgisi va so'nuvchi chiziq bilan */
 function FormSection({ title }: { title: string }) {
   return (
-    <div className="flex items-center gap-3 pt-1">
-      <span className="text-[11px] font-semibold uppercase tracking-[0.18em] text-base-content/40">
+    <div className="flex items-center gap-2.5 pt-2">
+      <span className="h-4 w-1 shrink-0 rounded-full bg-gradient-to-b from-primary to-accent" />
+      <span className="text-xs font-bold uppercase tracking-[0.16em] text-base-content/70">
         {title}
       </span>
-      <div className="h-px flex-1 bg-base-300/60" />
+      <div className="h-px flex-1 bg-gradient-to-r from-base-300 to-transparent" />
     </div>
   );
 }
@@ -688,7 +689,8 @@ export function ProductsPage() {
       {/* New Product Modal */}
       <ModalPortal isOpen={showNewProductModal} onClose={handleCloseNewProductModal}>
         <div className="w-full max-w-3xl bg-base-100 rounded-2xl shadow-2xl max-h-[90vh] overflow-y-auto">
-          <div className="p-4 sm:p-6">
+          {/* Sarlavha — kontent aylanganda ham tepada qoladi */}
+          <div className="sticky top-0 z-10 border-b border-base-200 bg-base-100/95 px-4 py-4 backdrop-blur sm:px-6">
             <div className="flex items-start justify-between gap-4">
               <div>
                 <h3 className="text-xl font-semibold">{editingProductId ? t('erp.products.editTitle') : t('erp.products.newProduct')}</h3>
@@ -698,8 +700,9 @@ export function ProductsPage() {
                 <X className="h-4 w-4" />
               </Button>
             </div>
-
-            <div className="mt-6 space-y-4">
+          </div>
+          <div className="p-4 sm:p-6">
+            <div className="space-y-4">
               {/* 1. Asosiy ma'lumotlar */}
               <FormSection title={t('erp.products.sectionMain')} />
               <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
@@ -732,7 +735,7 @@ export function ProductsPage() {
 
               {/* 2. Shina o'lchamlari — faqat TIRE shablonli kategoriyada (universal magazin) */}
               {isTireForm && (
-                <div className="rounded-xl border border-base-300 p-4">
+                <div className="form-card">
                   <h4 className="mb-3 text-sm font-semibold">{t('erp.products.sectionTire')}</h4>
                   <div className="grid grid-cols-3 gap-4 sm:grid-cols-6">
                     <NumberInput label={t('erp.products.fieldWidth')} value={formData.width ?? ''} onChange={(val) => handleFormChange('width', val === '' ? undefined : Number(val))} placeholder="205" showButtons={false} min={100} max={400} />
@@ -759,7 +762,7 @@ export function ProductsPage() {
 
               {/* 3. Kategoriya xususiyatlari (dinamik, merosi bilan) */}
               {formData.categoryId && formAttributes.length > 0 && (
-                <div className="rounded-xl border border-base-300 p-4">
+                <div className="form-card">
                   <h4 className="mb-1 text-sm font-semibold">{t('erp.products.attributesSection')}</h4>
                   <p className="mb-3 text-xs text-base-content/60">{t('erp.products.attributesSectionHint')}</p>
                   <AttributeValueInputs
@@ -838,13 +841,14 @@ export function ProductsPage() {
               </div>
             </div>
 
-            <div className="mt-6 flex justify-end gap-2">
-              <Button variant="ghost" onClick={handleCloseNewProductModal} disabled={saving}>{t('common.cancel')}</Button>
-              <Button variant="primary" onClick={handleSaveProduct} disabled={saving || !formData.sku.trim() || !formData.name.trim() || formData.sellingPrice <= 0}>
-                {saving && <span className="loading loading-spinner loading-sm" />}
-                {t('common.save')}
-              </Button>
-            </div>
+          </div>
+          {/* Amallar paneli — uzun formada ham doim ko'rinib turadi */}
+          <div className="sticky bottom-0 z-10 flex justify-end gap-2 border-t border-base-200 bg-base-100/95 px-4 py-3 backdrop-blur sm:px-6">
+            <Button variant="ghost" onClick={handleCloseNewProductModal} disabled={saving}>{t('common.cancel')}</Button>
+            <Button variant="primary" onClick={handleSaveProduct} disabled={saving || !formData.sku.trim() || !formData.name.trim() || formData.sellingPrice <= 0}>
+              {saving && <span className="loading loading-spinner loading-sm" />}
+              {t('common.save')}
+            </Button>
           </div>
         </div>
       </ModalPortal>

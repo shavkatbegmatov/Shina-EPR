@@ -171,12 +171,12 @@ export function CurrencyInput({
 
       <div
         className={clsx(
-          'relative flex items-center rounded-xl border bg-base-100 transition-all duration-200',
+          'relative flex items-center rounded-xl border transition-all duration-200',
           isFocused
-            ? 'border-primary ring-2 ring-primary/20'
+            ? 'border-primary bg-base-100 ring-2 ring-primary/20'
             : error
-              ? 'border-error'
-              : 'border-base-300 hover:border-base-content/30',
+              ? 'border-error bg-base-200/40'
+              : 'border-base-300 bg-base-200/40 hover:border-base-content/30',
           disabled && 'opacity-50 pointer-events-none bg-base-200'
         )}
       >

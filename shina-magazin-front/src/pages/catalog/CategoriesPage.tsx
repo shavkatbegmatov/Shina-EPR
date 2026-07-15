@@ -507,7 +507,7 @@ export function CategoriesPage() {
           </div>
 
           {/* Atributlar bo'limi */}
-          <div className="rounded-xl border border-base-300 p-4">
+          <div className="form-card">
             <div className="mb-3 flex items-center gap-2">
               <Link2 className="h-4 w-4 text-primary" />
               <h4 className="text-sm font-semibold">{t('erp.categories.attributesTitle')}</h4>

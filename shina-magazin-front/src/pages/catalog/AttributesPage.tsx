@@ -400,7 +400,7 @@ export function AttributesPage() {
 
           {/* Variantlar muharriri */}
           {isSelectable && (
-            <div className="rounded-xl border border-base-300 p-4">
+            <div className="form-card">
               <h4 className="mb-1 text-sm font-semibold">{t('erp.attributes.optionsTitle')}</h4>
               <p className="mb-3 text-xs text-base-content/60">{t('erp.attributes.optionsHint')}</p>
               <ul className="space-y-2">
