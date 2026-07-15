@@ -100,6 +100,11 @@ public class StockMovementService {
 
         // Update product stock
         product.setQuantity(newStock);
+        // Kirimda birlik narxi berilsa — mahsulot tannarxi (oxirgi kirim narxi) yangilanadi:
+        // tannarxning yagona manbai ombor kirimi va xaridlar
+        if (request.getMovementType() == MovementType.IN && request.getUnitPrice() != null) {
+            product.setPurchasePrice(request.getUnitPrice());
+        }
         productRepository.save(product);
 
         // Create movement record

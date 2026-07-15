@@ -117,8 +117,9 @@ public class PurchaseService {
             // Create stock movement for each item
             createStockMovement(product, itemRequest.getQuantity(), purchase.getOrderNumber(), currentUser);
 
-            // Update product stock
+            // Update product stock + tannarx (oxirgi xarid narxi mahsulot kartochkasiga yoziladi)
             product.setQuantity(product.getQuantity() + itemRequest.getQuantity());
+            product.setPurchasePrice(itemRequest.getUnitPrice());
             productRepository.save(product);
         }
 

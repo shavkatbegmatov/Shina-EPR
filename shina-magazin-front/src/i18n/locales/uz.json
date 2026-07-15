@@ -233,7 +233,15 @@
       "attrRequired": "Majburiy xususiyatlarni to'ldiring: {{names}}",
       "attributesSection": "Kategoriya xususiyatlari",
       "attributesSectionHint": "Tanlangan kategoriyaga biriktirilgan xususiyatlar (ota kategoriyalardan meros bilan). Ular do'kon filtrlarida ishlatiladi.",
-      "characteristics": "Xususiyatlar"
+      "characteristics": "Xususiyatlar",
+      "sectionMain": "Asosiy ma'lumotlar",
+      "sectionTire": "Shina o'lchamlari",
+      "sectionPricing": "Narx va zaxira siyosati",
+      "sectionMedia": "Tavsif va rasm",
+      "currentStock": "Hozirgi zaxira",
+      "stockUnit": "dona",
+      "stockManagedHint": "Zaxira va tannarx bu yerda tahrirlanmaydi — ular Ombor (kirim/chiqim/tuzatish) va Xaridlar orqali, harakat tarixi bilan boshqariladi.",
+      "newStockHint": "Yangi mahsulot 0 zaxira bilan yaratiladi. Boshlang'ich kirimni Ombor → Kirim orqali qiling — ta'minotchi va tannarx ham o'sha yerda qayd etiladi."
     },
     "customers": {
       "title": "Mijozlar",

@@ -95,6 +95,10 @@ public class ProductService {
 
         Product product = new Product();
         mapRequestToProduct(request, product);
+        // Boshlang'ich zaxira/tannarx faqat yaratishda qabul qilinadi (API mosligi);
+        // admin UI ularni yubormaydi — zaxira Ombor kirimi orqali kiritiladi
+        product.setQuantity(request.getQuantity() != null ? request.getQuantity() : 0);
+        product.setPurchasePrice(request.getPurchasePrice());
         product.setCreatedBy(getCurrentUser());
 
         Product savedProduct = productRepository.save(product);
@@ -113,6 +117,11 @@ public class ProductService {
         }
 
         mapRequestToProduct(request, product);
+        // Zaxira (quantity) tahrirlashda TEGILMAYDI — faqat Ombor/Xarid/Savdo o'zgartiradi.
+        // Tannarx odatda kirimdan keladi; aniq berilgan bo'lsagina yangilanadi (API mosligi).
+        if (request.getPurchasePrice() != null) {
+            product.setPurchasePrice(request.getPurchasePrice());
+        }
         Product savedProduct = productRepository.save(product);
         saveAttributeValues(savedProduct, request.getAttributes());
         return withAttributes(ProductResponse.from(savedProduct));
@@ -146,6 +155,13 @@ public class ProductService {
         return ProductResponse.from(productRepository.save(product));
     }
 
+    /**
+     * Katalog (kartochka) maydonlarini map qiladi. MUHIM: zaxira (quantity) va
+     * tannarx (purchasePrice) bu yerda YO'Q — zaxira faqat Ombor/Xarid/Savdo
+     * operatsiyalari orqali o'zgaradi (harakat tarixi bilan), tannarx esa oxirgi
+     * kirimdan yoziladi. Bu tahrirlashda zaxirani tasodifan 0 qilib yuborish
+     * bagining ham oldini oladi.
+     */
     private void mapRequestToProduct(ProductRequest request, Product product) {
         product.setSku(request.getSku());
         product.setName(request.getName());
@@ -155,9 +171,7 @@ public class ProductService {
         product.setLoadIndex(request.getLoadIndex());
         product.setSpeedRating(request.getSpeedRating());
         product.setSeason(request.getSeason());
-        product.setPurchasePrice(request.getPurchasePrice());
         product.setSellingPrice(request.getSellingPrice());
-        product.setQuantity(request.getQuantity() != null ? request.getQuantity() : 0);
         product.setMinStockLevel(request.getMinStockLevel() != null ? request.getMinStockLevel() : 5);
         product.setDescription(request.getDescription());
         product.setImageUrl(request.getImageUrl());

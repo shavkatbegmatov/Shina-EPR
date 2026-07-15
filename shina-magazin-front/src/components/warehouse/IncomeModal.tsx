@@ -156,6 +156,11 @@ export function IncomeModal({ isOpen, onClose, onSuccess }: IncomeModalProps) {
   // Select product
   const handleSelectProduct = (product: Product) => {
     setSelectedProduct(product);
+    // Qulaylik: joriy tannarx (oxirgi kirim narxi) taklif sifatida to'ldiriladi —
+    // yangi kirimda odatda o'sha narx atrofida bo'ladi, o'zgartirish mumkin
+    if (product.purchasePrice && unitPrice === 0) {
+      setUnitPrice(product.purchasePrice);
+    }
     setProductSearch('');
     setSearchResults([]);
     setShowDropdown(false);
@@ -371,29 +376,30 @@ export function IncomeModal({ isOpen, onClose, onSuccess }: IncomeModalProps) {
             </Button>
           </div>
 
-          {selectedSupplierId && (
-            <div className="grid grid-cols-2 gap-4">
-              <CurrencyInput
-                label={t('erp.incomeModal.unitPrice')}
-                value={unitPrice}
-                onChange={setUnitPrice}
-                min={0}
-                placeholder="0"
-                size="md"
-              />
+        </div>
 
-              <div className="form-control">
-                <span className="label-text mb-1 text-xs font-semibold uppercase tracking-[0.18em] text-base-content/50">
-                  {t('erp.incomeModal.totalAmount')}
-                </span>
-                <div className="h-12 flex items-center px-4 rounded-xl bg-success/10 border border-success/30">
-                  <span className="text-lg font-bold text-success">
-                    {formatCurrency(totalAmount)}
-                  </span>
-                </div>
-              </div>
+        {/* Tannarx — kirim narxi mahsulot kartochkasidagi tannarxning yagona manbai,
+            shuning uchun ta'minotchisiz kirimda ham doim ko'rinadi */}
+        <div className="grid grid-cols-2 gap-4">
+          <CurrencyInput
+            label={t('erp.incomeModal.unitPrice')}
+            value={unitPrice}
+            onChange={setUnitPrice}
+            min={0}
+            placeholder="0"
+            size="md"
+          />
+
+          <div className="form-control">
+            <span className="label-text mb-1 text-xs font-semibold uppercase tracking-[0.18em] text-base-content/50">
+              {t('erp.incomeModal.totalAmount')}
+            </span>
+            <div className="h-12 flex items-center px-4 rounded-xl bg-success/10 border border-success/30">
+              <span className="text-lg font-bold text-success">
+                {formatCurrency(totalAmount)}
+              </span>
             </div>
-          )}
+          </div>
         </div>
 
         {/* Notes */}

@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import toast from 'react-hot-toast';
-import { Plus, Package, BadgeCheck, AlertTriangle, X, Upload, Image as ImageIcon } from 'lucide-react';
+import { Plus, Package, BadgeCheck, AlertTriangle, Warehouse, X, Upload, Image as ImageIcon } from 'lucide-react';
 import clsx from 'clsx';
 import { productsApi, brandsApi, categoriesApi } from '../../api/products.api';
 import { formatCurrency, SEASONS } from '../../config/constants';
@@ -36,6 +36,18 @@ const emptyFormData: ProductRequest = {
   name: '',
   sellingPrice: 0,
 };
+
+/** Forma bo'lim sarlavhasi — ingichka chiziqli ajratgich bilan */
+function FormSection({ title }: { title: string }) {
+  return (
+    <div className="flex items-center gap-3 pt-1">
+      <span className="text-[11px] font-semibold uppercase tracking-[0.18em] text-base-content/40">
+        {title}
+      </span>
+      <div className="h-px flex-1 bg-base-300/60" />
+    </div>
+  );
+}
 
 /** Mahsulot javobidagi atribut qiymatlarini forma xaritasiga aylantiradi */
 function toValueMap(attrs?: ProductAttributeValue[]): AttributeValueMap {
@@ -73,6 +85,10 @@ export function ProductsPage() {
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
   const [showNewProductModal, setShowNewProductModal] = useState(false);
   const [editingProductId, setEditingProductId] = useState<number | null>(null);
+  // Tahrirdagi mahsulotning joriy zaxira/tannarxi — formada ko'rsatish va
+  // saqlashda o'zgarishsiz qaytarish uchun (ularni Ombor/Xaridlar boshqaradi)
+  const [editingStock, setEditingStock] = useState<number | null>(null);
+  const [editingCost, setEditingCost] = useState<number | undefined>(undefined);
   const [formData, setFormData] = useState<ProductRequest>(emptyFormData);
   const [saving, setSaving] = useState(false);
   const [uploadingImage, setUploadingImage] = useState(false);
@@ -277,6 +293,8 @@ export function ProductsPage() {
     setFormData(emptyFormData);
     setFormAttributes([]);
     setAttrValues({});
+    setEditingStock(null);
+    setEditingCost(undefined);
     setShowNewProductModal(true);
   };
 
@@ -286,10 +304,14 @@ export function ProductsPage() {
     setFormData(emptyFormData);
     setFormAttributes([]);
     setAttrValues({});
+    setEditingStock(null);
+    setEditingCost(undefined);
   };
 
   const handleEditProduct = (product: Product) => {
     setEditingProductId(product.id);
+    // Zaxira (quantity) va tannarx (purchasePrice) formada YO'Q — ular
+    // Ombor kirimi/Xaridlar orqali boshqariladi (yagona manba qoidasi)
     setFormData({
       sku: product.sku,
       name: product.name,
@@ -301,13 +323,13 @@ export function ProductsPage() {
       loadIndex: product.loadIndex,
       speedRating: product.speedRating,
       season: product.season,
-      purchasePrice: product.purchasePrice,
       sellingPrice: product.sellingPrice,
-      quantity: product.quantity,
       minStockLevel: product.minStockLevel,
       description: product.description,
       imageUrl: product.imageUrl,
     });
+    setEditingStock(product.quantity);
+    setEditingCost(product.purchasePrice);
     setAttrValues({});
     void loadFormAttributes(product.categoryId);
     // Ro'yxat javobida atribut qiymatlari yo'q — to'liq mahsulotni olib kelamiz
@@ -369,6 +391,11 @@ export function ProductsPage() {
     setSaving(true);
     try {
       const payload: ProductRequest = { ...formData, attributes };
+      // Zaxira va tannarx formada TAHRIRLANMAYDI (Ombor/Xaridlar boshqaradi).
+      // Tahrirda joriy qiymatlar o'zgarishsiz qaytariladi (backendlar aro moslik),
+      // yangi mahsulot esa 0 zaxira bilan boshlanadi.
+      payload.quantity = editingProductId ? editingStock ?? undefined : undefined;
+      payload.purchasePrice = editingProductId ? editingCost : undefined;
       if (!isTireForm) {
         // Universal mahsulot: shina maydonlari yuborilmaydi (kategoriya
         // almashtirilganda eski shina qiymatlari ham tozalanadi)
@@ -673,6 +700,8 @@ export function ProductsPage() {
             </div>
 
             <div className="mt-6 space-y-4">
+              {/* 1. Asosiy ma'lumotlar */}
+              <FormSection title={t('erp.products.sectionMain')} />
               <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
                 <label className="form-control">
                   <span className="label-text mb-1 text-xs font-semibold uppercase tracking-[0.18em] text-base-content/50">SKU *</span>
@@ -701,31 +730,34 @@ export function ProductsPage() {
                 />
               </div>
 
-              {/* Shina o'lcham maydonlari — faqat TIRE shablonli kategoriyada (universal magazin) */}
+              {/* 2. Shina o'lchamlari — faqat TIRE shablonli kategoriyada (universal magazin) */}
               {isTireForm && (
-                <div className="grid grid-cols-3 gap-4 sm:grid-cols-6">
-                  <NumberInput label={t('erp.products.fieldWidth')} value={formData.width ?? ''} onChange={(val) => handleFormChange('width', val === '' ? undefined : Number(val))} placeholder="205" showButtons={false} min={100} max={400} />
-                  <NumberInput label={t('erp.products.fieldProfile')} value={formData.profile ?? ''} onChange={(val) => handleFormChange('profile', val === '' ? undefined : Number(val))} placeholder="55" showButtons={false} min={10} max={100} />
-                  <NumberInput label={t('erp.products.fieldDiameter')} value={formData.diameter ?? ''} onChange={(val) => handleFormChange('diameter', val === '' ? undefined : Number(val))} placeholder="16" showButtons={false} min={10} max={30} />
-                  <label className="form-control">
-                    <span className="label-text mb-1 text-xs font-semibold uppercase tracking-[0.18em] text-base-content/50">{t('erp.products.fieldLoadIndex')}</span>
-                    <input type="text" className="input input-bordered w-full" value={formData.loadIndex || ''} onChange={(e) => handleFormChange('loadIndex', e.target.value || undefined)} placeholder="91" />
-                  </label>
-                  <label className="form-control">
-                    <span className="label-text mb-1 text-xs font-semibold uppercase tracking-[0.18em] text-base-content/50">{t('erp.products.fieldSpeed')}</span>
-                    <input type="text" className="input input-bordered w-full" value={formData.speedRating || ''} onChange={(e) => handleFormChange('speedRating', e.target.value || undefined)} placeholder="V" />
-                  </label>
-                  <Select
-                    label={t('erp.products.colSeason')}
-                    value={formData.season || ''}
-                    onChange={(value) => handleFormChange('season', value as Season || undefined)}
-                    placeholder="—"
-                    options={Object.entries(SEASONS).map(([key, { label }]) => ({ value: key, label }))}
-                  />
+                <div className="rounded-xl border border-base-300 p-4">
+                  <h4 className="mb-3 text-sm font-semibold">{t('erp.products.sectionTire')}</h4>
+                  <div className="grid grid-cols-3 gap-4 sm:grid-cols-6">
+                    <NumberInput label={t('erp.products.fieldWidth')} value={formData.width ?? ''} onChange={(val) => handleFormChange('width', val === '' ? undefined : Number(val))} placeholder="205" showButtons={false} min={100} max={400} />
+                    <NumberInput label={t('erp.products.fieldProfile')} value={formData.profile ?? ''} onChange={(val) => handleFormChange('profile', val === '' ? undefined : Number(val))} placeholder="55" showButtons={false} min={10} max={100} />
+                    <NumberInput label={t('erp.products.fieldDiameter')} value={formData.diameter ?? ''} onChange={(val) => handleFormChange('diameter', val === '' ? undefined : Number(val))} placeholder="16" showButtons={false} min={10} max={30} />
+                    <label className="form-control">
+                      <span className="label-text mb-1 text-xs font-semibold uppercase tracking-[0.18em] text-base-content/50">{t('erp.products.fieldLoadIndex')}</span>
+                      <input type="text" className="input input-bordered w-full" value={formData.loadIndex || ''} onChange={(e) => handleFormChange('loadIndex', e.target.value || undefined)} placeholder="91" />
+                    </label>
+                    <label className="form-control">
+                      <span className="label-text mb-1 text-xs font-semibold uppercase tracking-[0.18em] text-base-content/50">{t('erp.products.fieldSpeed')}</span>
+                      <input type="text" className="input input-bordered w-full" value={formData.speedRating || ''} onChange={(e) => handleFormChange('speedRating', e.target.value || undefined)} placeholder="V" />
+                    </label>
+                    <Select
+                      label={t('erp.products.colSeason')}
+                      value={formData.season || ''}
+                      onChange={(value) => handleFormChange('season', value as Season || undefined)}
+                      placeholder="—"
+                      options={Object.entries(SEASONS).map(([key, { label }]) => ({ value: key, label }))}
+                    />
+                  </div>
                 </div>
               )}
 
-              {/* Kategoriya xususiyatlari (dinamik, merosi bilan) */}
+              {/* 3. Kategoriya xususiyatlari (dinamik, merosi bilan) */}
               {formData.categoryId && formAttributes.length > 0 && (
                 <div className="rounded-xl border border-base-300 p-4">
                   <h4 className="mb-1 text-sm font-semibold">{t('erp.products.attributesSection')}</h4>
@@ -738,13 +770,30 @@ export function ProductsPage() {
                 </div>
               )}
 
-              <div className="grid grid-cols-2 gap-4 sm:grid-cols-4">
-                <CurrencyInput label={t('erp.products.fieldPurchasePrice')} value={formData.purchasePrice ?? 0} onChange={(val) => handleFormChange('purchasePrice', val || undefined)} min={0} />
+              {/* 4. Narx va zaxira siyosati — zaxira/tannarx Ombor va Xaridlar orqali */}
+              <FormSection title={t('erp.products.sectionPricing')} />
+              <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
                 <CurrencyInput label={t('erp.products.fieldSellingPrice')} value={formData.sellingPrice ?? 0} onChange={(val) => handleFormChange('sellingPrice', val)} min={0} />
-                <NumberInput label={t('erp.products.fieldQuantity')} value={formData.quantity ?? ''} onChange={(val) => handleFormChange('quantity', val === '' ? undefined : Number(val))} placeholder="0" min={0} />
                 <NumberInput label={t('erp.products.fieldMinStock')} value={formData.minStockLevel ?? ''} onChange={(val) => handleFormChange('minStockLevel', val === '' ? undefined : Number(val))} placeholder="5" min={0} />
+                {editingProductId && (
+                  <div className="form-control">
+                    <span className="label-text mb-1 text-xs font-semibold uppercase tracking-[0.18em] text-base-content/50">
+                      {t('erp.products.currentStock')}
+                    </span>
+                    <div className="flex h-12 items-center gap-2 rounded-xl border border-base-300 bg-base-200/50 px-3">
+                      <Warehouse className="h-4 w-4 shrink-0 text-base-content/40" />
+                      <span className="font-semibold">{editingStock ?? 0}</span>
+                      <span className="text-xs text-base-content/50">{t('erp.products.stockUnit')}</span>
+                    </div>
+                  </div>
+                )}
               </div>
+              <p className="text-xs text-base-content/50">
+                {editingProductId ? t('erp.products.stockManagedHint') : t('erp.products.newStockHint')}
+              </p>
 
+              {/* 5. Tavsif va rasm */}
+              <FormSection title={t('erp.products.sectionMedia')} />
               <label className="form-control">
                 <span className="label-text mb-1 text-xs font-semibold uppercase tracking-[0.18em] text-base-content/50">{t('erp.products.fieldDescription')}</span>
                 <textarea className="textarea textarea-bordered w-full" rows={2} value={formData.description || ''} onChange={(e) => handleFormChange('description', e.target.value || undefined)} placeholder={t('erp.products.descriptionPlaceholder')} />
