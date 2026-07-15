@@ -153,13 +153,13 @@ export function NumberInput({
 
   const sizeClasses = {
     sm: 'h-9 text-sm',
-    md: 'h-11 text-base',
+    md: 'h-12 text-base',
     lg: 'h-13 text-lg',
   };
 
   const buttonSizeClasses = {
     sm: 'w-9 h-9',
-    md: 'w-11 h-11',
+    md: 'w-12 h-12',
     lg: 'w-13 h-13',
   };
 

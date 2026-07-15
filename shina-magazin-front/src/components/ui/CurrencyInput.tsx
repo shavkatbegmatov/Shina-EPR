@@ -13,6 +13,7 @@ interface CurrencyInputProps {
   showQuickButtons?: boolean;
   className?: string;
   error?: string;
+  required?: boolean;
 }
 
 // Format number with thousand separators (1 234 567)
@@ -51,6 +52,7 @@ export function CurrencyInput({
   showQuickButtons = false,
   className,
   error,
+  required = false,
 }: CurrencyInputProps) {
   const [displayValue, setDisplayValue] = useState(formatNumber(value));
   const [isFocused, setIsFocused] = useState(false);
@@ -162,11 +164,9 @@ export function CurrencyInput({
   return (
     <div className={clsx('form-control', className)}>
       {label && (
-        <label className="label py-1">
-          <span className="label-text text-xs font-semibold uppercase tracking-[0.18em] text-base-content/50">
-            {label}
-          </span>
-        </label>
+        <span className="form-label">
+          {label} {required && <span className="text-error">*</span>}
+        </span>
       )}
 
       <div
@@ -199,6 +199,7 @@ export function CurrencyInput({
           disabled={disabled}
           aria-label={label}
           aria-invalid={!!error}
+          aria-required={required || undefined}
         />
 
         {/* Currency suffix */}
