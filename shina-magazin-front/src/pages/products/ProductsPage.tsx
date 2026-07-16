@@ -274,6 +274,7 @@ export function ProductsPage() {
       const data = await productsApi.getAll({
         page,
         size: pageSize,
+        sort: ['createdAt,desc', 'id,desc'],
         search: search || undefined,
         brandId: brandFilter || undefined,
         categoryId: categoryFilter || undefined,

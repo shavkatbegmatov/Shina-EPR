@@ -18,6 +18,7 @@ import { createExportApi } from './export.utils';
 export interface ProductFilters {
   page?: number;
   size?: number;
+  sort?: string[];
   search?: string;
   brandId?: number;
   categoryId?: number;
@@ -29,6 +30,7 @@ export const productsApi = {
     const params = new URLSearchParams();
     if (filters.page !== undefined) params.append('page', filters.page.toString());
     if (filters.size !== undefined) params.append('size', filters.size.toString());
+    filters.sort?.forEach((sort) => params.append('sort', sort));
     if (filters.search) params.append('search', filters.search);
     if (filters.brandId) params.append('brandId', filters.brandId.toString());
     if (filters.categoryId) params.append('categoryId', filters.categoryId.toString());
