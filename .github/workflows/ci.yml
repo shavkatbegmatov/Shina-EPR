@@ -96,6 +96,10 @@ jobs:
           cache-to: type=gha,mode=max,scope=frontend
 
   # ── CD: Trigger Coolify deploy ──
+  # Coolify'da BITTA Compose resurs (infra/coolify/docker-compose.yml) turadi —
+  # webhook butun stack'ni qayta deploy qiladi (yangi GHCR image'lar tortiladi).
+  # Webhook image'lar push bo'lgandan KEYIN chaqiriladi — eski image tortilib
+  # qolish poygasi yo'q (Coolify'ning push-ga bog'langan Auto Deploy'idan farqli).
   deploy:
     name: Deploy to Coolify
     runs-on: ubuntu-latest
@@ -104,14 +108,8 @@ jobs:
     # Aks holda SKIP bo'ladi (CI yashil qoladi, deploy job qizil bermaydi).
     if: github.event_name == 'push' && github.ref == 'refs/heads/master' && vars.DEPLOY_ENABLED == 'true'
     steps:
-      - name: Deploy backend
+      - name: Deploy stack (compose resource webhook)
         run: |
           curl -f -X GET "${{ secrets.COOLIFY_WEBHOOK_URL }}" \
-            -H "Authorization: Bearer ${{ secrets.COOLIFY_API_TOKEN }}" \
-            --max-time 30
-
-      - name: Deploy frontend
-        run: |
-          curl -f -X GET "${{ secrets.COOLIFY_FRONTEND_WEBHOOK_URL }}" \
             -H "Authorization: Bearer ${{ secrets.COOLIFY_API_TOKEN }}" \
             --max-time 30

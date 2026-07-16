@@ -1,7 +1,15 @@
+# Coolify uchun prod stack (Compose resource sifatida ulanadi).
+# Image'lar GITHUB ACTIONS'da quriladi va GHCR'dan tortiladi — serverda
+# build YO'Q (minimal yuklama). Private image'lar uchun serverda bir marta:
+#   docker login ghcr.io -u shavkatbegmatov -p <PAT read:packages>
+# ENV'lar Coolify UI'da beriladi: DB_PASSWORD, JWT_SECRET (majburiy);
+# PAYME_*/CLICK_*/SHOP_* — jonli to'lov/xabarnoma yoqilganda.
+# Domen Coolify UI'da faqat frontend'ga biriktiriladi (port 80, TLS avtomatik,
+# Traefik) — backend tashqariga ochilmaydi, nginx /api ni ichki tarmoqda proxy qiladi.
+
 services:
   db:
     image: postgres:16-alpine
-    restart: unless-stopped
     environment:
       POSTGRES_DB: ${DB_NAME:-shina_epr_db}
       POSTGRES_USER: ${DB_USERNAME:-shina_epr_user}
@@ -10,21 +18,21 @@ services:
       - postgres_data:/var/lib/postgresql/data
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U ${DB_USERNAME:-shina_epr_user} -d ${DB_NAME:-shina_epr_db}"]
-      interval: 10s
-      timeout: 5s
-      retries: 5
+      interval: 5s
+      timeout: 3s
+      retries: 12
 
   backend:
     image: ghcr.io/shavkatbegmatov/shina-epr-api:latest
     pull_policy: always
-    restart: unless-stopped
     environment:
+      # SPRING_PROFILES_ACTIVE=prod Dockerfile ENTRYPOINT'da
       DB_HOST: db
       DB_NAME: ${DB_NAME:-shina_epr_db}
       DB_USERNAME: ${DB_USERNAME:-shina_epr_user}
       DB_PASSWORD: ${DB_PASSWORD:?DB_PASSWORD is required}
       JWT_SECRET: ${JWT_SECRET:?JWT_SECRET is required}
-      # Rasm storage — quyidagi volume'ga yoziladi (deploy'da yo'qolmasligi uchun)
+      # Rasm storage — volume'ga yoziladi (deploy'da yo'qolmaydi)
       SHOP_STORAGE_DIR: /data/uploads
       # To'lov (jonli qilganda) — Coolify env'dan
       PAYME_ENABLED: ${PAYME_ENABLED:-false}
@@ -43,17 +51,20 @@ services:
     depends_on:
       db:
         condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://localhost:8183/api/actuator/health | grep -q UP"]
+      interval: 10s
+      timeout: 5s
+      retries: 18
+      start_period: 60s
 
   frontend:
     image: ghcr.io/shavkatbegmatov/shina-epr-front:latest
     pull_policy: always
-    restart: unless-stopped
     environment:
-      # nginx /api ni shu stack'dagi backend servisiga proxy qiladi
+      # nginx /api ni shu servisga proxy qiladi (Docker DNS)
       BACKEND_HOST: backend
       BACKEND_PORT: 8183
-    ports:
-      - "80:80"
     depends_on:
       - backend
 

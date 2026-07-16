@@ -17,9 +17,11 @@ server {
     resolver 127.0.0.11 valid=10s ipv6=off;
     resolver_timeout 5s;
 
-    # Backend host/port (Coolify backend servisi/konteyner nomi). Kerak bo'lsa o'zgartiring.
-    set $backend_host "shina-magazin-api";
-    set $backend_port "8183";
+    # Backend host/port — konteyner startida BACKEND_HOST/BACKEND_PORT env'dan qo'yiladi
+    # (nginx rasmiy envsubst mexanizmi: faqat mavjud env o'zgaruvchilar almashtiriladi,
+    # $host kabi nginx o'zgaruvchilariga tegilmaydi). Default'lar Dockerfile'da.
+    set $backend_host "${BACKEND_HOST}";
+    set $backend_port "${BACKEND_PORT}";
 
     gzip on;
     gzip_vary on;

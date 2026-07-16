@@ -37,6 +37,10 @@ services:
       context: ./shina-magazin-front
       dockerfile: Dockerfile
     restart: unless-stopped
+    environment:
+      # nginx /api ni shu stack'dagi backend servisiga proxy qiladi
+      BACKEND_HOST: backend
+      BACKEND_PORT: 8183
     ports:
       - "80:80"
     depends_on:
