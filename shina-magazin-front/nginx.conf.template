@@ -12,6 +12,11 @@ server {
     root /usr/share/nginx/html;
     index index.html;
 
+    # www -> apex 301 (SEO kanonik manzil). Har qanday www.<domen> uchun umumiy ishlaydi.
+    if ($host ~* ^www\.(.+)$) {
+        return 301 https://$1$request_uri;
+    }
+
     # Docker ichki DNS resolver — proxy_pass'da variable ishlatilganda nginx startup'da
     # DNS resolve qilmaydi; backend keyin paydo bo'lsa ham ishlay boshlaydi.
     resolver 127.0.0.11 valid=10s ipv6=off;

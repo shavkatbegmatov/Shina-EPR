@@ -21,7 +21,10 @@ writeFileSync(resolve(pub, 'sitemap.xml'), sitemap);
 const robots = `User-agent: *
 Allow: /
 Disallow: /admin
-Disallow: /kabinet
+Disallow: /hisob
+Disallow: /kirish
+Disallow: /checkout
+Disallow: /buyurtma
 ${SITE ? `Sitemap: ${SITE}/sitemap.xml\n` : ''}`;
 writeFileSync(resolve(pub, 'robots.txt'), robots);
 
