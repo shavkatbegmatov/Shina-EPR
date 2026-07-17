@@ -62,13 +62,15 @@ server {
     # Mahsulot sahifasi: link-preview bot bo'lsa backend server-meta (og:image = mahsulot
     # rasmi) beriladi; oddiy foydalanuvchi SPA oladi (tez). Faqat crawler backendga tegadi.
     location ~ ^/mahsulot/([0-9]+)/?$ {
-        set $pid $1;
+        # DIQQAT: $pid nomini ishlatib bo'lmaydi — u nginx'ning built-in o'zgaruvchisi
+        # (worker PID); qayta e'lon qilinsa [emerg] duplicate variable bilan yiqiladi.
+        set $product_id $1;
         proxy_set_header Host $host;
         proxy_set_header X-Forwarded-Proto $scheme;
         proxy_set_header X-Forwarded-Host $host;
         proxy_set_header X-Real-IP $remote_addr;
         if ($prerender_ua) {
-            proxy_pass http://$backend_host:$backend_port/api/v1/seo/products/$pid;
+            proxy_pass http://$backend_host:$backend_port/api/v1/seo/products/$product_id;
         }
         try_files $uri /index.html;
     }
