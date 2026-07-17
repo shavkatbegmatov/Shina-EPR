@@ -5,6 +5,13 @@ map $http_user_agent $prerender_ua {
     "~*(googlebot|bingbot|yandexbot|duckduckbot|telegrambot|facebookexternalhit|facebot|twitterbot|whatsapp|slackbot|linkedinbot|discordbot|vkshare|skypeuripreview|pinterest|redditbot|applebot)" 1;
 }
 
+# TLS reverse-proxy (Traefik) ortida $scheme http bo'ladi — upstream'dan kelgan
+# X-Forwarded-Proto'ni saqlaymiz; to'g'ridan-to'g'ri kirishda $scheme'ga tushamiz.
+map $http_x_forwarded_proto $fwd_proto {
+    default $http_x_forwarded_proto;
+    ""      $scheme;
+}
+
 server {
     listen 80;
     server_name _;
@@ -48,7 +55,7 @@ server {
         proxy_set_header Host $host;
         proxy_set_header X-Real-IP $remote_addr;
         proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
-        proxy_set_header X-Forwarded-Proto $scheme;
+        proxy_set_header X-Forwarded-Proto $fwd_proto;
         # WebSocket (STOMP/SockJS — real-time bildirishnomalar)
         proxy_read_timeout 86400;
         # Backend mavjud bo'lmasa 502/503/504 (crash o'rniga)
@@ -66,7 +73,7 @@ server {
         # (worker PID); qayta e'lon qilinsa [emerg] duplicate variable bilan yiqiladi.
         set $product_id $1;
         proxy_set_header Host $host;
-        proxy_set_header X-Forwarded-Proto $scheme;
+        proxy_set_header X-Forwarded-Proto $fwd_proto;
         proxy_set_header X-Forwarded-Host $host;
         proxy_set_header X-Real-IP $remote_addr;
         if ($prerender_ua) {
