@@ -32,6 +32,8 @@ services:
       DB_USERNAME: ${DB_USERNAME:-shina_epr_user}
       DB_PASSWORD: ${DB_PASSWORD:?DB_PASSWORD is required}
       JWT_SECRET: ${JWT_SECRET:?JWT_SECRET is required}
+      # Brauzer Origin'i uchun ruxsat (vergul bilan bir nechta bo'lishi mumkin)
+      CORS_ALLOWED_ORIGINS: ${CORS_ALLOWED_ORIGINS:-https://protektor.uz}
       # Rasm storage — volume'ga yoziladi (deploy'da yo'qolmaydi)
       SHOP_STORAGE_DIR: /data/uploads
       # To'lov (jonli qilganda) — Coolify env'dan

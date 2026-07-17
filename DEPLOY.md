@@ -89,8 +89,9 @@ Relizlar: `git tag vX.Y.Z && git push origin vX.Y.Z` → `release.yml` GitHub Re
 - [ ] (Jonli to'lov) Payme/Click sandbox → webhook → `paymentStatus=PAID`.
 
 ## Eslatma
-- **CORS:** prod same-origin (nginx proxy) → shart emas. Frontend ALOHIDA domenda bo'lsa, `WebConfig`
-  CORS origin'lari (hozir localhost) prod domenni o'z ichiga olishi kerak (env-driven CORS qo'shing).
+- **CORS:** env-driven — `CORS_ALLOWED_ORIGINS` (compose default: `https://protektor.uz`). Brauzer har
+  POST'ga Origin yuboradi, shuning uchun same-origin bo'lsa ham prod domen ro'yxatda bo'lishi shart.
+  Yangi domen qo'shilsa — vergul bilan shu env'ga qo'shiladi.
 - To'lov webhook'lari: Payme `https://<domen>/api/v1/payments/payme`; Click `.../click/prepare` +
   `.../complete`. SMS hozircha stub (`LogSmsSender`) — jonli SMS uchun provider impl kerak.
 - Batafsil bajarilgan ishlar: `QOLGAN-ISHLAR.md`.

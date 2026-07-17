@@ -2,6 +2,11 @@
 # -Dspring.profiles.active=prod (yoki SPRING_PROFILES_ACTIVE=prod env).
 # Barcha ulanish/sirlar ENV'dan — qattiq yozilgan kreditsial YO'Q.
 # Boshqa shop.* (storage/payment/notify) va jwt base application.yml'da env-driven.
+# Traefik/nginx ortida ishlaydi — X-Forwarded-Proto/Host'ga ishonish
+# (og:image kabi absolyut URL'lar https bo'lishi va scheme aniqlanishi uchun)
+server:
+  forward-headers-strategy: framework
+
 spring:
   datasource:
     url: jdbc:postgresql://${DB_HOST:localhost}:${DB_PORT:5432}/${DB_NAME:shina_epr_db}

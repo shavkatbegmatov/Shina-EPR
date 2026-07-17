@@ -1,6 +1,7 @@
 package uz.shinamagazin.api.config;
 
 import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.web.cors.CorsConfiguration;
@@ -22,6 +23,10 @@ public class WebConfig implements WebMvcConfigurer {
 
     private final AuditCorrelationInterceptor auditCorrelationInterceptor;
     private final StorageProperties storageProperties;
+
+    // application.yml `cors.allowed-origins` (prod'da CORS_ALLOWED_ORIGINS env)
+    @Value("${cors.allowed-origins}")
+    private List<String> allowedOrigins;
 
     @Override
     public void addInterceptors(InterceptorRegistry registry) {
@@ -49,12 +54,7 @@ public class WebConfig implements WebMvcConfigurer {
     @Bean
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration configuration = new CorsConfiguration();
-        configuration.setAllowedOrigins(List.of(
-                "http://localhost:5183",
-                "http://localhost:3000",
-                "http://127.0.0.1:5183",
-                "http://192.168.1.33:5183"
-        ));
+        configuration.setAllowedOrigins(allowedOrigins);
         configuration.setAllowedMethods(Arrays.asList(
                 "GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"
         ));
