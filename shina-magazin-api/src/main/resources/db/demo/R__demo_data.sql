@@ -204,16 +204,20 @@ INSERT INTO customers (full_name, phone, address, customer_type, company_name, b
 -- ─── Xodimlar (HR). Ba'zilariga user login bog'langan ───
 INSERT INTO employees (full_name, phone, email, position, department, salary, hire_date, status, birth_date, address, user_id)
   SELECT 'Sardor Bekmurodov', '+998909900001', 'director@protektor.uz', 'Direktor', 'Boshqaruv', 12000000, CURRENT_DATE - 1180, 'ACTIVE', DATE '1985-04-12', 'Toshkent sh., Mirzo Ulug''bek tumani', (SELECT id FROM users WHERE username='admin')
-  WHERE NOT EXISTS (SELECT 1 FROM employees WHERE phone='+998909900001');
+  WHERE NOT EXISTS (SELECT 1 FROM employees WHERE phone='+998909900001')
+    AND NOT EXISTS (SELECT 1 FROM employees WHERE user_id=(SELECT id FROM users WHERE username='admin'));
 INSERT INTO employees (full_name, phone, email, position, department, salary, hire_date, status, birth_date, address, user_id)
   SELECT 'Jasur Aliyev', '+998909900002', 'menejer@protektor.uz', 'Savdo menejeri', 'Savdo', 8500000, CURRENT_DATE - 760, 'ACTIVE', DATE '1990-09-03', 'Toshkent sh., Yunusobod tumani', (SELECT id FROM users WHERE username='menejer')
-  WHERE NOT EXISTS (SELECT 1 FROM employees WHERE phone='+998909900002');
+  WHERE NOT EXISTS (SELECT 1 FROM employees WHERE phone='+998909900002')
+    AND NOT EXISTS (SELECT 1 FROM employees WHERE user_id=(SELECT id FROM users WHERE username='menejer'));
 INSERT INTO employees (full_name, phone, email, position, department, salary, hire_date, status, birth_date, address, user_id)
   SELECT 'Nodira Yusupova', '+998909900003', 'sotuvchi@protektor.uz', 'Bosh sotuvchi', 'Savdo', 6000000, CURRENT_DATE - 540, 'ACTIVE', DATE '1994-01-22', 'Toshkent sh., Chilonzor tumani', (SELECT id FROM users WHERE username='seller')
-  WHERE NOT EXISTS (SELECT 1 FROM employees WHERE phone='+998909900003');
+  WHERE NOT EXISTS (SELECT 1 FROM employees WHERE phone='+998909900003')
+    AND NOT EXISTS (SELECT 1 FROM employees WHERE user_id=(SELECT id FROM users WHERE username='seller'));
 INSERT INTO employees (full_name, phone, email, position, department, salary, hire_date, status, birth_date, address, user_id)
   SELECT 'Malika Karimova', '+998909900004', 'kassir@protektor.uz', 'Kassir', 'Savdo', 5000000, CURRENT_DATE - 300, 'ACTIVE', DATE '1997-07-19', 'Toshkent sh., Sergeli tumani', (SELECT id FROM users WHERE username='kassir')
-  WHERE NOT EXISTS (SELECT 1 FROM employees WHERE phone='+998909900004');
+  WHERE NOT EXISTS (SELECT 1 FROM employees WHERE phone='+998909900004')
+    AND NOT EXISTS (SELECT 1 FROM employees WHERE user_id=(SELECT id FROM users WHERE username='kassir'));
 INSERT INTO employees (full_name, phone, email, position, department, salary, hire_date, status, birth_date, address)
   SELECT 'Bekzod To''raev', '+998909900005', NULL, 'Ombor mudiri', 'Ombor', 6500000, CURRENT_DATE - 880, 'ACTIVE', DATE '1988-11-05', 'Toshkent sh., Bektemir tumani'
   WHERE NOT EXISTS (SELECT 1 FROM employees WHERE phone='+998909900005');
