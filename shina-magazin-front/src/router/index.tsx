@@ -1,9 +1,10 @@
-import { lazy, Suspense } from 'react';
+import { Suspense } from 'react';
 import { createBrowserRouter, Navigate } from 'react-router-dom';
 import { MainLayout } from '../components/layout/MainLayout';
 import { ProtectedRoute } from '../components/common/ProtectedRoute';
 import { PageLoader } from '../components/common/PageLoader';
 import { PermissionCode } from '../hooks/usePermission';
+import { lazyWithRetry } from './lazyWithRetry';
 
 // Auth pages (small, load immediately)
 import { LoginPage } from '../pages/auth/LoginPage';
@@ -11,55 +12,55 @@ import { RegisterPage } from '../pages/auth/RegisterPage';
 import { ChangePasswordPage } from '../pages/auth/ChangePasswordPage';
 
 // Lazy-loaded main app pages
-const DashboardPage = lazy(() => import('../pages/dashboard/DashboardPage').then(m => ({ default: m.DashboardPage })));
-const ProductsPage = lazy(() => import('../pages/products/ProductsPage').then(m => ({ default: m.ProductsPage })));
-const ProductDetailPage = lazy(() => import('../pages/products/ProductDetailPage').then(m => ({ default: m.ProductDetailPage })));
-const CategoriesPage = lazy(() => import('../pages/catalog/CategoriesPage').then(m => ({ default: m.CategoriesPage })));
-const AttributesPage = lazy(() => import('../pages/catalog/AttributesPage').then(m => ({ default: m.AttributesPage })));
-const BrandsPage = lazy(() => import('../pages/catalog/BrandsPage').then(m => ({ default: m.BrandsPage })));
-const CustomersPage = lazy(() => import('../pages/customers/CustomersPage').then(m => ({ default: m.CustomersPage })));
-const CustomerDetailPage = lazy(() => import('../pages/customers/CustomerDetailPage').then(m => ({ default: m.CustomerDetailPage })));
-const POSPage = lazy(() => import('../pages/sales/POSPage').then(m => ({ default: m.POSPage })));
-const SalesPage = lazy(() => import('../pages/sales/SalesPage').then(m => ({ default: m.SalesPage })));
-const SaleDetailPage = lazy(() => import('../pages/sales/SaleDetailPage').then(m => ({ default: m.SaleDetailPage })));
-const DebtsPage = lazy(() => import('../pages/debts/DebtsPage').then(m => ({ default: m.DebtsPage })));
-const WarehousePage = lazy(() => import('../pages/warehouse/WarehousePage').then(m => ({ default: m.WarehousePage })));
-const SuppliersPage = lazy(() => import('../pages/suppliers/SuppliersPage').then(m => ({ default: m.SuppliersPage })));
-const SupplierDetailPage = lazy(() => import('../pages/suppliers/SupplierDetailPage').then(m => ({ default: m.SupplierDetailPage })));
-const PurchasesPage = lazy(() => import('../pages/purchases/PurchasesPage').then(m => ({ default: m.PurchasesPage })));
-const PurchaseDetailPage = lazy(() => import('../pages/purchases/PurchaseDetailPage').then(m => ({ default: m.PurchaseDetailPage })));
-const SettingsPage = lazy(() => import('../pages/settings/SettingsPage').then(m => ({ default: m.SettingsPage })));
-const NotificationsPage = lazy(() => import('../pages/notifications/NotificationsPage').then(m => ({ default: m.NotificationsPage })));
-const ReportsPage = lazy(() => import('../pages/reports/ReportsPage').then(m => ({ default: m.ReportsPage })));
-const EmployeesPage = lazy(() => import('../pages/employees/EmployeesPage').then(m => ({ default: m.EmployeesPage })));
-const EmployeeDetailPage = lazy(() => import('../pages/employees/EmployeeDetailPage').then(m => ({ default: m.EmployeeDetailPage })));
-const RolesPage = lazy(() => import('../pages/roles/RolesPage').then(m => ({ default: m.RolesPage })));
-const ProfilePage = lazy(() => import('../pages/profile/ProfilePage').then(m => ({ default: m.ProfilePage })));
-const AuditLogsPage = lazy(() => import('../pages/audit-logs/AuditLogsPage').then(m => ({ default: m.AuditLogsPage })));
-const ShopOrdersPage = lazy(() => import('../pages/shop-orders/ShopOrdersPage').then(m => ({ default: m.ShopOrdersPage })));
+const DashboardPage = lazyWithRetry(() => import('../pages/dashboard/DashboardPage').then(m => ({ default: m.DashboardPage })));
+const ProductsPage = lazyWithRetry(() => import('../pages/products/ProductsPage').then(m => ({ default: m.ProductsPage })));
+const ProductDetailPage = lazyWithRetry(() => import('../pages/products/ProductDetailPage').then(m => ({ default: m.ProductDetailPage })));
+const CategoriesPage = lazyWithRetry(() => import('../pages/catalog/CategoriesPage').then(m => ({ default: m.CategoriesPage })));
+const AttributesPage = lazyWithRetry(() => import('../pages/catalog/AttributesPage').then(m => ({ default: m.AttributesPage })));
+const BrandsPage = lazyWithRetry(() => import('../pages/catalog/BrandsPage').then(m => ({ default: m.BrandsPage })));
+const CustomersPage = lazyWithRetry(() => import('../pages/customers/CustomersPage').then(m => ({ default: m.CustomersPage })));
+const CustomerDetailPage = lazyWithRetry(() => import('../pages/customers/CustomerDetailPage').then(m => ({ default: m.CustomerDetailPage })));
+const POSPage = lazyWithRetry(() => import('../pages/sales/POSPage').then(m => ({ default: m.POSPage })));
+const SalesPage = lazyWithRetry(() => import('../pages/sales/SalesPage').then(m => ({ default: m.SalesPage })));
+const SaleDetailPage = lazyWithRetry(() => import('../pages/sales/SaleDetailPage').then(m => ({ default: m.SaleDetailPage })));
+const DebtsPage = lazyWithRetry(() => import('../pages/debts/DebtsPage').then(m => ({ default: m.DebtsPage })));
+const WarehousePage = lazyWithRetry(() => import('../pages/warehouse/WarehousePage').then(m => ({ default: m.WarehousePage })));
+const SuppliersPage = lazyWithRetry(() => import('../pages/suppliers/SuppliersPage').then(m => ({ default: m.SuppliersPage })));
+const SupplierDetailPage = lazyWithRetry(() => import('../pages/suppliers/SupplierDetailPage').then(m => ({ default: m.SupplierDetailPage })));
+const PurchasesPage = lazyWithRetry(() => import('../pages/purchases/PurchasesPage').then(m => ({ default: m.PurchasesPage })));
+const PurchaseDetailPage = lazyWithRetry(() => import('../pages/purchases/PurchaseDetailPage').then(m => ({ default: m.PurchaseDetailPage })));
+const SettingsPage = lazyWithRetry(() => import('../pages/settings/SettingsPage').then(m => ({ default: m.SettingsPage })));
+const NotificationsPage = lazyWithRetry(() => import('../pages/notifications/NotificationsPage').then(m => ({ default: m.NotificationsPage })));
+const ReportsPage = lazyWithRetry(() => import('../pages/reports/ReportsPage').then(m => ({ default: m.ReportsPage })));
+const EmployeesPage = lazyWithRetry(() => import('../pages/employees/EmployeesPage').then(m => ({ default: m.EmployeesPage })));
+const EmployeeDetailPage = lazyWithRetry(() => import('../pages/employees/EmployeeDetailPage').then(m => ({ default: m.EmployeeDetailPage })));
+const RolesPage = lazyWithRetry(() => import('../pages/roles/RolesPage').then(m => ({ default: m.RolesPage })));
+const ProfilePage = lazyWithRetry(() => import('../pages/profile/ProfilePage').then(m => ({ default: m.ProfilePage })));
+const AuditLogsPage = lazyWithRetry(() => import('../pages/audit-logs/AuditLogsPage').then(m => ({ default: m.AuditLogsPage })));
+const ShopOrdersPage = lazyWithRetry(() => import('../pages/shop-orders/ShopOrdersPage').then(m => ({ default: m.ShopOrdersPage })));
 
 // Lazy-loaded storefront (Protektor magazin) — ommaviy
-const ShopLayout = lazy(() => import('../shop/components/layout/ShopLayout'));
-const ShopHomePage = lazy(() => import('../shop/pages/ShopHomePage').then(m => ({ default: m.ShopHomePage })));
-const CatalogPage = lazy(() => import('../shop/pages/CatalogPage').then(m => ({ default: m.CatalogPage })));
-const ShopProductDetailPage = lazy(() => import('../shop/pages/ProductDetailPage').then(m => ({ default: m.ProductDetailPage })));
-const CheckoutPage = lazy(() => import('../shop/pages/CheckoutPage').then(m => ({ default: m.CheckoutPage })));
-const OrderConfirmationPage = lazy(() => import('../shop/pages/OrderConfirmationPage').then(m => ({ default: m.OrderConfirmationPage })));
-const OrdersPage = lazy(() => import('../shop/pages/OrdersPage').then(m => ({ default: m.OrdersPage })));
-const WishlistPage = lazy(() => import('../shop/pages/WishlistPage').then(m => ({ default: m.WishlistPage })));
-const ComparePage = lazy(() => import('../shop/pages/ComparePage').then(m => ({ default: m.ComparePage })));
-const ShopNotFound = lazy(() => import('../shop/pages/ShopNotFound').then(m => ({ default: m.ShopNotFound })));
-const ShopLoginPage = lazy(() => import('../shop/pages/ShopLoginPage').then(m => ({ default: m.ShopLoginPage })));
+const ShopLayout = lazyWithRetry(() => import('../shop/components/layout/ShopLayout'));
+const ShopHomePage = lazyWithRetry(() => import('../shop/pages/ShopHomePage').then(m => ({ default: m.ShopHomePage })));
+const CatalogPage = lazyWithRetry(() => import('../shop/pages/CatalogPage').then(m => ({ default: m.CatalogPage })));
+const ShopProductDetailPage = lazyWithRetry(() => import('../shop/pages/ProductDetailPage').then(m => ({ default: m.ProductDetailPage })));
+const CheckoutPage = lazyWithRetry(() => import('../shop/pages/CheckoutPage').then(m => ({ default: m.CheckoutPage })));
+const OrderConfirmationPage = lazyWithRetry(() => import('../shop/pages/OrderConfirmationPage').then(m => ({ default: m.OrderConfirmationPage })));
+const OrdersPage = lazyWithRetry(() => import('../shop/pages/OrdersPage').then(m => ({ default: m.OrdersPage })));
+const WishlistPage = lazyWithRetry(() => import('../shop/pages/WishlistPage').then(m => ({ default: m.WishlistPage })));
+const ComparePage = lazyWithRetry(() => import('../shop/pages/ComparePage').then(m => ({ default: m.ComparePage })));
+const ShopNotFound = lazyWithRetry(() => import('../shop/pages/ShopNotFound').then(m => ({ default: m.ShopNotFound })));
+const ShopLoginPage = lazyWithRetry(() => import('../shop/pages/ShopLoginPage').then(m => ({ default: m.ShopLoginPage })));
 
 // Lazy-loaded portal pages
-const PortalLayout = lazy(() => import('../portal/components/layout/PortalLayout'));
-const PortalDashboardPage = lazy(() => import('../portal/pages/DashboardPage'));
-const PortalPurchasesPage = lazy(() => import('../portal/pages/PurchasesPage'));
-const PortalPurchaseDetailPage = lazy(() => import('../portal/pages/PurchaseDetailPage'));
-const PortalDebtsPage = lazy(() => import('../portal/pages/DebtsPage'));
-const PortalProfilePage = lazy(() => import('../portal/pages/ProfilePage'));
-const PortalNotificationsPage = lazy(() => import('../portal/pages/NotificationsPage'));
-const PortalShopOrdersPage = lazy(() => import('../portal/pages/ShopOrdersPage'));
+const PortalLayout = lazyWithRetry(() => import('../portal/components/layout/PortalLayout'));
+const PortalDashboardPage = lazyWithRetry(() => import('../portal/pages/DashboardPage'));
+const PortalPurchasesPage = lazyWithRetry(() => import('../portal/pages/PurchasesPage'));
+const PortalPurchaseDetailPage = lazyWithRetry(() => import('../portal/pages/PurchaseDetailPage'));
+const PortalDebtsPage = lazyWithRetry(() => import('../portal/pages/DebtsPage'));
+const PortalProfilePage = lazyWithRetry(() => import('../portal/pages/ProfilePage'));
+const PortalNotificationsPage = lazyWithRetry(() => import('../portal/pages/NotificationsPage'));
+const PortalShopOrdersPage = lazyWithRetry(() => import('../portal/pages/ShopOrdersPage'));
 
 // Helper component for lazy routes with Suspense
 function LazyRoute({ children }: { children: React.ReactNode }) {

@@ -46,6 +46,13 @@ server {
         add_header Cache-Control "public, immutable";
     }
 
+    # SPA entrypoint deploydan keyin eski chunk nomlarini ushlab qolmasin.
+    # Hashlangan /assets fayllari yuqorida uzoq cache'da qoladi, faqat HTML yangilanadi.
+    location ~* \.html$ {
+        expires -1;
+        add_header Cache-Control "no-cache, no-store, must-revalidate";
+    }
+
     # API + yuklangan rasmlar (/api/uploads/...) -> backend (same-origin proxy)
     location /api/ {
         proxy_pass http://$backend_host:$backend_port$request_uri;
