@@ -15,6 +15,7 @@ import uz.shinamagazin.api.exception.ResourceNotFoundException;
 import uz.shinamagazin.api.repository.CustomerRepository;
 import uz.shinamagazin.api.repository.UserRepository;
 import uz.shinamagazin.api.security.CustomUserDetails;
+import uz.shinamagazin.api.util.PhoneNumberUtils;
 
 import java.math.BigDecimal;
 import java.util.List;
@@ -45,15 +46,17 @@ public class CustomerService {
     }
 
     public CustomerResponse getCustomerByPhone(String phone) {
-        Customer customer = customerRepository.findByPhone(phone)
+        String normalizedPhone = PhoneNumberUtils.normalize(phone);
+        Customer customer = customerRepository.findByPhone(normalizedPhone)
                 .orElseThrow(() -> new ResourceNotFoundException("Mijoz", "telefon", phone));
         return CustomerResponse.from(customer);
     }
 
     @Transactional
     public CustomerResponse createCustomer(CustomerRequest request) {
-        if (customerRepository.existsByPhone(request.getPhone())) {
-            throw new BadRequestException("Bu telefon raqam allaqachon ro'yxatdan o'tgan: " + request.getPhone());
+        String normalizedPhone = PhoneNumberUtils.normalize(request.getPhone());
+        if (customerRepository.existsByPhone(normalizedPhone)) {
+            throw new BadRequestException("Bu telefon raqam allaqachon ro'yxatdan o'tgan: " + normalizedPhone);
         }
 
         Customer customer = new Customer();
@@ -78,9 +81,10 @@ public class CustomerService {
         Customer customer = customerRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Mijoz", "id", id));
 
-        if (!customer.getPhone().equals(request.getPhone()) &&
-                customerRepository.existsByPhone(request.getPhone())) {
-            throw new BadRequestException("Bu telefon raqam allaqachon ro'yxatdan o'tgan: " + request.getPhone());
+        String normalizedPhone = PhoneNumberUtils.normalize(request.getPhone());
+        if (!customer.getPhone().equals(normalizedPhone) &&
+                customerRepository.existsByPhone(normalizedPhone)) {
+            throw new BadRequestException("Bu telefon raqam allaqachon ro'yxatdan o'tgan: " + normalizedPhone);
         }
 
         mapRequestToCustomer(request, customer);
@@ -112,8 +116,9 @@ public class CustomerService {
 
     private void mapRequestToCustomer(CustomerRequest request, Customer customer) {
         customer.setFullName(request.getFullName());
-        customer.setPhone(request.getPhone());
-        customer.setPhone2(request.getPhone2());
+        customer.setPhone(PhoneNumberUtils.normalize(request.getPhone()));
+        customer.setPhone2(request.getPhone2() == null || request.getPhone2().isBlank()
+                ? null : PhoneNumberUtils.normalize(request.getPhone2()));
         customer.setAddress(request.getAddress());
         customer.setCompanyName(request.getCompanyName());
         customer.setCustomerType(request.getCustomerType());

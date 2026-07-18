@@ -18,6 +18,7 @@ export interface ShopOrderItemDto {
 export interface ShopOrderDto {
   orderNo: string;
   status: ShopOrderStatus;
+  customerId?: number;
   customerName: string;
   customerPhone: string;
   customerEmail?: string;
@@ -35,6 +36,8 @@ export interface ShopOrderDto {
 
 export interface ShopOrderFilters {
   status?: ShopOrderStatus;
+  customerId?: number;
+  search?: string;
   page?: number;
   size?: number;
 }
@@ -44,9 +47,16 @@ export const shopOrdersApi = {
   getAll: async (filters: ShopOrderFilters = {}): Promise<PagedResponse<ShopOrderDto>> => {
     const params = new URLSearchParams();
     if (filters.status) params.append('status', filters.status);
+    if (filters.customerId) params.append('customerId', filters.customerId.toString());
+    if (filters.search) params.append('search', filters.search);
     if (filters.page !== undefined) params.append('page', filters.page.toString());
     if (filters.size !== undefined) params.append('size', filters.size.toString());
     const res = await api.get<ApiResponse<PagedResponse<ShopOrderDto>>>(`/v1/orders?${params}`);
+    return res.data.data;
+  },
+
+  getByOrderNo: async (orderNo: string): Promise<ShopOrderDto> => {
+    const res = await api.get<ApiResponse<ShopOrderDto>>(`/v1/orders/${encodeURIComponent(orderNo)}`);
     return res.data.data;
   },
 

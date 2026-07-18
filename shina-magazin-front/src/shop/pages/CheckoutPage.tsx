@@ -1,14 +1,16 @@
 import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
+import toast from 'react-hot-toast';
 import { Check, ChevronLeft, ChevronRight, Truck, Store, Banknote, CreditCard, Wallet, ShoppingBag, UserCheck } from 'lucide-react';
 import { Card, Button, EmptyState, buttonVariants, cn } from '@/ui';
 import { formatCurrency } from '../../config/constants';
 import { useCartStore, selectCartSubtotal } from '../store/cartStore';
-import { useOrderStore, generateOrderNo, calcDeliveryFee, type PaymentMethod, type DeliveryMethod } from '../store/orderStore';
+import { useOrderStore, calcDeliveryFee, type PaymentMethod, type DeliveryMethod } from '../store/orderStore';
 import { ProductImage } from '../components/ProductImage';
 import { ordersApi } from '../data/ordersApi';
 import { usePortalAuthStore } from '../../portal/store/portalAuthStore';
+import { PhoneInput } from '../../components/ui/PhoneInput';
 
 const STEPS = ['contact', 'delivery', 'payment', 'review'] as const;
 
@@ -85,10 +87,6 @@ export function CheckoutPage() {
     if (!validateStep(stepIdx)) return;
     setSubmitting(true);
 
-    // Backendga yuborishga harakat (narx serverda hisoblanadi, rasmiy orderNo).
-    // Backend yo'q/xato bo'lsa client-side (demo) orderNo bilan davom etamiz.
-    let orderNo = generateOrderNo();
-    let serverCreated = false;
     try {
       const server = await ordersApi.create({
         items: items.map((i) => ({ productId: i.product.id, quantity: i.qty })),
@@ -100,40 +98,40 @@ export function CheckoutPage() {
         note: form.note.trim() || undefined,
         payment: form.payment,
       });
-      orderNo = server.orderNo;
-      serverCreated = true;
-    } catch {
-      // backend mavjud emas — client-side buyurtma (storefront offline ham ishlaydi)
-    }
+      const orderNo = server.orderNo;
 
-    const order = {
-      orderNo,
-      createdAt: Date.now(),
-      items,
-      contact: { name: form.name.trim(), phone: form.phone.trim(), email: form.email.trim() || undefined },
-      delivery: { method: form.deliveryMethod, address: form.address.trim() || undefined, note: form.note.trim() || undefined },
-      payment: form.payment,
-      subtotal, deliveryFee, total,
-    };
-    addOrder(order);
-    clear();
+      addOrder({
+        orderNo,
+        createdAt: Date.now(),
+        items,
+        contact: { name: form.name.trim(), phone: form.phone.trim(), email: form.email.trim() || undefined },
+        delivery: { method: form.deliveryMethod, address: form.address.trim() || undefined, note: form.note.trim() || undefined },
+        payment: form.payment,
+        subtotal: server.subtotal,
+        deliveryFee: server.deliveryFee,
+        total: server.totalAmount,
+      });
+      clear();
 
-    // Onlayn to'lov: backend buyurtmani yaratgan va usul naqd EMAS bo'lsa,
-    // to'lovni boshlaymiz va provayder (Payme/Click) checkout sahifasiga yo'naltiramiz.
-    // Provayder o'chiq/sozlanmagan bo'lsa redirectUrl null -> tasdiq sahifasiga (PENDING).
-    if (serverCreated && form.payment !== 'cash') {
-      try {
-        const pay = await ordersApi.initiatePayment(orderNo);
-        if (pay.online && pay.redirectUrl) {
-          window.location.href = pay.redirectUrl;
-          return;
+      if (form.payment !== 'cash') {
+        try {
+          const pay = await ordersApi.initiatePayment(orderNo);
+          if (pay.online && pay.redirectUrl) {
+            window.location.href = pay.redirectUrl;
+            return;
+          }
+        } catch {
+          toast.error(t('shop.checkout.paymentStartFailed'));
         }
-      } catch {
-        // to'lov boshlanmadi — tasdiq sahifasiga o'tamiz
       }
-    }
 
-    navigate(`/buyurtma/${orderNo}`);
+      navigate(`/buyurtma/${orderNo}`);
+    } catch (error: unknown) {
+      const apiError = error as { response?: { data?: { message?: string } } };
+      toast.error(apiError.response?.data?.message || t('shop.checkout.orderFailed'));
+    } finally {
+      setSubmitting(false);
+    }
   };
 
   const inputClass = (field: string) =>
@@ -180,11 +178,13 @@ export function CheckoutPage() {
                 <input value={form.name} onChange={(e) => set('name', e.target.value)} className={inputClass('name')} placeholder={t('shop.checkout.namePlaceholder')} />
                 {errors.name && <p className="mt-1 text-xs text-error">{errors.name}</p>}
               </div>
-              <div>
-                <label className="mb-1 block text-sm font-medium">{t('shop.checkout.phone')} *</label>
-                <input value={form.phone} onChange={(e) => set('phone', e.target.value)} className={inputClass('phone')} placeholder="+998 90 123 45 67" inputMode="tel" />
-                {errors.phone && <p className="mt-1 text-xs text-error">{errors.phone}</p>}
-              </div>
+              <PhoneInput
+                label={t('shop.checkout.phone')}
+                value={form.phone}
+                onChange={(value) => set('phone', value)}
+                error={errors.phone}
+                required
+              />
               <div>
                 <label className="mb-1 block text-sm font-medium">{t('shop.checkout.email')} <span className="text-base-content/40">({t('shop.checkout.optional')})</span></label>
                 <input value={form.email} onChange={(e) => set('email', e.target.value)} className={inputClass('email')} placeholder="email@example.com" inputMode="email" />
@@ -263,7 +263,7 @@ export function CheckoutPage() {
                 <h3 className="mb-2 font-semibold">{t('shop.checkout.steps.payment')}</h3>
                 <p className="text-base-content/70">{t(`shop.checkout.pay.${form.payment}`)}</p>
               </div>
-              <div className="surface-soft rounded-xl p-3 text-xs text-base-content/60">{t('shop.checkout.demoNote')}</div>
+              <div className="surface-soft rounded-xl p-3 text-xs text-base-content/60">{t('shop.checkout.secureNote')}</div>
             </div>
           )}
 

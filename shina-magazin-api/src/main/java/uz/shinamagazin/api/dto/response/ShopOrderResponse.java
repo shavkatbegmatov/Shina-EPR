@@ -15,6 +15,7 @@ import java.util.List;
 public class ShopOrderResponse {
     private String orderNo;
     private String status;
+    private Long customerId;
     private String customerName;
     private String customerPhone;
     private String customerEmail;
@@ -55,6 +56,7 @@ public class ShopOrderResponse {
         return ShopOrderResponse.builder()
                 .orderNo(o.getOrderNo())
                 .status(o.getStatus() != null ? o.getStatus().name() : null)
+                .customerId(o.getCustomer() != null ? o.getCustomer().getId() : null)
                 .customerName(o.getCustomerName())
                 .customerPhone(o.getCustomerPhone())
                 .customerEmail(o.getCustomerEmail())

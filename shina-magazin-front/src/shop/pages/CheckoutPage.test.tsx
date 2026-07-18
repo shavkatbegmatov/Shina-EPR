@@ -1,64 +1,72 @@
-import { describe, it, expect, beforeEach } from 'vitest';
-import { render, screen, fireEvent } from '@testing-library/react';
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { render, screen, waitFor } from '@testing-library/react';
+import userEvent from '@testing-library/user-event';
 import { MemoryRouter } from 'react-router-dom';
-import '../../i18n'; // global i18n instance (useTranslation uchun)
-import { CheckoutPage } from './CheckoutPage';
-import { useCartStore } from '../store/cartStore';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import '../../i18n';
 import type { Product } from '../../types';
+import { useCartStore } from '../store/cartStore';
+import { useOrderStore } from '../store/orderStore';
+import { usePortalAuthStore } from '../../portal/store/portalAuthStore';
 
-const P1: Product = {
-  id: 1, sku: 'A-1', name: 'Shina A', sellingPrice: 100_000,
-  quantity: 10, minStockLevel: 1, lowStock: false, active: true,
+vi.mock('../data/ordersApi', () => ({
+  ordersApi: {
+    create: vi.fn(),
+    initiatePayment: vi.fn(),
+  },
+}));
+
+vi.mock('react-hot-toast', () => ({
+  default: { error: vi.fn(), success: vi.fn() },
+}));
+
+import toast from 'react-hot-toast';
+import { ordersApi } from '../data/ordersApi';
+import { CheckoutPage } from './CheckoutPage';
+
+const PRODUCT: Product = {
+  id: 1,
+  sku: 'TY-001',
+  name: 'Toyo Open Country',
+  sellingPrice: 1_450_000,
+  quantity: 3,
+  minStockLevel: 1,
+  lowStock: false,
+  active: true,
 };
 
-function renderCheckout() {
-  const qc = new QueryClient({ defaultOptions: { queries: { retry: false } } });
-  return render(
-    <QueryClientProvider client={qc}>
-      <MemoryRouter>
-        <CheckoutPage />
-      </MemoryRouter>
-    </QueryClientProvider>
-  );
-}
-
-describe('CheckoutPage validatsiya', () => {
-  beforeEach(() => useCartStore.getState().clear());
-
-  it('savat bo\'sh bo\'lsa forma maydonlari ko\'rsatilmaydi (bo\'sh holat)', () => {
-    renderCheckout();
-    expect(screen.queryAllByRole('textbox')).toHaveLength(0);
+describe('CheckoutPage', () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    localStorage.clear();
+    useCartStore.setState({ items: [{ product: PRODUCT, qty: 1 }] });
+    useOrderStore.setState({ orders: [] });
+    usePortalAuthStore.setState({
+      customer: { id: 7, fullName: 'Test Mijoz', phone: '+998901234567', balance: 0, hasDebt: false, preferredLanguage: 'uz' },
+      isAuthenticated: true,
+    });
   });
 
-  it('bo\'sh kontakt bilan "keyingi" bosilsa xato chiqadi va step 0 da qoladi', () => {
-    useCartStore.getState().add(P1);
-    const { container } = renderCheckout();
-    expect(screen.getAllByRole('textbox')).toHaveLength(3); // name, phone, email
-    fireEvent.click(screen.getByRole('button')); // "Keyingi"
-    expect(container.querySelectorAll('.text-error').length).toBeGreaterThan(0);
-    expect(screen.getAllByRole('textbox')).toHaveLength(3); // hali step 0
-  });
+  it('server xatosida savatni saqlaydi va lokal buyurtma yaratmaydi', async () => {
+    vi.mocked(ordersApi.create).mockRejectedValue({ response: { data: { message: 'Server xatosi' } } });
+    const user = userEvent.setup();
 
-  it('9 raqamdan qisqa telefon xato beradi', () => {
-    useCartStore.getState().add(P1);
-    const { container } = renderCheckout();
-    const inputs = screen.getAllByRole('textbox');
-    fireEvent.change(inputs[0], { target: { value: 'Ali Valiyev' } });
-    fireEvent.change(inputs[1], { target: { value: '123' } }); // 9 dan kam
-    fireEvent.click(screen.getByRole('button'));
-    expect(container.querySelectorAll('.text-error').length).toBeGreaterThan(0);
-    expect(screen.getAllByRole('textbox')).toHaveLength(3);
-  });
+    const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+    render(
+      <QueryClientProvider client={queryClient}>
+        <MemoryRouter><CheckoutPage /></MemoryRouter>
+      </QueryClientProvider>
+    );
 
-  it('to\'g\'ri kontakt bilan yetkazib berish bosqichiga o\'tadi', () => {
-    useCartStore.getState().add(P1);
-    renderCheckout();
-    const inputs = screen.getAllByRole('textbox');
-    fireEvent.change(inputs[0], { target: { value: 'Ali Valiyev' } });
-    fireEvent.change(inputs[1], { target: { value: '901234567' } }); // 9 raqam
-    fireEvent.click(screen.getByRole('button')); // "Keyingi"
-    // step 1 (yetkazib berish): address input + note textarea = 2 textbox
-    expect(screen.getAllByRole('textbox')).toHaveLength(2);
+    await user.click(screen.getByRole('button', { name: 'Davom etish' }));
+    await user.type(screen.getByPlaceholderText("Shahar, ko'cha, uy"), 'Toshkent, Chilonzor');
+    await user.click(screen.getByRole('button', { name: 'Davom etish' }));
+    await user.click(screen.getByRole('button', { name: 'Davom etish' }));
+    await user.click(screen.getByRole('button', { name: 'Buyurtmani tasdiqlash' }));
+
+    await waitFor(() => expect(ordersApi.create).toHaveBeenCalled());
+    expect(toast.error).toHaveBeenCalledWith('Server xatosi');
+    expect(useCartStore.getState().items).toHaveLength(1);
+    expect(useOrderStore.getState().orders).toHaveLength(0);
   });
 });

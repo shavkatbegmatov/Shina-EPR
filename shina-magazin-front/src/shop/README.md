@@ -14,7 +14,7 @@ responsiv (mobil hamburger → desktop nav), `data-app="shop"`.
 | `/mahsulot/:id` | `ProductDetailPage` | xususiyatlar, savatga, o'xshash mahsulotlar |
 | `/checkout` | `CheckoutPage` | 4-bosqich: aloqa → yetkazish → to'lov → tasdiq |
 | `/buyurtma/:orderNo` | `OrderConfirmationPage` | muvaffaqiyat + buyurtma tafsiloti |
-| `/buyurtmalarim` | `OrdersPage` | client-side buyurtma tarixi |
+| `/buyurtmalarim` | `OrdersPage` | login qilgan mijoz uchun serverdagi buyurtmalar tarixi |
 | `/saqlanganlar` · `/solishtirish` | `WishlistPage` · `ComparePage` | saqlangan / solishtirish |
 | `/*` | `ShopNotFound` | do'kon ichidagi 404 |
 
@@ -24,7 +24,7 @@ responsiv (mobil hamburger → desktop nav), `data-app="shop"`.
 ## Holat (client-side, `zustand` + `persist`)
 
 - `store/cartStore.ts` — savat (`shop-cart`). `selectCartCount`, `selectCartSubtotal`.
-- `store/orderStore.ts` — buyurtmalar tarixi (`shop-orders`) + `generateOrderNo()` +
+- `store/orderStore.ts` — server tasdiqlagan buyurtmalarning lokal keshi (`shop-orders`) +
   `calcDeliveryFee()` (1 000 000+ bepul / 30 000; olib ketish bepul).
 
 ## ⚠️ Data seam — backendga ulanishning YAGONA nuqtasi: `data/useCatalog.ts`

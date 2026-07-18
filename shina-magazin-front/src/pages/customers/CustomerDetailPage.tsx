@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useState } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+import { Link, useParams, useNavigate } from 'react-router-dom';
+import { useQuery } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
 import {
   ArrowLeft,
@@ -10,17 +11,29 @@ import {
   Wallet,
   FileText,
   AlertCircle,
+  ShoppingBag,
+  ChevronRight,
 } from 'lucide-react';
 import clsx from 'clsx';
-import { Button } from '@/ui';
+import { Badge, Button } from '@/ui';
 import { customersApi } from '../../api/customers.api';
+import { shopOrdersApi, type ShopOrderStatus } from '../../api/shopOrders.api';
 import { formatCurrency } from '../../config/constants';
 import type { Customer } from '../../types';
+import { usePermission } from '../../hooks/usePermission';
+
+const ORDER_TONE: Record<ShopOrderStatus, 'warning' | 'info' | 'success' | 'neutral'> = {
+  NEW: 'warning',
+  CONFIRMED: 'info',
+  COMPLETED: 'success',
+  CANCELLED: 'neutral',
+};
 
 export function CustomerDetailPage() {
   const { t } = useTranslation();
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
+  const { canViewSales } = usePermission();
 
   const [customer, setCustomer] = useState<Customer | null>(null);
   const [loading, setLoading] = useState(true);
@@ -40,6 +53,13 @@ export function CustomerDetailPage() {
   useEffect(() => {
     void loadCustomer();
   }, [loadCustomer]);
+
+  const customerId = id ? Number(id) : undefined;
+  const ordersQuery = useQuery({
+    queryKey: ['shop-orders', 'customer', customerId],
+    queryFn: () => shopOrdersApi.getAll({ customerId, page: 0, size: 5 }),
+    enabled: canViewSales && customerId !== undefined && Number.isFinite(customerId),
+  });
 
   // Customer type label helper
   const getCustomerTypeLabel = (type?: string) => {
@@ -286,6 +306,55 @@ export function CustomerDetailPage() {
           </div>
         </div>
       </div>
+
+      {canViewSales && (
+        <section className="surface-card overflow-hidden">
+          <div className="flex flex-wrap items-center justify-between gap-3 border-b border-base-200 p-4 sm:p-5">
+            <div>
+              <h2 className="flex items-center gap-2 font-semibold">
+                <ShoppingBag className="h-5 w-5 text-primary" />
+                {t('erp.customerDetail.shopOrders')}
+              </h2>
+              <p className="mt-1 text-sm text-base-content/60">
+                {t('erp.customerDetail.shopOrdersCount', { count: ordersQuery.data?.totalElements ?? 0 })}
+              </p>
+            </div>
+            <Link to={`/admin/shop-orders?customerId=${customer.id}`} className="btn btn-outline btn-sm gap-2">
+              {t('erp.customerDetail.viewAllOrders')} <ChevronRight className="h-4 w-4" />
+            </Link>
+          </div>
+
+          {ordersQuery.isLoading ? (
+            <div className="space-y-3 p-4 sm:p-5">
+              {[0, 1].map((item) => <div key={item} className="skeleton h-16 w-full" />)}
+            </div>
+          ) : ordersQuery.isError ? (
+            <div className="p-6 text-center text-sm text-error">{t('erp.customerDetail.ordersLoadError')}</div>
+          ) : (ordersQuery.data?.content.length ?? 0) === 0 ? (
+            <div className="p-8 text-center text-sm text-base-content/55">{t('erp.customerDetail.noShopOrders')}</div>
+          ) : (
+            <div className="divide-y divide-base-200">
+              {ordersQuery.data?.content.map((order) => (
+                <Link
+                  key={order.orderNo}
+                  to={`/admin/shop-orders?search=${encodeURIComponent(order.orderNo)}`}
+                  className="flex flex-wrap items-center gap-3 p-4 transition hover:bg-base-200/50 sm:px-5"
+                >
+                  <div className="min-w-0 flex-1">
+                    <p className="font-mono font-semibold text-primary">{order.orderNo}</p>
+                    <p className="mt-1 truncate text-xs text-base-content/50">
+                      {order.items.map((item) => item.productName).join(', ')}
+                    </p>
+                  </div>
+                  <Badge tone={ORDER_TONE[order.status]}>{t(`erp.shopOrders.status.${order.status}`)}</Badge>
+                  <span className="min-w-28 text-right font-semibold">{formatCurrency(order.totalAmount)}</span>
+                  <ChevronRight className="h-4 w-4 text-base-content/30" />
+                </Link>
+              ))}
+            </div>
+          )}
+        </section>
+      )}
 
       {/* Notes */}
       {customer.notes && (

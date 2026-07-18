@@ -85,14 +85,16 @@ public class ShopOrderController {
     @RequiresPermission(PermissionCode.SALES_VIEW)
     public ResponseEntity<ApiResponse<PagedResponse<ShopOrderResponse>>> listOrders(
             @RequestParam(required = false) ShopOrderStatus status,
+            @RequestParam(required = false) Long customerId,
+            @RequestParam(required = false) String search,
             @PageableDefault(size = 20) Pageable pageable) {
         return ResponseEntity.ok(ApiResponse.success(
-                PagedResponse.from(shopOrderService.getOrders(status, pageable))));
+                PagedResponse.from(shopOrderService.getOrders(status, customerId, search, pageable))));
     }
 
     @PatchMapping("/{orderNo}/status")
     @Operation(summary = "Update order status (staff)", description = "Buyurtma holatini yangilash")
-    @RequiresPermission(PermissionCode.SALES_VIEW)
+    @RequiresPermission(PermissionCode.SALES_UPDATE)
     public ResponseEntity<ApiResponse<ShopOrderResponse>> updateStatus(
             @PathVariable String orderNo,
             @RequestParam ShopOrderStatus status) {

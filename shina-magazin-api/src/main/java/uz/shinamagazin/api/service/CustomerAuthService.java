@@ -13,6 +13,7 @@ import uz.shinamagazin.api.exception.BadRequestException;
 import uz.shinamagazin.api.exception.ResourceNotFoundException;
 import uz.shinamagazin.api.repository.CustomerRepository;
 import uz.shinamagazin.api.security.JwtTokenProvider;
+import uz.shinamagazin.api.util.PhoneNumberUtils;
 
 import java.time.LocalDateTime;
 
@@ -30,7 +31,7 @@ public class CustomerAuthService {
 
     @Transactional
     public CustomerAuthResponse login(CustomerLoginRequest request) {
-        Customer customer = customerRepository.findByPhone(request.getPhone())
+        Customer customer = customerRepository.findByPhone(PhoneNumberUtils.normalize(request.getPhone()))
                 .orElseThrow(() -> new BadRequestException("Telefon raqam yoki PIN kod noto'g'ri"));
 
         // Portal yoqilganligini tekshirish

@@ -37,11 +37,6 @@ export const useOrderStore = create<OrderState>()(
   )
 );
 
-/** Demo buyurtma raqami — PR-<timestamp36>. Backend kelganda server beradi. */
-export function generateOrderNo(): string {
-  return `PR-${Date.now().toString(36).toUpperCase()}`;
-}
-
 /** Yetkazib berish narxi: 1 000 000 so'mdan oshsa bepul, aks holda 30 000. Olib ketish — bepul. */
 export const DELIVERY_FEE = 30000;
 export const FREE_DELIVERY_THRESHOLD = 1000000;

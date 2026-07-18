@@ -1,7 +1,6 @@
 import { describe, it, expect, beforeEach } from 'vitest';
 import {
   useOrderStore,
-  generateOrderNo,
   calcDeliveryFee,
   DELIVERY_FEE,
   FREE_DELIVERY_THRESHOLD,
@@ -28,12 +27,6 @@ describe('orderStore', () => {
     addOrder(mkOrder('PR-1'));
     addOrder(mkOrder('PR-2'));
     expect(useOrderStore.getState().orders.map((o) => o.orderNo)).toEqual(['PR-2', 'PR-1']);
-  });
-});
-
-describe('generateOrderNo', () => {
-  it('PR- prefiksi va base36 (katta harf) formatida', () => {
-    expect(generateOrderNo()).toMatch(/^PR-[0-9A-Z]+$/);
   });
 });
 

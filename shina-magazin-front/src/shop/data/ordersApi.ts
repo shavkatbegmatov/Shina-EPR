@@ -45,7 +45,11 @@ export interface OrderStatus {
  */
 export const ordersApi = {
   create: async (payload: CreateOrderPayload): Promise<ServerOrder> => {
-    const res = await api.post<ApiResponse<ServerOrder>>('/v1/orders', payload);
+    const res = await api.post<ApiResponse<ServerOrder>>('/v1/orders', {
+      ...payload,
+      deliveryMethod: payload.deliveryMethod.toUpperCase(),
+      payment: payload.payment.toUpperCase(),
+    });
     return res.data.data;
   },
 

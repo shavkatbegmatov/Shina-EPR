@@ -14,6 +14,8 @@ vi.mock('../../api/shopOrders.api', () => ({
 
 import { shopOrdersApi } from '../../api/shopOrders.api';
 import { ShopOrdersPage } from './ShopOrdersPage';
+import { useAuthStore } from '../../store/authStore';
+import { PermissionCode } from '../../hooks/usePermission';
 
 const ORDER: ShopOrderDto = {
   orderNo: 'PR-TEST1',
@@ -53,6 +55,9 @@ function renderPage() {
 describe('ShopOrdersPage', () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    useAuthStore.setState({
+      permissions: new Set([PermissionCode.SALES_VIEW, PermissionCode.SALES_UPDATE]),
+    });
     // Select dropdown jsdom'da scrollIntoView chaqiradi — uni stub qilamiz
     Element.prototype.scrollIntoView = vi.fn();
   });

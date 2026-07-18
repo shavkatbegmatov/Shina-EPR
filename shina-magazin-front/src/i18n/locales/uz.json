@@ -1006,7 +1006,12 @@
       "debtStatus": "Qarz holati",
       "noDebt": "Qarzsiz",
       "notes": "Izoh",
-      "backToList": "Mijozlar ro'yxatiga qaytish"
+      "backToList": "Mijozlar ro'yxatiga qaytish",
+      "shopOrders": "Do'kon buyurtmalari",
+      "shopOrdersCount": "Jami: {{count}} ta buyurtma",
+      "viewAllOrders": "Barchasini ko'rish",
+      "ordersLoadError": "Buyurtmalarni yuklab bo'lmadi",
+      "noShopOrders": "Bu mijoz hali do'kondan buyurtma bermagan"
     },
     "saleDetail": {
       "statusCompleted": "Yakunlangan",
@@ -1698,10 +1703,32 @@
       "total": "Jami",
       "statusLabel": "Holat",
       "changeStatus": "Holatni o'zgartirish",
+      "actions": "Amallar",
+      "viewDetails": "Buyurtma tafsilotlari",
+      "searchPlaceholder": "Buyurtma raqami, mijoz yoki telefon bo'yicha qidirish",
+      "customerFilter": "Mijoz #{{id}}",
+      "customerInfo": "Mijoz ma'lumotlari",
+      "openCustomer": "Mijoz profilini ochish",
+      "fulfillment": "Yetkazish va to'lov",
+      "product": "Mahsulot",
+      "quantity": "Miqdor",
+      "unitPrice": "Birlik narxi",
+      "subtotal": "Mahsulotlar jami",
+      "deliveryFee": "Yetkazib berish",
       "all": "Hammasi",
       "statusUpdated": "Holat yangilandi",
       "empty": "Buyurtmalar yo'q",
       "emptyHint": "Hozircha storefront buyurtmasi kelmagan.",
+      "deliveryMethod": {
+        "DELIVERY": "Yetkazib berish",
+        "PICKUP": "Olib ketish"
+      },
+      "paymentMethod": {
+        "CASH": "Naqd pul",
+        "CARD": "Bank kartasi",
+        "PAYME": "Payme",
+        "CLICK": "Click"
+      },
       "status": {
         "NEW": "Yangi",
         "CONFIRMED": "Tasdiqlangan",
@@ -1994,7 +2021,9 @@
       "total": "Jami",
       "emptyTitle": "Savat bo'sh",
       "emptyHint": "Buyurtma berish uchun avval mahsulot qo'shing.",
-      "demoNote": "Diqqat: bu demo. Haqiqiy to'lov amalga oshmaydi — buyurtma faqat namoyish uchun saqlanadi.",
+      "secureNote": "Buyurtma faqat serverda muvaffaqiyatli saqlangandan keyin qabul qilingan hisoblanadi.",
+      "orderFailed": "Buyurtmani yuborib bo'lmadi. Savatingiz saqlandi, qayta urinib ko'ring.",
+      "paymentStartFailed": "Buyurtma saqlandi, ammo onlayn to'lovni boshlash imkoni bo'lmadi.",
       "loggedInAs": "Kabinet: {{name}}",
       "haveAccount": "Kabinetingiz bormi? Kiring"
     },

@@ -21,6 +21,7 @@ import uz.shinamagazin.api.repository.CustomerRepository;
 import uz.shinamagazin.api.repository.ProductRepository;
 import uz.shinamagazin.api.repository.ShopOrderRepository;
 import uz.shinamagazin.api.service.notify.OrderNotificationService;
+import uz.shinamagazin.api.util.PhoneNumberUtils;
 
 import java.math.BigDecimal;
 
@@ -62,7 +63,7 @@ public class ShopOrderService {
                 .orderNo(generateOrderNo())
                 .customer(customer)
                 .customerName(req.getName().trim())
-                .customerPhone(req.getPhone().trim())
+                .customerPhone(PhoneNumberUtils.normalize(req.getPhone()))
                 .customerEmail(req.getEmail() != null && !req.getEmail().isBlank() ? req.getEmail().trim() : null)
                 .deliveryMethod(req.getDeliveryMethod())
                 .deliveryAddress(req.getAddress() != null && !req.getAddress().isBlank() ? req.getAddress().trim() : null)
@@ -143,11 +144,18 @@ public class ShopOrderService {
 
     /** Xodim uchun: buyurtmalar ro'yxati (eng yangi birinchi), ixtiyoriy holat filtri. */
     @Transactional(readOnly = true)
-    public Page<ShopOrderResponse> getOrders(ShopOrderStatus status, Pageable pageable) {
-        Page<ShopOrder> page = (status == null)
-                ? orderRepository.findAllByOrderByCreatedAtDesc(pageable)
-                : orderRepository.findByStatusOrderByCreatedAtDesc(status, pageable);
-        return page.map(ShopOrderResponse::from);
+    public Page<ShopOrderResponse> getOrders(
+            ShopOrderStatus status, Long customerId, String search, Pageable pageable) {
+        String customerPhone = null;
+        if (customerId != null) {
+            customerPhone = customerRepository.findById(customerId)
+                    .map(Customer::getPhone)
+                    .map(PhoneNumberUtils::normalize)
+                    .orElseThrow(() -> new ResourceNotFoundException("Mijoz", "id", customerId));
+        }
+        String normalizedSearch = search == null || search.isBlank() ? null : search.trim();
+        return orderRepository.searchOrders(status, customerId, customerPhone, normalizedSearch, pageable)
+                .map(ShopOrderResponse::from);
     }
 
     /** Mijoz akkaunti: o'z storefront buyurtmalari (customerId YOKI telefon bo'yicha —
@@ -155,7 +163,8 @@ public class ShopOrderService {
     @Transactional(readOnly = true)
     public Page<ShopOrderResponse> getCustomerOrders(Long customerId, String phone, Pageable pageable) {
         return orderRepository
-                .findByCustomerIdOrCustomerPhoneOrderByCreatedAtDesc(customerId, phone, pageable)
+                .findByCustomerIdOrCustomerPhoneOrderByCreatedAtDesc(
+                        customerId, PhoneNumberUtils.normalize(phone), pageable)
                 .map(ShopOrderResponse::from);
     }
 
@@ -164,8 +173,40 @@ public class ShopOrderService {
     public ShopOrderResponse updateStatus(String orderNo, ShopOrderStatus status) {
         ShopOrder order = orderRepository.findByOrderNo(orderNo)
                 .orElseThrow(() -> new ResourceNotFoundException("Buyurtma", "orderNo", orderNo));
+
+        ShopOrderStatus previousStatus = order.getStatus();
+        if (previousStatus == status) {
+            return ShopOrderResponse.from(order);
+        }
+
+        if (status == ShopOrderStatus.CANCELLED && previousStatus != ShopOrderStatus.CANCELLED) {
+            restoreReservedStock(order);
+        } else if (previousStatus == ShopOrderStatus.CANCELLED && status != ShopOrderStatus.CANCELLED) {
+            reserveStockAgain(order);
+        }
+
         order.setStatus(status);
         return ShopOrderResponse.from(orderRepository.save(order));
+    }
+
+    private void restoreReservedStock(ShopOrder order) {
+        order.getItems().forEach(item -> {
+            Product product = item.getProduct();
+            product.setQuantity(product.getQuantity() + item.getQuantity());
+            productRepository.save(product);
+        });
+    }
+
+    private void reserveStockAgain(ShopOrder order) {
+        order.getItems().forEach(item -> {
+            Product product = item.getProduct();
+            if (product.getQuantity() < item.getQuantity()) {
+                throw new BadRequestException("Buyurtmani qayta ochish uchun zaxira yetarli emas: "
+                        + product.getName() + " (qoldiq: " + product.getQuantity() + ")");
+            }
+            product.setQuantity(product.getQuantity() - item.getQuantity());
+            productRepository.save(product);
+        });
     }
 
     private BigDecimal calcDeliveryFee(ShopDeliveryMethod method, BigDecimal subtotal) {
