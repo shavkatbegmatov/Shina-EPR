@@ -3,7 +3,9 @@ package uz.shinamagazin.api.service;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import uz.shinamagazin.api.dto.request.CreateShopOrderRequest;
@@ -20,6 +22,7 @@ import uz.shinamagazin.api.exception.ResourceNotFoundException;
 import uz.shinamagazin.api.repository.CustomerRepository;
 import uz.shinamagazin.api.repository.ProductRepository;
 import uz.shinamagazin.api.repository.ShopOrderRepository;
+import uz.shinamagazin.api.repository.specification.ShopOrderSpecifications;
 import uz.shinamagazin.api.service.notify.OrderNotificationService;
 import uz.shinamagazin.api.util.PhoneNumberUtils;
 
@@ -154,7 +157,15 @@ public class ShopOrderService {
                     .orElseThrow(() -> new ResourceNotFoundException("Mijoz", "id", customerId));
         }
         String normalizedSearch = search == null || search.isBlank() ? null : search.trim();
-        return orderRepository.searchOrders(status, customerId, customerPhone, normalizedSearch, pageable)
+        Pageable sortedPageable = pageable.getSort().isSorted()
+                ? pageable
+                : PageRequest.of(pageable.getPageNumber(), pageable.getPageSize(),
+                        Sort.by(Sort.Direction.DESC, "createdAt"));
+
+        return orderRepository.findAll(
+                        ShopOrderSpecifications.withFilters(
+                                status, customerId, customerPhone, normalizedSearch),
+                        sortedPageable)
                 .map(ShopOrderResponse::from);
     }
 
