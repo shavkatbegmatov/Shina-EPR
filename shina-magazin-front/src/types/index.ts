@@ -347,6 +347,9 @@ export interface Customer {
   hasDebt: boolean;
   notes?: string;
   active: boolean;
+  portalEnabled: boolean;
+  pinConfigured: boolean;
+  pinSetAt?: string;
 }
 
 export interface CustomerRequest {

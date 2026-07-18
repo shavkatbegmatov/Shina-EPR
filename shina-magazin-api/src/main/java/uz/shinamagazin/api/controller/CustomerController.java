@@ -16,11 +16,13 @@ import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import uz.shinamagazin.api.dto.request.CustomerRequest;
+import uz.shinamagazin.api.dto.request.CustomerSetPinRequest;
 import uz.shinamagazin.api.dto.response.ApiResponse;
 import uz.shinamagazin.api.dto.response.CustomerResponse;
 import uz.shinamagazin.api.dto.response.PagedResponse;
 import uz.shinamagazin.api.enums.PermissionCode;
 import uz.shinamagazin.api.security.RequiresPermission;
+import uz.shinamagazin.api.service.CustomerAuthService;
 import uz.shinamagazin.api.service.CustomerService;
 import uz.shinamagazin.api.service.export.GenericExportService;
 
@@ -35,6 +37,7 @@ import java.util.List;
 public class CustomerController {
 
     private final CustomerService customerService;
+    private final CustomerAuthService customerAuthService;
     private final GenericExportService genericExportService;
 
     @GetMapping
@@ -93,6 +96,26 @@ public class CustomerController {
             @Valid @RequestBody CustomerRequest request) {
         CustomerResponse customer = customerService.updateCustomer(id, request);
         return ResponseEntity.ok(ApiResponse.success("Mijoz yangilandi", customer));
+    }
+
+    @PutMapping("/{id}/portal/pin")
+    @RequiresPermission(PermissionCode.CUSTOMERS_UPDATE)
+    @Operation(summary = "Set customer portal PIN", description = "Mijoz portaliga kirish uchun PIN o'rnatish yoki tiklash")
+    public ResponseEntity<ApiResponse<CustomerResponse>> setPortalPin(
+            @PathVariable Long id,
+            @Valid @RequestBody CustomerSetPinRequest request) {
+        customerAuthService.setCustomerPin(id, request);
+        CustomerResponse customer = customerService.getCustomerById(id);
+        return ResponseEntity.ok(ApiResponse.success("Mijoz portali PIN kodi o'rnatildi", customer));
+    }
+
+    @DeleteMapping("/{id}/portal")
+    @RequiresPermission(PermissionCode.CUSTOMERS_UPDATE)
+    @Operation(summary = "Disable customer portal", description = "Mijoz portaliga kirishni o'chirish va amaldagi PINni bekor qilish")
+    public ResponseEntity<ApiResponse<CustomerResponse>> disablePortal(@PathVariable Long id) {
+        customerAuthService.togglePortalAccess(id, false);
+        CustomerResponse customer = customerService.getCustomerById(id);
+        return ResponseEntity.ok(ApiResponse.success("Mijoz portaliga kirish o'chirildi", customer));
     }
 
     @DeleteMapping("/{id}")

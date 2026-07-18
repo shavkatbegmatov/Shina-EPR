@@ -38,6 +38,19 @@ export const customersApi = {
     return response.data.data;
   },
 
+  setPortalPin: async (id: number, pin: string, confirmPin: string): Promise<Customer> => {
+    const response = await api.put<ApiResponse<Customer>>(`/v1/customers/${id}/portal/pin`, {
+      pin,
+      confirmPin,
+    });
+    return response.data.data;
+  },
+
+  disablePortal: async (id: number): Promise<Customer> => {
+    const response = await api.delete<ApiResponse<Customer>>(`/v1/customers/${id}/portal`);
+    return response.data.data;
+  },
+
   delete: async (id: number): Promise<void> => {
     await api.delete(`/v1/customers/${id}`);
   },

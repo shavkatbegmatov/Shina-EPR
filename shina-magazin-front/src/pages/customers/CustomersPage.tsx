@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Plus, Users, Phone, X } from 'lucide-react';
+import { KeyRound, Phone, Plus, ShieldCheck, ShieldOff, Users, X } from 'lucide-react';
 import clsx from 'clsx';
 import toast from 'react-hot-toast';
 import { customersApi } from '../../api/customers.api';
@@ -15,7 +15,7 @@ import { useNotificationsStore } from '../../store/notificationsStore';
 import { useHighlight } from '../../hooks/useHighlight';
 import { PermissionGate } from '../../components/common/PermissionGate';
 import { usePermission, PermissionCode } from '../../hooks/usePermission';
-import { Button } from '@/ui';
+import { Button, ConfirmDialog } from '@/ui';
 import type { Customer, CustomerRequest, CustomerType } from '../../types';
 
 const emptyFormData: CustomerRequest = {
@@ -44,6 +44,11 @@ export function CustomersPage() {
   const [editingCustomer, setEditingCustomer] = useState<Customer | null>(null);
   const [formData, setFormData] = useState<CustomerRequest>(emptyFormData);
   const [saving, setSaving] = useState(false);
+  const [portalCustomer, setPortalCustomer] = useState<Customer | null>(null);
+  const [portalPin, setPortalPin] = useState('');
+  const [portalPinConfirm, setPortalPinConfirm] = useState('');
+  const [portalSaving, setPortalSaving] = useState(false);
+  const [showDisablePortalConfirm, setShowDisablePortalConfirm] = useState(false);
 
   const { notifications } = useNotificationsStore();
   const { highlightId, clearHighlight } = useHighlight();
@@ -72,6 +77,12 @@ export function CustomersPage() {
       notes: customer.notes,
     });
     setShowModal(true);
+  };
+
+  const handleOpenPortalModal = (customer: Customer) => {
+    setPortalCustomer(customer);
+    setPortalPin('');
+    setPortalPinConfirm('');
   };
 
   // Table columns
@@ -120,6 +131,19 @@ export function CustomersPage() {
       ),
     },
     {
+      key: 'portalEnabled',
+      header: t('erp.customers.colPortal'),
+      render: (customer) => {
+        const portalReady = customer.portalEnabled && customer.pinConfigured;
+        return (
+          <span className={clsx('badge badge-sm gap-1', portalReady ? 'badge-success' : 'badge-ghost')}>
+            {portalReady ? <ShieldCheck className="h-3.5 w-3.5" /> : <ShieldOff className="h-3.5 w-3.5" />}
+            {portalReady ? t('erp.customers.portalActive') : t('erp.customers.portalInactive')}
+          </span>
+        );
+      },
+    },
+    {
       key: 'address',
       header: t('erp.customers.colAddress'),
       className: 'max-w-xs truncate',
@@ -143,9 +167,15 @@ export function CustomersPage() {
       sortable: false,
       render: (customer) => (
         <PermissionGate permission={PermissionCode.CUSTOMERS_UPDATE}>
-          <Button variant="ghost" size="sm" onClick={(e) => { e.stopPropagation(); handleOpenEditModal(customer); }}>
-            {t('common.edit')}
-          </Button>
+          <div className="flex items-center justify-end gap-1">
+            <Button variant="ghost" size="sm" onClick={(e) => { e.stopPropagation(); handleOpenPortalModal(customer); }}>
+              <KeyRound className="h-4 w-4" />
+              {t('erp.customers.portalAction')}
+            </Button>
+            <Button variant="ghost" size="sm" onClick={(e) => { e.stopPropagation(); handleOpenEditModal(customer); }}>
+              {t('common.edit')}
+            </Button>
+          </div>
         </PermissionGate>
       ),
     },
@@ -202,6 +232,73 @@ export function CustomersPage() {
     setShowModal(false);
     setEditingCustomer(null);
     setFormData(emptyFormData);
+  };
+
+  const handleClosePortalModal = () => {
+    if (portalSaving) return;
+    setPortalCustomer(null);
+    setPortalPin('');
+    setPortalPinConfirm('');
+    setShowDisablePortalConfirm(false);
+  };
+
+  const handleSavePortalPin = async () => {
+    if (!portalCustomer || !/^\d{4,6}$/.test(portalPin) || portalPin !== portalPinConfirm) return;
+
+    if (!hasPermission(PermissionCode.CUSTOMERS_UPDATE)) {
+      toast.error(t('erp.customers.noPermission'));
+      return;
+    }
+
+    setPortalSaving(true);
+    try {
+      const updatedCustomer = await customersApi.setPortalPin(portalCustomer.id, portalPin, portalPinConfirm);
+      setCustomers((current) => current.map((customer) => (
+        customer.id === updatedCustomer.id ? updatedCustomer : customer
+      )));
+      toast.success(t('erp.customers.pinUpdatedToast'));
+      setPortalCustomer(null);
+      setPortalPin('');
+      setPortalPinConfirm('');
+    } catch (error: unknown) {
+      const err = error as { response?: { status?: number; data?: { message?: string } } };
+      if (err.response?.status !== 403) {
+        toast.error(err.response?.data?.message || t('erp.customers.portalError'));
+      }
+      console.error('Failed to set customer portal PIN:', error);
+    } finally {
+      setPortalSaving(false);
+    }
+  };
+
+  const handleDisablePortal = async () => {
+    if (!portalCustomer) return;
+
+    if (!hasPermission(PermissionCode.CUSTOMERS_UPDATE)) {
+      toast.error(t('erp.customers.noPermission'));
+      return;
+    }
+
+    setPortalSaving(true);
+    try {
+      const updatedCustomer = await customersApi.disablePortal(portalCustomer.id);
+      setCustomers((current) => current.map((customer) => (
+        customer.id === updatedCustomer.id ? updatedCustomer : customer
+      )));
+      toast.success(t('erp.customers.portalDisabledToast'));
+      setShowDisablePortalConfirm(false);
+      setPortalCustomer(null);
+      setPortalPin('');
+      setPortalPinConfirm('');
+    } catch (error: unknown) {
+      const err = error as { response?: { status?: number; data?: { message?: string } } };
+      if (err.response?.status !== 403) {
+        toast.error(err.response?.data?.message || t('erp.customers.portalError'));
+      }
+      console.error('Failed to disable customer portal:', error);
+    } finally {
+      setPortalSaving(false);
+    }
   };
 
   const handleFormChange = (field: keyof CustomerRequest, value: string | undefined) => {
@@ -315,9 +412,14 @@ export function CustomersPage() {
                 <p className="text-sm font-semibold">{customer.fullName}</p>
                 <p className="text-xs text-base-content/60">{customer.companyName || t('erp.customers.individual')}</p>
               </div>
-              <span className={clsx('badge badge-sm', customer.hasDebt ? 'badge-error' : 'badge-success')}>
-                {customer.hasDebt ? t('erp.customers.debtBadge') : t('erp.customers.cleanBadge')}
-              </span>
+              <div className="flex flex-col items-end gap-1">
+                <span className={clsx('badge badge-sm', customer.hasDebt ? 'badge-error' : 'badge-success')}>
+                  {customer.hasDebt ? t('erp.customers.debtBadge') : t('erp.customers.cleanBadge')}
+                </span>
+                <span className={clsx('badge badge-sm', customer.portalEnabled && customer.pinConfigured ? 'badge-success' : 'badge-ghost')}>
+                  {customer.portalEnabled && customer.pinConfigured ? t('erp.customers.portalActive') : t('erp.customers.portalInactive')}
+                </span>
+              </div>
             </div>
             <div className="flex items-center gap-2 text-sm text-base-content/70">
               <Phone className="h-4 w-4" />
@@ -326,9 +428,17 @@ export function CustomersPage() {
             {customer.address && <p className="text-xs text-base-content/60">{customer.address}</p>}
             <div className="flex items-center justify-between">
               <span className="text-sm font-semibold">{formatCurrency(customer.balance)}</span>
-              <Button variant="ghost" size="sm" className="min-h-[44px]" onClick={() => handleOpenEditModal(customer)}>
-                {t('common.edit')}
-              </Button>
+              <PermissionGate permission={PermissionCode.CUSTOMERS_UPDATE}>
+                <div className="flex items-center gap-1">
+                  <Button variant="ghost" size="sm" className="min-h-[44px]" onClick={() => handleOpenPortalModal(customer)}>
+                    <KeyRound className="h-4 w-4" />
+                    {t('erp.customers.portalAction')}
+                  </Button>
+                  <Button variant="ghost" size="sm" className="min-h-[44px]" onClick={() => handleOpenEditModal(customer)}>
+                    {t('common.edit')}
+                  </Button>
+                </div>
+              </PermissionGate>
             </div>
           </div>
         )}
@@ -402,6 +512,123 @@ export function CustomersPage() {
           </div>
         </div>
       </ModalPortal>
+
+      <ModalPortal isOpen={portalCustomer !== null} onClose={handleClosePortalModal}>
+        {portalCustomer && (
+          <div className="w-full max-w-md rounded-2xl bg-base-100 shadow-2xl">
+            <div className="p-4 sm:p-6">
+              <div className="flex items-start justify-between gap-4">
+                <div>
+                  <h3 className="text-xl font-semibold">{t('erp.customers.portalTitle')}</h3>
+                  <p className="mt-1 text-sm text-base-content/60">
+                    {portalCustomer.fullName} · {portalCustomer.phone}
+                  </p>
+                </div>
+                <Button variant="ghost" size="sm" onClick={handleClosePortalModal} disabled={portalSaving}>
+                  <X className="h-4 w-4" />
+                </Button>
+              </div>
+
+              <div className="mt-5 flex items-center justify-between rounded-card border border-base-300 bg-base-200/50 p-3">
+                <div className="flex items-center gap-3">
+                  {portalCustomer.portalEnabled && portalCustomer.pinConfigured
+                    ? <ShieldCheck className="h-5 w-5 text-success" />
+                    : <ShieldOff className="h-5 w-5 text-base-content/50" />}
+                  <div>
+                    <p className="text-sm font-medium">
+                      {portalCustomer.portalEnabled && portalCustomer.pinConfigured
+                        ? t('erp.customers.portalActive')
+                        : t('erp.customers.portalInactive')}
+                    </p>
+                    <p className="text-xs text-base-content/60">{t('erp.customers.portalStatusHint')}</p>
+                  </div>
+                </div>
+              </div>
+
+              <p className="mt-5 text-sm text-base-content/70">{t('erp.customers.setPinDescription')}</p>
+
+              <div className="mt-4 space-y-4">
+                <label className="form-control">
+                  <span className="label-text mb-1 text-xs font-semibold uppercase tracking-[0.18em] text-base-content/50">
+                    {t('erp.customers.pinLabel')}
+                  </span>
+                  <input
+                    type="password"
+                    inputMode="numeric"
+                    pattern="[0-9]*"
+                    autoComplete="new-password"
+                    maxLength={6}
+                    className="input input-bordered w-full tracking-widest"
+                    value={portalPin}
+                    onChange={(event) => setPortalPin(event.target.value.replace(/\D/g, ''))}
+                    placeholder={t('erp.customers.pinPlaceholder')}
+                  />
+                </label>
+                <label className="form-control">
+                  <span className="label-text mb-1 text-xs font-semibold uppercase tracking-[0.18em] text-base-content/50">
+                    {t('erp.customers.confirmPinLabel')}
+                  </span>
+                  <input
+                    type="password"
+                    inputMode="numeric"
+                    pattern="[0-9]*"
+                    autoComplete="new-password"
+                    maxLength={6}
+                    className={clsx('input input-bordered w-full tracking-widest', portalPinConfirm && portalPin !== portalPinConfirm && 'input-error')}
+                    value={portalPinConfirm}
+                    onChange={(event) => setPortalPinConfirm(event.target.value.replace(/\D/g, ''))}
+                    placeholder={t('erp.customers.pinPlaceholder')}
+                  />
+                  {portalPinConfirm && portalPin !== portalPinConfirm && (
+                    <span className="mt-1 text-xs text-error">{t('erp.customers.pinMismatch')}</span>
+                  )}
+                </label>
+                <p className="text-xs text-base-content/60">{t('erp.customers.pinRequirements')}</p>
+              </div>
+
+              <div className="mt-6 flex flex-col-reverse gap-2 sm:flex-row sm:justify-between">
+                <div>
+                  {portalCustomer.portalEnabled && (
+                    <Button
+                      variant="danger"
+                      onClick={() => setShowDisablePortalConfirm(true)}
+                      disabled={portalSaving}
+                    >
+                      {t('erp.customers.disablePortal')}
+                    </Button>
+                  )}
+                </div>
+                <div className="flex justify-end gap-2">
+                  <Button variant="ghost" onClick={handleClosePortalModal} disabled={portalSaving}>
+                    {t('common.cancel')}
+                  </Button>
+                  <Button
+                    variant="primary"
+                    onClick={handleSavePortalPin}
+                    loading={portalSaving && !showDisablePortalConfirm}
+                    disabled={!/^\d{4,6}$/.test(portalPin) || portalPin !== portalPinConfirm}
+                  >
+                    <KeyRound className="h-4 w-4" />
+                    {portalCustomer.pinConfigured ? t('erp.customers.resetPin') : t('erp.customers.setPin')}
+                  </Button>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+      </ModalPortal>
+
+      <ConfirmDialog
+        open={showDisablePortalConfirm}
+        onClose={() => setShowDisablePortalConfirm(false)}
+        onConfirm={handleDisablePortal}
+        title={t('erp.customers.disablePortalTitle')}
+        description={t('erp.customers.disablePortalDescription')}
+        confirmText={t('erp.customers.disablePortal')}
+        cancelText={t('common.cancel')}
+        danger
+        loading={portalSaving}
+      />
     </div>
   );
 }

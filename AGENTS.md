@@ -38,6 +38,7 @@ Backend (run in `shina-magazin-api/`):
 
 ## Commit & Pull Request Guidelines
 - Git history currently shows a single `init` commit, so no convention is established. Use short, imperative summaries (optionally scoped), e.g. `api: add stock adjustment endpoint`.
+- Keep commit messages focused on the product change. Do not mention AI, Codex, ChatGPT, automated generation, or assistant attribution in commit subjects or bodies.
 - PRs should describe affected areas (frontend/API), include screenshots for UI changes, and call out any DB migration or config updates.
 
 ## Configuration & Security Notes

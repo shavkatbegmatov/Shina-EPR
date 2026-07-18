@@ -11,6 +11,7 @@ import uz.shinamagazin.api.entity.Customer;
 import uz.shinamagazin.api.enums.CustomerType;
 
 import java.math.BigDecimal;
+import java.time.LocalDateTime;
 
 @Data
 @Builder
@@ -54,6 +55,12 @@ public class CustomerResponse {
     @ExportColumn(header = "Faol", order = 11, type = ColumnType.BOOLEAN)
     private Boolean active;
 
+    private boolean portalEnabled;
+
+    private boolean pinConfigured;
+
+    private LocalDateTime pinSetAt;
+
     public static CustomerResponse from(Customer customer) {
         return CustomerResponse.builder()
                 .id(customer.getId())
@@ -67,6 +74,9 @@ public class CustomerResponse {
                 .hasDebt(customer.getBalance().compareTo(BigDecimal.ZERO) < 0)
                 .notes(customer.getNotes())
                 .active(customer.getActive())
+                .portalEnabled(Boolean.TRUE.equals(customer.getPortalEnabled()))
+                .pinConfigured(customer.getPinHash() != null && !customer.getPinHash().isBlank())
+                .pinSetAt(customer.getPinSetAt())
                 .build();
     }
 }
