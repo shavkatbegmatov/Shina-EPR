@@ -73,6 +73,7 @@ export function useCatalogFacets(categoryId?: number): { facets: CatalogFacets |
     queryFn: () => catalogApi.facets(categoryId),
     staleTime: 5 * 60 * 1000,
     retry: false,
+    placeholderData: keepPreviousData,
   });
   return { facets: data, isLoading };
 }

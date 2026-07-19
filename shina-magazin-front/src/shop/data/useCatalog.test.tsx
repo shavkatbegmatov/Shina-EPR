@@ -2,15 +2,15 @@ import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { renderHook, waitFor } from '@testing-library/react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import type { ReactNode } from 'react';
-import type { Product } from '../../types';
+import type { CatalogFacets, Product } from '../../types';
 
 // Katalog seam'i catalogApi ustida ishlaydi — uni mock qilamiz
 vi.mock('./catalogApi', () => ({
-  catalogApi: { list: vi.fn(), getById: vi.fn() },
+  catalogApi: { list: vi.fn(), facets: vi.fn(), getById: vi.fn() },
 }));
 
 import { catalogApi } from './catalogApi';
-import { useCatalogProducts, useProduct, useCatalogBrands } from './useCatalog';
+import { useCatalogProducts, useProduct, useCatalogBrands, useCatalogFacets } from './useCatalog';
 import { DEMO_PRODUCTS } from './demoProducts';
 
 const SERVER: Product[] = [
@@ -19,6 +19,20 @@ const SERVER: Product[] = [
     sellingPrice: 1, quantity: 1, minStockLevel: 0, lowStock: false, active: true,
   },
 ];
+
+const ROOT_FACETS: CatalogFacets = {
+  categories: [{ id: 1, name: 'Shinalar', active: true }],
+  priceMin: 100,
+  priceMax: 500,
+  attributes: [],
+};
+
+const CATEGORY_FACETS: CatalogFacets = {
+  categories: ROOT_FACETS.categories,
+  priceMin: 200,
+  priceMax: 400,
+  attributes: [],
+};
 
 function wrapper({ children }: { children: ReactNode }) {
   const qc = new QueryClient({ defaultOptions: { queries: { retry: false } } });
@@ -62,5 +76,28 @@ describe('useCatalog seam (fallback)', () => {
     ]);
     const { result } = renderHook(() => useCatalogBrands(), { wrapper });
     await waitFor(() => expect(result.current).toEqual(['Alfa', 'Bravo']));
+  });
+
+  it('kategoriya almashganda yangi facet kelguncha avvalgisini saqlaydi', async () => {
+    let resolveCategory!: (facets: CatalogFacets) => void;
+    const categoryRequest = new Promise<CatalogFacets>((resolve) => {
+      resolveCategory = resolve;
+    });
+    vi.mocked(catalogApi.facets)
+      .mockResolvedValueOnce(ROOT_FACETS)
+      .mockReturnValueOnce(categoryRequest);
+
+    const { result, rerender } = renderHook(
+      ({ categoryId }: { categoryId?: number }) => useCatalogFacets(categoryId),
+      { wrapper, initialProps: { categoryId: undefined as number | undefined } }
+    );
+    await waitFor(() => expect(result.current.facets).toEqual(ROOT_FACETS));
+
+    rerender({ categoryId: 1 });
+    expect(result.current.facets).toEqual(ROOT_FACETS);
+    expect(result.current.isLoading).toBe(false);
+
+    resolveCategory(CATEGORY_FACETS);
+    await waitFor(() => expect(result.current.facets).toEqual(CATEGORY_FACETS));
   });
 });
