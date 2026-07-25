@@ -2,6 +2,7 @@ package uz.shinamagazin.api.repository;
 
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.jpa.repository.EntityGraph;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
@@ -16,13 +17,24 @@ import java.util.List;
 @Repository
 public interface DebtRepository extends JpaRepository<Debt, Long> {
 
+    // `DebtResponse.from` har bir qarz uchun customer va sale'ga tegadi (ikkalasi
+    // LAZY) — grafiksiz har qator 2 ta qo'shimcha so'rov qilardi.
+
+    @EntityGraph(attributePaths = {"customer", "sale"})
     List<Debt> findByCustomerId(Long customerId);
 
+    @Override
+    @EntityGraph(attributePaths = {"customer", "sale"})
+    Page<Debt> findAll(Pageable pageable);
+
+    @EntityGraph(attributePaths = {"customer", "sale"})
     Page<Debt> findByStatus(DebtStatus status, Pageable pageable);
 
+    @EntityGraph(attributePaths = {"customer", "sale"})
     @Query("SELECT d FROM Debt d WHERE d.status = 'ACTIVE' AND d.dueDate < :today")
     List<Debt> findOverdueDebts(@Param("today") LocalDate today);
 
+    @EntityGraph(attributePaths = {"customer", "sale"})
     @Query("SELECT d FROM Debt d WHERE d.status = 'ACTIVE'")
     List<Debt> findActiveDebts();
 

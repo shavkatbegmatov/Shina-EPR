@@ -2,6 +2,7 @@ package uz.shinamagazin.api.repository;
 
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.jpa.repository.EntityGraph;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
@@ -17,10 +18,27 @@ import java.util.Optional;
 @Repository
 public interface SaleRepository extends JpaRepository<Sale, Long> {
 
+    // ─────────────────────────────────────────────────────────────────────────
+    // Ro'yxat so'rovlarida @EntityGraph: `SaleResponse.from` har bir savdo uchun
+    // customer va createdBy'ga tegadi. Ikkalasi ham LAZY, shuning uchun grafiksiz
+    // 20 qatorlik sahifa 40 ta qo'shimcha so'rov qilardi.
+    //
+    // Kolleksiyalar (items) grafikda ATAYLAB yo'q: @OneToMany + Pageable birga
+    // kelsa Hibernate sahifalashni xotirada bajaradi (HHH000104) — bu esa butun
+    // jadvalni o'qishga olib keladi. items va item.product uchun global
+    // `hibernate.default_batch_fetch_size` ishlaydi.
+    // ─────────────────────────────────────────────────────────────────────────
+
     Optional<Sale> findByInvoiceNumber(String invoiceNumber);
 
+    @Override
+    @EntityGraph(attributePaths = {"customer", "createdBy"})
+    Page<Sale> findAll(Pageable pageable);
+
+    @EntityGraph(attributePaths = {"customer", "createdBy"})
     Page<Sale> findByStatus(SaleStatus status, Pageable pageable);
 
+    @EntityGraph(attributePaths = {"customer", "createdBy"})
     Page<Sale> findByCustomerId(Long customerId, Pageable pageable);
 
     @Query("SELECT s FROM Sale s WHERE s.saleDate BETWEEN :start AND :end")
@@ -29,6 +47,7 @@ public interface SaleRepository extends JpaRepository<Sale, Long> {
             @Param("end") LocalDateTime end
     );
 
+    @EntityGraph(attributePaths = {"customer", "createdBy"})
     Page<Sale> findBySaleDateBetween(LocalDateTime start, LocalDateTime end, Pageable pageable);
 
     @Query("SELECT s FROM Sale s WHERE s.saleDate >= :start AND s.saleDate < :end AND s.status = 'COMPLETED'")

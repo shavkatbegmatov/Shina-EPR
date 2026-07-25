@@ -20,6 +20,12 @@ spring:
         dialect: org.hibernate.dialect.PostgreSQLDialect
         jdbc:
           time_zone: Asia/Tashkent
+        # LAZY assotsiatsiyalarni to'plab yuklash — N+1 ga qarshi asosiy himoya.
+        # Barcha @ManyToOne proksilari va @OneToMany kolleksiyalari bir so'rovda
+        # 50 tagacha guruhlanadi: 20 ta savdo uchun mahsulotlarni olish 60 ta
+        # so'rov o'rniga 1-2 ta bo'ladi. @EntityGraph aniq ro'yxatlar uchun
+        # qo'shimcha optimallashtirish; bu esa qolgan HAMMA joyni qamrab oladi.
+        default_batch_fetch_size: 50
 
   flyway:
     enabled: true

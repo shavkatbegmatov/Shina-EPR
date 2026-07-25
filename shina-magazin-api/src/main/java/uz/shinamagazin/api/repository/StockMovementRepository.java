@@ -2,6 +2,7 @@ package uz.shinamagazin.api.repository;
 
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.jpa.repository.EntityGraph;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
@@ -15,10 +16,16 @@ import java.util.List;
 @Repository
 public interface StockMovementRepository extends JpaRepository<StockMovement, Long> {
 
+    // `StockMovementResponse.from` product, supplier va createdBy'ga tegadi —
+    // uchalasi ham LAZY, ya'ni grafiksiz har qator 3 ta qo'shimcha so'rov qilardi.
+
+    @EntityGraph(attributePaths = {"product", "supplier", "createdBy"})
     Page<StockMovement> findByProductId(Long productId, Pageable pageable);
 
+    @EntityGraph(attributePaths = {"product", "supplier", "createdBy"})
     List<StockMovement> findByReferenceTypeAndReferenceId(String referenceType, Long referenceId);
 
+    @EntityGraph(attributePaths = {"product", "supplier", "createdBy"})
     Page<StockMovement> findByMovementType(MovementType movementType, Pageable pageable);
 
     @Query("SELECT sm FROM StockMovement sm " +
@@ -26,6 +33,7 @@ public interface StockMovementRepository extends JpaRepository<StockMovement, Lo
             "AND (:movementType IS NULL OR sm.movementType = :movementType) " +
             "AND (:referenceType IS NULL OR sm.referenceType = :referenceType) " +
             "ORDER BY sm.createdAt DESC")
+    @EntityGraph(attributePaths = {"product", "supplier", "createdBy"})
     Page<StockMovement> findWithFilters(
             @Param("productId") Long productId,
             @Param("movementType") MovementType movementType,
@@ -34,6 +42,7 @@ public interface StockMovementRepository extends JpaRepository<StockMovement, Lo
     );
 
     @Query("SELECT sm FROM StockMovement sm WHERE sm.createdAt BETWEEN :start AND :end ORDER BY sm.createdAt DESC")
+    @EntityGraph(attributePaths = {"product", "supplier", "createdBy"})
     List<StockMovement> findByDateRange(
             @Param("start") LocalDateTime start,
             @Param("end") LocalDateTime end
@@ -51,5 +60,6 @@ public interface StockMovementRepository extends JpaRepository<StockMovement, Lo
     @Query("SELECT COALESCE(SUM(ABS(sm.quantity)), 0) FROM StockMovement sm WHERE sm.movementType = 'OUT' AND sm.createdAt >= :start")
     Integer getTotalOutgoingToday(@Param("start") LocalDateTime start);
 
+    @EntityGraph(attributePaths = {"product", "supplier", "createdBy"})
     Page<StockMovement> findAllByOrderByCreatedAtDesc(Pageable pageable);
 }

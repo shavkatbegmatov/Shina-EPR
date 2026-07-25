@@ -2,8 +2,10 @@ package uz.shinamagazin.api.repository;
 
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.jpa.repository.EntityGraph;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
+import org.springframework.data.jpa.domain.Specification;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
@@ -20,20 +22,36 @@ public interface ProductRepository extends JpaRepository<Product, Long>, JpaSpec
 
     boolean existsBySku(String sku);
 
+    // ProductResponse/CatalogProductResponse brand va category'ga tegadi (ikkalasi
+    // LAZY). Grafiksiz 20 mahsulotli sahifa 40 ta qo'shimcha so'rov qilardi —
+    // bu ommaviy katalogning eng issiq yo'li.
+
+    @Override
+    @EntityGraph(attributePaths = {"brand", "category"})
+    Page<Product> findAll(Pageable pageable);
+
+    @Override
+    @EntityGraph(attributePaths = {"brand", "category"})
+    Page<Product> findAll(Specification<Product> spec, Pageable pageable);
+
+    @EntityGraph(attributePaths = {"brand", "category"})
     List<Product> findByActiveTrue();
 
+    @EntityGraph(attributePaths = {"brand", "category"})
     Page<Product> findByActiveTrue(Pageable pageable);
 
     @Query("SELECT p FROM Product p WHERE p.active = true AND " +
             "(LOWER(p.name) LIKE LOWER(CONCAT('%', :search, '%')) OR " +
             "LOWER(p.sku) LIKE LOWER(CONCAT('%', :search, '%')) OR " +
             "LOWER(p.brand.name) LIKE LOWER(CONCAT('%', :search, '%')))")
+    @EntityGraph(attributePaths = {"brand", "category"})
     Page<Product> searchProducts(@Param("search") String search, Pageable pageable);
 
     // Eslatma: filtrlash endi ProductSpecs (JpaSpecificationExecutor) orqali —
     // kategoriya shajarasi va atribut filtrlarini bitta dvijok qamrab oladi.
 
     @Query("SELECT p FROM Product p WHERE p.active = true AND p.quantity <= p.minStockLevel")
+    @EntityGraph(attributePaths = {"brand", "category"})
     List<Product> findLowStockProducts();
 
     @Query("SELECT COUNT(p) FROM Product p WHERE p.active = true")
@@ -51,7 +69,9 @@ public interface ProductRepository extends JpaRepository<Product, Long>, JpaSpec
     @Query("SELECT SUM(p.quantity) FROM Product p WHERE p.active = true")
     Long getTotalStock();
 
+    @EntityGraph(attributePaths = {"brand", "category"})
     List<Product> findByBrandIdAndActiveTrue(Long brandId);
 
+    @EntityGraph(attributePaths = {"brand", "category"})
     List<Product> findByCategoryIdAndActiveTrue(Long categoryId);
 }
