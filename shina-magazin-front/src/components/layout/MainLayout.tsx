@@ -7,6 +7,7 @@ import { Sidebar } from './Sidebar';
 import { Header } from './Header';
 import { Footer } from './Footer';
 import { PasswordChangeModal } from '../common/PasswordChangeModal';
+import { ErrorBoundary } from '../common/ErrorBoundary';
 
 export function MainLayout() {
   const { isAuthenticated, user } = useAuthStore();
@@ -45,7 +46,13 @@ export function MainLayout() {
       <div className="flex min-w-0 flex-1 flex-col overflow-hidden">
         <Header />
         <main className="flex-1 overflow-y-auto overflow-x-hidden px-4 pb-6 pt-6 lg:px-8" style={{ scrollbarGutter: 'stable' }}>
-          <Outlet />
+          {/* Chegara main ICHIDA: sahifa yiqilsa ham sidebar/header qoladi va
+              foydalanuvchi boshqa bo'limga o'ta oladi. resetKeys marshrutga
+              bog'langan — aks holda bir marta yiqilgach boshqa sahifada ham
+              xato ko'rinib turardi. */}
+          <ErrorBoundary resetKeys={[location.pathname]}>
+            <Outlet />
+          </ErrorBoundary>
         </main>
         <Footer />
       </div>

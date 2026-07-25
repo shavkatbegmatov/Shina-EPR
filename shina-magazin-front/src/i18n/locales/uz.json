@@ -3,6 +3,12 @@
     "loading": "Yuklanmoqda...",
     "error": "Xatolik yuz berdi",
     "retry": "Qayta urinish",
+    "errorBoundary": {
+      "title": "Nimadir noto'g'ri ketdi",
+      "description": "Sahifani ko'rsatishda kutilmagan xatolik yuz berdi. Ma'lumotlaringiz saqlanib qoldi.",
+      "reload": "Sahifani yangilash",
+      "home": "Bosh sahifa"
+    },
     "cancel": "Bekor qilish",
     "save": "Saqlash",
     "confirm": "Tasdiqlash",

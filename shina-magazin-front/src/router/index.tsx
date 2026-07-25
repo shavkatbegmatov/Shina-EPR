@@ -3,6 +3,7 @@ import { createBrowserRouter, Navigate } from 'react-router-dom';
 import { MainLayout } from '../components/layout/MainLayout';
 import { ProtectedRoute } from '../components/common/ProtectedRoute';
 import { PageLoader } from '../components/common/PageLoader';
+import { RouteErrorElement } from '../components/common/ErrorBoundary';
 import { PermissionCode } from '../hooks/usePermission';
 import { lazyWithRetry } from './lazyWithRetry';
 
@@ -67,25 +68,34 @@ function LazyRoute({ children }: { children: React.ReactNode }) {
   return <Suspense fallback={<PageLoader />}>{children}</Suspense>;
 }
 
+// `errorElement` har bir yuqori darajali marshrutda: layout ICHIDAGI xatolarni
+// layout'lardagi <ErrorBoundary> ushlaydi (chrome saqlanadi), lekin layout'ning
+// O'ZI yiqilsa — masalan lazy chunk yuklanmasa yoki layout render'ida xato
+// bo'lsa — daraxt umuman qurilmaydi va faqat router darajasidagi chegara qoladi.
+// Ikkisisiz oq ekran qaytadi.
 export const router = createBrowserRouter([
   {
     path: '/admin/login',
     element: <LoginPage />,
+    errorElement: <RouteErrorElement />,
     handle: { title: 'Kirish' },
   },
   {
     path: '/admin/register',
     element: <RegisterPage />,
+    errorElement: <RouteErrorElement />,
     handle: { title: "Ro'yxatdan o'tish" },
   },
   {
     path: '/admin/change-password',
     element: <ChangePasswordPage />,
+    errorElement: <RouteErrorElement />,
     handle: { title: "Parolni o'zgartirish" },
   },
   {
     path: '/admin',
     element: <MainLayout />,
+    errorElement: <RouteErrorElement />,
     children: [
       {
         index: true,
@@ -392,6 +402,7 @@ export const router = createBrowserRouter([
         <PortalLayout />
       </LazyRoute>
     ),
+    errorElement: <RouteErrorElement />,
     children: [
       {
         index: true,
@@ -466,6 +477,7 @@ export const router = createBrowserRouter([
         <ShopLayout />
       </LazyRoute>
     ),
+    errorElement: <RouteErrorElement />,
     children: [
       {
         index: true,
