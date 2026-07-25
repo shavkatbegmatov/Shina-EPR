@@ -68,12 +68,21 @@ public class StockMovementService {
         int quantity = request.getQuantity();
         int newStock;
 
-        // Calculate new stock based on movement type
+        // Calculate new stock based on movement type.
+        // DIQQAT: quyidagi tekshiruvlar manfiy `quantity`ni ham hisobga oladi.
+        // DTO'da @Min(0) bor, lekin invariant shu yerda ham saqlanishi kerak —
+        // servis boshqa yo'ldan (masalan ichki chaqiruv) ham ishlatilishi mumkin.
         switch (request.getMovementType()) {
             case IN:
+                if (quantity <= 0) {
+                    throw new BadRequestException("Kirim miqdori musbat bo'lishi shart");
+                }
                 newStock = previousStock + quantity;
                 break;
             case OUT:
+                if (quantity <= 0) {
+                    throw new BadRequestException("Chiqim miqdori musbat bo'lishi shart");
+                }
                 if (quantity > previousStock) {
                     throw new BadRequestException(
                             String.format("Chiqim miqdori (%d) mavjud zaxiradan (%d) ko'p bo'lishi mumkin emas",
@@ -84,6 +93,9 @@ public class StockMovementService {
                 break;
             case ADJUSTMENT:
                 // For adjustment, quantity is the absolute new value
+                if (quantity < 0) {
+                    throw new BadRequestException("Zaxira manfiy bo'lishi mumkin emas");
+                }
                 newStock = quantity;
                 quantity = newStock - previousStock; // Calculate difference
                 break;

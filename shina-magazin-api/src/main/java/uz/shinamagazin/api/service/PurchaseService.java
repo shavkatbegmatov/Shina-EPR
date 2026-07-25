@@ -395,6 +395,18 @@ public class PurchaseService {
             int previousStock = product.getQuantity();
             int newStock = previousStock - returnItem.getReturnedQuantity();
 
+            // `createReturn` miqdorni faqat qabul qilingan miqdorga solishtiradi, JORIY
+            // zaxiraga emas. Oradan vaqt o'tadi (PENDING -> APPROVED -> COMPLETED) va
+            // mol sotilib ketgan bo'lishi mumkin: 10 ta olindi -> 8 tasi sotildi ->
+            // 10 tasi qaytarildi = zaxira -8. Bu holat stock_movements ledgeriga ham
+            // haqiqat sifatida yozilib, barcha ombor hisobotlarini buzardi.
+            if (newStock < 0) {
+                throw new BadRequestException(String.format(
+                        "\"%s\" uchun qaytarish miqdori (%d) joriy zaxiradan (%d) ko'p — "
+                                + "mol allaqachon sotilgan bo'lishi mumkin. Avval zaxirani to'g'rilang.",
+                        product.getName(), returnItem.getReturnedQuantity(), previousStock));
+            }
+
             StockMovement movement = StockMovement.builder()
                     .product(product)
                     .movementType(MovementType.OUT)
