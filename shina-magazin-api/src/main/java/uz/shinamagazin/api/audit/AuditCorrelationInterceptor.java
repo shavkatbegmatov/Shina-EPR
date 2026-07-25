@@ -44,5 +44,15 @@ public class AuditCorrelationInterceptor implements HandlerInterceptor {
             log.debug("Cleared audit correlation context: {} for {} {}",
                     correlationId, request.getMethod(), request.getRequestURI());
         }
+
+        // Dastlabki-holat konteksti odatda tranzaksiya tugashida bo'shatiladi, lekin
+        // tranzaksiyasiz o'qishlar (open-in-view ostidagi lazy yuklashlar) uchun
+        // hech kim tozalamaydi. Oqim pool'ga qaytishidan oldin kafolatli bo'shatamiz.
+        int leftover = AuditStateContext.size();
+        if (leftover > 0) {
+            AuditStateContext.clear();
+            log.debug("Cleared {} leftover audit state entries for {} {}",
+                    leftover, request.getMethod(), request.getRequestURI());
+        }
     }
 }

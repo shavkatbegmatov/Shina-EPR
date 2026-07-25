@@ -14,7 +14,6 @@ import uz.shinamagazin.api.security.CustomUserDetails;
 import uz.shinamagazin.api.service.AuditLogService;
 
 import java.util.Map;
-import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * JPA Entity Listener for automatic audit trail logging.
@@ -45,9 +44,15 @@ import java.util.concurrent.ConcurrentHashMap;
  *
  * <h3>Performance Considerations:</h3>
  * <ul>
- *   <li>Audit logging is asynchronous and won't block main transaction</li>
- *   <li>Uses separate transaction to avoid rollback issues</li>
- *   <li>Minimal overhead (< 5ms per operation)</li>
+ *   <li>Audit yozuvi SINXRON — JPA callback'i ichida, asosiy tranzaksiya oqimida
+ *       bajariladi. (Ilgari bu yerda "asinxron va tranzaksiyani bloklamaydi"
+ *       deb yozilgan edi; kod hech qachon unday ishlamagan.)</li>
+ *   <li>Dastlabki holat {@link AuditStateContext}da — tranzaksiya doirasida,
+ *       tranzaksiya tugagach avtomatik bo'shatiladi.</li>
+ *   <li>Ba'zi {@code toAuditMap()} implementatsiyalari lazy kolleksiyalarga
+ *       tegadi (masalan PurchaseOrder: items/payments/returns), ya'ni har
+ *       {@code @PostLoad}da qo'shimcha so'rov bo'ladi — bu alohida optimallashtirish
+ *       mavzusi.</li>
  * </ul>
  */
 @Component
@@ -60,9 +65,10 @@ public class AuditEntityListener {
     private static SensitiveDataMasker sensitiveDataMasker;
     private static ObjectMapper objectMapper;
 
-    // Cache to store original entity state when loaded from database
-    // Key: "EntityClass:EntityId", Value: audit map of original values
-    private static final ConcurrentHashMap<String, Map<String, Object>> originalStateCache = new ConcurrentHashMap<>();
+    // Dastlabki holat AuditStateContext'da (ThreadLocal, tranzaksiya doirasida).
+    // Ilgari shu yerda static ConcurrentHashMap turardi — u hech qachon
+    // bo'shatilmasdi va oqimlar orasida poygaga sabab bo'lardi (izohni
+    // AuditStateContext javadoc'ida ko'ring).
 
     /**
      * Spring autowiring method to inject dependencies into static fields.
@@ -105,7 +111,7 @@ public class AuditEntityListener {
 
             String cacheKey = getCacheKey(entity.getClass(), auditable.getId());
             Map<String, Object> originalData = auditable.toAuditMap();
-            originalStateCache.put(cacheKey, originalData);
+            AuditStateContext.put(cacheKey, originalData);
             log.debug("Cached original state for {} with id {}", auditable.getEntityName(), auditable.getId());
         } catch (Exception e) {
             log.warn("Could not cache original state for {}: {}", entity.getClass().getSimpleName(), e.getMessage());
@@ -176,8 +182,10 @@ public class AuditEntityListener {
         try {
             String cacheKey = getCacheKey(entity.getClass(), auditable.getId());
 
-            // Get old data from cache (captured at @PostLoad)
-            Map<String, Object> originalData = originalStateCache.remove(cacheKey);
+            // Get old data from context (captured at @PostLoad).
+            // remove() EMAS: bitta tranzaksiyada ikkinchi yangilash baseline'siz
+            // qolib, audit yozuvi jimgina tushmay qolmasligi uchun.
+            Map<String, Object> originalData = AuditStateContext.get(cacheKey);
 
             if (originalData == null) {
                 log.warn("No cached original state found for {} with id {}. Skipping audit log.",
@@ -233,9 +241,9 @@ public class AuditEntityListener {
         }
 
         try {
-            // Clean up cache entry
+            // Entity o'chirilmoqda — baseline endi keraksiz
             String cacheKey = getCacheKey(entity.getClass(), auditable.getId());
-            originalStateCache.remove(cacheKey);
+            AuditStateContext.remove(cacheKey);
 
             Long userId = getCurrentUserId();
             String ipAddress = getClientIpAddress();
