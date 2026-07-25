@@ -2,8 +2,8 @@ import { useState, useEffect } from 'react';
 import { Link, useParams } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { useQuery } from '@tanstack/react-query';
-import { ChevronRight, Minus, Plus, ShoppingCart, Check, ArrowLeft } from 'lucide-react';
-import { Card, Badge, Button, EmptyState, buttonVariants, cn } from '@/ui';
+import { AlertTriangle, ChevronRight, Minus, Plus, ShoppingCart, Check, ArrowLeft } from 'lucide-react';
+import { Card, Badge, Button, EmptyState, Skeleton, buttonVariants, cn } from '@/ui';
 import { formatCurrency } from '../../config/constants';
 import { ProductImage } from '../components/ProductImage';
 import { ProductCard } from '../components/ProductCard';
@@ -22,7 +22,7 @@ export function ProductDetailPage() {
   const [qty, setQty] = useState(1);
   const [added, setAdded] = useState(false);
 
-  const { product } = useProduct(id);
+  const { product, isLoading, isError, retry } = useProduct(id);
   const related = useRelatedProducts(product);
   const addRecent = useRecentStore((s) => s.add);
 
@@ -53,6 +53,41 @@ export function ProductDetailPage() {
     image: product?.imageUrl,
     type: 'product',
   });
+
+  // Yuklanish paytida "topilmadi" ko'rsatib bo'lmaydi — mahsulot bor bo'lsa ham
+  // bir zumga "mavjud emas" degan yolg'on xabar chiqardi.
+  if (isLoading) {
+    return (
+      <div className="mx-auto max-w-6xl px-4 py-10 sm:px-6">
+        <div className="grid gap-8 md:grid-cols-2">
+          <Skeleton className="aspect-square w-full rounded-2xl" />
+          <div className="space-y-4">
+            <Skeleton className="h-8 w-3/4" />
+            <Skeleton className="h-6 w-1/3" />
+            <Skeleton className="h-24 w-full" />
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // Katalog yuklanmadi — bu "mahsulot mavjud emas" bilan bir xil emas.
+  if (isError) {
+    return (
+      <div className="mx-auto max-w-3xl px-4 py-16 sm:px-6">
+        <EmptyState
+          icon={AlertTriangle}
+          title={t('shop.product.loadError')}
+          description={t('shop.product.loadErrorHint')}
+          action={
+            <Button variant="primary" onClick={retry}>
+              {t('common.retry')}
+            </Button>
+          }
+        />
+      </div>
+    );
+  }
 
   if (!product) {
     return (

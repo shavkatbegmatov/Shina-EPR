@@ -1,7 +1,7 @@
 import { useMemo, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
-import { SlidersHorizontal, X } from 'lucide-react';
+import { AlertTriangle, SlidersHorizontal, X } from 'lucide-react';
 import { EmptyState, Button, Skeleton } from '@/ui';
 import type { Product, Season } from '../../types';
 import { ProductCard } from '../components/ProductCard';
@@ -95,7 +95,7 @@ export function CatalogPage() {
     [categoryId, season, priceMin, priceMax, inStock, attrsParam, sort]
   );
   const { products: serverProducts, isLoading: serverLoading, serverMode } = useFilteredCatalog(serverParams);
-  const { products: allProducts } = useCatalogProducts();
+  const { products: allProducts, isError: catalogError, retry: retryCatalog } = useCatalogProducts();
 
   const results = useMemo(() => {
     const needle = q.trim().toLowerCase();
@@ -131,6 +131,11 @@ export function CatalogPage() {
   }, [serverMode, serverProducts, allProducts, q, brand, season, sort, width, profile, diameter]);
 
   const showSkeleton = serverMode && serverLoading && !serverProducts;
+
+  // Katalog yuklanmagan bo'lsa "filtrga mos mahsulot yo'q" deb ko'rsatish YOLG'ON
+  // bo'lardi — foydalanuvchi filtrlarni behuda o'zgartirib o'tirardi. Server
+  // filtrlangan ro'yxat ishlagan bo'lsa (serverProducts bor) xato ko'rsatilmaydi.
+  const catalogFailed = catalogError && !serverProducts?.length;
 
   const hasSize = Boolean(width || profile || diameter);
   const panelActiveCount =
@@ -319,6 +324,17 @@ export function CatalogPage() {
                 <Skeleton key={i} className="aspect-[3/4] w-full rounded-2xl" />
               ))}
             </div>
+          ) : catalogFailed ? (
+            <EmptyState
+              icon={AlertTriangle}
+              title={t('shop.catalog.loadError')}
+              description={t('shop.catalog.loadErrorHint')}
+              action={
+                <Button variant="primary" onClick={retryCatalog}>
+                  {t('common.retry')}
+                </Button>
+              }
+            />
           ) : results.length === 0 ? (
             <EmptyState
               icon={SlidersHorizontal}

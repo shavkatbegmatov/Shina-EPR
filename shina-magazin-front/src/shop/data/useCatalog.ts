@@ -7,42 +7,92 @@ import { catalogApi, type CatalogFilterParams } from './catalogApi';
 /**
  * Katalog ma'lumotlari uchun YAGONA seam (ulanish nuqtasi).
  *
- * Backend `GET /v1/catalog` bo'lsa undan o'qiydi; backend yo'q yoki xato bo'lsa
- * demo massivga TUSHADI — storefront offline/backendsiz ham to'liq ko'rinadi.
- * Iste'molchi sahifalar (Home/Catalog/PDP) faqat shu hooklarni ishlatadi.
+ * Backend `GET /v1/catalog` dan o'qiydi. Iste'molchi sahifalar (Home/Catalog/PDP)
+ * faqat shu hooklarni ishlatadi.
+ *
+ * ⚠️ Demo massiv faqat DEV'da fallback bo'ladi. Ilgari u productionda ham
+ * ishlardi va bu jiddiy muammo edi: bitta tarmoq uzilishi ommaviy do'konni
+ * XAYOLIY katalogga o'tkazardi — `DEMO_PRODUCTS` haqiqiy brend nomlari va
+ * narxlar bilan to'lgan ("Michelin Primacy 4", 1 200 000 so'm), banner ham,
+ * ogohlantirish ham yo'q edi. Mijoz mavjud bo'lmagan mahsulotga buyurtma bera
+ * olardi (savat/checkout tegishli tekshiruvni katalogdan emas, serverdan oladi,
+ * ya'ni buyurtma keyin xato beradi yoki noto'g'ri mahsulotga tushadi).
+ *
+ * Productionda xato — bu XATO: hooklar `isError` qaytaradi, sahifalar esa
+ * foydalanuvchiga rostini aytadi.
  */
+
+/**
+ * Demo fallback faqat lokal ishlab chiqishda (vite `import.meta.env.DEV`).
+ *
+ * Modul yuklanishida emas, HAR CHAQIRUVDA o'qiladi — shunda testlar
+ * `vi.stubEnv('DEV', false)` bilan production xatti-harakatini tekshira oladi
+ * (vitest'da DEV sukut bo'yicha `true`).
+ */
+const isDemoFallbackEnabled = (): boolean => import.meta.env.DEV;
+
 function useCatalogQuery() {
   return useQuery({
     queryKey: ['catalog'],
-    queryFn: async (): Promise<Product[]> => {
-      try {
-        const products = await catalogApi.list();
-        return products.length ? products : DEMO_PRODUCTS;
-      } catch {
-        return DEMO_PRODUCTS; // backend yo'q/xato → demo (vitrina baribir ishlaydi)
-      }
-    },
+    // Xato YUTILMAYDI — React Query uni isError orqali yuqoriga uzatsin
+    queryFn: (): Promise<Product[]> => catalogApi.list(),
     staleTime: 5 * 60 * 1000,
-    retry: false,
+    // Ilgari `false` edi: bitta o'tkinchi uzilish darhol demo rejimga tushirardi.
+    // Endi fallback yo'q, shuning uchun qisqa qayta urinish arziydi.
+    // Kechikish ataylab React Query defaultidan (1s, 2s) qisqaroq: mobil aloqada
+    // o'tkinchi uzilish yopiladi, lekin haqiqiy uzilishda mijoz ~1s dan ko'p
+    // skelet ko'rib o'tirmaydi.
+    retry: 2,
+    retryDelay: (attempt) => Math.min(300 * 2 ** attempt, 2000),
   });
 }
 
-export function useCatalogProducts(): { products: Product[]; isLoading: boolean } {
-  const { data, isLoading } = useCatalogQuery();
-  return { products: data ?? DEMO_PRODUCTS, isLoading };
+/**
+ * So'rov natijasini ro'yxatga aylantiradi.
+ * DEV'da so'rov MUVAFFAQIYATSIZ bo'lsa demo ro'yxat beriladi (backendsiz ishlash
+ * qulayligi). Backend bo'sh massiv qaytarsa — bu haqiqiy ma'lumot, demo BERILMAYDI.
+ */
+function resolveList(data: Product[] | undefined, isError: boolean): Product[] {
+  if (data) return data;
+  return isError && isDemoFallbackEnabled() ? DEMO_PRODUCTS : [];
 }
 
-export function useProduct(id?: string | number): { product: Product | undefined; isLoading: boolean } {
-  const { data, isLoading } = useCatalogQuery();
-  const list = data ?? DEMO_PRODUCTS;
+export function useCatalogProducts(): {
+  products: Product[];
+  isLoading: boolean;
+  isError: boolean;
+  retry: () => void;
+} {
+  const { data, isLoading, isError, refetch } = useCatalogQuery();
+  return {
+    products: resolveList(data, isError),
+    isLoading,
+    isError: isError && !isDemoFallbackEnabled(),
+    retry: () => void refetch(),
+  };
+}
+
+export function useProduct(id?: string | number): {
+  product: Product | undefined;
+  isLoading: boolean;
+  isError: boolean;
+  retry: () => void;
+} {
+  const { data, isLoading, isError, refetch } = useCatalogQuery();
+  const list = resolveList(data, isError);
   const product = useMemo(() => list.find((p) => String(p.id) === String(id)), [list, id]);
-  return { product, isLoading };
+  return {
+    product,
+    isLoading,
+    isError: isError && !isDemoFallbackEnabled(),
+    retry: () => void refetch(),
+  };
 }
 
 /** O'xshash mahsulotlar: avval bir brend, keyin bir kategoriya (boshqa brend) bilan to'ldiriladi. */
 export function useRelatedProducts(product: Product | undefined, limit = 4): Product[] {
-  const { data } = useCatalogQuery();
-  const list = data ?? DEMO_PRODUCTS;
+  const { data, isError } = useCatalogQuery();
+  const list = resolveList(data, isError);
   return useMemo(() => {
     if (!product) return [];
     const sameBrand = list.filter((p) => p.id !== product.id && p.brandName === product.brandName);
@@ -54,10 +104,11 @@ export function useRelatedProducts(product: Product | undefined, limit = 4): Pro
 }
 
 export function useCatalogBrands(): string[] {
-  const { data } = useCatalogQuery();
-  const list = data ?? DEMO_PRODUCTS;
+  const { data, isError } = useCatalogQuery();
+  const list = resolveList(data, isError);
   return useMemo(() => {
-    if (!list.length) return DEMO_BRANDS;
+    // Bo'sh ro'yxatda soxta brendlar ko'rsatilmaydi — filtr paneli bo'sh qoladi.
+    if (!list.length) return isDemoFallbackEnabled() ? DEMO_BRANDS : [];
     return [...new Set(list.map((p) => p.brandName).filter((b): b is string => Boolean(b)))].sort();
   }, [list]);
 }
@@ -80,8 +131,9 @@ export function useCatalogFacets(categoryId?: number): { facets: CatalogFacets |
 
 /**
  * Server tomonda filtrlangan katalog (kategoriya subtree + narx + atributlar).
- * Backend xatosida `serverMode=false` — sahifa demo ro'yxat ustidan client-side
- * filtrlashga tushadi (mavjud xatti-harakat saqlanadi).
+ * Backend xatosida `serverMode=false` — sahifa `useCatalogProducts()` ro'yxati
+ * ustidan client-side filtrlashga tushadi. Agar u ham yuklanmagan bo'lsa
+ * (productionda demo fallback yo'q), sahifa xato holatini ko'rsatadi.
  */
 export function useFilteredCatalog(params: CatalogFilterParams): {
   products: Product[] | undefined;

@@ -29,25 +29,31 @@ responsiv (mobil hamburger → desktop nav), `data-app="shop"`.
 
 ## ⚠️ Data seam — backendga ulanishning YAGONA nuqtasi: `data/useCatalog.ts`
 
-Hozir katalog `data/demoProducts.ts` (12 namuna shina) dan o'qiladi. Iste'molchi
-sahifalar (Home/Catalog/PDP) `DEMO_PRODUCTS`'ni **to'g'ridan import qilmaydi** —
-faqat shu hooklarni ishlatadi:
+Katalog `GET /v1/catalog` dan o'qiladi. Iste'molchi sahifalar (Home/Catalog/PDP)
+`DEMO_PRODUCTS`'ni **to'g'ridan import qilmaydi** — faqat shu hooklarni ishlatadi:
 
 ```ts
-useCatalogProducts()           // { products, isLoading }
-useProduct(id)                 // { product, isLoading }
+useCatalogProducts()           // { products, isLoading, isError, retry }
+useProduct(id)                 // { product, isLoading, isError, retry }
 useRelatedProducts(product)    // Product[]
 useCatalogBrands()             // string[]
 ```
 
-Backend tayyor bo'lganda **faqat `useCatalog.ts`** React Query'ga o'tadi; sahifalar tegmaydi:
+### 🚨 Demo fallback — faqat DEV
 
-```ts
-export function useCatalogProducts() {
-  const { data, isLoading } = useQuery({ queryKey: ['catalog'], queryFn: catalogApi.list });
-  return { products: data ?? [], isLoading };
-}
-```
+`DEMO_PRODUCTS` **faqat `import.meta.env.DEV`** rejimida, va **faqat so'rov xato
+bergan** holatda ishlatiladi (backendsiz lokal ishlash qulayligi uchun).
+Backend bo'sh massiv qaytarsa — bu haqiqiy ma'lumot, demo berilmaydi.
+
+Productionda fallback **YO'Q**. Sabab: demo massiv haqiqiy brend nomlari va
+narxlar bilan to'lgan ("Michelin Primacy 4", 1 200 000 so'm). Ilgari fallback
+prod'da ham ishlardi, ya'ni bitta tarmoq uzilishi ommaviy do'konni xayoliy
+katalogga o'tkazardi — hech qanday banner yoki ogohlantirishsiz — va mijoz
+mavjud bo'lmagan mahsulotga buyurtma bera olardi.
+
+Endi xato — bu xato: hooklar `isError` qaytaradi, sahifalar esa qayta urinish
+tugmasi bilan xato holatini ko'rsatadi. Buni `useCatalog.test.tsx` dagi
+`PROD: ...` testlari qo'riqlaydi.
 
 ## Backend shartnomasi
 

@@ -1,8 +1,8 @@
 import { useMemo } from 'react';
 import { Link } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
-import { ArrowRight, Car, Mountain, Gauge, Snowflake, ShieldCheck, Truck, BadgeCheck } from 'lucide-react';
-import { Card, buttonVariants, cn } from '@/ui';
+import { AlertTriangle, ArrowRight, Car, Mountain, Gauge, Snowflake, ShieldCheck, Truck, BadgeCheck } from 'lucide-react';
+import { Card, Button, EmptyState, Skeleton, buttonVariants, cn } from '@/ui';
 import { ProductCard } from '../components/ProductCard';
 import { RecentlyViewed } from '../components/RecentlyViewed';
 import { ShopLogo } from '../components/layout/ShopLogo';
@@ -24,7 +24,7 @@ const WHY = [
 
 export function ShopHomePage() {
   const { t } = useTranslation();
-  const { products } = useCatalogProducts();
+  const { products, isLoading, isError, retry } = useCatalogProducts();
   const featured = products.slice(0, 8);
 
   const brandCounts = useMemo(() => {
@@ -113,9 +113,30 @@ export function ShopHomePage() {
             {t('shop.home.viewAll')} <ArrowRight size={15} />
           </Link>
         </div>
-        <div className="grid grid-cols-2 gap-4 md:grid-cols-3 lg:grid-cols-4">
-          {featured.map((p) => <ProductCard key={p.id} product={p} />)}
-        </div>
+        {isLoading ? (
+          <div className="grid grid-cols-2 gap-4 md:grid-cols-3 lg:grid-cols-4">
+            {Array.from({ length: 8 }).map((_, i) => (
+              <Skeleton key={i} className="aspect-[3/4] w-full rounded-2xl" />
+            ))}
+          </div>
+        ) : isError ? (
+          /* Bo'sh grid o'rniga rostini aytamiz — ilgari bu yerda soxta demo
+             mahsulotlar ko'rsatilardi, keyin esa hech nima ko'rsatilmasdi. */
+          <EmptyState
+            icon={AlertTriangle}
+            title={t('shop.catalog.loadError')}
+            description={t('shop.catalog.loadErrorHint')}
+            action={
+              <Button variant="primary" onClick={retry}>
+                {t('common.retry')}
+              </Button>
+            }
+          />
+        ) : (
+          <div className="grid grid-cols-2 gap-4 md:grid-cols-3 lg:grid-cols-4">
+            {featured.map((p) => <ProductCard key={p.id} product={p} />)}
+          </div>
+        )}
       </section>
 
       {/* Recently viewed */}
