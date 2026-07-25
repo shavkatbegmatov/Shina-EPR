@@ -63,8 +63,10 @@ public class StaffNotificationController {
 
     @PostMapping("/{id}/read")
     @Operation(summary = "Mark as read", description = "Bildirishnomani o'qilgan qilish")
-    public ResponseEntity<ApiResponse<Void>> markAsRead(@PathVariable Long id) {
-        notificationService.markAsRead(id);
+    public ResponseEntity<ApiResponse<Void>> markAsRead(
+            @PathVariable Long id,
+            @AuthenticationPrincipal CustomUserDetails userDetails) {
+        notificationService.markAsRead(id, userDetails.getId());
         return ResponseEntity.ok(ApiResponse.success("Bildirishnoma o'qilgan deb belgilandi", null));
     }
 
@@ -79,8 +81,10 @@ public class StaffNotificationController {
 
     @DeleteMapping("/{id}")
     @Operation(summary = "Delete notification", description = "Bildirishnomani o'chirish")
-    public ResponseEntity<ApiResponse<Void>> deleteNotification(@PathVariable Long id) {
-        notificationService.deleteNotification(id);
+    public ResponseEntity<ApiResponse<Void>> deleteNotification(
+            @PathVariable Long id,
+            @AuthenticationPrincipal CustomUserDetails userDetails) {
+        notificationService.deleteNotification(id, userDetails.getId());
         return ResponseEntity.ok(ApiResponse.success("Bildirishnoma o'chirildi", null));
     }
 }

@@ -50,11 +50,30 @@ public interface StaffNotificationRepository extends JpaRepository<StaffNotifica
     int markAllAsReadByUserId(@Param("userId") Long userId);
 
     /**
-     * Bitta bildirishnomani o'qilgan qilish
+     * Bitta bildirishnomani o'qilgan qilish — FAQAT chaqiruvchi ko'ra oladigan bo'lsa.
+     *
+     * Egalik sharti ({@code user.id = :userId OR user IS NULL}) yuqoridagi o'qish
+     * so'rovlari bilan bir xil: shaxsiy bildirishnoma faqat egasiniki, global
+     * (user IS NULL) esa barcha xodimlarniki. Aks holda id'ni ketma-ket sinab
+     * chiqib boshqa xodimning bildirishnomasini o'zgartirish mumkin edi.
+     *
+     * @return 0 — topilmadi, chaqiruvchiniki emas yoki allaqachon o'qilgan
+     *         (ataylab farqlanmaydi — mavjudlik oshkor bo'lmasin)
      */
-    @Modifying
-    @Query("UPDATE StaffNotification n SET n.isRead = true, n.readAt = CURRENT_TIMESTAMP WHERE n.id = :id AND n.isRead = false")
-    int markAsReadById(@Param("id") Long id);
+    @Modifying(clearAutomatically = true, flushAutomatically = true)
+    @Query("""
+            UPDATE StaffNotification n SET n.isRead = true, n.readAt = CURRENT_TIMESTAMP
+            WHERE n.id = :id AND n.isRead = false AND (n.user.id = :userId OR n.user IS NULL)""")
+    int markAsReadByIdForUser(@Param("id") Long id, @Param("userId") Long userId);
+
+    /**
+     * Bildirishnomani o'chirish — FAQAT chaqiruvchi ko'ra oladigan bo'lsa.
+     *
+     * @return o'chirilgan qatorlar soni (0 — topilmadi yoki chaqiruvchiniki emas)
+     */
+    @Modifying(clearAutomatically = true, flushAutomatically = true)
+    @Query("DELETE FROM StaffNotification n WHERE n.id = :id AND (n.user.id = :userId OR n.user IS NULL)")
+    int deleteByIdForUser(@Param("id") Long id, @Param("userId") Long userId);
 
     /**
      * Eski bildirishnomalarni o'chirish (30 kundan eski)

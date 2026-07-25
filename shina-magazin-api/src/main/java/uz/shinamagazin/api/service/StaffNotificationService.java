@@ -65,11 +65,14 @@ public class StaffNotificationService {
     }
 
     /**
-     * Bildirishnomani o'qilgan qilish
+     * Bildirishnomani o'qilgan qilish.
+     *
+     * `userId` egalik tekshiruvi uchun — chaqiruvchi faqat O'ZI ko'ra oladigan
+     * bildirishnomani o'zgartira oladi (shaxsiy yoki global).
      */
     @Transactional
-    public void markAsRead(Long notificationId) {
-        int updated = notificationRepository.markAsReadById(notificationId);
+    public void markAsRead(Long notificationId, Long userId) {
+        int updated = notificationRepository.markAsReadByIdForUser(notificationId, userId);
         if (updated == 0) {
             throw new ResourceNotFoundException("Bildirishnoma topilmadi yoki allaqachon o'qilgan");
         }
@@ -84,14 +87,18 @@ public class StaffNotificationService {
     }
 
     /**
-     * Bildirishnomani o'chirish
+     * Bildirishnomani o'chirish.
+     *
+     * Ilgari faqat mavjudlik tekshirilardi (`existsById` + `deleteById`), ya'ni
+     * istalgan autentifikatsiyalangan foydalanuvchi id'ni ketma-ket sinab chiqib
+     * boshqa xodimning bildirishnomalarini o'chira olardi.
      */
     @Transactional
-    public void deleteNotification(Long notificationId) {
-        if (!notificationRepository.existsById(notificationId)) {
+    public void deleteNotification(Long notificationId, Long userId) {
+        int deleted = notificationRepository.deleteByIdForUser(notificationId, userId);
+        if (deleted == 0) {
             throw new ResourceNotFoundException("Bildirishnoma topilmadi");
         }
-        notificationRepository.deleteById(notificationId);
     }
 
     /**

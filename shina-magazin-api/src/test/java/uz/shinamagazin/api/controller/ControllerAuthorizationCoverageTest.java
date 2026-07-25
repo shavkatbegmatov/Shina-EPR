@@ -51,7 +51,8 @@ class ControllerAuthorizationCoverageTest {
             // ID so'rovdan emas, @AuthenticationPrincipal'dan olinadi
             "CustomerPortalController",
             "AccountOrderController",
-            "SessionController"
+            "SessionController",
+            "StaffNotificationController"
     );
 
     /**
@@ -62,19 +63,7 @@ class ControllerAuthorizationCoverageTest {
             "ShopOrderController#createOrder",       // vitrinadan mehmon buyurtmasi
             "ShopOrderController#getOrderStatus",    // buyurtma holati (ommaviy poll)
             "SettingsController#getPublicSettings",  // vitrina uchun ommaviy sozlamalar
-            "LoginActivityController#getMyLoginHistory", // o'z tarixini ko'rish
-
-            // ⚠️ MA'LUM BO'SHLIQ — bu yerda ruxsat emas, EGALIK tekshiruvi kerak.
-            // Hozir istalgan autentifikatsiyalangan foydalanuvchi boshqa xodimning
-            // bildirishnomasini id bo'yicha o'qilgan deb belgilashi yoki o'chirishi mumkin
-            // (StaffNotificationService faqat mavjudlikni tekshiradi, userId bo'yicha
-            // filtrlamaydi). Tuzatish: service/repository qatlamiga userId scoping.
-            "StaffNotificationController#getNotifications",
-            "StaffNotificationController#getUnreadNotifications",
-            "StaffNotificationController#getUnreadCount",
-            "StaffNotificationController#markAsRead",
-            "StaffNotificationController#markAllAsRead",
-            "StaffNotificationController#deleteNotification"
+            "LoginActivityController#getMyLoginHistory" // o'z tarixini ko'rish
     );
 
     @Test
