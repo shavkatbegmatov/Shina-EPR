@@ -34,7 +34,7 @@ jobs:
       - run: npm test
       - run: npm run build
 
-  # ── CI: Backend compile ──
+  # ── CI: Backend compile + test ──
   backend-ci:
     name: Backend CI
     runs-on: ubuntu-latest
@@ -48,7 +48,10 @@ jobs:
           distribution: temurin
           java-version: 17
           cache: maven
-      - run: chmod +x mvnw && ./mvnw clean compile -DskipTests -q
+      # Testlar CI'da ISHLASHI shart: xavfsizlik qorovul testlari (avtorizatsiya
+      # qamrovi, JWT kalit validatsiyasi, Click imzo tekshiruvi) faqat shu yerda
+      # regressiyani ushlay oladi. Testlar tashqi DB talab qilmaydi — H2 in-memory.
+      - run: chmod +x mvnw && ./mvnw clean test -q
 
   # ── CD: Build Docker images + push to GHCR ──
   build-and-push:

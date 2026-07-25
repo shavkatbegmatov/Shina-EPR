@@ -28,9 +28,45 @@ public class JwtTokenProvider {
 
     private SecretKey key;
 
+    /** HS256 uchun minimal kalit uzunligi (RFC 7518: kalit hash chiqishidan kichik bo'lmasin). */
+    private static final int MIN_KEY_BYTES = 32;
+
+    /**
+     * Repo tarixida ochiq qolgan, shuning uchun ISHONCHSIZ deb hisoblanadigan kalitlar.
+     * Bular ilgari application.yml'da default sifatida turgan — ya'ni ular bilan
+     * imzolangan tokenni istalgan odam soxtalashtira oladi. Qayta ishlatilmasin.
+     */
+    private static final Set<String> COMPROMISED_SECRETS = Set.of(
+            "mS1mNCtIuahtLE4Q/OW/eQc/11mONeSU5T1dcGnwX0M="
+    );
+
     @PostConstruct
     public void init() {
-        byte[] keyBytes = Decoders.BASE64.decode(jwtSecret);
+        if (jwtSecret == null || jwtSecret.isBlank()) {
+            throw new IllegalStateException(
+                    "JWT_SECRET o'rnatilmagan. Generatsiya: openssl rand -base64 32");
+        }
+        if (COMPROMISED_SECRETS.contains(jwtSecret.trim())) {
+            throw new IllegalStateException(
+                    "JWT_SECRET repo tarixida ochiq qolgan eski default kalitga teng — "
+                            + "u bilan token soxtalashtirish mumkin. Yangi kalit generatsiya qiling: "
+                            + "openssl rand -base64 32");
+        }
+
+        byte[] keyBytes;
+        try {
+            keyBytes = Decoders.BASE64.decode(jwtSecret);
+        } catch (RuntimeException e) {
+            // jjwt DecodingException'i IllegalArgumentException'dan meros olmaydi
+            throw new IllegalStateException(
+                    "JWT_SECRET to'g'ri base64 emas. Generatsiya: openssl rand -base64 32", e);
+        }
+        if (keyBytes.length < MIN_KEY_BYTES) {
+            throw new IllegalStateException(String.format(
+                    "JWT_SECRET juda qisqa (%d bayt), kamida %d bayt kerak. "
+                            + "Generatsiya: openssl rand -base64 32", keyBytes.length, MIN_KEY_BYTES));
+        }
+
         this.key = Keys.hmacShaKeyFor(keyBytes);
     }
 

@@ -38,8 +38,13 @@ server:
     context-path: /api
 
 # JWT Configuration
+# `secret` uchun DEFAULT QIYMAT YO'Q — ataylab. Ilgari bu yerda ishlaydigan base64
+# kalit turardi, ya'ni JWT_SECRET o'rnatilmagan har qanday deployment uchun repo
+# ko'ra oladigan har kim token soxtalashtira olardi (fail-open). Endi kalit
+# berilmasa ilova ishga TUSHMAYDI. Dev uchun default application-dev.yml'da.
+# Generatsiya: openssl rand -base64 32
 jwt:
-  secret: ${JWT_SECRET:mS1mNCtIuahtLE4Q/OW/eQc/11mONeSU5T1dcGnwX0M=}
+  secret: ${JWT_SECRET}
   expiration: 86400000 # 24 hours in milliseconds
   refresh-expiration: 604800000 # 7 days
 

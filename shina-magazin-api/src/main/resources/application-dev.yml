@@ -25,6 +25,12 @@ spring:
     compatibility-verifier:
       enabled: false
 
+# DEV-ONLY imzo kaliti — lokal ishlab chiqish uchun, JWT_SECRET o'rnatilmagan bo'lsa.
+# Prod'da bu fayl YUKLANMAYDI (profil `prod`), u yerda JWT_SECRET majburiy.
+# Bu kalit repoda ochiq — hech qachon prod'da ishlatilmasin.
+jwt:
+  secret: ${JWT_SECRET:JyhYCX/C4dqsliMYHB635TPrujj0WEY+IglVoEWmwvA=}
+
 logging:
   level:
     uz.shinamagazin: DEBUG
