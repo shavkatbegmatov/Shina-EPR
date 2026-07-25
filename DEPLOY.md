@@ -54,7 +54,8 @@ PAT olish: GitHub → Settings → Developer settings → Personal access tokens
 | ENV | Qiymat | Izoh |
 |---|---|---|
 | `DB_PASSWORD` | (kuchli parol) | **majburiy** |
-| `JWT_SECRET` | (kuchli base64) | **majburiy** — default'ni ALMASHTIRING |
+| `JWT_SECRET` | (kuchli base64) | **majburiy** — o'rnatilmasa ilova ishga TUSHMAYDI |
+| `ADMIN_INITIAL_PASSWORD` | (kuchli parol) | tavsiya etiladi — pastdagi izohga qarang |
 | `DB_NAME` / `DB_USERNAME` | `shina_epr_db` / `shina_epr_user` | default'lar bor |
 | `PAYME_*`, `CLICK_*`, `SHOP_RETURN_URL` | — | jonli to'lov yoqilganda |
 | `SHOP_NOTIFY_SMS/EMAIL`, `SPRING_MAIL_*` | — | jonli xabarnoma yoqilganda |
@@ -65,6 +66,17 @@ PAT olish: GitHub → Settings → Developer settings → Personal access tokens
    boshqaradi (image tayyor bo'lgandan keyin). **Deploy webhook** URL'ini oling → GitHub secret
    `COOLIFY_WEBHOOK_URL`; API token → `COOLIFY_API_TOKEN`.
 6. GitHub'da `DEPLOY_ENABLED=true` variable qo'ying → keyingi `master` push to'liq avtomatik.
+
+> **`JWT_SECRET`** — default qiymat YO'Q. O'rnatilmasa Spring ishga tushishda xato beradi
+> (bu ataylab: ilgari repoda ochiq turgan default kalit bilan token soxtalashtirish mumkin edi).
+> Generatsiya: `openssl rand -base64 32`. Kalitni almashtirish barcha joriy sessiyalarni bekor qiladi.
+>
+> **`ADMIN_INITIAL_PASSWORD`** — `admin` akkauntining boshlang'ich paroli. Seed migratsiyalari
+> (`V2`/`V3`) `admin/admin123` yaratadi va bu hash'lar repoda ochiq, shuning uchun ishga tushishda
+> `DefaultCredentialGuard` parolni **majburan almashtiradi**. Bu env o'rnatilgan bo'lsa — o'sha parol
+> qo'yiladi; **bo'sh bo'lsa tasodifiy parol generatsiya qilinib backend logiga WARN darajasida
+> bir marta yoziladi** (`docker logs` orqali oling). Har ikki holatda ham birinchi kirishda parolni
+> almashtirish talab qilinadi. `seller` namuna akkaunti har doim tasodifiy parolga o'tkaziladi.
 
 > Volume'lar compose'da: `postgres_data` (DB) va `uploads_data` (`/data/uploads` — mahsulot
 > rasmlari). Coolify UI'da `postgres_data` uchun scheduled backup yoqish tavsiya etiladi.
@@ -83,6 +95,8 @@ Relizlar: `git tag vX.Y.Z && git push origin vX.Y.Z` → `release.yml` GitHub Re
 ## Post-deploy checklist
 - [ ] GitHub Actions: frontend/backend CI + build-and-push yashil; deploy job ishladi.
 - [ ] Backend log: Flyway migratsiyalar + `Started`.
+- [ ] **Xavfsizlik:** logdagi `XAVFSIZLIK: 'admin' akkaunti ...` qatorini toping → shu parol bilan
+      kiring → darhol almashtiring. `admin123` bilan kirish ishlamasligini tasdiqlang.
 - [ ] `https://<domen>`: do'kon `/`, ERP `/admin`, kabinet `/hisob`, login `/kirish`.
 - [ ] ERP'da rasm yuklash → storefront'da ko'rinadi (`uploads_data` volume ishlayapti).
 - [ ] Telegram'da `<domen>` ulashish → OG karta (`VITE_SITE_URL`).

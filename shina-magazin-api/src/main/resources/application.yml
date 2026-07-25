@@ -43,6 +43,17 @@ jwt:
   expiration: 86400000 # 24 hours in milliseconds
   refresh-expiration: 604800000 # 7 days
 
+# Ilova xavfsizlik sozlamalari
+app:
+  security:
+    # V2/V3 seed'idagi ommaviy parollarni (admin123/seller123) ishga tushishda
+    # avtomatik almashtirish — `DefaultCredentialGuard`. Dev profilida ishlamaydi.
+    default-credentials:
+      rotate: ${DEFAULT_CREDENTIALS_ROTATE:true}
+      # `admin` uchun boshlang'ich parol. O'rnatilsa — parol logga TUSHMAYDI (tavsiya etiladi).
+      # Bo'sh bo'lsa, tasodifiy parol generatsiya qilinib WARN logga bir marta yoziladi.
+      admin-password: ${ADMIN_INITIAL_PASSWORD:}
+
 # CORS — ruxsat etilgan origin'lar (vergul bilan ajratilgan).
 # Prod'da CORS_ALLOWED_ORIGINS env orqali beriladi (masalan https://protektor.uz).
 # Brauzer har bir POST'ga Origin yuboradi; proxy ortida scheme farqi tufayli
