@@ -39,6 +39,7 @@ public class SaleService {
     private final StaffNotificationService staffNotificationService;
     private final NotificationService customerNotificationService;
     private final SettingsService settingsService;
+    private final DocumentNumberService documentNumberService;
 
     public Page<SaleResponse> getAllSales(LocalDate startDate, LocalDate endDate, Pageable pageable) {
         LocalDate effectiveStart = startDate;
@@ -281,11 +282,15 @@ public class SaleService {
         return SaleResponse.from(saleRepository.save(sale));
     }
 
+    /**
+     * Hisob-faktura raqami — {@link DocumentNumberService} atomik beradi.
+     *
+     * Ilgari bu yerda "MAX(...) + 1" bor edi: ikki kassir bir vaqtda savdo qilsa
+     * ikkalasi bir xil raqam olib, invoice_number UNIQUE cheklovi tufayli
+     * yutqazganning savdosi yo'qolardi.
+     */
     private String generateInvoiceNumber() {
-        String prefix = "INV" + LocalDate.now().format(DateTimeFormatter.ofPattern("yyyyMMdd"));
-        Integer maxNumber = saleRepository.findMaxInvoiceNumber(prefix);
-        int nextNumber = (maxNumber != null ? maxNumber : 0) + 1;
-        return prefix + String.format("%04d", nextNumber);
+        return documentNumberService.nextInvoiceNumber();
     }
 
     private User getCurrentUser() {

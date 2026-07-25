@@ -37,6 +37,7 @@ public class PurchaseService {
     private final StockMovementRepository stockMovementRepository;
     private final UserRepository userRepository;
     private final SupplierService supplierService;
+    private final DocumentNumberService documentNumberService;
 
     // ==================== PURCHASE ORDERS ====================
 
@@ -498,18 +499,14 @@ public class PurchaseService {
         stockMovementRepository.save(movement);
     }
 
+    /** Xarid raqami — atomik (ilgari "MAX(...) + 1" poygaga sabab bo'lardi). */
     private String generateOrderNumber() {
-        String prefix = "PO-";
-        Integer maxNum = purchaseOrderRepository.findMaxOrderNumber(prefix);
-        int nextNum = (maxNum != null ? maxNum : 0) + 1;
-        return String.format("%s%06d", prefix, nextNum);
+        return documentNumberService.nextPurchaseOrderNumber();
     }
 
+    /** Qaytarish raqami — atomik (ilgari "MAX(...) + 1" poygaga sabab bo'lardi). */
     private String generateReturnNumber() {
-        String prefix = "RT-";
-        Integer maxNum = purchaseReturnRepository.findMaxReturnNumber(prefix);
-        int nextNum = (maxNum != null ? maxNum : 0) + 1;
-        return String.format("%s%06d", prefix, nextNum);
+        return documentNumberService.nextPurchaseReturnNumber();
     }
 
     private User getCurrentUser() {

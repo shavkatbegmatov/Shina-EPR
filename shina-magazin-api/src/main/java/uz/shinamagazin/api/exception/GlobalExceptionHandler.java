@@ -1,8 +1,10 @@
 package uz.shinamagazin.api.exception;
 
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.orm.ObjectOptimisticLockingFailureException;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.authorization.AuthorizationDeniedException;
@@ -127,6 +129,46 @@ public class GlobalExceptionHandler {
         return ResponseEntity
                 .status(HttpStatus.BAD_REQUEST)
                 .body(ApiResponse.error("So'rov ma'lumotlari noto'g'ri formatda yuborildi"));
+    }
+
+    /**
+     * Optimistik qulf to'qnashuvi — ikki foydalanuvchi bir yozuvni bir vaqtda o'zgartirdi.
+     *
+     * <p>Bu kutilgan konkurentlik holati, server nosozligi EMAS. Ilgari handler
+     * bo'lmagani uchun pastdagi catch-all'ga tushib, mijozga "Ichki server xatosi"
+     * deb 500 qaytarardi — masalan bitta ommabop shinani ikki xaridor bir vaqtda
+     * buyurtma qilganda (Product'da @Version bor va u oversell'ni to'g'ri to'sadi).
+     *
+     * @return 409 Conflict — mijoz qayta urinib ko'rishi mumkin
+     */
+    @ExceptionHandler(ObjectOptimisticLockingFailureException.class)
+    public ResponseEntity<ApiResponse<Void>> handleOptimisticLockingFailure(
+            ObjectOptimisticLockingFailureException ex) {
+        log.warn("Optimistic locking conflict: {}", ex.getMessage());
+        return ResponseEntity
+                .status(HttpStatus.CONFLICT)
+                .body(ApiResponse.error(
+                        "Ma'lumot boshqa foydalanuvchi tomonidan o'zgartirildi. Sahifani yangilab, qayta urinib ko'ring."));
+    }
+
+    /**
+     * DB cheklovi buzilishi (UNIQUE, FK, NOT NULL).
+     *
+     * <p>Handler bo'lmagani uchun bu ham 500 bo'lardi. Eng ko'p uchraydigan holat —
+     * hujjat raqamining takrorlanishi (invoice_number/order_number UNIQUE).
+     *
+     * <p>Istisno matni javobga QO'SHILMAYDI: u cheklov, jadval va ustun nomlarini
+     * oshkor qiladi. Tafsilot faqat serverda logga tushadi.
+     *
+     * @return 409 Conflict
+     */
+    @ExceptionHandler(DataIntegrityViolationException.class)
+    public ResponseEntity<ApiResponse<Void>> handleDataIntegrityViolation(DataIntegrityViolationException ex) {
+        log.error("Data integrity violation: {}", ex.getMostSpecificCause().getMessage(), ex);
+        return ResponseEntity
+                .status(HttpStatus.CONFLICT)
+                .body(ApiResponse.error(
+                        "Ma'lumotni saqlab bo'lmadi: bunday yozuv allaqachon mavjud yoki bog'liq ma'lumot topilmadi."));
     }
 
     @ExceptionHandler(Exception.class)
