@@ -25,6 +25,7 @@ import uz.shinamagazin.api.enums.EmployeeStatus;
 import uz.shinamagazin.api.enums.PermissionCode;
 import uz.shinamagazin.api.security.RequiresPermission;
 import uz.shinamagazin.api.service.EmployeeService;
+import uz.shinamagazin.api.service.export.ExportSupport;
 import uz.shinamagazin.api.service.export.GenericExportService;
 
 import java.io.ByteArrayOutputStream;
@@ -146,8 +147,10 @@ public class EmployeeController {
             @RequestParam(defaultValue = "excel") String format,
             @RequestParam(defaultValue = "10000") int maxRecords
     ) {
+        // Chegara tekshiruvi try'dan TASHQARIDA: pastdagi catch (Exception) uni
+        // RuntimeException'ga o'rab, 400 o'rniga 500 qaytarardi.
+        Pageable pageable = ExportSupport.pageable(maxRecords);
         try {
-            Pageable pageable = PageRequest.of(0, maxRecords);
             Page<EmployeeResponse> page = search != null && !search.isEmpty()
                     ? employeeService.searchEmployees(search, pageable)
                     : employeeService.getAllEmployees(pageable);
@@ -171,6 +174,7 @@ public class EmployeeController {
                     .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"" + filename + "\"")
                     .contentType(MediaType.parseMediaType(contentType))
                     .contentLength(resource.contentLength())
+                    .headers(ExportSupport.truncationHeaders(page, "xodimlar"))
                     .body(resource);
 
         } catch (Exception e) {

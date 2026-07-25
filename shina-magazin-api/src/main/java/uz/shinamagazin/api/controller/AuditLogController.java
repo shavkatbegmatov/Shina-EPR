@@ -23,6 +23,7 @@ import uz.shinamagazin.api.enums.PermissionCode;
 import uz.shinamagazin.api.security.RequiresPermission;
 import uz.shinamagazin.api.service.AuditLogService;
 import uz.shinamagazin.api.service.export.ExcelExportService;
+import uz.shinamagazin.api.service.export.ExportSupport;
 import uz.shinamagazin.api.service.export.PdfExportService;
 
 import java.io.ByteArrayOutputStream;
@@ -141,9 +142,10 @@ public class AuditLogController {
             @RequestParam(defaultValue = "excel") String format,
             @RequestParam(defaultValue = "10000") int maxRecords
     ) {
+        // Chegara tekshiruvi try'dan TASHQARIDA: pastdagi catch (Exception) uni
+        // RuntimeException'ga o'rab, 400 o'rniga 500 qaytarardi.
+        Pageable pageable = ExportSupport.pageable(maxRecords, Sort.by(Sort.Direction.DESC, "createdAt"));
         try {
-            // Fetch audit logs with filters (limit to maxRecords for safety)
-            Pageable pageable = PageRequest.of(0, maxRecords, Sort.by(Sort.Direction.DESC, "createdAt"));
             Page<AuditLogResponse> auditLogsPage = auditLogService.searchAuditLogs(
                     entityType, action, userId, search, pageable
             );
@@ -169,6 +171,7 @@ public class AuditLogController {
                     .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"" + filename + "\"")
                     .contentType(MediaType.parseMediaType(contentType))
                     .contentLength(resource.contentLength())
+                    .headers(ExportSupport.truncationHeaders(auditLogsPage, "audit loglar"))
                     .body(resource);
         } catch (Exception e) {
             throw new RuntimeException("Eksport qilishda xatolik: " + e.getMessage(), e);

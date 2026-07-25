@@ -41,6 +41,15 @@ public interface SaleRepository extends JpaRepository<Sale, Long> {
     @EntityGraph(attributePaths = {"customer", "createdBy"})
     Page<Sale> findByCustomerId(Long customerId, Pageable pageable);
 
+    /**
+     * Mijozning savdolari SONI.
+     *
+     * <p>Ilgari bu `findByCustomerId(id, Pageable.unpaged()).getTotalElements()`
+     * bilan olinardi — ya'ni faqat sonni bilish uchun mijozning BARCHA savdolari
+     * xotiraga yuklanardi (@EntityGraph bilan yana customer/createdBy join'i ham).
+     */
+    long countByCustomerId(Long customerId);
+
     @Query("SELECT s FROM Sale s WHERE s.saleDate BETWEEN :start AND :end")
     List<Sale> findBySaleDateBetween(
             @Param("start") LocalDateTime start,

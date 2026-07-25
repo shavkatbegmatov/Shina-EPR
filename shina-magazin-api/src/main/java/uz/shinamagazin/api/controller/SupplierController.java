@@ -22,6 +22,7 @@ import uz.shinamagazin.api.dto.response.SupplierResponse;
 import uz.shinamagazin.api.enums.PermissionCode;
 import uz.shinamagazin.api.security.RequiresPermission;
 import uz.shinamagazin.api.service.SupplierService;
+import uz.shinamagazin.api.service.export.ExportSupport;
 import uz.shinamagazin.api.service.export.GenericExportService;
 
 import java.io.ByteArrayOutputStream;
@@ -119,8 +120,10 @@ public class SupplierController {
             @RequestParam(defaultValue = "excel") String format,
             @RequestParam(defaultValue = "10000") int maxRecords
     ) {
+        // Chegara tekshiruvi try'dan TASHQARIDA: pastdagi catch (Exception) uni
+        // RuntimeException'ga o'rab, 400 o'rniga 500 qaytarardi.
+        Pageable pageable = ExportSupport.pageable(maxRecords);
         try {
-            Pageable pageable = PageRequest.of(0, maxRecords);
             Page<SupplierResponse> page = search != null && !search.isEmpty()
                     ? supplierService.searchSuppliers(search, pageable)
                     : supplierService.getAllSuppliers(pageable);
@@ -144,6 +147,7 @@ public class SupplierController {
                     .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"" + filename + "\"")
                     .contentType(MediaType.parseMediaType(contentType))
                     .contentLength(resource.contentLength())
+                    .headers(ExportSupport.truncationHeaders(page, "ta'minotchilar"))
                     .body(resource);
 
         } catch (Exception e) {

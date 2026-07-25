@@ -22,6 +22,7 @@ import uz.shinamagazin.api.enums.DebtStatus;
 import uz.shinamagazin.api.enums.PermissionCode;
 import uz.shinamagazin.api.security.RequiresPermission;
 import uz.shinamagazin.api.service.DebtService;
+import uz.shinamagazin.api.service.export.ExportSupport;
 import uz.shinamagazin.api.service.export.GenericExportService;
 
 import java.io.ByteArrayOutputStream;
@@ -56,8 +57,10 @@ public class DebtController {
             @RequestParam(required = false) DebtStatus status,
             @RequestParam(defaultValue = "excel") String format,
             @RequestParam(defaultValue = "10000") int maxRecords) {
+        // Chegara tekshiruvi try'dan TASHQARIDA: pastdagi catch (Exception) uni
+        // RuntimeException'ga o'rab, 400 o'rniga 500 qaytarardi.
+        Pageable pageable = ExportSupport.pageable(maxRecords);
         try {
-            Pageable pageable = Pageable.ofSize(maxRecords);
             Page<DebtResponse> page = debtService.getAllDebts(status, pageable);
 
             ByteArrayOutputStream output = genericExportService.export(
@@ -79,6 +82,7 @@ public class DebtController {
                     .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"" + filename + "\"")
                     .contentType(MediaType.parseMediaType(contentType))
                     .contentLength(resource.contentLength())
+                    .headers(ExportSupport.truncationHeaders(page, "qarzlar"))
                     .body(resource);
 
         } catch (Exception e) {

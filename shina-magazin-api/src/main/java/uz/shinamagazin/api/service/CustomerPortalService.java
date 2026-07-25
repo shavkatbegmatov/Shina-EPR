@@ -108,7 +108,7 @@ public class CustomerPortalService {
                 .orElseThrow(() -> new ResourceNotFoundException("Mijoz", "id", customerId));
 
         BigDecimal totalDebt = getTotalDebt(customerId);
-        long totalPurchases = saleRepository.findByCustomerId(customerId, Pageable.unpaged()).getTotalElements();
+        long totalPurchases = saleRepository.countByCustomerId(customerId);
 
         return CustomerDashboardStats.builder()
                 .balance(customer.getBalance())
