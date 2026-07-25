@@ -11,6 +11,7 @@ import uz.shinamagazin.api.service.ShopPaymentService;
 
 import java.math.BigDecimal;
 import java.nio.charset.StandardCharsets;
+import java.security.MessageDigest;
 import java.time.ZoneId;
 import java.util.Base64;
 import java.util.HashMap;
@@ -66,8 +67,10 @@ public class PaymeWebhookController {
                 default -> rpcError(id, ERR_METHOD, "Method not found");
             });
         } catch (Exception e) {
-            log.error("Payme webhook error", e);
-            return ResponseEntity.ok(rpcError(id, ERR_CANT_PERFORM, e.getMessage()));
+            // Xato matni provayderga QAYTARILMAYDI — JPA/SQL istisnolari jadval va
+            // ustun nomlarini oshkor qiladi. Tafsilot faqat serverda logga tushadi.
+            log.error("Payme webhook error (method={})", method, e);
+            return ResponseEntity.ok(rpcError(id, ERR_CANT_PERFORM, "Internal error"));
         }
     }
 
@@ -144,12 +147,20 @@ public class PaymeWebhookController {
     // --- helpers ---
 
     private boolean authorized(String auth) {
+        // Integratsiya o'chiq bo'lsa hech qanday webhook qabul qilinmaydi (fail-closed).
+        if (!props.getPayme().isEnabled()) {
+            log.warn("Payme webhook chaqirildi, lekin integratsiya o'chiq (PAYME_ENABLED=false) — rad etildi");
+            return false;
+        }
         if (auth == null || !auth.startsWith("Basic ")) return false;
         try {
             String decoded = new String(Base64.getDecoder().decode(auth.substring(6)), StandardCharsets.UTF_8);
             int idx = decoded.indexOf(':');
             String key = idx >= 0 ? decoded.substring(idx + 1) : "";
-            return !props.getPayme().getKey().isBlank() && props.getPayme().getKey().equals(key);
+            String expected = props.getPayme().getKey();
+            return !expected.isBlank() && MessageDigest.isEqual(
+                    expected.getBytes(StandardCharsets.UTF_8),
+                    key.getBytes(StandardCharsets.UTF_8));
         } catch (Exception e) {
             return false;
         }
