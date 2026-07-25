@@ -336,5 +336,14 @@ export const DEMO_PRODUCTS: Product[] = [
   },
 ];
 
-/** Katalogdagi noyob brendlar (filtr uchun). */
-export const DEMO_BRANDS: string[] = [...new Set(DEMO_PRODUCTS.map((p) => p.brandName!).filter(Boolean))].sort();
+/**
+ * Katalogdagi noyob brendlar (filtr uchun).
+ *
+ * Ataylab FUNKSIYA, modul darajasidagi const emas: `.sort()` mutatsiya bo'lgani
+ * uchun Rollup top-level hisoblashni "nopok" deb biladi va butun modulni prod
+ * bundle'da ushlab qolardi. Natijada soxta mahsulotlar (haqiqiy brend nomlari va
+ * narxlar bilan) ommaviy JS'ga tushardi — garchi hech qachon ko'rsatilmasa ham.
+ */
+export function getDemoBrands(): string[] {
+  return [...new Set(DEMO_PRODUCTS.map((p) => p.brandName!).filter(Boolean))].sort();
+}

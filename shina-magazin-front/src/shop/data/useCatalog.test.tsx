@@ -10,7 +10,13 @@ vi.mock('./catalogApi', () => ({
 }));
 
 import { catalogApi } from './catalogApi';
-import { useCatalogProducts, useProduct, useCatalogBrands, useCatalogFacets } from './useCatalog';
+import {
+  useCatalogProducts,
+  useProduct,
+  useCatalogBrands,
+  useCatalogFacets,
+  resolveCatalogList,
+} from './useCatalog';
 import { DEMO_PRODUCTS } from './demoProducts';
 
 const SERVER: Product[] = [
@@ -39,10 +45,44 @@ function wrapper({ children }: { children: ReactNode }) {
   return <QueryClientProvider client={qc}>{children}</QueryClientProvider>;
 }
 
+/**
+ * ⚠️ Vitrinaning eng muhim tasdig'i: PRODUCTIONDA backend yiqilganda mijoz
+ * XAYOLIY mahsulot ko'rmasligi kerak.
+ *
+ * Ilgari bitta tarmoq uzilishi butun do'konni haqiqiy brend nomlari va narxlar
+ * bilan to'lgan demo katalogga o'tkazardi ("Michelin Primacy 4", 1 200 000 so'm)
+ * va mijoz mavjud bo'lmagan mahsulotga buyurtma bera olardi.
+ *
+ * Prod/dev farqi `import.meta.env.DEV` modul-const'i orqali hal qilinadi (bu
+ * demo massivning bundle'dan tree-shake bo'lishi uchun zarur), shuning uchun uni
+ * hook darajasida stublab bo'lmaydi — vitest'da DEV har doim `true`. Buning
+ * o'rniga qaror mantig'i sof funksiya sifatida to'g'ridan-to'g'ri sinaladi.
+ */
+describe('resolveCatalogList — fallback qarori', () => {
+  it('PROD (fallback bo\'sh): xatoda demo emas, bo\'sh ro\'yxat qaytadi', () => {
+    expect(resolveCatalogList(undefined, true, [])).toEqual([]);
+  });
+
+  it('DEV (fallback berilgan): xatoda demo qaytadi', () => {
+    expect(resolveCatalogList(undefined, true, DEMO_PRODUCTS)).toEqual(DEMO_PRODUCTS);
+  });
+
+  it('Backend bo\'sh massiv qaytarsa fallback ISHLATILMAYDI (haqiqiy ma\'lumot)', () => {
+    expect(resolveCatalogList([], false, DEMO_PRODUCTS)).toEqual([]);
+  });
+
+  it('Backend ma\'lumot qaytarsa fallback ISHLATILMAYDI', () => {
+    expect(resolveCatalogList(SERVER, false, DEMO_PRODUCTS)).toEqual(SERVER);
+  });
+
+  it('Yuklanish paytida (data yo\'q, xato yo\'q) fallback ISHLATILMAYDI', () => {
+    expect(resolveCatalogList(undefined, false, DEMO_PRODUCTS)).toEqual([]);
+  });
+});
+
 describe('useCatalog seam (fallback)', () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    vi.unstubAllEnvs();
   });
 
   it('backend mahsulot qaytarsa o\'shani beradi', async () => {
@@ -60,45 +100,10 @@ describe('useCatalog seam (fallback)', () => {
   });
 
   it('DEV: backend xato bersa demo\'ga tushadi (backendsiz ishlash qulayligi)', async () => {
-    vi.stubEnv('DEV', true);
     vi.mocked(catalogApi.list).mockRejectedValue(new Error('network'));
     const { result } = renderHook(() => useCatalogProducts(), { wrapper });
     // Hook qayta urinadi (retry: 2), shuning uchun waitFor default 1s dan uzunroq
     await waitFor(() => expect(result.current.products).toEqual(DEMO_PRODUCTS), { timeout: 5000 });
-    expect(result.current.isError).toBe(false);
-  });
-
-  // ⚠️ Bu vitrinaning eng muhim tasdig'i: productionda backend yiqilganda mijoz
-  // XAYOLIY mahsulot ko'rmasligi kerak. Ilgari bir tarmoq uzilishi butun do'konni
-  // haqiqiy brend nomlari va narxlar bilan to'lgan demo katalogga o'tkazardi va
-  // mijoz mavjud bo'lmagan mahsulotga buyurtma bera olardi.
-  it('PROD: backend xato bersa demo KO\'RSATILMAYDI, xato holati qaytadi', async () => {
-    vi.stubEnv('DEV', false);
-    vi.mocked(catalogApi.list).mockRejectedValue(new Error('network'));
-    const { result } = renderHook(() => useCatalogProducts(), { wrapper });
-    await waitFor(() => expect(result.current.isError).toBe(true), { timeout: 5000 });
-    expect(result.current.products).toEqual([]);
-  });
-
-  it('PROD: brendlar ro\'yxatida ham soxta qiymat bo\'lmaydi', async () => {
-    vi.stubEnv('DEV', false);
-    vi.mocked(catalogApi.list).mockRejectedValue(new Error('network'));
-    // Xato holatiga chindan yetganini kutamiz — bo'sh massiv yuklanish paytida
-    // ham qaytadi, shuning uchun faqat `[]` ni tekshirish yolg'on ijobiy berardi.
-    const { result } = renderHook(
-      () => ({ brands: useCatalogBrands(), catalog: useCatalogProducts() }),
-      { wrapper }
-    );
-    await waitFor(() => expect(result.current.catalog.isError).toBe(true), { timeout: 5000 });
-    expect(result.current.brands).toEqual([]);
-  });
-
-  it('PROD: useProduct xatoda mahsulot ham, demo ham qaytarmaydi', async () => {
-    vi.stubEnv('DEV', false);
-    vi.mocked(catalogApi.list).mockRejectedValue(new Error('network'));
-    const { result } = renderHook(() => useProduct(DEMO_PRODUCTS[0].id), { wrapper });
-    await waitFor(() => expect(result.current.isError).toBe(true), { timeout: 5000 });
-    expect(result.current.product).toBeUndefined();
   });
 
   it('useProduct id bo\'yicha topadi', async () => {

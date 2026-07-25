@@ -1,7 +1,7 @@
 import { useMemo } from 'react';
 import { keepPreviousData, useQuery } from '@tanstack/react-query';
 import type { CatalogFacets, Product } from '../../types';
-import { DEMO_PRODUCTS, DEMO_BRANDS } from './demoProducts';
+import { DEMO_PRODUCTS, getDemoBrands } from './demoProducts';
 import { catalogApi, type CatalogFilterParams } from './catalogApi';
 
 /**
@@ -23,13 +23,23 @@ import { catalogApi, type CatalogFilterParams } from './catalogApi';
  */
 
 /**
- * Demo fallback faqat lokal ishlab chiqishda (vite `import.meta.env.DEV`).
+ * Demo fallback faqat lokal ishlab chiqishda.
  *
- * Modul yuklanishida emas, HAR CHAQIRUVDA o'qiladi — shunda testlar
- * `vi.stubEnv('DEV', false)` bilan production xatti-harakatini tekshira oladi
- * (vitest'da DEV sukut bo'yicha `true`).
+ * MODUL DARAJASIDAGI const bo'lishi MUHIM: Vite `import.meta.env.DEV`ni prod
+ * build'da `false`ga almashtiradi, shundan keyin quyidagi shartlar o'chib,
+ * demo modulga hech qanday havola qolmaydi va u bundle'dan butunlay chiqib
+ * ketadi. Agar bu bayroq funksiya ichida o'qilsa, Rollup havolani "tirik" deb
+ * hisoblab, soxta mahsulotlarni (haqiqiy brend nomlari va narxlar bilan)
+ * ommaviy JS'ga qo'shib yuboradi.
+ *
+ * Shu sababli `getDemoBrands()` ham funksiya — qarang `demoProducts.ts`.
+ * Tekshirish: `npm run build && grep -c Primacy dist/assets/*.js` → 0.
  */
-const isDemoFallbackEnabled = (): boolean => import.meta.env.DEV;
+const DEMO_FALLBACK_ENABLED = import.meta.env.DEV;
+
+/** Prod build'da `[]` ga foldlanadi — DEMO_PRODUCTS havolasi yo'qoladi. */
+const demoFallbackProducts = (): Product[] => (DEMO_FALLBACK_ENABLED ? DEMO_PRODUCTS : []);
+const demoFallbackBrands = (): string[] => (DEMO_FALLBACK_ENABLED ? getDemoBrands() : []);
 
 function useCatalogQuery() {
   return useQuery({
@@ -49,13 +59,27 @@ function useCatalogQuery() {
 
 /**
  * So'rov natijasini ro'yxatga aylantiradi.
- * DEV'da so'rov MUVAFFAQIYATSIZ bo'lsa demo ro'yxat beriladi (backendsiz ishlash
- * qulayligi). Backend bo'sh massiv qaytarsa — bu haqiqiy ma'lumot, demo BERILMAYDI.
+ *
+ * So'rov MUVAFFAQIYATSIZ bo'lsagina `fallback` ishlatiladi. Backend bo'sh massiv
+ * qaytarsa — bu haqiqiy ma'lumot, fallback BERILMAYDI.
+ *
+ * `fallback` parametr sifatida uzatiladi (modul ichidan o'qilmaydi), shunda
+ * prod xatti-harakatini env stublamasdan to'g'ridan-to'g'ri test qilish mumkin —
+ * qarang `useCatalog.test.tsx`.
+ *
+ * @internal faqat testlar uchun eksport qilingan
  */
-function resolveList(data: Product[] | undefined, isError: boolean): Product[] {
+export function resolveCatalogList(
+  data: Product[] | undefined,
+  isError: boolean,
+  fallback: Product[]
+): Product[] {
   if (data) return data;
-  return isError && isDemoFallbackEnabled() ? DEMO_PRODUCTS : [];
+  return isError ? fallback : [];
 }
+
+const resolveList = (data: Product[] | undefined, isError: boolean): Product[] =>
+  resolveCatalogList(data, isError, demoFallbackProducts());
 
 export function useCatalogProducts(): {
   products: Product[];
@@ -67,7 +91,7 @@ export function useCatalogProducts(): {
   return {
     products: resolveList(data, isError),
     isLoading,
-    isError: isError && !isDemoFallbackEnabled(),
+    isError: isError && !DEMO_FALLBACK_ENABLED,
     retry: () => void refetch(),
   };
 }
@@ -84,7 +108,7 @@ export function useProduct(id?: string | number): {
   return {
     product,
     isLoading,
-    isError: isError && !isDemoFallbackEnabled(),
+    isError: isError && !DEMO_FALLBACK_ENABLED,
     retry: () => void refetch(),
   };
 }
@@ -108,7 +132,7 @@ export function useCatalogBrands(): string[] {
   const list = resolveList(data, isError);
   return useMemo(() => {
     // Bo'sh ro'yxatda soxta brendlar ko'rsatilmaydi — filtr paneli bo'sh qoladi.
-    if (!list.length) return isDemoFallbackEnabled() ? DEMO_BRANDS : [];
+    if (!list.length) return demoFallbackBrands();
     return [...new Set(list.map((p) => p.brandName).filter((b): b is string => Boolean(b)))].sort();
   }, [list]);
 }
