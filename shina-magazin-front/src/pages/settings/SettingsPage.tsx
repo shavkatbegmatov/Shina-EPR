@@ -15,6 +15,7 @@ import {
 } from 'lucide-react';
 import clsx from 'clsx';
 import toast from 'react-hot-toast';
+import { getApiErrorMessage } from '../../utils/apiError';
 import { useTranslation } from 'react-i18next';
 import { brandsApi, categoriesApi } from '../../api/products.api';
 import { settingsApi } from '../../api/settings.api';
@@ -165,6 +166,7 @@ export function SettingsPage() {
       void loadBrands();
     } catch (error) {
       console.error('Failed to save brand:', error);
+      toast.error(getApiErrorMessage(error));
     } finally {
       setBrandSaving(false);
     }
@@ -179,6 +181,7 @@ export function SettingsPage() {
       void loadBrands();
     } catch (error) {
       console.error('Failed to delete brand:', error);
+      toast.error(getApiErrorMessage(error));
     } finally {
       setBrandDeleting(false);
     }
@@ -227,6 +230,7 @@ export function SettingsPage() {
       void loadCategories();
     } catch (error) {
       console.error('Failed to save category:', error);
+      toast.error(getApiErrorMessage(error));
     } finally {
       setCategorySaving(false);
     }
@@ -241,6 +245,7 @@ export function SettingsPage() {
       void loadCategories();
     } catch (error) {
       console.error('Failed to delete category:', error);
+      toast.error(getApiErrorMessage(error));
     } finally {
       setCategoryDeleting(false);
     }

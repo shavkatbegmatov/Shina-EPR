@@ -2,6 +2,8 @@
   "common": {
     "loading": "Yuklanmoqda...",
     "error": "Xatolik yuz berdi",
+    "networkError": "Server bilan aloqa yo'q. Internetni tekshirib, qayta urinib ko'ring.",
+    "loadFailed": "Ma'lumotni yuklab bo'lmadi",
     "retry": "Qayta urinish",
     "errorBoundary": {
       "title": "Nimadir noto'g'ri ketdi",

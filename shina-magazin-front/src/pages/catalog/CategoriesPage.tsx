@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import toast from 'react-hot-toast';
+import { getApiErrorMessage } from '../../utils/apiError';
 import {
   Plus,
   Pencil,
@@ -197,6 +198,7 @@ export function CategoriesPage() {
       void loadTree();
     } catch (error) {
       console.error('Failed to save category:', error);
+      toast.error(getApiErrorMessage(error));
     } finally {
       setSaving(false);
     }
@@ -212,6 +214,7 @@ export function CategoriesPage() {
       void loadTree();
     } catch (error) {
       console.error('Failed to delete category:', error);
+      toast.error(getApiErrorMessage(error));
     } finally {
       setDeleting(false);
     }

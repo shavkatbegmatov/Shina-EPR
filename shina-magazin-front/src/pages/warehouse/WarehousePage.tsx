@@ -13,6 +13,8 @@ import {
 } from 'lucide-react';
 import clsx from 'clsx';
 import { useTranslation } from 'react-i18next';
+import toast from 'react-hot-toast';
+import { getApiErrorMessage } from '../../utils/apiError';
 import { Button } from '@/ui';
 import { warehouseApi } from '../../api/warehouse.api';
 import { productsApi } from '../../api/products.api';
@@ -302,6 +304,7 @@ export function WarehousePage() {
       void loadLowStockProducts();
     } catch (error) {
       console.error('Failed to create adjustment:', error);
+      toast.error(getApiErrorMessage(error));
     } finally {
       setSubmitting(false);
     }

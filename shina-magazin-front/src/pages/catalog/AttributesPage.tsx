@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import toast from 'react-hot-toast';
+import { getApiErrorMessage } from '../../utils/apiError';
 import { Plus, Pencil, Trash2, SlidersHorizontal, GripVertical, X } from 'lucide-react';
 import { attributesApi } from '../../api/products.api';
 import { PermissionCode } from '../../hooks/usePermission';
@@ -124,6 +125,7 @@ export function AttributesPage() {
       void load();
     } catch (error) {
       console.error('Failed to save attribute:', error);
+      toast.error(getApiErrorMessage(error));
     } finally {
       setSaving(false);
     }
@@ -139,6 +141,7 @@ export function AttributesPage() {
       void load();
     } catch (error) {
       console.error('Failed to delete attribute:', error);
+      toast.error(getApiErrorMessage(error));
     } finally {
       setDeleting(false);
     }

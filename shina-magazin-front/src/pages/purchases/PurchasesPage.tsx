@@ -1,6 +1,8 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
+import toast from 'react-hot-toast';
+import { getApiErrorMessage } from '../../utils/apiError';
 import {
   Plus,
   ShoppingCart,
@@ -354,6 +356,7 @@ export function PurchasesPage() {
       void loadPurchaseStats();
     } catch (error) {
       console.error('Failed to save purchase:', error);
+      toast.error(getApiErrorMessage(error));
     } finally {
       setPurchaseSaving(false);
     }

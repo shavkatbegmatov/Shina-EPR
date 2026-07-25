@@ -1,5 +1,7 @@
 import { useCallback, useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
+import toast from 'react-hot-toast';
+import { getApiErrorMessage } from '../../utils/apiError';
 import { useParams, useNavigate } from 'react-router-dom';
 import {
   ArrowLeft,
@@ -232,6 +234,7 @@ export function PurchaseDetailPage() {
       void loadReturns();
     } catch (error) {
       console.error('Failed to save return:', error);
+      toast.error(getApiErrorMessage(error));
     } finally {
       setReturnSaving(false);
     }
@@ -244,6 +247,7 @@ export function PurchaseDetailPage() {
       void loadReturns();
     } catch (error) {
       console.error('Failed to approve return:', error);
+      toast.error(getApiErrorMessage(error));
     }
   };
 
@@ -255,6 +259,7 @@ export function PurchaseDetailPage() {
       void loadPurchase();
     } catch (error) {
       console.error('Failed to complete return:', error);
+      toast.error(getApiErrorMessage(error));
     }
   };
 
@@ -266,6 +271,7 @@ export function PurchaseDetailPage() {
       void loadReturns();
     } catch (error) {
       console.error('Failed to delete return:', error);
+      toast.error(getApiErrorMessage(error));
     }
   };
 

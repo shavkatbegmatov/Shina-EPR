@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import toast from 'react-hot-toast';
+import { getApiErrorMessage } from '../../utils/apiError';
 import { Plus, Pencil, Trash2, BadgeCheck } from 'lucide-react';
 import { brandsApi } from '../../api/products.api';
 import { PermissionCode } from '../../hooks/usePermission';
@@ -77,6 +78,7 @@ export function BrandsPage() {
       void load();
     } catch (error) {
       console.error('Failed to save brand:', error);
+      toast.error(getApiErrorMessage(error));
     } finally {
       setSaving(false);
     }
@@ -92,6 +94,7 @@ export function BrandsPage() {
       void load();
     } catch (error) {
       console.error('Failed to delete brand:', error);
+      toast.error(getApiErrorMessage(error));
     } finally {
       setDeleting(false);
     }

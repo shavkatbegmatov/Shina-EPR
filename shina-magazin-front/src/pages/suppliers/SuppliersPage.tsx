@@ -19,6 +19,8 @@ import {
 } from 'lucide-react';
 import clsx from 'clsx';
 import { useTranslation } from 'react-i18next';
+import toast from 'react-hot-toast';
+import { getApiErrorMessage } from '../../utils/apiError';
 import { Button } from '@/ui';
 import { suppliersApi } from '../../api/suppliers.api';
 import { purchasesApi } from '../../api/purchases.api';
@@ -509,6 +511,7 @@ export function SuppliersPage() {
       void loadAllSuppliers();
     } catch (error) {
       console.error('Failed to save supplier:', error);
+      toast.error(getApiErrorMessage(error));
     } finally {
       setSaving(false);
     }
@@ -593,6 +596,7 @@ export function SuppliersPage() {
       void loadStats();
     } catch (error) {
       console.error('Failed to save purchase:', error);
+      toast.error(getApiErrorMessage(error));
     } finally {
       setPurchaseSaving(false);
     }

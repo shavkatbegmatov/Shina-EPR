@@ -1,6 +1,7 @@
 import { useState, useMemo, useEffect, useRef, ReactNode } from 'react';
 import { ArrowUpDown, ArrowUp, ArrowDown, ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight, AlertTriangle, RefreshCw } from 'lucide-react';
 import clsx from 'clsx';
+import { useTranslation } from 'react-i18next';
 import { Skeleton } from '@/ui';
 import { Select } from './Select';
 
@@ -141,6 +142,8 @@ export function DataTable<T>({
   className,
   containerClassName,
 }: DataTableProps<T>) {
+  const { t } = useTranslation();
+
   // Internal sort state (for client-side sorting)
   const [internalSortConfig, setInternalSortConfig] = useState<SortConfig>({
     key: '',
@@ -305,13 +308,13 @@ export function DataTable<T>({
             <AlertTriangle className="h-6 w-6" />
           </div>
           <div>
-            <p className="font-semibold">Ma'lumotni yuklab bo'lmadi</p>
+            <p className="font-semibold">{t('common.loadFailed')}</p>
             <p className="mt-1 text-sm text-base-content/60">{error}</p>
           </div>
           {onRetry && (
             <button className="btn btn-sm btn-outline gap-2" onClick={onRetry}>
               <RefreshCw className="h-4 w-4" />
-              Qayta urinish
+              {t('common.retry')}
             </button>
           )}
         </div>
