@@ -8,6 +8,8 @@ import org.springframework.web.bind.annotation.*;
 import uz.shinamagazin.api.dto.response.ApiResponse;
 import uz.shinamagazin.api.dto.response.ChartDataResponse;
 import uz.shinamagazin.api.dto.response.DashboardStatsResponse;
+import uz.shinamagazin.api.enums.PermissionCode;
+import uz.shinamagazin.api.security.RequiresPermission;
 import uz.shinamagazin.api.service.DashboardService;
 
 @RestController
@@ -20,12 +22,14 @@ public class DashboardController {
 
     @GetMapping("/stats")
     @Operation(summary = "Get dashboard stats", description = "Dashboard statistikasi")
+    @RequiresPermission(PermissionCode.DASHBOARD_VIEW)
     public ResponseEntity<ApiResponse<DashboardStatsResponse>> getStats() {
         return ResponseEntity.ok(ApiResponse.success(dashboardService.getStats()));
     }
 
     @GetMapping("/charts")
     @Operation(summary = "Get chart data", description = "Grafiklar uchun ma'lumotlar (sotuvlar trendi, top mahsulotlar, to'lov usullari va h.k.)")
+    @RequiresPermission(PermissionCode.DASHBOARD_VIEW)
     public ResponseEntity<ApiResponse<ChartDataResponse>> getChartData(
             @RequestParam(defaultValue = "30") int days) {
         return ResponseEntity.ok(ApiResponse.success(dashboardService.getChartData(days)));

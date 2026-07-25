@@ -40,6 +40,7 @@ public class DebtController {
 
     @GetMapping
     @Operation(summary = "Get all debts", description = "Barcha qarzlarni olish")
+    @RequiresPermission(PermissionCode.DEBTS_VIEW)
     public ResponseEntity<ApiResponse<PagedResponse<DebtResponse>>> getAllDebts(
             @RequestParam(required = false) DebtStatus status,
             @PageableDefault(size = 20) Pageable pageable) {
@@ -87,24 +88,28 @@ public class DebtController {
 
     @GetMapping("/active")
     @Operation(summary = "Get active debts", description = "Faol qarzlarni olish")
+    @RequiresPermission(PermissionCode.DEBTS_VIEW)
     public ResponseEntity<ApiResponse<List<DebtResponse>>> getActiveDebts() {
         return ResponseEntity.ok(ApiResponse.success(debtService.getActiveDebts()));
     }
 
     @GetMapping("/overdue")
     @Operation(summary = "Get overdue debts", description = "Muddati o'tgan qarzlarni olish")
+    @RequiresPermission(PermissionCode.DEBTS_VIEW)
     public ResponseEntity<ApiResponse<List<DebtResponse>>> getOverdueDebts() {
         return ResponseEntity.ok(ApiResponse.success(debtService.getOverdueDebts()));
     }
 
     @GetMapping("/{id}")
     @Operation(summary = "Get debt by ID", description = "ID bo'yicha qarzni olish")
+    @RequiresPermission(PermissionCode.DEBTS_VIEW)
     public ResponseEntity<ApiResponse<DebtResponse>> getDebtById(@PathVariable Long id) {
         return ResponseEntity.ok(ApiResponse.success(debtService.getDebtById(id)));
     }
 
     @GetMapping("/customer/{customerId}")
     @Operation(summary = "Get customer debts", description = "Mijozning qarzlarini olish")
+    @RequiresPermission(PermissionCode.DEBTS_VIEW)
     public ResponseEntity<ApiResponse<List<DebtResponse>>> getCustomerDebts(
             @PathVariable Long customerId) {
         return ResponseEntity.ok(ApiResponse.success(debtService.getCustomerDebts(customerId)));
@@ -112,12 +117,14 @@ public class DebtController {
 
     @GetMapping("/{id}/payments")
     @Operation(summary = "Get debt payments", description = "Qarz to'lovlarini olish")
+    @RequiresPermission(PermissionCode.DEBTS_VIEW)
     public ResponseEntity<ApiResponse<List<PaymentResponse>>> getDebtPayments(@PathVariable Long id) {
         return ResponseEntity.ok(ApiResponse.success(debtService.getDebtPayments(id)));
     }
 
     @GetMapping("/customer/{customerId}/payments")
     @Operation(summary = "Get customer payments", description = "Mijoz to'lovlarini olish")
+    @RequiresPermission(PermissionCode.DEBTS_VIEW)
     public ResponseEntity<ApiResponse<PagedResponse<PaymentResponse>>> getCustomerPayments(
             @PathVariable Long customerId,
             @PageableDefault(size = 20) Pageable pageable) {
@@ -128,6 +135,7 @@ public class DebtController {
 
     @PostMapping("/{id}/pay")
     @Operation(summary = "Make partial payment", description = "Qisman to'lov qilish")
+    @RequiresPermission(PermissionCode.DEBTS_PAY)
     public ResponseEntity<ApiResponse<DebtResponse>> makePayment(
             @PathVariable Long id,
             @Valid @RequestBody DebtPaymentRequest request) {
@@ -138,6 +146,7 @@ public class DebtController {
 
     @PostMapping("/{id}/pay-full")
     @Operation(summary = "Make full payment", description = "To'liq to'lov qilish")
+    @RequiresPermission(PermissionCode.DEBTS_PAY)
     public ResponseEntity<ApiResponse<DebtResponse>> makeFullPayment(
             @PathVariable Long id,
             @Valid @RequestBody DebtPaymentRequest request) {
@@ -148,12 +157,14 @@ public class DebtController {
 
     @GetMapping("/total")
     @Operation(summary = "Get total active debt", description = "Jami faol qarz summasini olish")
+    @RequiresPermission(PermissionCode.DEBTS_VIEW)
     public ResponseEntity<ApiResponse<BigDecimal>> getTotalActiveDebt() {
         return ResponseEntity.ok(ApiResponse.success(debtService.getTotalActiveDebt()));
     }
 
     @GetMapping("/customer/{customerId}/total")
     @Operation(summary = "Get customer total debt", description = "Mijozning jami qarzini olish")
+    @RequiresPermission(PermissionCode.DEBTS_VIEW)
     public ResponseEntity<ApiResponse<BigDecimal>> getCustomerTotalDebt(@PathVariable Long customerId) {
         return ResponseEntity.ok(ApiResponse.success(debtService.getCustomerTotalDebt(customerId)));
     }
