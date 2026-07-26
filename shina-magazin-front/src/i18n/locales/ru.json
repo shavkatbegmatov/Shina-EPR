@@ -688,7 +688,10 @@
         "noExpenses": "За этот период расходы не зафиксированы",
         "dailyNetProfit": "Чистая прибыль по дням",
         "missingCostWarning": "У {{count}} строк продаж нет себестоимости — валовая прибыль может быть завышена. Укажите закупочную цену товаров."
-      }
+      },
+      "statNetRevenue": "Чистая выручка",
+      "grossMinusReturns": "Валовая {{gross}} − возвраты {{returns}}",
+      "colReturns": "Возврат"
     },
     "pos": {
       "productsTitle": "Товары",

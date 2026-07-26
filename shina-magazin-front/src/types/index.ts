@@ -780,16 +780,25 @@ export interface WarehouseStats {
 
 // Report Types
 export interface SalesReport {
+  /** Yalpi savdo summasi — qaytarishlar ayirilmagan. */
   totalRevenue: number;
+  /** Davrda qaytarilgan summa. */
+  returnsTotal: number;
+  /** totalRevenue − returnsTotal. */
+  netRevenue: number;
   totalProfit: number;
   totalSalesCount: number;
+  /** Bekor qilinmagan savdolar — qaytarilganlari ham shu yerda. */
   completedSalesCount: number;
   cancelledSalesCount: number;
+  returnsCount: number;
   averageSaleAmount: number;
   cashTotal: number;
   cardTotal: number;
   transferTotal: number;
   debtTotal: number;
+  /** Tannarxi noma'lum qatorlar — noldan katta bo'lsa foyda oshib ko'rinadi. */
+  itemsWithoutCost: number;
   dailyData: DailySalesData[];
   topProducts: TopSellingProduct[];
   topCustomers: TopCustomer[];
@@ -798,6 +807,8 @@ export interface SalesReport {
 export interface DailySalesData {
   date: string;
   revenue: number;
+  returns: number;
+  netRevenue: number;
   salesCount: number;
 }
 
@@ -805,7 +816,9 @@ export interface TopSellingProduct {
   productId: number;
   productName: string;
   productSku: string;
+  /** SOF miqdor: sotilgan − qaytarilgan. */
   quantitySold: number;
+  quantityReturned: number;
   totalRevenue: number;
 }
 

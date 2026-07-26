@@ -347,11 +347,21 @@ function SalesReportView({ report }: { report: SalesReport }) {
   return (
     <div className="space-y-6">
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
+        {/* Sof daromad asosiy raqam: qaytarishlar ayirilgan holda. Yalpi
+            summa va qaytarishlar ostida ko'rsatiladi. */}
         <StatCard
-          title={t('erp.reports.statTotalRevenue')}
-          value={formatCurrency(report.totalRevenue)}
+          title={t('erp.reports.statNetRevenue')}
+          value={formatCurrency(report.netRevenue)}
           icon={TrendingUp}
           color="success"
+          subtext={
+            report.returnsTotal > 0
+              ? t('erp.reports.grossMinusReturns', {
+                  gross: formatCurrency(report.totalRevenue),
+                  returns: formatCurrency(report.returnsTotal),
+                })
+              : undefined
+          }
         />
         <StatCard
           title={t('erp.reports.statTotalProfit')}
@@ -374,6 +384,15 @@ function SalesReportView({ report }: { report: SalesReport }) {
         />
       </div>
 
+      {/* Tannarxi noma'lum qatorlar foydani oshirib ko'rsatadi — hisobotga
+          ishonishdan oldin bu haqda bilish kerak. */}
+      {report.itemsWithoutCost > 0 && (
+        <div className="alert alert-warning">
+          <AlertTriangle className="h-5 w-5" />
+          <span>{t('erp.reports.pl.missingCostWarning', { count: report.itemsWithoutCost })}</span>
+        </div>
+      )}
+
       <div className="surface-card p-6">
         <h2 className="mb-4 text-lg font-semibold">{t('erp.reports.byPaymentMethod')}</h2>
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
@@ -395,6 +414,7 @@ function SalesReportView({ report }: { report: SalesReport }) {
                     <th>{t('erp.reports.colDate')}</th>
                     <th className="text-right">{t('erp.reports.colSales')}</th>
                     <th className="text-right">{t('erp.reports.colRevenue')}</th>
+                    <th className="text-right">{t('erp.reports.colReturns')}</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -403,6 +423,13 @@ function SalesReportView({ report }: { report: SalesReport }) {
                       <td>{formatDate(day.date)}</td>
                       <td className="text-right">{day.salesCount}</td>
                       <td className="text-right">{formatCurrency(day.revenue)}</td>
+                      <td className="text-right">
+                        {day.returns > 0 ? (
+                          <span className="text-error">−{formatCurrency(day.returns)}</span>
+                        ) : (
+                          '—'
+                        )}
+                      </td>
                     </tr>
                   ))}
                 </tbody>

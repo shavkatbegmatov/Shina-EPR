@@ -330,11 +330,13 @@ class ProfitLossReportTest {
     }
 
     private Sale sale(LocalDate date, ItemSpec spec) {
+        // Summalar noldan boshlanadi va `addItem` ularni to'plab boradi —
+        // shunda fixture haqiqiy savdodagidek izchil qoladi.
         Sale sale = Sale.builder()
                 .invoiceNumber("INV-" + (++seq))
                 .saleDate(date.atTime(12, 0))
-                .subtotal(new BigDecimal(spec.totalPrice()))
-                .totalAmount(new BigDecimal(spec.totalPrice()))
+                .subtotal(BigDecimal.ZERO)
+                .totalAmount(BigDecimal.ZERO)
                 .paidAmount(new BigDecimal(spec.totalPrice()))
                 .debtAmount(BigDecimal.ZERO)
                 .paymentMethod(PaymentMethod.CASH)
@@ -347,6 +349,13 @@ class ProfitLossReportTest {
         return sale;
     }
 
+    /**
+     * Qator qo'shadi VA savdo summalarini yangilaydi.
+     *
+     * <p>Haqiqiy savdoda {@code subtotal} har doim qatorlar yig'indisiga teng.
+     * Fixture buni buzsa, tushum {@code totalAmount} dan olinadigan hisobot
+     * ma'nosiz raqam ustida sinalardi.
+     */
     private SaleItem addItem(Sale sale, Product forProduct, int quantity,
                              String unitPrice, String costPrice, String totalPrice) {
         SaleItem item = SaleItem.builder()
@@ -358,6 +367,11 @@ class ProfitLossReportTest {
                 .costPrice(costPrice == null ? null : new BigDecimal(costPrice))
                 .build();
         sale.addItem(item);
+
+        BigDecimal lineTotal = new BigDecimal(totalPrice);
+        sale.setSubtotal(sale.getSubtotal().add(lineTotal));
+        sale.setTotalAmount(sale.getTotalAmount().add(lineTotal));
+
         saleRepository.saveAndFlush(sale);
         return item;
     }

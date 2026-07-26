@@ -688,7 +688,10 @@
         "noExpenses": "Bu davrda xarajat qayd etilmagan",
         "dailyNetProfit": "Kunlik sof foyda",
         "missingCostWarning": "{{count}} ta savdo qatorining tannarxi noma’lum — yalpi foyda haqiqiydan yuqori ko‘rinishi mumkin. Mahsulotlarga xarid narxini kiriting."
-      }
+      },
+      "statNetRevenue": "Sof daromad",
+      "grossMinusReturns": "Yalpi {{gross}} − qaytarish {{returns}}",
+      "colReturns": "Qaytarish"
     },
     "pos": {
       "productsTitle": "Mahsulotlar",

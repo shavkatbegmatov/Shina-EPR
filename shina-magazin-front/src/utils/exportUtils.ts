@@ -26,9 +26,12 @@ export function exportReportToExcel(report: SalesReport, startDate: string, endD
     [],
     ['Umumiy ko\'rsatkichlar'],
     ['Jami daromad', formatCurrency(report.totalRevenue)],
+    ['Qaytarishlar', formatCurrency(report.returnsTotal)],
+    ['Sof daromad', formatCurrency(report.netRevenue)],
     ['Jami foyda', formatCurrency(report.totalProfit)],
     ['Sotuvlar soni', report.completedSalesCount],
     ['Bekor qilingan', report.cancelledSalesCount],
+    ['Qaytarishlar soni', report.returnsCount],
     ['O\'rtacha sotuv', formatCurrency(report.averageSaleAmount)],
     [],
     ['To\'lov usullari'],
@@ -42,27 +45,30 @@ export function exportReportToExcel(report: SalesReport, startDate: string, endD
   XLSX.utils.book_append_sheet(workbook, summarySheet, 'Umumiy');
 
   // Daily sales sheet
-  const dailyHeaders = ['Sana', 'Sotuvlar soni', 'Daromad'];
+  const dailyHeaders = ['Sana', 'Sotuvlar soni', 'Daromad', 'Qaytarishlar', 'Sof daromad'];
   const dailyRows = report.dailyData.map(day => [
     formatDate(day.date),
     day.salesCount,
     formatCurrency(day.revenue),
+    formatCurrency(day.returns),
+    formatCurrency(day.netRevenue),
   ]);
   const dailySheet = XLSX.utils.aoa_to_sheet([dailyHeaders, ...dailyRows]);
-  dailySheet['!cols'] = [{ wch: 15 }, { wch: 15 }, { wch: 20 }];
+  dailySheet['!cols'] = [{ wch: 15 }, { wch: 15 }, { wch: 20 }, { wch: 20 }, { wch: 20 }];
   XLSX.utils.book_append_sheet(workbook, dailySheet, 'Kunlik sotuvlar');
 
   // Top products sheet
-  const productHeaders = ['#', 'Mahsulot', 'SKU', 'Sotilgan', 'Daromad'];
+  const productHeaders = ['#', 'Mahsulot', 'SKU', 'Sotilgan (sof)', 'Qaytarilgan', 'Daromad'];
   const productRows = report.topProducts.map((product, index) => [
     index + 1,
     product.productName,
     product.productSku,
     product.quantitySold,
+    product.quantityReturned,
     formatCurrency(product.totalRevenue),
   ]);
   const productSheet = XLSX.utils.aoa_to_sheet([productHeaders, ...productRows]);
-  productSheet['!cols'] = [{ wch: 5 }, { wch: 30 }, { wch: 15 }, { wch: 10 }, { wch: 20 }];
+  productSheet['!cols'] = [{ wch: 5 }, { wch: 30 }, { wch: 15 }, { wch: 14 }, { wch: 12 }, { wch: 20 }];
   XLSX.utils.book_append_sheet(workbook, productSheet, 'Top mahsulotlar');
 
   // Top customers sheet
@@ -106,9 +112,12 @@ export function exportReportToPDF(report: SalesReport, startDate: string, endDat
     head: [['Ko\'rsatkich', 'Qiymat']],
     body: [
       ['Jami daromad', formatCurrency(report.totalRevenue)],
+      ['Qaytarishlar', formatCurrency(report.returnsTotal)],
+      ['Sof daromad', formatCurrency(report.netRevenue)],
       ['Jami foyda', formatCurrency(report.totalProfit)],
       ['Sotuvlar soni', report.completedSalesCount.toString()],
       ['Bekor qilingan', report.cancelledSalesCount.toString()],
+      ['Qaytarishlar soni', report.returnsCount.toString()],
       ['O\'rtacha sotuv', formatCurrency(report.averageSaleAmount)],
     ],
     theme: 'striped',
@@ -145,12 +154,13 @@ export function exportReportToPDF(report: SalesReport, startDate: string, endDat
 
   autoTable(doc, {
     startY: yPos,
-    head: [['#', 'Mahsulot', 'SKU', 'Sotilgan', 'Daromad']],
+    head: [['#', 'Mahsulot', 'SKU', 'Sotilgan (sof)', 'Qaytarilgan', 'Daromad']],
     body: report.topProducts.map((product, index) => [
       (index + 1).toString(),
       product.productName,
       product.productSku,
       product.quantitySold.toString(),
+      product.quantityReturned.toString(),
       formatCurrency(product.totalRevenue),
     ]),
     theme: 'striped',
@@ -189,11 +199,13 @@ export function exportReportToPDF(report: SalesReport, startDate: string, endDat
 
     autoTable(doc, {
       startY: yPos,
-      head: [['Sana', 'Sotuvlar soni', 'Daromad']],
+      head: [['Sana', 'Sotuvlar soni', 'Daromad', 'Qaytarishlar', 'Sof daromad']],
       body: report.dailyData.map(day => [
         formatDate(day.date),
         day.salesCount.toString(),
         formatCurrency(day.revenue),
+        formatCurrency(day.returns),
+        formatCurrency(day.netRevenue),
       ]),
       theme: 'striped',
       headStyles: { fillColor: [139, 92, 246] },

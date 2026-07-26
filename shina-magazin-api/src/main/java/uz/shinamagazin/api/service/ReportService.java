@@ -36,71 +36,91 @@ public class ReportService {
     private final ExpenseRepository expenseRepository;
     private final SaleReturnRepository saleReturnRepository;
 
+    /**
+     * Sotuvlar hisoboti.
+     *
+     * <p>Ilgari bu yerda qaytarishlar umuman ko'rinmasdi va natija ikki xil
+     * yo'l bilan buzilardi:
+     * <ul>
+     *   <li>to'liq qaytarilgan savdo {@link SaleStatus#REFUNDED} holatiga
+     *       o'tgani uchun hisobotdan BUTUNLAY yo'qolardi — go'yo savdo
+     *       bo'lmagandek;
+     *   <li>qisman qaytarilgan savdo esa {@code COMPLETED} bo'lib qolgani
+     *       uchun to'liq summasi bilan qolardi, qaytarilgan qism esa hech
+     *       qayerdan ayirilmasdi.
+     * </ul>
+     *
+     * <p>Endi qaytarish alohida qator: savdo sodir bo'lgani qoladi, qaytarish
+     * esa o'zi bo'lgan sanada ayiriladi.
+     */
     public SalesReportResponse getSalesReport(LocalDate startDate, LocalDate endDate) {
+        if (startDate.isAfter(endDate)) {
+            throw new BadRequestException("Boshlanish sanasi tugash sanasidan keyin bo'lishi mumkin emas");
+        }
+
         LocalDateTime start = startDate.atStartOfDay();
         LocalDateTime end = endDate.atTime(LocalTime.MAX);
 
-        List<Sale> sales = saleRepository.findBySaleDateBetween(start, end);
+        List<Sale> allSales = saleRepository.findBySaleDateBetween(start, end);
 
-        // Completed sales only for revenue
-        List<Sale> completedSales = sales.stream()
-                .filter(s -> s.getStatus() == SaleStatus.COMPLETED)
+        // Bekor qilingandan boshqasi — SODIR BO'LGAN savdo. REFUNDED ham
+        // shu yerda: savdo bo'lgan, keyin qaytarilgan (u alohida ayiriladi).
+        List<Sale> sales = allSales.stream()
+                .filter(s -> s.getStatus() != SaleStatus.CANCELLED)
                 .collect(Collectors.toList());
 
-        // Calculate totals
-        BigDecimal totalRevenue = completedSales.stream()
+        List<SaleReturn> returns = saleReturnRepository.findByReturnDateBetweenWithItems(start, end);
+
+        BigDecimal totalRevenue = sales.stream()
                 .map(Sale::getTotalAmount)
                 .reduce(BigDecimal.ZERO, BigDecimal::add);
 
-        BigDecimal totalProfit = calculateProfit(completedSales);
-
-        long cancelledCount = sales.stream()
-                .filter(s -> s.getStatus() == SaleStatus.CANCELLED)
-                .count();
-
-        BigDecimal averageSaleAmount = completedSales.isEmpty() ? BigDecimal.ZERO :
-                totalRevenue.divide(BigDecimal.valueOf(completedSales.size()), 2, RoundingMode.HALF_UP);
-
-        // Payment method breakdown
-        BigDecimal cashTotal = completedSales.stream()
-                .filter(s -> s.getPaymentMethod() == PaymentMethod.CASH)
-                .map(Sale::getPaidAmount)
+        BigDecimal returnsTotal = returns.stream()
+                .map(SaleReturn::getRefundAmount)
                 .reduce(BigDecimal.ZERO, BigDecimal::add);
 
-        BigDecimal cardTotal = completedSales.stream()
-                .filter(s -> s.getPaymentMethod() == PaymentMethod.CARD)
-                .map(Sale::getPaidAmount)
-                .reduce(BigDecimal.ZERO, BigDecimal::add);
+        BigDecimal totalProfit = calculateProfit(sales).subtract(returnsProfitImpact(returns));
 
-        BigDecimal transferTotal = completedSales.stream()
-                .filter(s -> s.getPaymentMethod() == PaymentMethod.TRANSFER)
-                .map(Sale::getPaidAmount)
-                .reduce(BigDecimal.ZERO, BigDecimal::add);
+        long cancelledCount = allSales.size() - sales.size();
 
-        BigDecimal debtTotal = completedSales.stream()
+        // O'rtacha chek — bitta savdoning o'lchami, shuning uchun qaytarishlar
+        // ayirilmaydi: ular alohida hodisa va boshqa davrga tegishli bo'lishi
+        // mumkin.
+        BigDecimal averageSaleAmount = sales.isEmpty() ? BigDecimal.ZERO :
+                totalRevenue.divide(BigDecimal.valueOf(sales.size()), 2, RoundingMode.HALF_UP);
+
+        // To'lov usullari `paidAmount` dan olinadi, u esa naqd qaytarishda
+        // KAMAYTIRILADI — ya'ni bu summalar allaqachon qaytarishlardan toza.
+        BigDecimal cashTotal = sumPaidByMethod(sales, PaymentMethod.CASH);
+        BigDecimal cardTotal = sumPaidByMethod(sales, PaymentMethod.CARD);
+        BigDecimal transferTotal = sumPaidByMethod(sales, PaymentMethod.TRANSFER);
+
+        BigDecimal debtTotal = sales.stream()
                 .map(Sale::getDebtAmount)
                 .reduce(BigDecimal.ZERO, BigDecimal::add);
 
-        // Daily data
-        List<SalesReportResponse.DailySalesData> dailyData = getDailyData(completedSales, startDate, endDate);
+        List<SalesReportResponse.DailySalesData> dailyData =
+                getDailyData(sales, returns, startDate, endDate);
 
-        // Top products
-        List<SalesReportResponse.TopSellingProduct> topProducts = getTopProducts(completedSales);
+        List<SalesReportResponse.TopSellingProduct> topProducts = getTopProducts(sales, returns);
 
-        // Top customers
-        List<SalesReportResponse.TopCustomer> topCustomers = getTopCustomers(completedSales);
+        List<SalesReportResponse.TopCustomer> topCustomers = getTopCustomers(sales, returns);
 
         return SalesReportResponse.builder()
                 .totalRevenue(totalRevenue)
+                .returnsTotal(returnsTotal)
+                .netRevenue(totalRevenue.subtract(returnsTotal))
                 .totalProfit(totalProfit)
-                .totalSalesCount(sales.size())
-                .completedSalesCount(completedSales.size())
+                .totalSalesCount(allSales.size())
+                .completedSalesCount(sales.size())
                 .cancelledSalesCount(cancelledCount)
+                .returnsCount(returns.size())
                 .averageSaleAmount(averageSaleAmount)
                 .cashTotal(cashTotal)
                 .cardTotal(cardTotal)
                 .transferTotal(transferTotal)
                 .debtTotal(debtTotal)
+                .itemsWithoutCost(countItemsWithoutCost(sales))
                 .dailyData(dailyData)
                 .topProducts(topProducts)
                 .topCustomers(topCustomers)
@@ -110,25 +130,108 @@ public class ReportService {
     /**
      * Yalpi foyda: tushum − tannarx.
      *
-     * <p>Ilgari bu yerda ikkita xato bor edi:
+     * <p>Ilgari bu yerda uchta xato bor edi:
      * <ul>
-     *   <li>{@code unitPrice} ishlatilardi — chegirma hisobga olinmasdi, ya'ni
-     *       chegirma bilan sotilgan savdolarda foyda OSHIB ko'rinardi;
+     *   <li>{@code unitPrice} ishlatilardi — qator chegirmasi hisobga
+     *       olinmasdi, ya'ni foyda OSHIB ko'rinardi;
+     *   <li>savdo darajasidagi chegirma ({@code sale.discountAmount}) esa
+     *       umuman e'tiborga olinmasdi — shuning uchun tushum qatorlardan
+     *       emas, {@code sale.totalAmount} dan olinadi: mijoz aynan shuni
+     *       to'laydi;
      *   <li>tannarx sifatida mahsulotning JORIY xarid narxi olinardi — bugun
      *       narx o'zgarsa o'tgan oyning foydasi ham o'zgarardi.
      * </ul>
      */
-    private BigDecimal calculateProfit(List<Sale> completedSales) {
-        BigDecimal profit = BigDecimal.ZERO;
-        for (Sale sale : completedSales) {
-            for (SaleItem item : sale.getItems()) {
-                BigDecimal cost = lineCost(item);
-                if (cost != null) {
-                    profit = profit.add(item.getTotalPrice().subtract(cost));
-                }
+    private BigDecimal calculateProfit(List<Sale> sales) {
+        BigDecimal revenue = BigDecimal.ZERO;
+        BigDecimal cost = BigDecimal.ZERO;
+        for (Sale sale : sales) {
+            revenue = revenue.add(sale.getTotalAmount());
+            cost = cost.add(salesCost(sale));
+        }
+        return revenue.subtract(cost);
+    }
+
+    /**
+     * Savdodagi barcha qatorlarning tannarxi.
+     *
+     * <p>Tannarxi noma'lum qator NOL deb olinadi — uni umuman tashlab yuborish
+     * o'sha qatorning tushumini ham yashirardi. Bunday qatorlar soni
+     * hisobotda alohida qaytariladi ({@code itemsWithoutCost}).
+     */
+    private BigDecimal salesCost(Sale sale) {
+        BigDecimal total = BigDecimal.ZERO;
+        for (SaleItem item : sale.getItems()) {
+            BigDecimal cost = lineCost(item);
+            if (cost != null) {
+                total = total.add(cost);
             }
         }
-        return profit;
+        return total;
+    }
+
+    private long countItemsWithoutCost(List<Sale> sales) {
+        return sales.stream()
+                .flatMap(s -> s.getItems().stream())
+                .filter(i -> lineCost(i) == null)
+                .count();
+    }
+
+    /**
+     * Qaytarishlarning yalpi foydaga ta'siri: qaytarilgan pul − qaytgan tannarx.
+     *
+     * <p>Faqat pulni ayirish yetarli emas: tovar omborga qaytdi, uning
+     * tannarxi ham sotilganlar tannarxidan chiqishi kerak. Aks holda
+     * qaytarish foydani ikki marta urardi.
+     */
+    private BigDecimal returnsProfitImpact(List<SaleReturn> returns) {
+        BigDecimal impact = BigDecimal.ZERO;
+        for (SaleReturn saleReturn : returns) {
+            impact = impact.add(saleReturn.getRefundAmount()).subtract(returnedCost(saleReturn));
+        }
+        return impact;
+    }
+
+    /** Qaytarilgan tovarlarning tannarxi. */
+    private BigDecimal returnedCost(SaleReturn saleReturn) {
+        BigDecimal total = BigDecimal.ZERO;
+        for (SaleReturnItem item : saleReturn.getItems()) {
+            BigDecimal unitCost = item.getSaleItem() != null ? item.getSaleItem().getCostPrice() : null;
+            if (unitCost == null && item.getProduct() != null) {
+                unitCost = item.getProduct().getPurchasePrice();
+            }
+            if (unitCost != null) {
+                total = total.add(unitCost.multiply(BigDecimal.valueOf(item.getQuantity())));
+            }
+        }
+        return total;
+    }
+
+    /**
+     * Qatorning savdo darajasidagi chegirma hisobga olingan tushumi.
+     *
+     * <p>{@code totalPrice} faqat QATOR chegirmasini biladi. Butun savdoga
+     * qo'shimcha chegirma berilgan bo'lsa (masalan "yaxlitladik"), u
+     * qatorlarga ulushga qarab taqsimlanadi — aks holda mahsulotlar kesimi
+     * savdo summasidan katta chiqardi.
+     */
+    private BigDecimal effectiveLineRevenue(Sale sale, SaleItem item) {
+        BigDecimal lineTotal = item.getTotalPrice();
+        BigDecimal subtotal = sale.getSubtotal();
+        BigDecimal total = sale.getTotalAmount();
+
+        if (subtotal == null || subtotal.signum() == 0 || total == null
+                || subtotal.compareTo(total) == 0) {
+            return lineTotal;
+        }
+        return lineTotal.multiply(total).divide(subtotal, 2, RoundingMode.HALF_UP);
+    }
+
+    private BigDecimal sumPaidByMethod(List<Sale> sales, PaymentMethod method) {
+        return sales.stream()
+                .filter(s -> s.getPaymentMethod() == method)
+                .map(Sale::getPaidAmount)
+                .reduce(BigDecimal.ZERO, BigDecimal::add);
     }
 
     /**
@@ -184,20 +287,18 @@ public class ReportService {
             String dateKey = sale.getSaleDate().toLocalDate().format(formatter);
             PlAggregator agg = daily.get(dateKey);
 
-            for (SaleItem item : sale.getItems()) {
-                BigDecimal lineRevenue = item.getTotalPrice();
-                BigDecimal lineCost = lineCost(item);
-                if (lineCost == null) {
-                    itemsWithoutCost++;
-                    lineCost = BigDecimal.ZERO;
-                }
+            // Tushum ATAYLAB qatorlardan emas, `totalAmount` dan: qatorlar
+            // yig'indisi savdo darajasidagi chegirmani bilmaydi, ya'ni mijoz
+            // to'lagan summadan katta chiqardi.
+            BigDecimal saleRevenue = sale.getTotalAmount();
+            BigDecimal saleCost = salesCost(sale);
+            itemsWithoutCost += sale.getItems().stream().filter(i -> lineCost(i) == null).count();
 
-                revenue = revenue.add(lineRevenue);
-                cogs = cogs.add(lineCost);
-                if (agg != null) {
-                    agg.revenue = agg.revenue.add(lineRevenue);
-                    agg.cogs = agg.cogs.add(lineCost);
-                }
+            revenue = revenue.add(saleRevenue);
+            cogs = cogs.add(saleCost);
+            if (agg != null) {
+                agg.revenue = agg.revenue.add(saleRevenue);
+                agg.cogs = agg.cogs.add(saleCost);
             }
         }
 
@@ -214,21 +315,13 @@ public class ReportService {
                 agg.returns = agg.returns.add(saleReturn.getRefundAmount());
             }
 
-            for (SaleReturnItem item : saleReturn.getItems()) {
-                // Tovar omborga qaytdi — uning tannarxi sotilganlar tannarxidan
-                // chiqadi. Aks holda qaytarish yalpi foydani ikki marta urardi:
-                // ham tushum kamayardi, ham tannarx qolib ketardi.
-                BigDecimal unitCost = item.getSaleItem() != null ? item.getSaleItem().getCostPrice() : null;
-                if (unitCost == null && item.getProduct() != null) {
-                    unitCost = item.getProduct().getPurchasePrice();
-                }
-                if (unitCost == null) continue;
-
-                BigDecimal returnedCost = unitCost.multiply(BigDecimal.valueOf(item.getQuantity()));
-                cogs = cogs.subtract(returnedCost);
-                if (agg != null) {
-                    agg.cogs = agg.cogs.subtract(returnedCost);
-                }
+            // Tovar omborga qaytdi — uning tannarxi sotilganlar tannarxidan
+            // chiqadi. Aks holda qaytarish yalpi foydani ikki marta urardi:
+            // ham tushum kamayardi, ham tannarx qolib ketardi.
+            BigDecimal returnedCost = returnedCost(saleReturn);
+            cogs = cogs.subtract(returnedCost);
+            if (agg != null) {
+                agg.cogs = agg.cogs.subtract(returnedCost);
             }
         }
 
@@ -316,24 +409,37 @@ public class ReportService {
         BigDecimal expenses = BigDecimal.ZERO;
     }
 
+    /**
+     * Kunlik tushum.
+     *
+     * <p>{@code revenue} — yalpi (savdolar), {@code returns} — o'sha kunda
+     * qaytarilgan summa. Ikkalasi alohida qaytariladi: qaytarish boshqa
+     * davrdagi savdoga tegishli bo'lishi mumkin, shuning uchun uni tushumga
+     * "singdirib yuborish" kunlik dinamikani buzardi.
+     */
     private List<SalesReportResponse.DailySalesData> getDailyData(
-            List<Sale> sales, LocalDate startDate, LocalDate endDate) {
+            List<Sale> sales, List<SaleReturn> returns, LocalDate startDate, LocalDate endDate) {
 
         Map<String, DailyAggregator> dailyMap = new LinkedHashMap<>();
         DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd");
 
-        // Initialize all days
         for (LocalDate date = startDate; !date.isAfter(endDate); date = date.plusDays(1)) {
             dailyMap.put(date.format(formatter), new DailyAggregator());
         }
 
-        // Aggregate sales
         for (Sale sale : sales) {
-            String dateKey = sale.getSaleDate().toLocalDate().format(formatter);
-            DailyAggregator agg = dailyMap.get(dateKey);
+            DailyAggregator agg = dailyMap.get(sale.getSaleDate().toLocalDate().format(formatter));
             if (agg != null) {
                 agg.revenue = agg.revenue.add(sale.getTotalAmount());
                 agg.count++;
+            }
+        }
+
+        for (SaleReturn saleReturn : returns) {
+            DailyAggregator agg =
+                    dailyMap.get(saleReturn.getReturnDate().toLocalDate().format(formatter));
+            if (agg != null) {
+                agg.returns = agg.returns.add(saleReturn.getRefundAmount());
             }
         }
 
@@ -341,43 +447,78 @@ public class ReportService {
                 .map(e -> SalesReportResponse.DailySalesData.builder()
                         .date(e.getKey())
                         .revenue(e.getValue().revenue)
+                        .returns(e.getValue().returns)
+                        .netRevenue(e.getValue().revenue.subtract(e.getValue().returns))
                         .salesCount(e.getValue().count)
                         .build())
                 .collect(Collectors.toList());
     }
 
-    private List<SalesReportResponse.TopSellingProduct> getTopProducts(List<Sale> sales) {
+    /**
+     * Eng ko'p sotilgan mahsulotlar — SOF miqdor bo'yicha.
+     *
+     * <p>Qaytarilgan tovar ayiriladi: hammasi qaytarilgan mahsulot "eng ko'p
+     * sotilgan" ro'yxatida turishi noto'g'ri edi.
+     */
+    private List<SalesReportResponse.TopSellingProduct> getTopProducts(
+            List<Sale> sales, List<SaleReturn> returns) {
+
         Map<Long, ProductAggregator> productMap = new HashMap<>();
 
         for (Sale sale : sales) {
             for (SaleItem item : sale.getItems()) {
-                Long productId = item.getProduct().getId();
-                ProductAggregator agg = productMap.computeIfAbsent(productId, k -> {
-                    ProductAggregator a = new ProductAggregator();
-                    a.productId = productId;
-                    a.productName = item.getProduct().getName();
-                    a.productSku = item.getProduct().getSku();
-                    return a;
-                });
+                ProductAggregator agg = aggregatorFor(productMap, item.getProduct());
                 agg.quantitySold += item.getQuantity();
-                agg.totalRevenue = agg.totalRevenue.add(item.getTotalPrice());
+                agg.totalRevenue = agg.totalRevenue.add(effectiveLineRevenue(sale, item));
             }
         }
 
+        for (SaleReturn saleReturn : returns) {
+            for (SaleReturnItem item : saleReturn.getItems()) {
+                ProductAggregator agg = aggregatorFor(productMap, item.getProduct());
+                agg.quantityReturned += item.getQuantity();
+                agg.totalRevenue = agg.totalRevenue.subtract(item.getTotalPrice());
+            }
+        }
+
+        // Sof miqdor bo'yicha saralanadi — davrda sotuvsiz, faqat qaytarishi
+        // bo'lgan mahsulot manfiy chiqadi va tabiiy ravishda ro'yxat oxiriga
+        // tushib, kesib tashlanadi.
         return productMap.values().stream()
-                .sorted((a, b) -> Integer.compare(b.quantitySold, a.quantitySold))
+                .sorted((a, b) -> Integer.compare(
+                        b.quantitySold - b.quantityReturned,
+                        a.quantitySold - a.quantityReturned))
                 .limit(10)
                 .map(a -> SalesReportResponse.TopSellingProduct.builder()
                         .productId(a.productId)
                         .productName(a.productName)
                         .productSku(a.productSku)
-                        .quantitySold(a.quantitySold)
+                        .quantitySold(a.quantitySold - a.quantityReturned)
+                        .quantityReturned(a.quantityReturned)
                         .totalRevenue(a.totalRevenue)
                         .build())
                 .collect(Collectors.toList());
     }
 
-    private List<SalesReportResponse.TopCustomer> getTopCustomers(List<Sale> sales) {
+    private ProductAggregator aggregatorFor(Map<Long, ProductAggregator> map, Product product) {
+        return map.computeIfAbsent(product.getId(), k -> {
+            ProductAggregator a = new ProductAggregator();
+            a.productId = product.getId();
+            a.productName = product.getName();
+            a.productSku = product.getSku();
+            return a;
+        });
+    }
+
+    /**
+     * Eng ko'p xarid qilgan mijozlar — qaytarishlar ayirilgan holda.
+     *
+     * <p>Katta xarid qilib, keyin hammasini qaytargan mijoz "eng yaxshi
+     * mijoz" bo'lib qolmasligi kerak.
+     */
+    private List<SalesReportResponse.TopCustomer> getTopCustomers(
+            List<Sale> sales, List<SaleReturn> returns) {
+
         Map<Long, CustomerAggregator> customerMap = new HashMap<>();
 
         for (Sale sale : sales) {
@@ -393,6 +534,19 @@ public class ReportService {
             });
             agg.purchaseCount++;
             agg.totalSpent = agg.totalSpent.add(sale.getTotalAmount());
+        }
+
+        // Qaytarish faqat MAVJUD mijozdan ayiriladi: agar uning savdosi bu
+        // davrda bo'lmasa, uni ro'yxatga manfiy summa bilan qo'shish "top
+        // mijozlar" jadvalini chalkashtirardi.
+        for (SaleReturn saleReturn : returns) {
+            Sale sale = saleReturn.getSale();
+            if (sale == null || sale.getCustomer() == null) continue;
+
+            CustomerAggregator agg = customerMap.get(sale.getCustomer().getId());
+            if (agg != null) {
+                agg.totalSpent = agg.totalSpent.subtract(saleReturn.getRefundAmount());
+            }
         }
 
         return customerMap.values().stream()
@@ -806,6 +960,7 @@ public class ReportService {
     // Helper classes
     private static class DailyAggregator {
         BigDecimal revenue = BigDecimal.ZERO;
+        BigDecimal returns = BigDecimal.ZERO;
         long count = 0;
     }
 
@@ -837,6 +992,7 @@ public class ReportService {
         String productName;
         String productSku;
         int quantitySold = 0;
+        int quantityReturned = 0;
         BigDecimal totalRevenue = BigDecimal.ZERO;
     }
 
