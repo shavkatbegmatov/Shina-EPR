@@ -49,6 +49,27 @@ public final class ProductSpecs {
         return (root, query, cb) -> cb.equal(root.get("season"), season);
     }
 
+    /**
+     * Shina o'lchami bo'yicha aniq moslik. Har bir bo'lak mustaqil ixtiyoriy,
+     * shuning uchun "faqat R16" yoki "205/55, diametr farqi yo'q" ham ishlaydi.
+     *
+     * <p>O'lcham alohida sonli ustunlarda saqlanadi (width/profile/diameter),
+     * shuning uchun bu yerda LIKE emas, tenglik ishlatiladi — indeks ishlaydi
+     * va "16" qidiruvi "160" ga tushib ketmaydi.
+     */
+    public static Specification<Product> sizeIs(Integer width, Integer profile, Integer diameter) {
+        if (width == null && profile == null && diameter == null) {
+            return null;
+        }
+        return (root, query, cb) -> {
+            var predicates = new java.util.ArrayList<jakarta.persistence.criteria.Predicate>(3);
+            if (width != null) predicates.add(cb.equal(root.get("width"), width));
+            if (profile != null) predicates.add(cb.equal(root.get("profile"), profile));
+            if (diameter != null) predicates.add(cb.equal(root.get("diameter"), diameter));
+            return cb.and(predicates.toArray(jakarta.persistence.criteria.Predicate[]::new));
+        };
+    }
+
     public static Specification<Product> matchesSearch(String search) {
         if (search == null || search.isBlank()) {
             return null;

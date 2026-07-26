@@ -282,6 +282,16 @@ export interface CatalogFacets {
   priceMin?: number;
   priceMax?: number;
   attributes: CatalogAttributeFacet[];
+  /**
+   * Shina o'lchami tanlagichi uchun mavjud qiymatlar — BUTUN katalogdan.
+   * Ilgari ro'yxatlar vitrinaga yuklangan birinchi 200 mahsulotdan qurilardi,
+   * ya'ni katalog kattaroq bo'lsa ba'zi o'lchamlar taklif qilinmasdi.
+   */
+  sizes?: {
+    widths: number[];
+    profiles: number[];
+    diameters: number[];
+  };
 }
 
 export interface Product {

@@ -69,6 +69,35 @@ public interface ProductRepository extends JpaRepository<Product, Long>, JpaSpec
     @Query("SELECT SUM(p.quantity) FROM Product p WHERE p.active = true")
     Long getTotalStock();
 
+    // ─── O'lcham facetlari (o'lcham tanlagich ro'yxatlari) ───
+    // Ilgari tanlagich ro'yxatlari vitrinaga yuklangan birinchi 200 mahsulotdan
+    // qurilardi, ya'ni katalog kattaroq bo'lsa ba'zi o'lchamlar umuman
+    // taklif qilinmasdi. Endi ular butun katalogdan olinadi.
+
+    @Query("""
+            SELECT DISTINCT p.width FROM Product p
+            WHERE p.active = true AND p.width IS NOT NULL
+              AND (:allCategories = true OR p.category.id IN (:categoryIds))
+            ORDER BY p.width""")
+    List<Integer> distinctWidths(@Param("allCategories") boolean allCategories,
+                                 @Param("categoryIds") List<Long> categoryIds);
+
+    @Query("""
+            SELECT DISTINCT p.profile FROM Product p
+            WHERE p.active = true AND p.profile IS NOT NULL
+              AND (:allCategories = true OR p.category.id IN (:categoryIds))
+            ORDER BY p.profile""")
+    List<Integer> distinctProfiles(@Param("allCategories") boolean allCategories,
+                                   @Param("categoryIds") List<Long> categoryIds);
+
+    @Query("""
+            SELECT DISTINCT p.diameter FROM Product p
+            WHERE p.active = true AND p.diameter IS NOT NULL
+              AND (:allCategories = true OR p.category.id IN (:categoryIds))
+            ORDER BY p.diameter""")
+    List<Integer> distinctDiameters(@Param("allCategories") boolean allCategories,
+                                    @Param("categoryIds") List<Long> categoryIds);
+
     @EntityGraph(attributePaths = {"brand", "category"})
     List<Product> findByBrandIdAndActiveTrue(Long brandId);
 

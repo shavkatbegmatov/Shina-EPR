@@ -17,6 +17,7 @@ import uz.shinamagazin.api.exception.ResourceNotFoundException;
 import uz.shinamagazin.api.repository.ProductAttributeValueRepository;
 import uz.shinamagazin.api.repository.ProductRepository;
 import uz.shinamagazin.api.repository.spec.ProductSpecs;
+import uz.shinamagazin.api.util.TireSizeQuery;
 
 import java.math.BigDecimal;
 import java.util.ArrayList;
@@ -41,10 +42,31 @@ public class CatalogService {
     private final CategoryService categoryService;
 
     @Transactional(readOnly = true)
+    /**
+     * Ommaviy katalog.
+     *
+     * <p>O'lcham ikki yo'l bilan kelishi mumkin:
+     * <ul>
+     *   <li>aniq parametrlar sifatida (filtr paneli / o'lcham tanlagich);</li>
+     *   <li>qidiruv satri ichida — mijoz odatda "205/55R16" deb yozadi.</li>
+     * </ul>
+     * Ilgari ikkinchi yo'l umuman ishlamasdi: qidiruv faqat nom/SKU/brend
+     * bo'yicha LIKE qilardi, o'lcham esa alohida sonli ustunlarda saqlanadi.
+     * Ya'ni o'lcham mahsulot nomida bo'lmasa, mijoz hech narsa topmasdi.
+     *
+     * <p>Aniq parametrlar ustunroq: qidiruvdan ajratilgan o'lcham faqat tegishli
+     * bo'lak berilmagan bo'lsa qo'llanadi.
+     */
     public Page<CatalogProductResponse> getCatalog(
             Long brandId, Long categoryId, Season season, String search,
+            Integer width, Integer profile, Integer diameter,
             BigDecimal priceMin, BigDecimal priceMax, Boolean inStock,
             Map<Long, List<Long>> attributeFilters, Pageable pageable) {
+
+        TireSizeQuery parsed = TireSizeQuery.parse(search);
+        // Qidiruvdan o'lcham ajratilgan bo'lsa, qolgan matn (masalan brend nomi)
+        // matn qidiruvi sifatida ishlatiladi.
+        String textSearch = parsed.hasAnySize() ? parsed.remainingText() : search;
 
         Specification<Product> spec = Specification.allOf(
                 ProductSpecs.activeTrue(),
@@ -52,7 +74,11 @@ public class CatalogService {
                 ProductSpecs.categoryIn(categoryId != null
                         ? categoryService.collectDescendantIds(categoryId) : null),
                 ProductSpecs.seasonIs(season),
-                ProductSpecs.matchesSearch(search),
+                ProductSpecs.sizeIs(
+                        width != null ? width : parsed.width(),
+                        profile != null ? profile : parsed.profile(),
+                        diameter != null ? diameter : parsed.diameter()),
+                ProductSpecs.matchesSearch(textSearch),
                 ProductSpecs.priceGte(priceMin),
                 ProductSpecs.priceLte(priceMax),
                 ProductSpecs.inStock(inStock),
@@ -135,6 +161,11 @@ public class CatalogService {
                 .priceMin(priceMin)
                 .priceMax(priceMax)
                 .attributes(facets)
+                .sizes(CatalogFacetsResponse.SizeFacet.builder()
+                        .widths(productRepository.distinctWidths(allCategories, categoryIds))
+                        .profiles(productRepository.distinctProfiles(allCategories, categoryIds))
+                        .diameters(productRepository.distinctDiameters(allCategories, categoryIds))
+                        .build())
                 .build();
     }
 

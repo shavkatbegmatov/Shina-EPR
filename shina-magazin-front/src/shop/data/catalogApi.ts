@@ -23,6 +23,15 @@ export interface CatalogFilterParams {
   priceMin?: number;
   priceMax?: number;
   inStock?: boolean;
+  /**
+   * Erkin matn. Backend undan shina o'lchamini ham ajratib oladi
+   * ("205/55R16"), shuning uchun o'lchamni brauzerda filtrlash shart emas.
+   */
+  search?: string;
+  /** Shina o'lchami — filtr paneli / o'lcham tanlagichdan aniq qiymatlar. */
+  width?: number;
+  profile?: number;
+  diameter?: number;
   /** Backend formati: "attrId:optId,optId;attrId:optId" */
   attrs?: string;
   /** Pageable sort, masalan "sellingPrice,asc" */
@@ -42,6 +51,10 @@ export const catalogApi = {
     if (filters.priceMin !== undefined) params.append('priceMin', String(filters.priceMin));
     if (filters.priceMax !== undefined) params.append('priceMax', String(filters.priceMax));
     if (filters.inStock) params.append('inStock', 'true');
+    if (filters.search?.trim()) params.append('search', filters.search.trim());
+    if (filters.width) params.append('width', String(filters.width));
+    if (filters.profile) params.append('profile', String(filters.profile));
+    if (filters.diameter) params.append('diameter', String(filters.diameter));
     if (filters.attrs) params.append('attrs', filters.attrs);
     if (filters.sort) params.append('sort', filters.sort);
     const res = await api.get<ApiResponse<PagedResponse<PublicProduct>>>(`/v1/catalog?${params}`);

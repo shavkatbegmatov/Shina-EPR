@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { Search } from 'lucide-react';
 import { Card, Button, cn } from '@/ui';
-import { useCatalogProducts } from '../data/useCatalog';
+import { useCatalogProducts, useCatalogFacets } from '../data/useCatalog';
 
 /**
  * Shina o'lchami qidiruvchisi — eni / balandligi / diametri bo'yicha (mas. 205/55 R16).
@@ -14,6 +14,7 @@ export function TireSizeFinder({ className }: { className?: string }) {
   const { t } = useTranslation();
   const navigate = useNavigate();
   const { products } = useCatalogProducts();
+  const { facets } = useCatalogFacets();
 
   const [width, setWidth] = useState('');
   const [profile, setProfile] = useState('');
@@ -21,9 +22,12 @@ export function TireSizeFinder({ className }: { className?: string }) {
 
   const uniqSorted = (vals: (number | undefined)[]) =>
     [...new Set(vals.filter((v): v is number => v != null))].sort((a, b) => a - b);
-  const widths = uniqSorted(products.map((p) => p.width));
-  const profiles = uniqSorted(products.map((p) => p.profile));
-  const diameters = uniqSorted(products.map((p) => p.diameter));
+
+  // Ro'yxatlar serverdan (butun katalog bo'yicha). Facet yo'q bo'lsa —
+  // yuklangan mahsulotlardan quriladi (dev/demo rejimi).
+  const widths = facets?.sizes?.widths ?? uniqSorted(products.map((p) => p.width));
+  const profiles = facets?.sizes?.profiles ?? uniqSorted(products.map((p) => p.profile));
+  const diameters = facets?.sizes?.diameters ?? uniqSorted(products.map((p) => p.diameter));
 
   const submit = (e: React.FormEvent) => {
     e.preventDefault();

@@ -8,6 +8,7 @@ import { ProductCard } from '../components/ProductCard';
 import { TireSizeFinder } from '../components/TireSizeFinder';
 import { CatalogFilterPanel } from '../components/CatalogFilterPanel';
 import { getEffectiveTemplate } from '../../utils/categoryTree';
+import { useDebouncedValue } from '../../hooks/useDebouncedValue';
 import {
   useCatalogProducts,
   useCatalogBrands,
@@ -53,6 +54,8 @@ export function CatalogPage() {
   const [filtersOpen, setFiltersOpen] = useState(false);
 
   const [q, setQ] = useState(searchParams.get('q') ?? '');
+  // Qidiruv endi serverga ketadi — har bosilgan harfda so'rov yubormaslik uchun
+  const debouncedQ = useDebouncedValue(q, 300);
   const [brand, setBrand] = useState(searchParams.get('brand') ?? '');
   const [season, setSeason] = useState<string>(searchParams.get('season') ?? '');
   const [sort, setSort] = useState<SortKey>('new');
@@ -82,6 +85,11 @@ export function CatalogPage() {
     if (!facets) return true; // demo rejim — shina do'koni default
     return getEffectiveTemplate(facets.categories, categoryId) === 'TIRE';
   }, [facets, categoryId]);
+  // Qidiruv va o'lcham ham SERVERGA uzatiladi. Ilgari ular brauzerda
+  // filtrlanardi — ya'ni faqat yuklab olingan birinchi 200 mahsulot ichida
+  // qidirilardi va katalog o'sganda qolganlari umuman topilmasdi. Bundan
+  // tashqari "205/55R16" kabi so'rov mahsulot NOMIDA bo'lmasa ishlamasdi;
+  // backend endi uni o'lcham ustunlariga tarjima qiladi.
   const serverParams = useMemo(
     () => ({
       categoryId,
@@ -89,10 +97,14 @@ export function CatalogPage() {
       priceMin,
       priceMax,
       inStock: inStock || undefined,
+      search: debouncedQ.trim() || undefined,
+      width: width ? Number(width) : undefined,
+      profile: profile ? Number(profile) : undefined,
+      diameter: diameter ? Number(diameter) : undefined,
       attrs: attrsParam || undefined,
       sort: SORT_TO_SERVER[sort],
     }),
-    [categoryId, season, priceMin, priceMax, inStock, attrsParam, sort]
+    [categoryId, season, priceMin, priceMax, inStock, debouncedQ, width, profile, diameter, attrsParam, sort]
   );
   const { products: serverProducts, isLoading: serverLoading, serverMode } = useFilteredCatalog(serverParams);
   const { products: allProducts, isError: catalogError, retry: retryCatalog } = useCatalogProducts();
@@ -112,9 +124,11 @@ export function CatalogPage() {
     };
 
     if (serverMode) {
-      // Server: kategoriya shajarasi, narx, mavjudlik, atributlar, mavsum, saralash.
-      // Client: tez filtrlar (qidiruv, brend nomi, shina o'lchami).
-      return (serverProducts ?? []).filter(matchBasics);
+      // Server: kategoriya shajarasi, narx, mavjudlik, atributlar, mavsum,
+      // saralash, QIDIRUV va SHINA O'LCHAMI.
+      // Client: faqat brend nomi — panel brendni nom bo'yicha beradi, backend
+      // esa brandId kutadi (nom -> id moslashtiruvi hali yo'q).
+      return (serverProducts ?? []).filter((p) => !brand || p.brandName === brand);
     }
 
     // Fallback (backend yo'q): eski to'liq client-side yo'l — demo rejim ishlayveradi

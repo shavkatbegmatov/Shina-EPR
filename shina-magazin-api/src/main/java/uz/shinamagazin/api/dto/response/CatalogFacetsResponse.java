@@ -23,6 +23,18 @@ public class CatalogFacetsResponse {
     private BigDecimal priceMin;
     private BigDecimal priceMax;
     private List<AttributeFacet> attributes;
+    /** Shina o'lchami tanlagichi uchun mavjud qiymatlar (butun katalogdan). */
+    private SizeFacet sizes;
+
+    @Data
+    @Builder
+    @NoArgsConstructor
+    @AllArgsConstructor
+    public static class SizeFacet {
+        private List<Integer> widths;
+        private List<Integer> profiles;
+        private List<Integer> diameters;
+    }
 
     @Data
     @Builder

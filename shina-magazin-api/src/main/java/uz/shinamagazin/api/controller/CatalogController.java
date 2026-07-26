@@ -42,6 +42,9 @@ public class CatalogController {
             @RequestParam(required = false) Long categoryId,
             @RequestParam(required = false) Season season,
             @RequestParam(required = false) String search,
+            @RequestParam(required = false) Integer width,
+            @RequestParam(required = false) Integer profile,
+            @RequestParam(required = false) Integer diameter,
             @RequestParam(required = false) BigDecimal priceMin,
             @RequestParam(required = false) BigDecimal priceMax,
             @RequestParam(required = false) Boolean inStock,
@@ -49,7 +52,8 @@ public class CatalogController {
             @PageableDefault(size = 24) Pageable pageable) {
 
         Page<CatalogProductResponse> page = catalogService.getCatalog(
-                brandId, categoryId, season, search, priceMin, priceMax, inStock,
+                brandId, categoryId, season, search, width, profile, diameter,
+                priceMin, priceMax, inStock,
                 CatalogService.parseAttributeFilters(attrs), pageable);
         return ResponseEntity.ok(ApiResponse.success(PagedResponse.from(page)));
     }
