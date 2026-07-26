@@ -1,5 +1,5 @@
-import type { CSSProperties } from 'react';
-import { useEffect, useState, useCallback } from 'react';
+import { useState, type CSSProperties } from 'react';
+import { keepPreviousData, useQuery } from '@tanstack/react-query';
 import {
   ShoppingCart,
   Package,
@@ -31,9 +31,10 @@ import {
   Legend,
 } from 'recharts';
 import { dashboardApi } from '../../api/dashboard.api';
+import { queryKeys } from '../../lib/queryKeys';
+import { useInvalidateOnNotification } from '../../hooks/useInvalidateOnNotification';
 import { formatCurrency, formatNumber } from '../../config/constants';
-import type { DashboardStats, ChartData } from '../../types';
-import { useNotificationsStore } from '../../store/notificationsStore';
+
 import { Button, buttonVariants, useChartColors, StatCard, Skeleton } from '@/ui';
 
 // Grafik ranglari tema-aware useChartColors() hooki orqali keladi (src/ui/charts).
@@ -114,41 +115,28 @@ const CustomTooltip = ({ active, payload, label }: CustomTooltipProps) => {
 export function DashboardPage() {
   const colors = useChartColors();
   const barCursor = { fill: colors.cursor };
-  const [stats, setStats] = useState<DashboardStats | null>(null);
-  const [chartData, setChartData] = useState<ChartData | null>(null);
-  const [initialLoading, setInitialLoading] = useState(true);
-  const [refreshing, setRefreshing] = useState(false);
   const [period, setPeriod] = useState<7 | 30>(30);
-  const { notifications } = useNotificationsStore();
-  const loadData = useCallback(async (isInitial = false) => {
-    try {
-      if (!isInitial) {
-        setRefreshing(true);
-      }
-      const [statsData, chartsData] = await Promise.all([
-        dashboardApi.getStats(),
-        dashboardApi.getChartData(period),
-      ]);
-      setStats(statsData);
-      setChartData(chartsData);
-    } catch (error) {
-      console.error('Failed to load dashboard data:', error);
-    } finally {
-      setInitialLoading(false);
-      setRefreshing(false);
-    }
-  }, [period]);
 
-  useEffect(() => {
-    loadData(true);
-  }, [loadData]);
+  const statsQuery = useQuery({
+    queryKey: queryKeys.dashboard.stats(),
+    queryFn: () => dashboardApi.getStats(),
+  });
 
-  useEffect(() => {
-    if (notifications.length > 0) {
-      void loadData();
-    }
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [notifications.length]);
+  // Grafik davri kalitga kiradi: 7 va 30 kunlik ma'lumot alohida keshlanadi,
+  // shuning uchun davrni qayta tanlaganda so'rov yubormasdan ko'rsatiladi.
+  const chartQuery = useQuery({
+    queryKey: queryKeys.dashboard.chart(period),
+    queryFn: () => dashboardApi.getChartData(period),
+    placeholderData: keepPreviousData,
+  });
+
+  const stats = statsQuery.data ?? null;
+  const chartData = chartQuery.data ?? null;
+  const initialLoading = statsQuery.isPending || chartQuery.isPending;
+  const refreshing =
+    (statsQuery.isFetching || chartQuery.isFetching) && !initialLoading;
+
+  useInvalidateOnNotification([queryKeys.dashboard.all]);
 
   if (initialLoading) {
     return (

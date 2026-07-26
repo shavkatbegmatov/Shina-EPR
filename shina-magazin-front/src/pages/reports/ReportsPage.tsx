@@ -1,4 +1,5 @@
-import { useEffect, useState, useCallback } from 'react';
+import { useCallback, useState } from 'react';
+import { keepPreviousData, useQuery, useQueryClient } from '@tanstack/react-query';
 import {
   TrendingUp,
   ShoppingCart,
@@ -19,7 +20,6 @@ import {
   Receipt,
   Clock,
   UserX,
-  Check,
   Scale,
   Wallet,
   TrendingDown,
@@ -28,6 +28,8 @@ import clsx from 'clsx';
 import { useTranslation } from 'react-i18next';
 import { Button } from '@/ui';
 import { reportsApi } from '../../api/reports.api';
+import { queryKeys } from '../../lib/queryKeys';
+import { useInvalidateOnNotification } from '../../hooks/useInvalidateOnNotification';
 import {
   formatCurrency,
   formatNumber,
@@ -47,7 +49,6 @@ import {
 } from '../../utils/exportUtils';
 import { DateRangePicker, type DateRangePreset, type DateRange } from '../../components/common/DateRangePicker';
 import type { SalesReport, WarehouseReport, DebtsReport, ProfitLossReport } from '../../types';
-import { useNotificationsStore } from '../../store/notificationsStore';
 import { PermissionCode, usePermission } from '../../hooks/usePermission';
 import { PermissionGate } from '../../components/common/PermissionGate';
 
@@ -55,20 +56,12 @@ type ReportTab = 'sales' | 'warehouse' | 'debts' | 'profitLoss';
 
 export function ReportsPage() {
   const { t } = useTranslation();
+  const queryClient = useQueryClient();
   const { hasPermission } = usePermission();
   const canViewProfitLoss = hasPermission(PermissionCode.EXPENSES_VIEW);
   const [activeTab, setActiveTab] = useState<ReportTab>('sales');
-  const [salesReport, setSalesReport] = useState<SalesReport | null>(null);
-  const [warehouseReport, setWarehouseReport] = useState<WarehouseReport | null>(null);
-  const [debtsReport, setDebtsReport] = useState<DebtsReport | null>(null);
-  const [profitLoss, setProfitLoss] = useState<ProfitLossReport | null>(null);
-  const [initialLoading, setInitialLoading] = useState(true);
-  const [refreshing, setRefreshing] = useState(false);
-  const [refreshSuccess, setRefreshSuccess] = useState(false);
-  const [error, setError] = useState<string | null>(null);
   const [dateRangePreset, setDateRangePreset] = useState<DateRangePreset>('month');
   const [customRange, setCustomRange] = useState<DateRange>({ start: '', end: '' });
-  const { notifications } = useNotificationsStore();
 
   // Toshkent timezone da sana oralig'ini hisoblash
   const getDateRangeValues = useCallback((preset: DateRangePreset): { start: string; end: string } => {
@@ -98,74 +91,69 @@ export function ReportsPage() {
     }
   }, [customRange.start, customRange.end]);
 
-  const loadReports = useCallback(async (isManualRefresh = false) => {
-    // Agar birinchi yuklash bo'lmasa, smooth refresh uchun refreshing holati ishlatiladi
-    const isFirstLoad = initialLoading;
+  const range = getDateRangeValues(dateRangePreset);
+  /** Maxsus oraliq to'liq tanlanmaguncha so'rov yubormaymiz. */
+  const rangeReady = Boolean(range.start && range.end);
 
-    if (!isFirstLoad) {
-      setRefreshing(true);
-    }
+  const salesQuery = useQuery({
+    queryKey: queryKeys.reports.sales(range),
+    queryFn: () => reportsApi.getSalesReport(range.start, range.end),
+    enabled: rangeReady,
+    placeholderData: keepPreviousData,
+  });
 
-    if (isManualRefresh) {
-      setRefreshSuccess(false);
-    }
+  const warehouseQuery = useQuery({
+    queryKey: queryKeys.reports.warehouse(range),
+    queryFn: () => reportsApi.getWarehouseReport(range.start, range.end),
+    enabled: rangeReady,
+    placeholderData: keepPreviousData,
+  });
 
-    setError(null);
+  const debtsQuery = useQuery({
+    queryKey: queryKeys.reports.debts(range),
+    queryFn: () => reportsApi.getDebtsReport(range.start, range.end),
+    enabled: rangeReady,
+    placeholderData: keepPreviousData,
+  });
 
-    try {
-      const { start, end } = getDateRangeValues(dateRangePreset);
-      if (!start || !end) {
-        setError(t('erp.reports.selectDateRange'));
-        setInitialLoading(false);
-        setRefreshing(false);
-        return;
-      }
-      const [sales, warehouse, debts] = await Promise.all([
-        reportsApi.getSalesReport(start, end),
-        reportsApi.getWarehouseReport(start, end),
-        reportsApi.getDebtsReport(start, end),
-      ]);
-      setSalesReport(sales);
-      setWarehouseReport(warehouse);
-      setDebtsReport(debts);
+  /**
+   * P&L ATAYLAB alohida so'rov.
+   *
+   * <p>U `EXPENSES_VIEW` talab qiladi. Boshqa hisobotlar bilan bitta
+   * `Promise.all` ichida bo'lsa, ruxsati yo'q kassirga kelgan 403 QOLGAN
+   * hisobotlarni ham ochilmay qoldirardi.
+   */
+  const profitLossQuery = useQuery({
+    queryKey: queryKeys.reports.profitLoss(range),
+    queryFn: () => reportsApi.getProfitLossReport(range.start, range.end),
+    enabled: rangeReady && canViewProfitLoss,
+    placeholderData: keepPreviousData,
+  });
 
-      // P&L ATAYLAB alohida: u EXPENSES_VIEW talab qiladi, va yuqoridagi
-      // Promise.all ichida bo'lsa ruxsati yo'q kassirga 403 kelib QOLGAN
-      // hisobotlar ham ochilmay qolardi.
-      if (canViewProfitLoss) {
-        try {
-          setProfitLoss(await reportsApi.getProfitLossReport(start, end));
-        } catch (plError) {
-          console.error('Failed to load profit & loss report:', plError);
-          setProfitLoss(null);
-        }
-      }
+  const salesReport = salesQuery.data ?? null;
+  const warehouseReport = warehouseQuery.data ?? null;
+  const debtsReport = debtsQuery.data ?? null;
+  const profitLoss = profitLossQuery.data ?? null;
 
-      if (isManualRefresh) {
-        setRefreshSuccess(true);
-        setTimeout(() => setRefreshSuccess(false), 2000);
-      }
-    } catch (err) {
-      console.error('Failed to load reports:', err);
-      setError(t('erp.reports.loadError'));
-    } finally {
-      setInitialLoading(false);
-      setRefreshing(false);
-    }
-  }, [dateRangePreset, getDateRangeValues, initialLoading, t, canViewProfitLoss]);
+  const initialLoading =
+    rangeReady && (salesQuery.isPending || warehouseQuery.isPending || debtsQuery.isPending);
+  const refreshing =
+    (salesQuery.isFetching || warehouseQuery.isFetching || debtsQuery.isFetching) &&
+    !initialLoading;
 
-  useEffect(() => {
-    if (dateRangePreset !== 'custom' || (customRange.start && customRange.end)) {
-      loadReports(false);
-    }
-  }, [dateRangePreset, customRange.start, customRange.end, loadReports]);
+  // P&L xatosi umumiy xatoga QO'SHILMAYDI — u ruxsatga bog'liq va qolgan
+  // hisobotlarni to'smasligi kerak.
+  const error = !rangeReady
+    ? t('erp.reports.selectDateRange')
+    : salesQuery.isError || warehouseQuery.isError || debtsQuery.isError
+      ? t('erp.reports.loadError')
+      : null;
 
-  // WebSocket orqali yangi notification kelganda hisobotlarni yangilash
-  useEffect(() => {
-    if (notifications.length > 0) {
-      loadReports(false);
-    }
-  }, [notifications.length, loadReports]);
+  const refreshAll = () => {
+    void queryClient.invalidateQueries({ queryKey: queryKeys.reports.all });
+  };
+
+  useInvalidateOnNotification([queryKeys.reports.all]);
 
   const handleDateRangeChange = (preset: DateRangePreset, range?: DateRange) => {
     setDateRangePreset(preset);
@@ -233,24 +221,18 @@ export function ReportsPage() {
             onChange={handleDateRangeChange}
           />
 
+          {/* "Yangilandi" holati olib tashlandi: React Query bilan yangilanish
+              deyarli bir zumda tugaydi va 2 soniya turadigan yashil belgi
+              ma'lumot allaqachon yangi ekanini emas, kechikishni ko'rsatardi. */}
           <Button
-            variant={refreshSuccess ? 'success' : 'outline'}
+            variant="outline"
             size="sm"
             className="gap-2 transition-all"
-            onClick={() => loadReports(true)}
+            onClick={refreshAll}
             disabled={initialLoading || refreshing}
           >
-            {refreshSuccess ? (
-              <>
-                <Check className="h-4 w-4" />
-                {t('erp.reports.refreshed')}
-              </>
-            ) : (
-              <>
-                <RefreshCw className={clsx('h-4 w-4', refreshing && 'animate-spin')} />
-                {refreshing ? t('erp.reports.refreshing') : t('common.refresh')}
-              </>
-            )}
+            <RefreshCw className={clsx('h-4 w-4', refreshing && 'animate-spin')} />
+            {refreshing ? t('erp.reports.refreshing') : t('common.refresh')}
           </Button>
 
           <div className="flex items-center gap-2">

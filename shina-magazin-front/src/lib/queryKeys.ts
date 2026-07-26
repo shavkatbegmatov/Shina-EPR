@@ -100,6 +100,21 @@ export const queryKeys = {
     list: () => ['attributes', 'list'] as const,
   },
 
+  dashboard: {
+    all: ['dashboard'] as const,
+    stats: () => ['dashboard', 'stats'] as const,
+    chart: (days: number) => ['dashboard', 'chart', days] as const,
+  },
+
+  reports: {
+    all: ['reports'] as const,
+    sales: (range: { start: string; end: string }) => ['reports', 'sales', range] as const,
+    warehouse: (range: { start: string; end: string }) => ['reports', 'warehouse', range] as const,
+    debts: (range: { start: string; end: string }) => ['reports', 'debts', range] as const,
+    profitLoss: (range: { start: string; end: string }) =>
+      ['reports', 'profit-loss', range] as const,
+  },
+
   warehouse: {
     all: ['warehouse'] as const,
     stats: () => ['warehouse', 'stats'] as const,
