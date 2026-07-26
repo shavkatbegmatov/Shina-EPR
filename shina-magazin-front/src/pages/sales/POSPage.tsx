@@ -1,4 +1,5 @@
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
+import { keepPreviousData, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
 import { Plus, Minus, Trash2, ShoppingCart, User, X, Users, ArrowRight, Phone, Check, Printer } from 'lucide-react';
 import toast from 'react-hot-toast';
@@ -7,7 +8,8 @@ import { productsApi } from '../../api/products.api';
 import { salesApi } from '../../api/sales.api';
 import { customersApi } from '../../api/customers.api';
 import { useCartStore } from '../../store/cartStore';
-import { useNotificationsStore } from '../../store/notificationsStore';
+import { useInvalidateOnNotification } from '../../hooks/useInvalidateOnNotification';
+import { queryKeys } from '../../lib/queryKeys';
 import { formatCurrency, PAYMENT_METHODS } from '../../config/constants';
 import { enumLabel } from '@/shared/enumLabel';
 import { CurrencyInput } from '../../components/ui/CurrencyInput';
@@ -19,11 +21,10 @@ import { SearchInput } from '../../components/ui/SearchInput';
 import { CustomerSearchCombobox } from '../../components/common/NamePhoneSearchCombobox';
 import { Button } from '@/ui';
 import { useSaleReceipt } from '../../components/receipt/useSaleReceipt';
-import type { Product, PaymentMethod, Customer, Sale } from '../../types';
+import type { PaymentMethod, Customer, Sale } from '../../types';
 
 export function POSPage() {
   const { t } = useTranslation();
-  const [products, setProducts] = useState<Product[]>([]);
   const [search, setSearch] = useState('');
   const [loading, setLoading] = useState(false);
   const [showPayment, setShowPayment] = useState(false);
@@ -38,37 +39,29 @@ export function POSPage() {
 
   // Modal state
   const [showCustomerModal, setShowCustomerModal] = useState(false);
-  const [modalCustomers, setModalCustomers] = useState<Customer[]>([]);
   const [modalPage, setModalPage] = useState(0);
   const [modalPageSize, setModalPageSize] = useState(20);
-  const [modalTotalPages, setModalTotalPages] = useState(0);
-  const [modalTotalElements, setModalTotalElements] = useState(0);
-  const [modalLoading, setModalLoading] = useState(false);
 
   const cart = useCartStore();
-  const { notifications } = useNotificationsStore();
-  const loadProducts = useCallback(async () => {
-    try {
-      const data = await productsApi.getAll({
-        search: search || undefined,
-        size: 100, // Faza 3'da paginatsiya/infinite-scroll bilan almashtiriladi
-      });
-      setProducts(data.content);
-    } catch (error) {
-      console.error('Failed to load products:', error);
-    }
-  }, [search]);
+  const queryClient = useQueryClient();
 
-  useEffect(() => {
-    void loadProducts();
-  }, [loadProducts]);
+  const productsQuery = useQuery({
+    queryKey: queryKeys.products.search(search),
+    // size: 100 — Faza 3'da paginatsiya/infinite-scroll bilan almashtiriladi
+    queryFn: () => productsApi.getAll({ search: search || undefined, size: 100 }),
+    // Kassir bir xil so'zni qayta terganda ro'yxat keshdan chiqadi va
+    // ekran "sakramaydi" — kassada tezlik sezilarli.
+    placeholderData: keepPreviousData,
+  });
 
-  // WebSocket orqali yangi notification kelganda mahsulotlarni yangilash (zaxira o'zgarishi)
-  useEffect(() => {
-    if (notifications.length > 0) {
-      void loadProducts();
-    }
-  }, [notifications.length, loadProducts]);
+  const products = productsQuery.data?.content ?? [];
+
+  /** Zaxira o'zgardi — mahsulot ro'yxatini yangilash kerak. */
+  const invalidateProducts = () =>
+    queryClient.invalidateQueries({ queryKey: queryKeys.products.all });
+
+  // WebSocket bildirishnomasi kelganda zaxira o'zgargan bo'lishi mumkin
+  useInvalidateOnNotification([queryKeys.products.all]);
 
   const handleSelectCustomer = (customer: Customer) => {
     cart.setCustomer(customer);
@@ -79,30 +72,34 @@ export function POSPage() {
     cart.setCustomer(null);
   };
 
-  const loadModalCustomers = useCallback(async () => {
-    setModalLoading(true);
-    try {
-      const data = await customersApi.getAll({
+  // Mijozlar ro'yxati — oyna ochilmaguncha so'ralmaydi
+  const modalCustomersQuery = useQuery({
+    queryKey: queryKeys.customers.list({
+      page: modalPage,
+      size: modalPageSize,
+      search: customerSearch || undefined,
+    }),
+    queryFn: () =>
+      customersApi.getAll({
         page: modalPage,
         size: modalPageSize,
         search: customerSearch || undefined,
-      });
-      setModalCustomers(data.content);
-      setModalTotalPages(data.totalPages);
-      setModalTotalElements(data.totalElements);
-    } catch (error) {
-      console.error('Failed to load customers:', error);
-      toast.error(t('erp.pos.loadCustomersError'));
-    } finally {
-      setModalLoading(false);
-    }
-  }, [modalPage, modalPageSize, customerSearch]);
+      }),
+    enabled: showCustomerModal,
+    placeholderData: keepPreviousData,
+  });
+
+  const modalCustomers = modalCustomersQuery.data?.content ?? [];
+  const modalTotalPages = modalCustomersQuery.data?.totalPages ?? 0;
+  const modalTotalElements = modalCustomersQuery.data?.totalElements ?? 0;
+  const modalLoading = showCustomerModal && modalCustomersQuery.isPending;
 
   useEffect(() => {
-    if (showCustomerModal) {
-      void loadModalCustomers();
+    if (modalCustomersQuery.isError) {
+      console.error('Failed to load customers:', modalCustomersQuery.error);
+      toast.error(t('erp.pos.loadCustomersError'));
     }
-  }, [showCustomerModal, loadModalCustomers]);
+  }, [modalCustomersQuery.isError, modalCustomersQuery.error, t]);
 
   const handleOpenModal = () => {
     setModalPage(0);
@@ -224,7 +221,12 @@ export function POSPage() {
       setCompletedSale(sale);
       cart.clear();
       setPaidAmount(0);
-      void loadProducts();
+      // Zaxira kamaydi — ro'yxat yangilanmasa kassir sotilgan tovarni yana
+      // sotishga urinardi.
+      void invalidateProducts();
+      // Savdo qarz va mijoz balansiga ham ta'sir qiladi
+      void queryClient.invalidateQueries({ queryKey: queryKeys.sales.all });
+      void queryClient.invalidateQueries({ queryKey: queryKeys.debts.all });
     } catch (error: unknown) {
       const err = error as { response?: { data?: { message?: string } } };
       toast.error(err.response?.data?.message || t('common.error'));
