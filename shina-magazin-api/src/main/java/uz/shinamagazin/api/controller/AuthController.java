@@ -5,9 +5,16 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.AuthenticationException;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.server.ResponseStatusException;
+import uz.shinamagazin.api.exception.AccountDisabledException;
+import uz.shinamagazin.api.exception.AccountLockedException;
+import uz.shinamagazin.api.security.ClientIp;
+import uz.shinamagazin.api.security.SimpleRateLimiter;
 import uz.shinamagazin.api.dto.request.ChangePasswordRequest;
 import uz.shinamagazin.api.dto.request.LoginRequest;
 import uz.shinamagazin.api.dto.response.ApiResponse;
@@ -28,6 +35,24 @@ public class AuthController {
     private final AuthService authService;
     private final UserService userService;
     private final SessionService sessionService;
+    private final SimpleRateLimiter rateLimiter;
+
+    /**
+     * IP bo'yicha login throttle.
+     *
+     * <p>Mavjud himoya faqat FOYDALANUVCHI NOMI bo'yicha edi (LoginAttemptService:
+     * 5 urinish / 30 daqiqa). U bitta akkauntga parol tanlashni to'sadi, lekin
+     * credential stuffing'ni to'smaydi: hujumchi bitta parolni minglab turli
+     * foydalanuvchi nomiga sinab ko'rsa, hech bir akkaunt 5 chegarasiga
+     * yetmaydi va urinishlar cheksiz davom etadi.
+     *
+     * <p>Chegara ataylab bo'sh qo'yilgan (30/15 daqiqa): bitta ofis IP'si ortida
+     * o'nlab xodim bo'lishi mumkin. Muhimi — faqat MUVAFFAQIYATSIZ urinishlar
+     * hisoblanadi va muvaffaqiyatli kirish byudjetni tozalaydi, ya'ni normal
+     * foydalanuvchi hech qachon bloklanmaydi.
+     */
+    private static final int LOGIN_MAX_FAILURES_PER_IP = 30;
+    private static final long LOGIN_WINDOW_MS = 15 * 60_000;
 
     @PostMapping("/login")
     @Operation(summary = "Login", description = "Foydalanuvchi tizimga kirish")
@@ -37,9 +62,26 @@ public class AuthController {
 
         String ipAddress = getClientIpAddress(httpRequest);
         String userAgent = httpRequest.getHeader("User-Agent");
+        String throttleKey = "login:" + ipAddress;
 
-        JwtResponse response = authService.login(request, ipAddress, userAgent);
-        return ResponseEntity.ok(ApiResponse.success("Muvaffaqiyatli kirish", response));
+        if (rateLimiter.isBlocked(throttleKey, LOGIN_MAX_FAILURES_PER_IP, LOGIN_WINDOW_MS)) {
+            throw new ResponseStatusException(HttpStatus.TOO_MANY_REQUESTS,
+                    "Juda ko'p muvaffaqiyatsiz urinish. 15 daqiqadan keyin qayta urinib ko'ring.");
+        }
+
+        try {
+            JwtResponse response = authService.login(request, ipAddress, userAgent);
+            // Muvaffaqiyat — byudjet tozalanadi, aks holda kun davomida
+            // to'plangan tasodifiy xatolar ofisni bloklab qo'yardi.
+            rateLimiter.reset(throttleKey);
+            return ResponseEntity.ok(ApiResponse.success("Muvaffaqiyatli kirish", response));
+        } catch (AuthenticationException | AccountLockedException | AccountDisabledException e) {
+            // Faqat AUTENTIFIKATSIYA xatolari hisoblanadi. Infratuzilma xatosi
+            // (masalan DB uzilishi) hisoblanmasligi kerak — aks holda baza
+            // tiklangach barcha xodim 15 daqiqa kira olmasdi.
+            rateLimiter.recordFailure(throttleKey, LOGIN_WINDOW_MS);
+            throw e;
+        }
     }
 
     @PostMapping("/refresh-token")
@@ -102,15 +144,8 @@ public class AuthController {
         return ResponseEntity.ok(ApiResponse.success("Parol muvaffaqiyatli o'zgartirildi"));
     }
 
+    /** @see ClientIp — mantiq bir joyga yig'ildi (ilgari 3 joyda, turlicha edi). */
     private String getClientIpAddress(HttpServletRequest request) {
-        String xForwardedFor = request.getHeader("X-Forwarded-For");
-        if (xForwardedFor != null && !xForwardedFor.isEmpty()) {
-            return xForwardedFor.split(",")[0].trim();
-        }
-        String xRealIp = request.getHeader("X-Real-IP");
-        if (xRealIp != null && !xRealIp.isEmpty()) {
-            return xRealIp;
-        }
-        return request.getRemoteAddr();
+        return ClientIp.of(request);
     }
 }

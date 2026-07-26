@@ -4,8 +4,21 @@
 # Boshqa shop.* (storage/payment/notify) va jwt base application.yml'da env-driven.
 # Traefik/nginx ortida ishlaydi — X-Forwarded-Proto/Host'ga ishonish
 # (og:image kabi absolyut URL'lar https bo'lishi va scheme aniqlanishi uchun)
+#
+# `native` (Tomcat RemoteIpValve), `framework` (Spring ForwardedHeaderFilter) EMAS.
+# Sabab — xavfsizlik: ForwardedHeaderFilter getRemoteAddr() ni X-Forwarded-For
+# ning BIRINCHI qiymatiga o'rnatadi, uni esa MIJOZ yuboradi. Ya'ni hujumchi
+# har so'rovda soxta IP yozib, login rate limitini butunlay chetlab o'ta olardi
+# (har urinish "yangi IP" bo'lib ko'rinardi). Bu ClientIpTest'da o'lchangan.
+#
+# RemoteIpValve XFF ni o'ngdan chapga yuradi, `internal-proxies` ga mos kelgan
+# ishonchli manzillarni o'tkazib yuboradi va birinchi ISHONCHSIZ manzilni oladi.
+# Traefik Docker tarmog'ida (172.16/12) turgani uchun Tomcat'ning standart
+# internalProxies ro'yxati (10/8, 172.16/12, 192.168/16, 127/8) yetarli.
+# Valve X-Forwarded-Proto va X-Forwarded-Host'ni ham qayta ishlaydi, shuning
+# uchun absolyut URL'lar avvalgidek to'g'ri quriladi.
 server:
-  forward-headers-strategy: framework
+  forward-headers-strategy: native
 
 spring:
   datasource:

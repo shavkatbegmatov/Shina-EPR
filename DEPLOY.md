@@ -95,6 +95,10 @@ Relizlar: `git tag vX.Y.Z && git push origin vX.Y.Z` → `release.yml` GitHub Re
 ## Post-deploy checklist
 - [ ] GitHub Actions: frontend/backend CI + build-and-push yashil; deploy job ishladi.
 - [ ] Backend log: Flyway migratsiyalar + `Started`.
+- [ ] **Proksi sarlavhalari** (`forward-headers-strategy: native` ga o'tildi): storefront'ni
+      Telegram'da ulashib OG kartani tekshiring (absolyut URL `https://<domen>` bo'lishi kerak,
+      ichki host emas), va login logida IP haqiqiy mijoz manzili ekanini ko'ring
+      (Traefik konteyner IP'si `172.x` EMAS). Ikkalasi ham RemoteIpValve orqali ishlaydi.
 - [ ] **Xavfsizlik:** logdagi `XAVFSIZLIK: 'admin' akkaunti ...` qatorini toping → shu parol bilan
       kiring → darhol almashtiring. `admin123` bilan kirish ishlamasligini tasdiqlang.
 - [ ] `https://<domen>`: do'kon `/`, ERP `/admin`, kabinet `/hisob`, login `/kirish`.

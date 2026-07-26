@@ -21,6 +21,7 @@ import uz.shinamagazin.api.enums.PermissionCode;
 import uz.shinamagazin.api.enums.ShopOrderStatus;
 import uz.shinamagazin.api.security.CustomerUserDetails;
 import uz.shinamagazin.api.security.RequiresPermission;
+import uz.shinamagazin.api.security.ClientIp;
 import uz.shinamagazin.api.security.SimpleRateLimiter;
 import uz.shinamagazin.api.service.ShopOrderService;
 
@@ -58,10 +59,9 @@ public class ShopOrderController {
                 .body(ApiResponse.success("Buyurtma qabul qilindi", order));
     }
 
+    /** @see ClientIp — mantiq bir joyga yig'ildi (ilgari 3 joyda, turlicha edi). */
     private static String clientIp(HttpServletRequest req) {
-        String xff = req.getHeader("X-Forwarded-For");
-        if (xff != null && !xff.isBlank()) return xff.split(",")[0].trim();
-        return req.getRemoteAddr();
+        return ClientIp.of(req);
     }
 
     @GetMapping("/{orderNo}/status")

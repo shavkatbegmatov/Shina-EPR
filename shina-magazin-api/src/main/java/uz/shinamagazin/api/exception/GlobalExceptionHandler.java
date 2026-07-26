@@ -13,6 +13,7 @@ import org.springframework.http.converter.HttpMessageNotReadableException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
+import org.springframework.web.server.ResponseStatusException;
 import uz.shinamagazin.api.dto.response.ApiResponse;
 
 import java.util.HashMap;
@@ -169,6 +170,32 @@ public class GlobalExceptionHandler {
                 .status(HttpStatus.CONFLICT)
                 .body(ApiResponse.error(
                         "Ma'lumotni saqlab bo'lmadi: bunday yozuv allaqachon mavjud yoki bog'liq ma'lumot topilmadi."));
+    }
+
+    /**
+     * `ResponseStatusException` — status kodi istisnoning O'ZIDA ko'rsatilgan.
+     *
+     * <p>Bu handler bo'lmasa pastdagi `Exception` catch-all uni ushlab olardi va
+     * har qanday statusni 500 ga aylantirardi. Spring @ControllerAdvice'ni
+     * `ResponseStatusExceptionResolver`dan OLDIN ishlatadi, shuning uchun
+     * catch-all g'olib chiqardi. Amalda buyurtma endpointidagi rate-limit
+     * javobi (429) mijozga "Ichki server xatosi" (500) bo'lib borardi.
+     */
+    @ExceptionHandler(ResponseStatusException.class)
+    public ResponseEntity<ApiResponse<Void>> handleResponseStatusException(ResponseStatusException ex) {
+        HttpStatus status = HttpStatus.resolve(ex.getStatusCode().value());
+        if (status == null) {
+            status = HttpStatus.INTERNAL_SERVER_ERROR;
+        }
+        String reason = ex.getReason() != null ? ex.getReason() : status.getReasonPhrase();
+
+        if (status.is5xxServerError()) {
+            log.error("Server error ({}): {}", status.value(), reason, ex);
+        } else {
+            log.warn("Request rejected ({}): {}", status.value(), reason);
+        }
+
+        return ResponseEntity.status(status).body(ApiResponse.error(reason));
     }
 
     @ExceptionHandler(Exception.class)
