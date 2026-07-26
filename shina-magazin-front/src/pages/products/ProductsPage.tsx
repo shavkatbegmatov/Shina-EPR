@@ -1,4 +1,5 @@
-import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
+import { useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
+import { keepPreviousData, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
 import toast from 'react-hot-toast';
 import { getApiErrorMessage } from '../../utils/apiError';
@@ -31,15 +32,13 @@ import { ExportButtons } from '../../components/common/ExportButtons';
 import { ProductImportModal } from './ProductImportModal';
 import { AttributeValueInputs, type AttributeValueMap } from '../../components/catalog/AttributeValueInputs';
 import { flattenCategoryTree, getEffectiveTemplate, indentLabel } from '../../utils/categoryTree';
-import { useNotificationsStore } from '../../store/notificationsStore';
 import { PermissionCode } from '../../hooks/usePermission';
 import { PermissionGate } from '../../components/common/PermissionGate';
 import { useHighlight } from '../../hooks/useHighlight';
+import { useInvalidateOnNotification } from '../../hooks/useInvalidateOnNotification';
+import { queryKeys } from '../../lib/queryKeys';
 import type {
   Product,
-  Brand,
-  Category,
-  CategoryAttribute,
   ProductAttributeValue,
   ProductAttributeValueRequest,
   Season,
@@ -98,15 +97,7 @@ function toValueMap(attrs?: ProductAttributeValue[]): AttributeValueMap {
 
 export function ProductsPage() {
   const { t } = useTranslation();
-  const [products, setProducts] = useState<Product[]>([]);
-  const [loadError, setLoadError] = useState<string | null>(null);
-  const [brands, setBrands] = useState<Brand[]>([]);
-  const [categoryTree, setCategoryTree] = useState<Category[]>([]);
-  // Kategoriyaning effektiv (merosi bilan) atributlari — forma uchun
-  const [formAttributes, setFormAttributes] = useState<CategoryAttribute[]>([]);
   const [attrValues, setAttrValues] = useState<AttributeValueMap>({});
-  const [initialLoading, setInitialLoading] = useState(true);
-  const [refreshing, setRefreshing] = useState(false);
   const [showImport, setShowImport] = useState(false);
   const [search, setSearch] = useState('');
   const [brandFilter, setBrandFilter] = useState<number | ''>('');
@@ -114,8 +105,6 @@ export function ProductsPage() {
   const [seasonFilter, setSeasonFilter] = useState<Season | ''>('');
   const [page, setPage] = useState(0);
   const [pageSize, setPageSize] = useState(20);
-  const [totalPages, setTotalPages] = useState(0);
-  const [totalElements, setTotalElements] = useState(0);
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
   const [showNewProductModal, setShowNewProductModal] = useState(false);
   const [editingProductId, setEditingProductId] = useState<number | null>(null);
@@ -128,8 +117,23 @@ export function ProductsPage() {
   const [uploadingImage, setUploadingImage] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  const { notifications } = useNotificationsStore();
+  const queryClient = useQueryClient();
   const { highlightId, clearHighlight } = useHighlight();
+
+  // Brendlar va kategoriya daraxti — KATALOG sahifalari bilan bir xil
+  // kalitda: bo'limlar orasida yurganda qaytadan so'ralmaydi va brend
+  // tahrirlangach bu yerda ham o'z-o'zidan yangilanadi.
+  const brandsQuery = useQuery({
+    queryKey: queryKeys.brands.list(),
+    queryFn: () => brandsApi.getAll(),
+  });
+  const categoryTreeQuery = useQuery({
+    queryKey: queryKeys.categories.tree(),
+    queryFn: () => categoriesApi.getTree(),
+  });
+
+  const brands = useMemo(() => brandsQuery.data ?? [], [brandsQuery.data]);
+  const categoryTree = useMemo(() => categoryTreeQuery.data ?? [], [categoryTreeQuery.data]);
 
   // Ro'yxat konteksti tanlangan kategoriyaga moslashadi: shinaga tegishli
   // bo'lmagan kategoriya tanlansa Mavsum filtri va O'lcham/Mavsum ustunlari yashirinadi
@@ -225,19 +229,6 @@ export function ProductsPage() {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isTireContext]);
 
-  const loadData = useCallback(async () => {
-    try {
-      const [brandsData, treeData] = await Promise.all([
-        brandsApi.getAll(),
-        categoriesApi.getTree(),
-      ]);
-      setBrands(brandsData);
-      setCategoryTree(treeData);
-    } catch (error) {
-      console.error('Failed to load data:', error);
-    }
-  }, []);
-
   // Daraxt bo'yicha indentli variantlar (filtr va forma selectlari uchun)
   const categoryOptions = useMemo(
     () =>
@@ -256,66 +247,47 @@ export function ProductsPage() {
     formData.name.trim().length > 0 &&
     formData.sellingPrice > 0;
 
-  // Tanlangan kategoriyaning effektiv atributlarini yuklash
-  const loadFormAttributes = useCallback(async (categoryId?: number) => {
-    if (!categoryId) {
-      setFormAttributes([]);
-      return;
-    }
-    try {
-      setFormAttributes(await categoriesApi.getAttributes(categoryId));
-    } catch (error) {
-      console.error('Failed to load category attributes:', error);
-      setFormAttributes([]);
-    }
-  }, []);
+  /**
+   * Formadagi kategoriyaning effektiv atributlari.
+   *
+   * <p>Ilgari bu qo'lda chaqirilardi — `handleFormChange` dan va
+   * `handleEditProduct` dan alohida. Endi kategoriya kalitga kirgani uchun
+   * so'rov o'z-o'zidan ketadi va chaqirishni unutish mumkin emas.
+   */
+  const formAttributesQuery = useQuery({
+    queryKey: queryKeys.categories.attributes(formData.categoryId ?? 0),
+    queryFn: () => categoriesApi.getAttributes(formData.categoryId as number),
+    enabled: showNewProductModal && !!formData.categoryId,
+  });
+  const formAttributes = useMemo(
+    () => formAttributesQuery.data ?? [],
+    [formAttributesQuery.data]
+  );
 
-  const loadProducts = useCallback(async (isInitial = false) => {
-    if (!isInitial) {
-      setRefreshing(true);
-    }
-    try {
-      const data = await productsApi.getAll({
-        page,
-        size: pageSize,
-        sort: ['createdAt,desc', 'id,desc'],
-        search: search || undefined,
-        brandId: brandFilter || undefined,
-        categoryId: categoryFilter || undefined,
-        season: seasonFilter || undefined,
-      });
-      setProducts(data.content);
-      setTotalPages(data.totalPages);
-      setTotalElements(data.totalElements);
-      setLoadError(null);
-    } catch (error) {
-      console.error('Failed to load products:', error);
-      setLoadError(getApiErrorMessage(error));
-    } finally {
-      setInitialLoading(false);
-      setRefreshing(false);
-    }
-  }, [brandFilter, categoryFilter, page, pageSize, search, seasonFilter]);
+  const listParams = {
+    page,
+    size: pageSize,
+    search: search || undefined,
+    brandId: brandFilter || undefined,
+    categoryId: categoryFilter || undefined,
+    season: seasonFilter || undefined,
+  };
 
-  useEffect(() => {
-    void loadData();
-    void loadProducts(true);
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  const productsQuery = useQuery({
+    queryKey: queryKeys.products.list(listParams),
+    queryFn: () =>
+      productsApi.getAll({ ...listParams, sort: ['createdAt,desc', 'id,desc'] }),
+    placeholderData: keepPreviousData,
+  });
 
-  // Reload when filters change
-  useEffect(() => {
-    void loadProducts();
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [page, pageSize, search, brandFilter, categoryFilter, seasonFilter]);
+  const products = productsQuery.data?.content ?? [];
+  const totalPages = productsQuery.data?.totalPages ?? 0;
+  const totalElements = productsQuery.data?.totalElements ?? 0;
+  const loadError = productsQuery.isError ? getApiErrorMessage(productsQuery.error) : null;
+  const initialLoading = productsQuery.isPending;
+  const refreshing = productsQuery.isFetching && !productsQuery.isPending;
 
-  // WebSocket orqali yangi notification kelganda mahsulotlarni yangilash
-  useEffect(() => {
-    if (notifications.length > 0) {
-      void loadProducts();
-    }
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [notifications.length]);
+  useInvalidateOnNotification([queryKeys.products.all]);
 
   const handleResetFilters = () => {
     setSearch('');
@@ -332,7 +304,6 @@ export function ProductsPage() {
 
   const handleOpenNewProductModal = () => {
     setFormData(emptyFormData);
-    setFormAttributes([]);
     setAttrValues({});
     setEditingStock(null);
     setEditingCost(undefined);
@@ -343,7 +314,6 @@ export function ProductsPage() {
     setShowNewProductModal(false);
     setEditingProductId(null);
     setFormData(emptyFormData);
-    setFormAttributes([]);
     setAttrValues({});
     setEditingStock(null);
     setEditingCost(undefined);
@@ -372,7 +342,6 @@ export function ProductsPage() {
     setEditingStock(product.quantity);
     setEditingCost(product.purchasePrice);
     setAttrValues({});
-    void loadFormAttributes(product.categoryId);
     // Ro'yxat javobida atribut qiymatlari yo'q — to'liq mahsulotni olib kelamiz
     productsApi
       .getById(product.id)
@@ -381,11 +350,10 @@ export function ProductsPage() {
     setShowNewProductModal(true);
   };
 
+  // Kategoriya o'zgarsa atributlar O'Z-O'ZIDAN qayta olinadi: ular
+  // `formData.categoryId` ga kalitlangan so'rovdan keladi.
   const handleFormChange = (field: keyof ProductRequest, value: string | number | undefined) => {
     setFormData((prev) => ({ ...prev, [field]: value }));
-    if (field === 'categoryId') {
-      void loadFormAttributes(typeof value === 'number' ? value : undefined);
-    }
   };
 
   const handleAttrValueChange = (attributeId: number, value?: ProductAttributeValueRequest) => {
@@ -453,7 +421,8 @@ export function ProductsPage() {
         await productsApi.create(payload);
       }
       handleCloseNewProductModal();
-      void loadProducts();
+      // Prefiks bo'yicha: barcha filtr/sahifa kombinatsiyalari eskiradi
+      void queryClient.invalidateQueries({ queryKey: queryKeys.products.all });
     } catch (error) {
       console.error('Failed to save product:', error);
       toast.error(getApiErrorMessage(error));
@@ -582,7 +551,7 @@ export function ProductsPage() {
         <DataTable
           data={products}
           error={loadError}
-          onRetry={() => loadProducts(true)}
+          onRetry={() => void productsQuery.refetch()}
           columns={columns}
           keyExtractor={(product) => product.id}
           loading={initialLoading && !refreshing}
@@ -946,7 +915,7 @@ export function ProductsPage() {
       <ProductImportModal
         open={showImport}
         onClose={() => setShowImport(false)}
-        onImported={() => loadProducts(true)}
+        onImported={() => void queryClient.invalidateQueries({ queryKey: queryKeys.products.all })}
       />
     </div>
   );

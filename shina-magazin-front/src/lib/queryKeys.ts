@@ -22,6 +22,15 @@ export interface PurchaseListParams {
   size: number;
 }
 
+export interface ProductListParams {
+  page: number;
+  size: number;
+  search?: string;
+  brandId?: number;
+  categoryId?: number;
+  season?: string;
+}
+
 export const queryKeys = {
   suppliers: {
     all: ['suppliers'] as const,
@@ -41,6 +50,7 @@ export const queryKeys = {
 
   products: {
     all: ['products'] as const,
+    list: (params: ProductListParams) => ['products', 'list', params] as const,
     search: (term: string) => ['products', 'search', term] as const,
   },
 
