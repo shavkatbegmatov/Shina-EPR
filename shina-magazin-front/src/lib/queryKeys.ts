@@ -70,4 +70,18 @@ export const queryKeys = {
     all: ['attributes'] as const,
     list: () => ['attributes', 'list'] as const,
   },
+
+  customers: {
+    all: ['customers'] as const,
+    list: (params: { page: number; size: number; search?: string }) =>
+      ['customers', 'list', params] as const,
+    detail: (id: number) => ['customers', 'detail', id] as const,
+  },
+
+  sales: {
+    all: ['sales'] as const,
+    list: (params: { page: number; size: number; startDate?: string; endDate?: string }) =>
+      ['sales', 'list', params] as const,
+    detail: (id: number) => ['sales', 'detail', id] as const,
+  },
 } as const;

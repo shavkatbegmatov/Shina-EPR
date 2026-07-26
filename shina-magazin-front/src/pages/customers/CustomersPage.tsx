@@ -1,4 +1,5 @@
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useMemo, useState } from 'react';
+import { keepPreviousData, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
 import { KeyRound, Phone, Plus, ShieldCheck, ShieldOff, Users, X } from 'lucide-react';
 import clsx from 'clsx';
@@ -12,8 +13,9 @@ import { SearchInput } from '../../components/ui/SearchInput';
 import { ModalPortal } from '../../components/common/Modal';
 import { PhoneInput } from '../../components/ui/PhoneInput';
 import { Select } from '../../components/ui/Select';
-import { useNotificationsStore } from '../../store/notificationsStore';
 import { useHighlight } from '../../hooks/useHighlight';
+import { useInvalidateOnNotification } from '../../hooks/useInvalidateOnNotification';
+import { queryKeys } from '../../lib/queryKeys';
 import { PermissionGate } from '../../components/common/PermissionGate';
 import { usePermission, PermissionCode } from '../../hooks/usePermission';
 import { Button, ConfirmDialog } from '@/ui';
@@ -33,15 +35,9 @@ const isValidPhone = (phone: string): boolean => {
 
 export function CustomersPage() {
   const { t } = useTranslation();
-  const [customers, setCustomers] = useState<Customer[]>([]);
-  const [loadError, setLoadError] = useState<string | null>(null);
-  const [initialLoading, setInitialLoading] = useState(true);
-  const [refreshing, setRefreshing] = useState(false);
   const [search, setSearch] = useState('');
   const [page, setPage] = useState(0);
   const [pageSize, setPageSize] = useState(20);
-  const [totalPages, setTotalPages] = useState(0);
-  const [totalElements, setTotalElements] = useState(0);
   const [showModal, setShowModal] = useState(false);
   const [editingCustomer, setEditingCustomer] = useState<Customer | null>(null);
   const [formData, setFormData] = useState<CustomerRequest>(emptyFormData);
@@ -52,7 +48,7 @@ export function CustomersPage() {
   const [portalSaving, setPortalSaving] = useState(false);
   const [showDisablePortalConfirm, setShowDisablePortalConfirm] = useState(false);
 
-  const { notifications } = useNotificationsStore();
+  const queryClient = useQueryClient();
   const { highlightId, clearHighlight } = useHighlight();
   const { hasPermission } = usePermission();
   const hasSearch = useMemo(() => search.trim().length > 0, [search]);
@@ -183,50 +179,28 @@ export function CustomersPage() {
     },
   ], [t]);
 
-  const loadCustomers = useCallback(async (isInitial = false) => {
-    if (!isInitial) {
-      setRefreshing(true);
-    }
-    try {
-      const data = await customersApi.getAll({
-        page,
-        size: pageSize,
-        search: search || undefined,
-      });
-      setCustomers(data.content);
-      setTotalPages(data.totalPages);
-      setTotalElements(data.totalElements);
-      setLoadError(null);
-    } catch (error) {
-      console.error('Failed to load customers:', error);
-      // Xatoni jadvalga uzatamiz — aks holda bo'sh ro'yxat ko'rinib, operator
-      // mijozlar yo'q deb o'ylardi.
-      setLoadError(getApiErrorMessage(error));
-    } finally {
-      setInitialLoading(false);
-      setRefreshing(false);
-    }
-  }, [page, pageSize, search]);
+  const listParams = { page, size: pageSize, search: search || undefined };
 
-  // Initial load
-  useEffect(() => {
-    loadCustomers(true);
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  const customersQuery = useQuery({
+    queryKey: queryKeys.customers.list(listParams),
+    queryFn: () => customersApi.getAll(listParams),
+    // Sahifa almashganda jadval bo'sh holatga sakramaydi
+    placeholderData: keepPreviousData,
+  });
 
-  // Reload when filters change
-  useEffect(() => {
-    void loadCustomers();
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [page, pageSize, search]);
+  const customers = customersQuery.data?.content ?? [];
+  const totalPages = customersQuery.data?.totalPages ?? 0;
+  const totalElements = customersQuery.data?.totalElements ?? 0;
+  // Xatoni jadvalga uzatamiz — aks holda bo'sh ro'yxat ko'rinib, operator
+  // mijozlar yo'q deb o'ylardi.
+  const loadError = customersQuery.isError ? getApiErrorMessage(customersQuery.error) : null;
+  const initialLoading = customersQuery.isPending;
+  const refreshing = customersQuery.isFetching && !customersQuery.isPending;
 
-  // WebSocket orqali yangi notification kelganda mijozlarni yangilash
-  useEffect(() => {
-    if (notifications.length > 0) {
-      void loadCustomers();
-    }
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [notifications.length]);
+  const invalidateCustomers = () =>
+    queryClient.invalidateQueries({ queryKey: queryKeys.customers.all });
+
+  useInvalidateOnNotification([queryKeys.customers.all]);
 
   const handleOpenNewModal = () => {
     setEditingCustomer(null);
@@ -258,10 +232,8 @@ export function CustomersPage() {
 
     setPortalSaving(true);
     try {
-      const updatedCustomer = await customersApi.setPortalPin(portalCustomer.id, portalPin, portalPinConfirm);
-      setCustomers((current) => current.map((customer) => (
-        customer.id === updatedCustomer.id ? updatedCustomer : customer
-      )));
+      await customersApi.setPortalPin(portalCustomer.id, portalPin, portalPinConfirm);
+      void invalidateCustomers();
       toast.success(t('erp.customers.pinUpdatedToast'));
       setPortalCustomer(null);
       setPortalPin('');
@@ -287,10 +259,8 @@ export function CustomersPage() {
 
     setPortalSaving(true);
     try {
-      const updatedCustomer = await customersApi.disablePortal(portalCustomer.id);
-      setCustomers((current) => current.map((customer) => (
-        customer.id === updatedCustomer.id ? updatedCustomer : customer
-      )));
+      await customersApi.disablePortal(portalCustomer.id);
+      void invalidateCustomers();
       toast.success(t('erp.customers.portalDisabledToast'));
       setShowDisablePortalConfirm(false);
       setPortalCustomer(null);
@@ -336,7 +306,7 @@ export function CustomersPage() {
         toast.success(t('erp.customers.createdToast'));
       }
       handleCloseModal();
-      void loadCustomers();
+      void invalidateCustomers();
     } catch (error: unknown) {
       const err = error as { response?: { status?: number; data?: { message?: string } } };
       // Skip toast for 403 errors (axios interceptor handles them)
@@ -400,7 +370,7 @@ export function CustomersPage() {
           keyExtractor={(customer) => customer.id}
           loading={initialLoading && !refreshing}
           error={loadError}
-          onRetry={() => loadCustomers(true)}
+          onRetry={() => void customersQuery.refetch()}
           highlightId={highlightId}
           onHighlightComplete={clearHighlight}
           emptyIcon={<Users className="h-12 w-12" />}

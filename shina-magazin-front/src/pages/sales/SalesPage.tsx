@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
+import { keepPreviousData, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
 import { Link } from 'react-router-dom';
 import { ShoppingCart, Receipt, Eye, XCircle, Calendar, User, X, CreditCard, Banknote, ArrowRightLeft, Layers } from 'lucide-react';
@@ -24,10 +25,11 @@ import { DateRangePicker, type DateRangePreset, type DateRange } from '../../com
 import { SearchInput } from '../../components/ui/SearchInput';
 import { ExportButtons } from '../../components/common/ExportButtons';
 import { useHighlight } from '../../hooks/useHighlight';
+import { useInvalidateOnNotification } from '../../hooks/useInvalidateOnNotification';
+import { queryKeys } from '../../lib/queryKeys';
 import { PermissionGate } from '../../components/common/PermissionGate';
 import { usePermission, PermissionCode } from '../../hooks/usePermission';
 import type { Sale, PaymentStatus, SaleStatus, PaymentMethod } from '../../types';
-import { useNotificationsStore } from '../../store/notificationsStore';
 import { Button, buttonVariants } from '@/ui';
 
 const paymentMethodIcons: Record<PaymentMethod, React.ReactNode> = {
@@ -39,14 +41,8 @@ const paymentMethodIcons: Record<PaymentMethod, React.ReactNode> = {
 
 export function SalesPage() {
   const { t } = useTranslation();
-  const [sales, setSales] = useState<Sale[]>([]);
-  const [loadError, setLoadError] = useState<string | null>(null);
-  const [initialLoading, setInitialLoading] = useState(true);
-  const [refreshing, setRefreshing] = useState(false);
   const [page, setPage] = useState(0);
   const [pageSize, setPageSize] = useState(20);
-  const [totalPages, setTotalPages] = useState(0);
-  const [totalElements, setTotalElements] = useState(0);
   const [search, setSearch] = useState('');
   const [dateRangePreset, setDateRangePreset] = useState<DateRangePreset>('all');
   const [customRange, setCustomRange] = useState<DateRange>({ start: '', end: '' });
@@ -57,7 +53,7 @@ export function SalesPage() {
   const [showCancelModal, setShowCancelModal] = useState(false);
   const [cancelling, setCancelling] = useState(false);
   const [loadingDetails, setLoadingDetails] = useState(false);
-  const { notifications } = useNotificationsStore();
+  const queryClient = useQueryClient();
   const { highlightId, clearHighlight } = useHighlight();
   const { hasPermission } = usePermission();
 
@@ -114,6 +110,40 @@ export function SalesPage() {
     }
     setPage(0);
   };
+
+  const dateRange = getDateRangeValues(dateRangePreset);
+  const listParams = {
+    page,
+    size: pageSize,
+    startDate: dateRange?.start,
+    endDate: dateRange?.end,
+  };
+
+  const salesQuery = useQuery({
+    queryKey: queryKeys.sales.list(listParams),
+    queryFn: () => salesApi.getAll({ ...listParams, sort: 'saleDate,desc' }),
+    placeholderData: keepPreviousData,
+  });
+
+  // `?? []` har renderda yangi massiv beradi — `filteredSales` memosi
+  // shusiz hech qachon keshlanmasdi.
+  const sales = useMemo(() => salesQuery.data?.content ?? [], [salesQuery.data]);
+  const totalPages = salesQuery.data?.totalPages ?? 0;
+  const totalElements = salesQuery.data?.totalElements ?? 0;
+  const loadError = salesQuery.isError ? getApiErrorMessage(salesQuery.error) : null;
+  const initialLoading = salesQuery.isPending;
+  const refreshing = salesQuery.isFetching && !salesQuery.isPending;
+
+  // Xato jadvalda ham, toast'da ham ko'rsatiladi — jadvaldagi panel sababni
+  // tushuntiradi, toast esa fon yangilanishida sezilmay qolmasligi uchun.
+  useEffect(() => {
+    if (salesQuery.isError) {
+      console.error('Failed to load sales:', salesQuery.error);
+      toast.error(t('erp.sales.loadError'));
+    }
+  }, [salesQuery.isError, salesQuery.error, t]);
+
+  useInvalidateOnNotification([queryKeys.sales.all]);
 
   const filteredSales = useMemo(() => {
     return sales.filter((sale) => {
@@ -244,52 +274,6 @@ export function SalesPage() {
     },
   ], [t]);
 
-  const loadSales = useCallback(async (isInitial = false) => {
-    if (!isInitial) {
-      setRefreshing(true);
-    }
-    try {
-      const dateRange = getDateRangeValues(dateRangePreset);
-      const data = await salesApi.getAll({
-        page,
-        size: pageSize,
-        sort: 'saleDate,desc',
-        startDate: dateRange?.start,
-        endDate: dateRange?.end,
-      });
-      setSales(data.content);
-      setTotalPages(data.totalPages);
-      setTotalElements(data.totalElements);
-      setLoadError(null);
-    } catch (error) {
-      console.error('Failed to load sales:', error);
-      setLoadError(getApiErrorMessage(error));
-      toast.error(t('erp.sales.loadError'));
-    } finally {
-      setInitialLoading(false);
-      setRefreshing(false);
-    }
-  }, [page, pageSize, dateRangePreset, getDateRangeValues, t]);
-
-  useEffect(() => {
-    loadSales(true);
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
-
-  // Reload when page/pageSize or date range changes
-  useEffect(() => {
-    void loadSales();
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [page, pageSize, dateRangePreset, customRange.start, customRange.end]);
-
-  // WebSocket orqali yangi notification kelganda sotuvlarni yangilash
-  useEffect(() => {
-    if (notifications.length > 0) {
-      void loadSales();
-    }
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [notifications.length]);
-
   const handleResetFilters = () => {
     setSearch('');
     setPaymentStatusFilter('');
@@ -324,7 +308,7 @@ export function SalesPage() {
       toast.success(t('erp.sales.cancelSuccess'));
       setShowCancelModal(false);
       setSelectedSale(null);
-      void loadSales();
+      void queryClient.invalidateQueries({ queryKey: queryKeys.sales.all });
     } catch (error: unknown) {
       const err = error as { response?: { status?: number; data?: { message?: string } } };
       // Skip toast for 403 errors (axios interceptor handles them)
@@ -435,7 +419,7 @@ export function SalesPage() {
         <DataTable
           data={filteredSales}
           error={loadError}
-          onRetry={() => loadSales(true)}
+          onRetry={() => void salesQuery.refetch()}
           columns={columns}
           keyExtractor={(sale) => sale.id}
           loading={initialLoading && !refreshing}
