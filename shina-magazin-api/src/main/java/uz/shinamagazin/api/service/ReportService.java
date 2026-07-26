@@ -3,13 +3,16 @@ package uz.shinamagazin.api.service;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import uz.shinamagazin.api.dto.response.DebtsReportResponse;
+import uz.shinamagazin.api.dto.response.ProfitLossResponse;
 import uz.shinamagazin.api.dto.response.SalesReportResponse;
 import uz.shinamagazin.api.dto.response.WarehouseReportResponse;
 import uz.shinamagazin.api.entity.*;
 import uz.shinamagazin.api.enums.DebtStatus;
+import uz.shinamagazin.api.enums.ExpenseCategory;
 import uz.shinamagazin.api.enums.MovementType;
 import uz.shinamagazin.api.enums.PaymentMethod;
 import uz.shinamagazin.api.enums.SaleStatus;
+import uz.shinamagazin.api.exception.BadRequestException;
 import uz.shinamagazin.api.repository.*;
 
 import java.math.BigDecimal;
@@ -30,6 +33,8 @@ public class ReportService {
     private final StockMovementRepository stockMovementRepository;
     private final DebtRepository debtRepository;
     private final PaymentRepository paymentRepository;
+    private final ExpenseRepository expenseRepository;
+    private final SaleReturnRepository saleReturnRepository;
 
     public SalesReportResponse getSalesReport(LocalDate startDate, LocalDate endDate) {
         LocalDateTime start = startDate.atStartOfDay();
@@ -102,20 +107,213 @@ public class ReportService {
                 .build();
     }
 
+    /**
+     * Yalpi foyda: tushum − tannarx.
+     *
+     * <p>Ilgari bu yerda ikkita xato bor edi:
+     * <ul>
+     *   <li>{@code unitPrice} ishlatilardi — chegirma hisobga olinmasdi, ya'ni
+     *       chegirma bilan sotilgan savdolarda foyda OSHIB ko'rinardi;
+     *   <li>tannarx sifatida mahsulotning JORIY xarid narxi olinardi — bugun
+     *       narx o'zgarsa o'tgan oyning foydasi ham o'zgarardi.
+     * </ul>
+     */
     private BigDecimal calculateProfit(List<Sale> completedSales) {
         BigDecimal profit = BigDecimal.ZERO;
         for (Sale sale : completedSales) {
             for (SaleItem item : sale.getItems()) {
-                BigDecimal costPrice = item.getProduct().getPurchasePrice();
-                if (costPrice != null) {
-                    BigDecimal itemProfit = item.getUnitPrice()
-                            .subtract(costPrice)
-                            .multiply(BigDecimal.valueOf(item.getQuantity()));
-                    profit = profit.add(itemProfit);
+                BigDecimal cost = lineCost(item);
+                if (cost != null) {
+                    profit = profit.add(item.getTotalPrice().subtract(cost));
                 }
             }
         }
         return profit;
+    }
+
+    /**
+     * Savdo qatorining tannarxi (miqdorga ko'paytirilgan).
+     *
+     * <p>Avval qatorda muhrlangan tannarx, u yo'q bo'lsa (V34 gacha yozilgan
+     * savdolar) mahsulotning joriy xarid narxi. Ikkalasi ham yo'q bo'lsa
+     * {@code null} — bunday qator tannarxi NOMA'LUM, uni nol deb hisoblash
+     * foydani soxta oshirardi.
+     */
+    private BigDecimal lineCost(SaleItem item) {
+        BigDecimal unitCost = item.getCostPrice();
+        if (unitCost == null && item.getProduct() != null) {
+            unitCost = item.getProduct().getPurchasePrice();
+        }
+        return unitCost == null ? null : unitCost.multiply(BigDecimal.valueOf(item.getQuantity()));
+    }
+
+    /**
+     * Foyda va zarar hisoboti (P&amp;L).
+     *
+     * <p>Tushum va tannarx bir xil davrga tegishli savdolardan, xarajatlar esa
+     * {@code expenseDate} bo'yicha olinadi.
+     *
+     * <p>Savdolar orasiga {@link SaleStatus#REFUNDED} ham KIRADI: qaytarish
+     * alohida qator sifatida ayiriladi, shuning uchun to'liq qaytarilgan
+     * savdoni tushumdan ham chiqarib tashlash summani ikki marta kamaytirardi.
+     */
+    public ProfitLossResponse getProfitLoss(LocalDate startDate, LocalDate endDate) {
+        if (startDate.isAfter(endDate)) {
+            throw new BadRequestException("Boshlanish sanasi tugash sanasidan keyin bo'lishi mumkin emas");
+        }
+
+        LocalDateTime start = startDate.atStartOfDay();
+        LocalDateTime end = endDate.atTime(LocalTime.MAX);
+        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd");
+
+        Map<String, PlAggregator> daily = new LinkedHashMap<>();
+        for (LocalDate date = startDate; !date.isAfter(endDate); date = date.plusDays(1)) {
+            daily.put(date.format(formatter), new PlAggregator());
+        }
+
+        // ─── Savdolar: tushum va tannarx ───
+        List<Sale> sales = saleRepository.findBySaleDateBetween(start, end).stream()
+                .filter(s -> s.getStatus() != SaleStatus.CANCELLED)
+                .toList();
+
+        BigDecimal revenue = BigDecimal.ZERO;
+        BigDecimal cogs = BigDecimal.ZERO;
+        long itemsWithoutCost = 0;
+
+        for (Sale sale : sales) {
+            String dateKey = sale.getSaleDate().toLocalDate().format(formatter);
+            PlAggregator agg = daily.get(dateKey);
+
+            for (SaleItem item : sale.getItems()) {
+                BigDecimal lineRevenue = item.getTotalPrice();
+                BigDecimal lineCost = lineCost(item);
+                if (lineCost == null) {
+                    itemsWithoutCost++;
+                    lineCost = BigDecimal.ZERO;
+                }
+
+                revenue = revenue.add(lineRevenue);
+                cogs = cogs.add(lineCost);
+                if (agg != null) {
+                    agg.revenue = agg.revenue.add(lineRevenue);
+                    agg.cogs = agg.cogs.add(lineCost);
+                }
+            }
+        }
+
+        // ─── Qaytarishlar: tushumni ham, tannarxni ham kamaytiradi ───
+        List<SaleReturn> returns = saleReturnRepository.findByReturnDateBetweenWithItems(start, end);
+        BigDecimal returnsTotal = BigDecimal.ZERO;
+
+        for (SaleReturn saleReturn : returns) {
+            String dateKey = saleReturn.getReturnDate().toLocalDate().format(formatter);
+            PlAggregator agg = daily.get(dateKey);
+
+            returnsTotal = returnsTotal.add(saleReturn.getRefundAmount());
+            if (agg != null) {
+                agg.returns = agg.returns.add(saleReturn.getRefundAmount());
+            }
+
+            for (SaleReturnItem item : saleReturn.getItems()) {
+                // Tovar omborga qaytdi — uning tannarxi sotilganlar tannarxidan
+                // chiqadi. Aks holda qaytarish yalpi foydani ikki marta urardi:
+                // ham tushum kamayardi, ham tannarx qolib ketardi.
+                BigDecimal unitCost = item.getSaleItem() != null ? item.getSaleItem().getCostPrice() : null;
+                if (unitCost == null && item.getProduct() != null) {
+                    unitCost = item.getProduct().getPurchasePrice();
+                }
+                if (unitCost == null) continue;
+
+                BigDecimal returnedCost = unitCost.multiply(BigDecimal.valueOf(item.getQuantity()));
+                cogs = cogs.subtract(returnedCost);
+                if (agg != null) {
+                    agg.cogs = agg.cogs.subtract(returnedCost);
+                }
+            }
+        }
+
+        BigDecimal netRevenue = revenue.subtract(returnsTotal);
+        BigDecimal grossProfit = netRevenue.subtract(cogs);
+
+        // ─── Xarajatlar ───
+        BigDecimal totalExpenses = expenseRepository.sumTotal(startDate, endDate);
+        List<ProfitLossResponse.ExpenseBreakdown> byCategory = new ArrayList<>();
+        long expensesCount = 0;
+
+        for (Object[] row : expenseRepository.sumByCategory(startDate, endDate)) {
+            ExpenseCategory category = (ExpenseCategory) row[0];
+            BigDecimal amount = (BigDecimal) row[1];
+            long count = ((Number) row[2]).longValue();
+            expensesCount += count;
+
+            byCategory.add(ProfitLossResponse.ExpenseBreakdown.builder()
+                    .category(category)
+                    .amount(amount)
+                    .count(count)
+                    .percent(percentOf(amount, totalExpenses))
+                    .build());
+        }
+        byCategory.sort((a, b) -> b.getAmount().compareTo(a.getAmount()));
+
+        for (Object[] row : expenseRepository.sumByDate(startDate, endDate)) {
+            PlAggregator agg = daily.get(((LocalDate) row[0]).format(formatter));
+            if (agg != null) {
+                agg.expenses = agg.expenses.add((BigDecimal) row[1]);
+            }
+        }
+
+        BigDecimal netProfit = grossProfit.subtract(totalExpenses);
+
+        List<ProfitLossResponse.DailyProfitLoss> dailyData = daily.entrySet().stream()
+                .map(e -> {
+                    PlAggregator a = e.getValue();
+                    BigDecimal dayRevenue = a.revenue.subtract(a.returns);
+                    BigDecimal dayGross = dayRevenue.subtract(a.cogs);
+                    return ProfitLossResponse.DailyProfitLoss.builder()
+                            .date(e.getKey())
+                            .revenue(dayRevenue)
+                            .grossProfit(dayGross)
+                            .expenses(a.expenses)
+                            .netProfit(dayGross.subtract(a.expenses))
+                            .build();
+                })
+                .collect(Collectors.toList());
+
+        return ProfitLossResponse.builder()
+                .startDate(startDate.format(formatter))
+                .endDate(endDate.format(formatter))
+                .revenue(revenue)
+                .returns(returnsTotal)
+                .netRevenue(netRevenue)
+                .costOfGoodsSold(cogs)
+                .grossProfit(grossProfit)
+                .grossMarginPercent(percentOf(grossProfit, netRevenue))
+                .totalExpenses(totalExpenses)
+                .expensesByCategory(byCategory)
+                .netProfit(netProfit)
+                .netMarginPercent(percentOf(netProfit, netRevenue))
+                .salesCount(sales.size())
+                .returnsCount(returns.size())
+                .expensesCount(expensesCount)
+                .daily(dailyData)
+                .itemsWithoutCost(itemsWithoutCost)
+                .build();
+    }
+
+    /** {@code part / whole * 100}, maxraj nol bo'lsa nol (cheksizlik o'rniga). */
+    private BigDecimal percentOf(BigDecimal part, BigDecimal whole) {
+        if (whole == null || whole.signum() == 0) {
+            return BigDecimal.ZERO;
+        }
+        return part.multiply(BigDecimal.valueOf(100))
+                .divide(whole, 2, RoundingMode.HALF_UP);
+    }
+
+    private static class PlAggregator {
+        BigDecimal revenue = BigDecimal.ZERO;
+        BigDecimal returns = BigDecimal.ZERO;
+        BigDecimal cogs = BigDecimal.ZERO;
+        BigDecimal expenses = BigDecimal.ZERO;
     }
 
     private List<SalesReportResponse.DailySalesData> getDailyData(

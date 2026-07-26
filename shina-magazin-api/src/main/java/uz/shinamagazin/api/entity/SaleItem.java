@@ -44,6 +44,30 @@ public class SaleItem extends BaseEntity implements Auditable {
     @Column(name = "total_price", nullable = false, precision = 15, scale = 2)
     private BigDecimal totalPrice;
 
+    /**
+     * Sotuv paytidagi tannarx — foyda hisobi uchun muhrlanadi.
+     *
+     * <p>Mahsulotning JORIY {@code purchasePrice} ini ishlatib bo'lmaydi:
+     * ta'minotchi narxi keyin o'zgarsa o'tgan oyning foydasi ham o'zgarib
+     * ketardi. Eski qatorlarda {@code null} bo'lishi mumkin (V34 gacha
+     * yozilmagan) — u holda joriy xarid narxiga qaytiladi.
+     */
+    @Column(name = "cost_price", precision = 15, scale = 2)
+    private BigDecimal costPrice;
+
+    /**
+     * Chegirmani hisobga olgan holdagi bir dona narxi.
+     *
+     * <p>{@code unitPrice} chegirmagacha bo'lgan narx; foydani undan hisoblash
+     * chegirma berilgan savdolarda foydani oshirib ko'rsatardi.
+     */
+    public BigDecimal effectiveUnitPrice() {
+        if (quantity == null || quantity == 0 || totalPrice == null) {
+            return unitPrice != null ? unitPrice : BigDecimal.ZERO;
+        }
+        return totalPrice.divide(BigDecimal.valueOf(quantity), 2, java.math.RoundingMode.HALF_UP);
+    }
+
     // ============================================
     // Auditable Interface Implementation
     // ============================================

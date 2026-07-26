@@ -10,17 +10,20 @@ import uz.shinamagazin.api.dto.request.CloseShiftRequest;
 import uz.shinamagazin.api.dto.request.OpenShiftRequest;
 import uz.shinamagazin.api.dto.response.ZReportResponse;
 import uz.shinamagazin.api.entity.CashShift;
+import uz.shinamagazin.api.entity.Expense;
 import uz.shinamagazin.api.entity.Sale;
 import uz.shinamagazin.api.entity.SaleReturn;
 import uz.shinamagazin.api.entity.User;
 import uz.shinamagazin.api.enums.*;
 import uz.shinamagazin.api.exception.BadRequestException;
 import uz.shinamagazin.api.repository.CashShiftRepository;
+import uz.shinamagazin.api.repository.ExpenseRepository;
 import uz.shinamagazin.api.repository.SaleRepository;
 import uz.shinamagazin.api.repository.SaleReturnRepository;
 import uz.shinamagazin.api.repository.UserRepository;
 
 import java.math.BigDecimal;
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -55,6 +58,7 @@ class CashShiftReportTest {
     @Autowired private SaleRepository saleRepository;
     @Autowired private UserRepository userRepository;
     @Autowired private SaleReturnRepository saleReturnRepository;
+    @Autowired private ExpenseRepository expenseRepository;
 
     private CashShiftService service;
     private User cashier;
@@ -62,11 +66,12 @@ class CashShiftReportTest {
 
     @BeforeEach
     void setUp() {
+        expenseRepository.deleteAll();
         saleRepository.deleteAll();
         shiftRepository.deleteAll();
         userRepository.deleteAll();
 
-        service = new CashShiftService(shiftRepository, userRepository, saleReturnRepository);
+        service = new CashShiftService(shiftRepository, userRepository, saleReturnRepository, expenseRepository);
         cashier = userRepository.saveAndFlush(user("kassir"));
         invoiceSeq = 0;
     }
@@ -217,6 +222,71 @@ class CashShiftReportTest {
                 .isEqualByComparingTo("500000");
     }
 
+    // ─── Naqd xarajatlar ───
+    // Kassir kassadan pul olib xarajat qilishi mumkin (suv, kanselyariya).
+    // Buni ayirmasa kassa kam chiqib, unga asossiz kamomad yozilardi.
+
+    @Test
+    @DisplayName("Naqd xarajat kutilgan kassani kamaytiradi")
+    void cashExpenseReducesExpectedCash() {
+        CashShift shift = openShift("100000");
+        sale(shift, PaymentMethod.CASH, "500000", "500000", "0", SaleStatus.COMPLETED);
+
+        expenseRepository.saveAndFlush(expense(shift, PaymentMethod.CASH, "80000"));
+
+        ZReportResponse report = service.getReport(shift.getId());
+        assertThat(report.getCashExpenses()).isEqualByComparingTo("80000");
+        assertThat(report.getExpensesCount()).isEqualTo(1);
+        assertThat(report.getExpectedCash())
+                .as("100 000 + 500 000 − 80 000")
+                .isEqualByComparingTo("520000");
+    }
+
+    @Test
+    @DisplayName("Karta bilan to'langan xarajat kassaga ta'sir qilmaydi")
+    void cardExpenseDoesNotAffectCash() {
+        CashShift shift = openShift("0");
+        sale(shift, PaymentMethod.CASH, "500000", "500000", "0", SaleStatus.COMPLETED);
+
+        expenseRepository.saveAndFlush(expense(shift, PaymentMethod.CARD, "300000"));
+
+        ZReportResponse report = service.getReport(shift.getId());
+        assertThat(report.getCashExpenses())
+                .as("kassadan pul chiqmagan")
+                .isEqualByComparingTo("0");
+        assertThat(report.getExpensesCount())
+                .as("lekin xarajat sifatida sanaladi")
+                .isEqualTo(1);
+        assertThat(report.getExpectedCash()).isEqualByComparingTo("500000");
+    }
+
+    @Test
+    @DisplayName("Boshqa smenaning xarajatlari aralashmaydi")
+    void otherShiftExpensesAreNotCounted() {
+        CashShift first = openShift("0");
+        expenseRepository.saveAndFlush(expense(first, PaymentMethod.CASH, "50000"));
+        service.closeShift(cashier.getId(), close("-50000", null));
+
+        CashShift second = openShift("0");
+        expenseRepository.saveAndFlush(expense(second, PaymentMethod.CASH, "70000"));
+
+        assertThat(service.getReport(second.getId()).getCashExpenses()).isEqualByComparingTo("70000");
+        assertThat(service.getReport(first.getId()).getCashExpenses()).isEqualByComparingTo("50000");
+    }
+
+    @Test
+    @DisplayName("Smenaga bog'lanmagan xarajat kassaga ta'sir qilmaydi")
+    void expenseWithoutShiftIsIgnored() {
+        CashShift shift = openShift("0");
+        sale(shift, PaymentMethod.CASH, "500000", "500000", "0", SaleStatus.COMPLETED);
+
+        expenseRepository.saveAndFlush(expense(null, PaymentMethod.CASH, "400000"));
+
+        assertThat(service.getReport(shift.getId()).getExpectedCash())
+                .as("bank orqali to'langan yoki smenasiz kiritilgan xarajat kassadan chiqmagan")
+                .isEqualByComparingTo("500000");
+    }
+
     // ─── Yopish ───
 
     @Test
@@ -310,6 +380,17 @@ class CashShiftReportTest {
                 .shift(shift)
                 .build();
         return saleRepository.saveAndFlush(sale);
+    }
+
+    private Expense expense(CashShift shift, PaymentMethod method, String amount) {
+        return Expense.builder()
+                .expenseDate(LocalDate.now())
+                .category(ExpenseCategory.SUPPLIES)
+                .amount(new BigDecimal(amount))
+                .paymentMethod(method)
+                .shift(shift)
+                .createdBy(cashier)
+                .build();
     }
 
     private static User user(String username) {

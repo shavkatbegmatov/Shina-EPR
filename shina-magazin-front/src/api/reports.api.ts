@@ -1,5 +1,11 @@
 import api from './axios';
-import type { ApiResponse, SalesReport, WarehouseReport, DebtsReport } from '../types';
+import type {
+  ApiResponse,
+  SalesReport,
+  WarehouseReport,
+  DebtsReport,
+  ProfitLossReport,
+} from '../types';
 
 export const reportsApi = {
   getSalesReport: async (startDate: string, endDate: string): Promise<SalesReport> => {
@@ -18,6 +24,14 @@ export const reportsApi = {
 
   getDebtsReport: async (startDate: string, endDate: string): Promise<DebtsReport> => {
     const response = await api.get<ApiResponse<DebtsReport>>('/v1/reports/debts', {
+      params: { startDate, endDate },
+    });
+    return response.data.data;
+  },
+
+  /** Sof foyda: tushum − tannarx − xarajatlar. `EXPENSES_VIEW` talab qiladi. */
+  getProfitLossReport: async (startDate: string, endDate: string): Promise<ProfitLossReport> => {
+    const response = await api.get<ApiResponse<ProfitLossReport>>('/v1/reports/profit-loss', {
       params: { startDate, endDate },
     });
     return response.data.data;

@@ -121,9 +121,100 @@ export interface ZReport {
   /** Qaytarishlarda kassadan chiqqan pul. */
   cashRefunded: number;
   returnsCount: number;
+  /** Smenada kassadan chiqqan naqd xarajat. */
+  cashExpenses: number;
+  /** Smenadagi xarajatlar soni (naqd bo'lmaganlari ham). */
+  expensesCount: number;
   expectedCash: number;
   countedCash?: number;
   difference?: number;
+}
+
+// ─── Xarajatlar va sof foyda (P&L) ───
+
+export type ExpenseCategory =
+  | 'RENT'
+  | 'SALARY'
+  | 'UTILITIES'
+  | 'TRANSPORT'
+  | 'SUPPLIES'
+  | 'MARKETING'
+  | 'TAX'
+  | 'MAINTENANCE'
+  | 'BANK_FEE'
+  | 'OTHER';
+
+export const EXPENSE_CATEGORIES: ExpenseCategory[] = [
+  'RENT',
+  'SALARY',
+  'UTILITIES',
+  'TRANSPORT',
+  'SUPPLIES',
+  'MARKETING',
+  'TAX',
+  'MAINTENANCE',
+  'BANK_FEE',
+  'OTHER',
+];
+
+export interface Expense {
+  id: number;
+  /** Xarajat SODIR BO'LGAN sana (tizimga kiritilgan payt emas). */
+  expenseDate: string;
+  category: ExpenseCategory;
+  amount: number;
+  description?: string;
+  paymentMethod: PaymentMethod;
+  /** Naqd xarajat bog'langan smena — null bo'lsa kassaga tegmagan. */
+  shiftId?: number;
+  createdByName?: string;
+  createdAt: string;
+}
+
+export interface ExpenseRequest {
+  expenseDate: string;
+  category: ExpenseCategory;
+  amount: number;
+  description?: string;
+  paymentMethod: PaymentMethod;
+}
+
+export interface ProfitLossExpenseBreakdown {
+  category: ExpenseCategory;
+  amount: number;
+  count: number;
+  /** Umumiy xarajatdagi ulushi, %. */
+  percent: number;
+}
+
+export interface ProfitLossDaily {
+  date: string;
+  revenue: number;
+  grossProfit: number;
+  expenses: number;
+  netProfit: number;
+}
+
+export interface ProfitLossReport {
+  startDate: string;
+  endDate: string;
+  revenue: number;
+  returns: number;
+  netRevenue: number;
+  costOfGoodsSold: number;
+  grossProfit: number;
+  grossMarginPercent: number;
+  totalExpenses: number;
+  expensesByCategory: ProfitLossExpenseBreakdown[];
+  /** Manfiy bo'lishi mumkin — bu ZARAR. */
+  netProfit: number;
+  netMarginPercent: number;
+  salesCount: number;
+  returnsCount: number;
+  expensesCount: number;
+  daily: ProfitLossDaily[];
+  /** Tannarxi noma'lum savdo qatorlari — noldan katta bo'lsa foyda oshib ko'rinadi. */
+  itemsWithoutCost: number;
 }
 
 // Settings Types

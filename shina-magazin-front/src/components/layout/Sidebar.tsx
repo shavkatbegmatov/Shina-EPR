@@ -22,6 +22,7 @@ import {
   BadgeCheck,
   Receipt,
   Clock,
+  Wallet,
   ChevronDown,
   ExternalLink,
   type LucideIcon,
@@ -85,6 +86,7 @@ const NAV_GROUPS: NavGroup[] = [
     labelKey: 'erp.nav.groups.insights',
     items: [
       { path: '/admin/reports', icon: BarChart3, labelKey: 'erp.nav.reports', permission: PermissionCode.REPORTS_VIEW_SALES },
+      { path: '/admin/expenses', icon: Wallet, labelKey: 'erp.nav.expenses', permission: PermissionCode.EXPENSES_VIEW },
       { path: '/admin/notifications', icon: Bell, labelKey: 'erp.nav.notifications', permission: PermissionCode.NOTIFICATIONS_VIEW },
     ],
   },

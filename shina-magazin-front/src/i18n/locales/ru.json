@@ -173,7 +173,8 @@
         "insights": "Аналитика",
         "management": "Управление"
       },
-      "shifts": "Смены"
+      "shifts": "Смены",
+      "expenses": "Расходы"
     },
     "header": {
       "home": "Главная",
@@ -669,7 +670,25 @@
       "debtsStatistics": "Статистика долгов",
       "paymentsReceived": "Полученные платежи",
       "paymentsCountLabel": "Количество платежей",
-      "activePlusOverdue": "Активные + Просроченные"
+      "activePlusOverdue": "Активные + Просроченные",
+      "tabProfitLoss": "Прибыль и убытки",
+      "pl": {
+        "revenue": "Выручка",
+        "returns": "Возвраты",
+        "netRevenue": "Чистая выручка",
+        "cogs": "Себестоимость",
+        "grossProfit": "Валовая прибыль",
+        "expenses": "Расходы",
+        "netProfit": "Чистая прибыль",
+        "margin": "Маржа {{value}}%",
+        "salesCount": "Продаж: {{count}}",
+        "expensesCount": "Расходов: {{count}}",
+        "breakdown": "Расчёт по шагам",
+        "expensesByCategory": "Расходы по категориям",
+        "noExpenses": "За этот период расходы не зафиксированы",
+        "dailyNetProfit": "Чистая прибыль по дням",
+        "missingCostWarning": "У {{count}} строк продаж нет себестоимости — валовая прибыль может быть завышена. Укажите закупочную цену товаров."
+      }
     },
     "pos": {
       "productsTitle": "Товары",
@@ -1905,7 +1924,8 @@
       "emptyTitle": "Смен нет",
       "emptyDescription": "Откройте первую смену.",
       "cashRefunded": "Возвраты наличными",
-      "returnsCount": "Количество возвратов"
+      "returnsCount": "Количество возвратов",
+      "cashExpenses": "Наличные расходы"
     },
     "returns": {
       "title": "Возвраты",
@@ -1934,6 +1954,41 @@
       "apply": "Импортировать",
       "row": "Строка",
       "done": "Новых: {{created}}, обновлено: {{updated}}"
+    },
+    "expenses": {
+      "title": "Расходы",
+      "subtitle": "Аренда, зарплата, коммуналка — для расчёта чистой прибыли",
+      "add": "Добавить расход",
+      "addTitle": "Новый расход",
+      "editTitle": "Редактировать расход",
+      "date": "Дата",
+      "category": "Категория",
+      "allCategories": "Все категории",
+      "amount": "Сумма",
+      "amountRequired": "Сумма должна быть больше нуля",
+      "description": "Примечание",
+      "paymentMethod": "Способ оплаты",
+      "cashHint": "Наличный расход привязывается к открытой смене и вычитается из кассы в Z-отчёте",
+      "pageTotal": "Итого на странице",
+      "created": "Расход добавлен",
+      "updated": "Расход обновлён",
+      "deleted": "Расход удалён",
+      "deleteTitle": "Удалить расход",
+      "deleteMessage": "Расход на сумму {{amount}} будет удалён. Продолжить?",
+      "emptyTitle": "Расходов нет",
+      "emptyDescription": "За выбранный период расходы не зафиксированы",
+      "categories": {
+        "RENT": "Аренда",
+        "SALARY": "Зарплата",
+        "UTILITIES": "Коммунальные",
+        "TRANSPORT": "Транспорт",
+        "SUPPLIES": "Хозтовары",
+        "MARKETING": "Реклама",
+        "TAX": "Налоги",
+        "MAINTENANCE": "Ремонт",
+        "BANK_FEE": "Банковская комиссия",
+        "OTHER": "Прочее"
+      }
     }
   },
   "shop": {

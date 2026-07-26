@@ -20,6 +20,9 @@ import {
   Clock,
   UserX,
   Check,
+  Scale,
+  Wallet,
+  TrendingDown,
 } from 'lucide-react';
 import clsx from 'clsx';
 import { useTranslation } from 'react-i18next';
@@ -43,19 +46,22 @@ import {
   exportDebtsReportToPDF,
 } from '../../utils/exportUtils';
 import { DateRangePicker, type DateRangePreset, type DateRange } from '../../components/common/DateRangePicker';
-import type { SalesReport, WarehouseReport, DebtsReport } from '../../types';
+import type { SalesReport, WarehouseReport, DebtsReport, ProfitLossReport } from '../../types';
 import { useNotificationsStore } from '../../store/notificationsStore';
-import { PermissionCode } from '../../hooks/usePermission';
+import { PermissionCode, usePermission } from '../../hooks/usePermission';
 import { PermissionGate } from '../../components/common/PermissionGate';
 
-type ReportTab = 'sales' | 'warehouse' | 'debts';
+type ReportTab = 'sales' | 'warehouse' | 'debts' | 'profitLoss';
 
 export function ReportsPage() {
   const { t } = useTranslation();
+  const { hasPermission } = usePermission();
+  const canViewProfitLoss = hasPermission(PermissionCode.EXPENSES_VIEW);
   const [activeTab, setActiveTab] = useState<ReportTab>('sales');
   const [salesReport, setSalesReport] = useState<SalesReport | null>(null);
   const [warehouseReport, setWarehouseReport] = useState<WarehouseReport | null>(null);
   const [debtsReport, setDebtsReport] = useState<DebtsReport | null>(null);
+  const [profitLoss, setProfitLoss] = useState<ProfitLossReport | null>(null);
   const [initialLoading, setInitialLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [refreshSuccess, setRefreshSuccess] = useState(false);
@@ -123,6 +129,18 @@ export function ReportsPage() {
       setWarehouseReport(warehouse);
       setDebtsReport(debts);
 
+      // P&L ATAYLAB alohida: u EXPENSES_VIEW talab qiladi, va yuqoridagi
+      // Promise.all ichida bo'lsa ruxsati yo'q kassirga 403 kelib QOLGAN
+      // hisobotlar ham ochilmay qolardi.
+      if (canViewProfitLoss) {
+        try {
+          setProfitLoss(await reportsApi.getProfitLossReport(start, end));
+        } catch (plError) {
+          console.error('Failed to load profit & loss report:', plError);
+          setProfitLoss(null);
+        }
+      }
+
       if (isManualRefresh) {
         setRefreshSuccess(true);
         setTimeout(() => setRefreshSuccess(false), 2000);
@@ -134,7 +152,7 @@ export function ReportsPage() {
       setInitialLoading(false);
       setRefreshing(false);
     }
-  }, [dateRangePreset, getDateRangeValues, initialLoading, t]);
+  }, [dateRangePreset, getDateRangeValues, initialLoading, t, canViewProfitLoss]);
 
   useEffect(() => {
     if (dateRangePreset !== 'custom' || (customRange.start && customRange.end)) {
@@ -275,6 +293,15 @@ export function ReportsPage() {
           <Receipt className="h-4 w-4" />
           {t('erp.reports.tabDebts')}
         </button>
+        {canViewProfitLoss && (
+          <button
+            className={clsx('tab gap-2', activeTab === 'profitLoss' && 'tab-active')}
+            onClick={() => setActiveTab('profitLoss')}
+          >
+            <Scale className="h-4 w-4" />
+            {t('erp.reports.tabProfitLoss')}
+          </button>
+        )}
       </div>
 
       {error && (
@@ -306,6 +333,9 @@ export function ReportsPage() {
 
         {/* Debts Report Tab */}
         {activeTab === 'debts' && debtsReport && <DebtsReportView report={debtsReport} />}
+
+        {/* Profit & Loss Tab */}
+        {activeTab === 'profitLoss' && profitLoss && <ProfitLossView report={profitLoss} />}
       </div>
     </div>
   );
@@ -935,4 +965,201 @@ function formatShortDate(dateStr: string): string {
   const day = date.getDate().toString().padStart(2, '0');
   const month = (date.getMonth() + 1).toString().padStart(2, '0');
   return `${day}.${month}`;
+}
+
+/**
+ * Foyda va zarar hisoboti (P&L).
+ *
+ * <p>Yalpi marja chiroyli ko'rinib, ijara/maosh/kommunaldan keyin do'kon
+ * ZARARDA bo'lishi mumkin. Shuning uchun asosiy raqam — sof foyda, va u
+ * manfiy bo'lsa qizil rangda ko'rsatiladi.
+ */
+function ProfitLossView({ report }: { report: ProfitLossReport }) {
+  const { t } = useTranslation();
+  const isLoss = report.netProfit < 0;
+
+  const rows: { label: string; value: number; kind?: 'subtotal' | 'total' | 'deduction' }[] = [
+    { label: t('erp.reports.pl.revenue'), value: report.revenue },
+    { label: t('erp.reports.pl.returns'), value: -report.returns, kind: 'deduction' },
+    { label: t('erp.reports.pl.netRevenue'), value: report.netRevenue, kind: 'subtotal' },
+    { label: t('erp.reports.pl.cogs'), value: -report.costOfGoodsSold, kind: 'deduction' },
+    { label: t('erp.reports.pl.grossProfit'), value: report.grossProfit, kind: 'subtotal' },
+    { label: t('erp.reports.pl.expenses'), value: -report.totalExpenses, kind: 'deduction' },
+    { label: t('erp.reports.pl.netProfit'), value: report.netProfit, kind: 'total' },
+  ];
+
+  return (
+    <div className="space-y-6">
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
+        <StatCard
+          title={t('erp.reports.pl.netRevenue')}
+          value={formatCurrency(report.netRevenue)}
+          icon={TrendingUp}
+          color="info"
+          subtext={t('erp.reports.pl.salesCount', { count: report.salesCount })}
+        />
+        <StatCard
+          title={t('erp.reports.pl.grossProfit')}
+          value={formatCurrency(report.grossProfit)}
+          icon={Banknote}
+          color="success"
+          subtext={t('erp.reports.pl.margin', { value: report.grossMarginPercent })}
+        />
+        <StatCard
+          title={t('erp.reports.pl.expenses')}
+          value={formatCurrency(report.totalExpenses)}
+          icon={Wallet}
+          color="warning"
+          subtext={t('erp.reports.pl.expensesCount', { count: report.expensesCount })}
+        />
+        <StatCard
+          title={t('erp.reports.pl.netProfit')}
+          value={formatCurrency(report.netProfit)}
+          icon={isLoss ? TrendingDown : Scale}
+          color={isLoss ? 'error' : 'primary'}
+          subtext={t('erp.reports.pl.margin', { value: report.netMarginPercent })}
+        />
+      </div>
+
+      {/* Tannarxi noma'lum qatorlar yalpi foydani OSHIRIB ko'rsatadi —
+          hisobotga ishonishdan oldin bu haqda bilish kerak. */}
+      {report.itemsWithoutCost > 0 && (
+        <div className="alert alert-warning">
+          <AlertTriangle className="h-5 w-5" />
+          <span>{t('erp.reports.pl.missingCostWarning', { count: report.itemsWithoutCost })}</span>
+        </div>
+      )}
+
+      <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
+        {/* Hisob ketma-ketligi */}
+        <div className="surface-card p-5">
+          <h3 className="mb-4 font-semibold">{t('erp.reports.pl.breakdown')}</h3>
+          <div className="space-y-1">
+            {rows.map((row) => (
+              <div
+                key={row.label}
+                className={clsx(
+                  'flex items-center justify-between rounded-lg px-3 py-2',
+                  row.kind === 'subtotal' && 'bg-base-200/60 font-medium',
+                  row.kind === 'total' && 'mt-2 bg-base-200 text-lg font-bold'
+                )}
+              >
+                <span className={clsx(row.kind === 'deduction' && 'text-base-content/70')}>
+                  {row.label}
+                </span>
+                <span
+                  className={clsx(
+                    row.kind === 'deduction' && 'text-base-content/70',
+                    row.kind === 'total' && (row.value < 0 ? 'text-error' : 'text-success')
+                  )}
+                >
+                  {formatCurrency(row.value)}
+                </span>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        {/* Xarajatlar turkumi */}
+        <div className="surface-card p-5">
+          <h3 className="mb-4 font-semibold">{t('erp.reports.pl.expensesByCategory')}</h3>
+          {report.expensesByCategory.length === 0 ? (
+            <p className="py-8 text-center text-sm text-base-content/60">
+              {t('erp.reports.pl.noExpenses')}
+            </p>
+          ) : (
+            <div className="space-y-3">
+              {report.expensesByCategory.map((row) => (
+                <div key={row.category}>
+                  <div className="mb-1 flex items-center justify-between text-sm">
+                    <span>{t(`erp.expenses.categories.${row.category}`)}</span>
+                    <span className="font-medium">
+                      {formatCurrency(row.amount)}{' '}
+                      <span className="text-base-content/50">({row.percent}%)</span>
+                    </span>
+                  </div>
+                  <div className="h-2 w-full overflow-hidden rounded-full bg-base-200">
+                    <div
+                      className="h-full rounded-full bg-warning"
+                      style={{ width: `${Math.min(row.percent, 100)}%` }}
+                    />
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      </div>
+
+      {/* Kunlik sof foyda */}
+      <div className="surface-card p-5">
+        <h3 className="mb-4 font-semibold">{t('erp.reports.pl.dailyNetProfit')}</h3>
+        <div className="h-56">
+          <NetProfitChart data={report.daily} />
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/**
+ * Kunlik sof foyda — nol chizig'idan yuqori/pastga.
+ *
+ * <p>Oddiy ustunli grafik yaramaydi: manfiy kun (zarar) aynan shu hisobotda
+ * eng muhim signal, uni pastga qarab ko'rsatish kerak.
+ */
+function NetProfitChart({ data }: { data: ProfitLossReport['daily'] }) {
+  const { t } = useTranslation();
+  if (data.length === 0) return null;
+
+  const peak = Math.max(...data.map((d) => Math.abs(d.netProfit)), 1);
+
+  return (
+    <div className="flex h-full flex-col">
+      <div className="relative flex flex-1 items-center gap-1">
+        {/* Nol chizig'i */}
+        <div className="absolute inset-x-0 top-1/2 h-px bg-base-300" />
+        {data.map((day) => {
+          const height = (Math.abs(day.netProfit) / peak) * 50;
+          const positive = day.netProfit >= 0;
+          return (
+            <div key={day.date} className="group relative flex h-full flex-1 flex-col justify-center">
+              <div className="flex h-full flex-col justify-center">
+                <div className="flex h-1/2 items-end">
+                  {positive && (
+                    <div
+                      className="w-full rounded-t bg-success transition-all group-hover:opacity-80"
+                      style={{ height: `${Math.max(height * 2, day.netProfit === 0 ? 0 : 2)}%` }}
+                    />
+                  )}
+                </div>
+                <div className="flex h-1/2 items-start">
+                  {!positive && (
+                    <div
+                      className="w-full rounded-b bg-error transition-all group-hover:opacity-80"
+                      style={{ height: `${Math.max(height * 2, 2)}%` }}
+                    />
+                  )}
+                </div>
+              </div>
+              <div className="pointer-events-none absolute bottom-full left-1/2 z-10 mb-1 hidden -translate-x-1/2 whitespace-nowrap rounded bg-base-300 px-2 py-1 text-xs shadow-lg group-hover:block">
+                {formatShortDate(day.date)}: {formatCurrency(day.netProfit)}
+                <br />
+                <span className="text-base-content/60">
+                  {t('erp.reports.pl.expenses')}: {formatCurrency(day.expenses)}
+                </span>
+              </div>
+            </div>
+          );
+        })}
+      </div>
+      <div className="mt-2 flex gap-1">
+        {data.map((day) => (
+          <div key={day.date} className="flex-1 text-center text-[10px] text-base-content/60">
+            {formatShortDate(day.date)}
+          </div>
+        ))}
+      </div>
+    </div>
+  );
 }

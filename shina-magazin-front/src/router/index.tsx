@@ -31,6 +31,7 @@ const SupplierDetailPage = lazyWithRetry(() => import('../pages/suppliers/Suppli
 const PurchasesPage = lazyWithRetry(() => import('../pages/purchases/PurchasesPage').then(m => ({ default: m.PurchasesPage })));
 const PurchaseDetailPage = lazyWithRetry(() => import('../pages/purchases/PurchaseDetailPage').then(m => ({ default: m.PurchaseDetailPage })));
 const ShiftsPage = lazyWithRetry(() => import('../pages/shifts/ShiftsPage').then(m => ({ default: m.ShiftsPage })));
+const ExpensesPage = lazyWithRetry(() => import('../pages/expenses/ExpensesPage').then(m => ({ default: m.ExpensesPage })));
 const SettingsPage = lazyWithRetry(() => import('../pages/settings/SettingsPage').then(m => ({ default: m.SettingsPage })));
 const NotificationsPage = lazyWithRetry(() => import('../pages/notifications/NotificationsPage').then(m => ({ default: m.NotificationsPage })));
 const ReportsPage = lazyWithRetry(() => import('../pages/reports/ReportsPage').then(m => ({ default: m.ReportsPage })));
@@ -185,6 +186,17 @@ export const router = createBrowserRouter([
           </ProtectedRoute>
         ),
         handle: { title: 'Smenalar' },
+      },
+      {
+        path: 'expenses',
+        element: (
+          <ProtectedRoute permission={PermissionCode.EXPENSES_VIEW}>
+            <LazyRoute>
+              <ExpensesPage />
+            </LazyRoute>
+          </ProtectedRoute>
+        ),
+        handle: { title: 'Xarajatlar' },
       },
       {
         path: 'sales',

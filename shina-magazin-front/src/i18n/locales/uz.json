@@ -173,7 +173,8 @@
         "insights": "Tahlil",
         "management": "Boshqaruv"
       },
-      "shifts": "Smenalar"
+      "shifts": "Smenalar",
+      "expenses": "Xarajatlar"
     },
     "header": {
       "home": "Bosh sahifa",
@@ -669,7 +670,25 @@
       "debtsStatistics": "Qarzlar statistikasi",
       "paymentsReceived": "Qabul qilingan to'lovlar",
       "paymentsCountLabel": "To'lovlar soni",
-      "activePlusOverdue": "Faol + Muddati o'tgan"
+      "activePlusOverdue": "Faol + Muddati o'tgan",
+      "tabProfitLoss": "Foyda va zarar",
+      "pl": {
+        "revenue": "Tushum",
+        "returns": "Qaytarishlar",
+        "netRevenue": "Sof tushum",
+        "cogs": "Tannarx",
+        "grossProfit": "Yalpi foyda",
+        "expenses": "Xarajatlar",
+        "netProfit": "Sof foyda",
+        "margin": "Marja {{value}}%",
+        "salesCount": "{{count}} ta savdo",
+        "expensesCount": "{{count}} ta xarajat",
+        "breakdown": "Hisob ketma-ketligi",
+        "expensesByCategory": "Xarajatlar turkumi bo‘yicha",
+        "noExpenses": "Bu davrda xarajat qayd etilmagan",
+        "dailyNetProfit": "Kunlik sof foyda",
+        "missingCostWarning": "{{count}} ta savdo qatorining tannarxi noma’lum — yalpi foyda haqiqiydan yuqori ko‘rinishi mumkin. Mahsulotlarga xarid narxini kiriting."
+      }
     },
     "pos": {
       "productsTitle": "Mahsulotlar",
@@ -1905,7 +1924,8 @@
       "emptyTitle": "Smenalar yo'q",
       "emptyDescription": "Birinchi smenani oching.",
       "cashRefunded": "Naqd qaytarishlar",
-      "returnsCount": "Qaytarishlar soni"
+      "returnsCount": "Qaytarishlar soni",
+      "cashExpenses": "Naqd xarajatlar"
     },
     "returns": {
       "title": "Qaytarishlar",
@@ -1934,6 +1954,41 @@
       "apply": "Import qilish",
       "row": "Qator",
       "done": "{{created}} ta yangi, {{updated}} ta yangilandi"
+    },
+    "expenses": {
+      "title": "Xarajatlar",
+      "subtitle": "Ijara, maosh, kommunal — sof foyda hisobi uchun",
+      "add": "Xarajat qo‘shish",
+      "addTitle": "Yangi xarajat",
+      "editTitle": "Xarajatni tahrirlash",
+      "date": "Sana",
+      "category": "Turkum",
+      "allCategories": "Barcha turkumlar",
+      "amount": "Summa",
+      "amountRequired": "Summa noldan katta bo‘lishi kerak",
+      "description": "Izoh",
+      "paymentMethod": "To‘lov usuli",
+      "cashHint": "Naqd xarajat ochiq smenaga bog‘lanadi va Z-hisobotda kassadan ayiriladi",
+      "pageTotal": "Sahifadagi jami",
+      "created": "Xarajat qo‘shildi",
+      "updated": "Xarajat yangilandi",
+      "deleted": "Xarajat o‘chirildi",
+      "deleteTitle": "Xarajatni o‘chirish",
+      "deleteMessage": "{{amount}} miqdoridagi xarajat o‘chiriladi. Davom etasizmi?",
+      "emptyTitle": "Xarajatlar yo‘q",
+      "emptyDescription": "Tanlangan davrda xarajat qayd etilmagan",
+      "categories": {
+        "RENT": "Ijara",
+        "SALARY": "Ish haqi",
+        "UTILITIES": "Kommunal",
+        "TRANSPORT": "Transport",
+        "SUPPLIES": "Xo‘jalik mollari",
+        "MARKETING": "Reklama",
+        "TAX": "Soliq",
+        "MAINTENANCE": "Ta’mirlash",
+        "BANK_FEE": "Bank komissiyasi",
+        "OTHER": "Boshqa"
+      }
     }
   },
   "shop": {

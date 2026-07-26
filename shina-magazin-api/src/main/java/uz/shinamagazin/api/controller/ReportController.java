@@ -8,6 +8,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import uz.shinamagazin.api.dto.response.ApiResponse;
 import uz.shinamagazin.api.dto.response.DebtsReportResponse;
+import uz.shinamagazin.api.dto.response.ProfitLossResponse;
 import uz.shinamagazin.api.dto.response.SalesReportResponse;
 import uz.shinamagazin.api.dto.response.WarehouseReportResponse;
 import uz.shinamagazin.api.enums.PermissionCode;
@@ -49,5 +50,21 @@ public class ReportController {
             @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate startDate,
             @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate endDate) {
         return ResponseEntity.ok(ApiResponse.success(reportService.getDebtsReport(startDate, endDate)));
+    }
+
+    /**
+     * Sof foyda hisoboti.
+     *
+     * <p>{@code REPORTS_VIEW_SALES} emas, {@code EXPENSES_VIEW} talab qilinadi:
+     * P&amp;L xarajatlarni (jumladan maoshlarni) ochib beradi, savdo hisobotini
+     * ko'ra oladigan har bir kassir uni ko'rmasligi kerak.
+     */
+    @GetMapping("/profit-loss")
+    @Operation(summary = "Profit & loss", description = "Foyda va zarar hisoboti (sof foyda)")
+    @RequiresPermission(PermissionCode.EXPENSES_VIEW)
+    public ResponseEntity<ApiResponse<ProfitLossResponse>> getProfitLoss(
+            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate startDate,
+            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate endDate) {
+        return ResponseEntity.ok(ApiResponse.success(reportService.getProfitLoss(startDate, endDate)));
     }
 }

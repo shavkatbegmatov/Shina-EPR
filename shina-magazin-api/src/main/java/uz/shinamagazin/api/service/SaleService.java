@@ -134,6 +134,9 @@ public class SaleService {
                     .unitPrice(unitPrice)
                     .discount(discount)
                     .totalPrice(itemFinalTotal)
+                    // Tannarx AYNI PAYTDA muhrlanadi: ta'minotchi narxi keyin
+                    // o'zgarsa, bu savdoning foydasi o'zgarmasligi kerak.
+                    .costPrice(product.getPurchasePrice())
                     .build();
 
             sale.addItem(saleItem);

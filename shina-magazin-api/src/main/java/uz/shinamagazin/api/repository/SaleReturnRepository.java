@@ -50,4 +50,20 @@ public interface SaleReturnRepository extends JpaRepository<SaleReturn, Long> {
 
     @Query("SELECT COUNT(r) FROM SaleReturn r WHERE r.shift.id = :shiftId")
     long countByShift(@Param("shiftId") Long shiftId);
+
+    /**
+     * Davrdagi qaytarishlar — P&amp;L uchun qatorlari bilan.
+     *
+     * <p>Qatorlar kerak, chunki qaytarish faqat tushumni emas, TANNARXNI ham
+     * kamaytiradi: tovar omborga qaytdi, uning tannarxi endi sotilgan
+     * tovarlar tannarxida turmasligi kerak.
+     */
+    @Query("""
+            SELECT DISTINCT r FROM SaleReturn r
+            LEFT JOIN FETCH r.items i
+            LEFT JOIN FETCH i.saleItem
+            LEFT JOIN FETCH i.product
+            WHERE r.returnDate BETWEEN :start AND :end""")
+    List<SaleReturn> findByReturnDateBetweenWithItems(@Param("start") java.time.LocalDateTime start,
+                                                      @Param("end") java.time.LocalDateTime end);
 }

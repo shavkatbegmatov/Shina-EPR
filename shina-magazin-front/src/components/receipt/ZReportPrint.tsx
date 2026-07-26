@@ -63,6 +63,13 @@ export function ZReportPrint({ report, settings }: { report: ZReport; settings?:
           `${t('erp.shifts.cashRefunded')} (${report.returnsCount})`,
           `−${formatCurrency(report.cashRefunded)}`
         )}
+      {/* Kassadan olib qilingan xarajat ham chiqim — kassirga kamomad
+          yozilmasligi uchun chekda ko'rinishi kerak */}
+      {report.cashExpenses > 0 &&
+        row(
+          `${t('erp.shifts.cashExpenses')} (${report.expensesCount})`,
+          `−${formatCurrency(report.cashExpenses)}`
+        )}
       {row(t('erp.shifts.expectedCash'), formatCurrency(report.expectedCash), true)}
       {report.countedCash != null && row(t('erp.shifts.countedCash'), formatCurrency(report.countedCash))}
       {report.difference != null &&

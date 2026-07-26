@@ -43,7 +43,11 @@ public class ZReportResponse {
     private BigDecimal cashRefunded;
     /** Smenadagi qaytarishlar soni. */
     private long returnsCount;
-    /** openingFloat + cashReceived − cashRefunded. */
+    /** Smenada kassadan chiqqan naqd XARAJAT. */
+    private BigDecimal cashExpenses;
+    /** Smenadagi xarajatlar soni (naqd bo'lmaganlari ham). */
+    private long expensesCount;
+    /** openingFloat + cashReceived − cashRefunded − cashExpenses. */
     private BigDecimal expectedCash;
     /** Kassir sanagan pul (smena yopilmagan bo'lsa null). */
     private BigDecimal countedCash;

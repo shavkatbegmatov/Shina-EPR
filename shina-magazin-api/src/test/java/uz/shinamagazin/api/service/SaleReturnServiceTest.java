@@ -51,6 +51,7 @@ class SaleReturnServiceTest {
     @Autowired private CustomerRepository customerRepository;
     @Autowired private UserRepository userRepository;
     @Autowired private CashShiftRepository shiftRepository;
+    @Autowired private uz.shinamagazin.api.repository.ExpenseRepository expenseRepository;
     @Autowired private jakarta.persistence.EntityManager entityManager;
 
     private SaleReturnService service;
@@ -77,7 +78,8 @@ class SaleReturnServiceTest {
         product = productRepository.saveAndFlush(product(10));
         seq = 0;
 
-        CashShiftService shiftService = new CashShiftService(shiftRepository, userRepository, saleReturnRepository);
+        CashShiftService shiftService =
+                new CashShiftService(shiftRepository, userRepository, saleReturnRepository, expenseRepository);
         service = new SaleReturnService(saleReturnRepository, saleRepository, saleItemRepository,
                 productRepository, stockMovementRepository, customerRepository, userRepository,
                 new SequentialNumbers(), shiftService);
