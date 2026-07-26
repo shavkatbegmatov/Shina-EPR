@@ -1,4 +1,5 @@
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useMemo, useState } from 'react';
+import { keepPreviousData, useQuery, useQueryClient } from '@tanstack/react-query';
 import {
   Package,
   TrendingUp,
@@ -15,6 +16,8 @@ import clsx from 'clsx';
 import { useTranslation } from 'react-i18next';
 import toast from 'react-hot-toast';
 import { getApiErrorMessage } from '../../utils/apiError';
+import { queryKeys } from '../../lib/queryKeys';
+import { useInvalidateOnNotification } from '../../hooks/useInvalidateOnNotification';
 import { Button } from '@/ui';
 import { warehouseApi } from '../../api/warehouse.api';
 import { productsApi } from '../../api/products.api';
@@ -25,7 +28,6 @@ import { ModalPortal } from '../../components/common/Modal';
 import { SearchInput } from '../../components/ui/SearchInput';
 import { ExportButtons } from '../../components/common/ExportButtons';
 import { IncomeModal } from '../../components/warehouse/IncomeModal';
-import { useNotificationsStore } from '../../store/notificationsStore';
 import { PermissionCode } from '../../hooks/usePermission';
 import { PermissionGate } from '../../components/common/PermissionGate';
 import {
@@ -39,22 +41,14 @@ import type {
   MovementType,
   Product,
   StockMovement,
-  WarehouseStats,
+
 } from '../../types';
 
 export function WarehousePage() {
   const { t } = useTranslation();
-  const [stats, setStats] = useState<WarehouseStats | null>(null);
-  const [movements, setMovements] = useState<StockMovement[]>([]);
-  const [loadError, setLoadError] = useState<string | null>(null);
-  const [lowStockProducts, setLowStockProducts] = useState<Product[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [initialLoadingMovements, setInitialLoadingMovements] = useState(true);
-  const [refreshingMovements, setRefreshingMovements] = useState(false);
+  const queryClient = useQueryClient();
   const [page, setPage] = useState(0);
   const [pageSize, setPageSize] = useState(20);
-  const [totalPages, setTotalPages] = useState(0);
-  const [totalElements, setTotalElements] = useState(0);
 
   // Filters
   const [movementTypeFilter, setMovementTypeFilter] = useState<MovementType | ''>('');
@@ -76,7 +70,6 @@ export function WarehousePage() {
   const [searchResults, setSearchResults] = useState<Product[]>([]);
   const [searchLoading, setSearchLoading] = useState(false);
 
-  const { notifications } = useNotificationsStore();
   const getMovementIcon = (type: MovementType) => {
     switch (type) {
       case 'IN':
@@ -166,75 +159,51 @@ export function WarehousePage() {
     setPage(0);
   };
 
-  const loadStats = useCallback(async () => {
-    try {
-      const data = await warehouseApi.getStats();
-      setStats(data);
-    } catch (error) {
-      console.error('Failed to load stats:', error);
-    }
-  }, []);
+  const statsQuery = useQuery({
+    queryKey: queryKeys.warehouse.stats(),
+    queryFn: () => warehouseApi.getStats(),
+  });
 
-  const loadMovements = useCallback(async (isInitial = false) => {
-    if (!isInitial) {
-      setRefreshingMovements(true);
-    }
-    try {
-      const data = await warehouseApi.getMovements({
-        page,
-        size: pageSize,
-        movementType: movementTypeFilter || undefined,
-        referenceType: referenceTypeFilter || undefined,
-      });
-      setMovements(data.content);
-      setTotalPages(data.totalPages);
-      setTotalElements(data.totalElements);
-      setLoadError(null);
-    } catch (error) {
-      console.error('Failed to load movements:', error);
-      setLoadError(getApiErrorMessage(error));
-    } finally {
-      setInitialLoadingMovements(false);
-      setRefreshingMovements(false);
-    }
-  }, [page, pageSize, movementTypeFilter, referenceTypeFilter]);
+  const lowStockQuery = useQuery({
+    queryKey: queryKeys.warehouse.lowStock(),
+    queryFn: () => warehouseApi.getLowStockProducts(),
+  });
 
-  const loadLowStockProducts = useCallback(async () => {
-    try {
-      const data = await warehouseApi.getLowStockProducts();
-      setLowStockProducts(data);
-    } catch (error) {
-      console.error('Failed to load low stock products:', error);
-    }
-  }, []);
+  const movementParams = {
+    page,
+    size: pageSize,
+    movementType: movementTypeFilter || undefined,
+    referenceType: referenceTypeFilter || undefined,
+  };
 
-  const loadInitialData = useCallback(async () => {
-    setLoading(true);
-    await Promise.all([loadStats(), loadLowStockProducts()]);
-    setLoading(false);
-  }, [loadStats, loadLowStockProducts]);
+  const movementsQuery = useQuery({
+    queryKey: queryKeys.warehouse.movements(movementParams),
+    queryFn: () => warehouseApi.getMovements(movementParams),
+    placeholderData: keepPreviousData,
+  });
 
-  useEffect(() => {
-    void loadInitialData();
-    void loadMovements(true);
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  const stats = statsQuery.data ?? null;
+  const lowStockProducts = useMemo(() => lowStockQuery.data ?? [], [lowStockQuery.data]);
+  const movements = movementsQuery.data?.content ?? [];
+  const totalPages = movementsQuery.data?.totalPages ?? 0;
+  const totalElements = movementsQuery.data?.totalElements ?? 0;
+  const loadError = movementsQuery.isError ? getApiErrorMessage(movementsQuery.error) : null;
+  const loading = statsQuery.isPending || lowStockQuery.isPending;
+  const initialLoadingMovements = movementsQuery.isPending;
+  const refreshingMovements = movementsQuery.isFetching && !movementsQuery.isPending;
 
-  // Reload when filters change
-  useEffect(() => {
-    void loadMovements();
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [page, pageSize, movementTypeFilter, referenceTypeFilter]);
+  /**
+   * Zaxira o'zgardi.
+   *
+   * <p>Ombor statistikasi, kam zaxira ro'yxati va harakatlar bitta prefiks
+   * ostida. Mahsulot ro'yxati ham eskiradi — u zaxira sonini ko'rsatadi.
+   */
+  const invalidateWarehouse = () => {
+    void queryClient.invalidateQueries({ queryKey: queryKeys.warehouse.all });
+    void queryClient.invalidateQueries({ queryKey: queryKeys.products.all });
+  };
 
-  // WebSocket orqali yangi notification kelganda ombor ma'lumotlarini yangilash
-  useEffect(() => {
-    if (notifications.length > 0) {
-      void loadStats();
-      void loadMovements();
-      void loadLowStockProducts();
-    }
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [notifications.length]);
+  useInvalidateOnNotification([queryKeys.warehouse.all]);
 
   const handleSearchProducts = async (query: string) => {
     setProductSearch(query);
@@ -281,9 +250,11 @@ export function WarehousePage() {
   // IncomeModal muvaffaqiyatli bajarilganda
   const handleIncomeSuccess = () => {
     setShowIncomeModal(false);
-    void loadStats();
-    void loadMovements();
-    void loadLowStockProducts();
+    // Ilgari bu yerda yangilash YO'Q edi: kirim qilingandan keyin harakatlar
+    // ro'yxati va zaxira statistikasi eski holatda qolardi. Ular faqat
+    // WebSocket bildirishnomasi kelsa yangilanardi — kirim esa har doim
+    // ham bildirishnoma tug'dirmaydi.
+    invalidateWarehouse();
   };
 
   const handleSubmitAdjustment = async () => {
@@ -302,9 +273,7 @@ export function WarehousePage() {
       });
 
       handleCloseAdjustmentModal();
-      void loadStats();
-      void loadMovements();
-      void loadLowStockProducts();
+      invalidateWarehouse();
     } catch (error) {
       console.error('Failed to create adjustment:', error);
       toast.error(getApiErrorMessage(error));
@@ -484,7 +453,7 @@ export function WarehousePage() {
             <DataTable
               data={movements}
               error={loadError}
-              onRetry={() => loadMovements(true)}
+              onRetry={() => void movementsQuery.refetch()}
               columns={columns}
               keyExtractor={(movement) => movement.id}
               loading={initialLoadingMovements}

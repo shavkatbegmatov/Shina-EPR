@@ -77,6 +77,31 @@ export const queryKeys = {
     list: () => ['attributes', 'list'] as const,
   },
 
+  warehouse: {
+    all: ['warehouse'] as const,
+    stats: () => ['warehouse', 'stats'] as const,
+    movements: (params: { page: number; size: number; type?: string }) =>
+      ['warehouse', 'movements', params] as const,
+    lowStock: () => ['warehouse', 'low-stock'] as const,
+  },
+
+  expenses: {
+    all: ['expenses'] as const,
+    list: (params: { page: number; size: number; startDate: string; endDate: string; category?: string }) =>
+      ['expenses', 'list', params] as const,
+  },
+
+  shifts: {
+    all: ['shifts'] as const,
+    current: () => ['shifts', 'current'] as const,
+    history: () => ['shifts', 'history'] as const,
+  },
+
+  settings: {
+    all: ['settings'] as const,
+    detail: () => ['settings', 'detail'] as const,
+  },
+
   customers: {
     all: ['customers'] as const,
     list: (params: { page: number; size: number; search?: string }) =>

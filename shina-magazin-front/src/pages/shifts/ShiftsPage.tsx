@@ -1,4 +1,5 @@
-import { useCallback, useEffect, useState } from 'react';
+import { useEffect, useState } from 'react';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
 import { Clock, Printer, Wallet, AlertTriangle, CheckCircle2 } from 'lucide-react';
 import clsx from 'clsx';
@@ -6,6 +7,7 @@ import toast from 'react-hot-toast';
 import { shiftsApi } from '../../api/shifts.api';
 import { settingsApi } from '../../api/settings.api';
 import { getApiErrorMessage } from '../../utils/apiError';
+import { queryKeys } from '../../lib/queryKeys';
 import { formatCurrency, formatDateTime } from '../../config/constants';
 import { CurrencyInput } from '../../components/ui/CurrencyInput';
 import { DataTable, Column } from '../../components/ui/DataTable';
@@ -14,7 +16,7 @@ import { PermissionGate } from '../../components/common/PermissionGate';
 import { PermissionCode } from '../../hooks/usePermission';
 import { ZReportPrint } from '../../components/receipt/ZReportPrint';
 import { Button } from '@/ui';
-import type { CashShift, ReceiptSettings, ZReport } from '../../types';
+import type { CashShift, ZReport } from '../../types';
 
 /**
  * Kassa smenasi — ochish, yopish va Z-hisobot.
@@ -25,12 +27,8 @@ import type { CashShift, ReceiptSettings, ZReport } from '../../types';
  */
 export function ShiftsPage() {
   const { t } = useTranslation();
+  const queryClient = useQueryClient();
 
-  const [current, setCurrent] = useState<CashShift | null>(null);
-  const [history, setHistory] = useState<CashShift[]>([]);
-  const [loadError, setLoadError] = useState<string | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [settings, setSettings] = useState<ReceiptSettings>();
 
   const [showOpen, setShowOpen] = useState(false);
   const [openingFloat, setOpeningFloat] = useState(0);
@@ -42,27 +40,38 @@ export function ShiftsPage() {
   /** Chop etiladigan Z-hisobot (yopilgandan keyin yoki tarixdan tanlanganda). */
   const [printing, setPrinting] = useState<ZReport | null>(null);
 
-  const load = useCallback(async () => {
-    setLoading(true);
-    try {
-      const [shift, page] = await Promise.all([shiftsApi.getCurrent(), shiftsApi.getAll(0, 20)]);
-      setCurrent(shift);
-      setHistory(page.content);
-      setLoadError(null);
-    } catch (error) {
-      console.error('Failed to load shifts:', error);
-      setLoadError(getApiErrorMessage(error));
-    } finally {
-      setLoading(false);
-    }
-  }, []);
+  const currentQuery = useQuery({
+    queryKey: queryKeys.shifts.current(),
+    queryFn: () => shiftsApi.getCurrent(),
+  });
 
-  useEffect(() => {
-    void load();
-    settingsApi.get().then(setSettings).catch(() => {
-      /* sarlavhasiz hisobot — chop etish baribir ishlaydi */
-    });
-  }, [load]);
+  const historyQuery = useQuery({
+    queryKey: queryKeys.shifts.history(),
+    queryFn: () => shiftsApi.getAll(0, 20),
+  });
+
+  /**
+   * Chek sarlavhasi — xatosi Z-hisobotni to'smaydi.
+   *
+   * <p>Sozlama yuklanmasa hisobot sarlavhasiz chop etiladi; shuning uchun
+   * bu so'rovning xatosi hech qayerda ko'rsatilmaydi.
+   */
+  const settingsQuery = useQuery({
+    queryKey: queryKeys.settings.detail(),
+    queryFn: () => settingsApi.get(),
+  });
+
+  const current = currentQuery.data ?? null;
+  const history = historyQuery.data?.content ?? [];
+  const settings = settingsQuery.data;
+  const loading = currentQuery.isPending || historyQuery.isPending;
+  const loadError =
+    currentQuery.isError || historyQuery.isError
+      ? getApiErrorMessage(currentQuery.error ?? historyQuery.error)
+      : null;
+
+  const invalidateShifts = () =>
+    queryClient.invalidateQueries({ queryKey: queryKeys.shifts.all });
 
   // Chop etish DOM'ga qo'yilgandan KEYIN — aks holda bo'sh sahifa chiqadi
   useEffect(() => {
@@ -78,7 +87,7 @@ export function ShiftsPage() {
       toast.success(t('erp.shifts.opened'));
       setShowOpen(false);
       setOpeningFloat(0);
-      void load();
+      void invalidateShifts();
     } catch (error) {
       toast.error(getApiErrorMessage(error));
     } finally {
@@ -95,7 +104,7 @@ export function ShiftsPage() {
       setCountedCash(0);
       setCloseNotes('');
       setPrinting(report);   // yopilishi bilan Z-hisobot chop etishga tayyor
-      void load();
+      void invalidateShifts();
     } catch (error) {
       toast.error(getApiErrorMessage(error));
     } finally {
@@ -220,7 +229,7 @@ export function ShiftsPage() {
         keyExtractor={(s) => s.id}
         loading={loading}
         error={loadError}
-        onRetry={load}
+        onRetry={() => { void currentQuery.refetch(); void historyQuery.refetch(); }}
         emptyIcon={<Clock className="h-12 w-12" />}
         emptyTitle={t('erp.shifts.emptyTitle')}
         emptyDescription={t('erp.shifts.emptyDescription')}

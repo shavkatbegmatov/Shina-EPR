@@ -1,8 +1,10 @@
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
+import { keepPreviousData, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
 import { Receipt, Pencil, Trash2, Plus, Wallet } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { expensesApi } from '../../api/expenses.api';
+import { queryKeys } from '../../lib/queryKeys';
 import { getApiErrorMessage } from '../../utils/apiError';
 import { formatCurrency, formatDate, formatDateForApi } from '../../config/constants';
 import { CurrencyInput } from '../../components/ui/CurrencyInput';
@@ -51,6 +53,7 @@ function emptyForm(): FormState {
  */
 export function ExpensesPage() {
   const { t } = useTranslation();
+  const queryClient = useQueryClient();
   const [range, setRange] = useState(defaultRange);
   const [category, setCategory] = useState<ExpenseCategory | ''>('');
 
@@ -63,12 +66,7 @@ export function ExpensesPage() {
     [t]
   );
 
-  const [expenses, setExpenses] = useState<Expense[]>([]);
-  const [totalElements, setTotalElements] = useState(0);
-  const [totalPages, setTotalPages] = useState(0);
   const [page, setPage] = useState(0);
-  const [loading, setLoading] = useState(true);
-  const [loadError, setLoadError] = useState<string | null>(null);
 
   const [editing, setEditing] = useState<Expense | null>(null);
   const [showForm, setShowForm] = useState(false);
@@ -76,30 +74,34 @@ export function ExpensesPage() {
   const [saving, setSaving] = useState(false);
   const [deleting, setDeleting] = useState<Expense | null>(null);
 
-  const load = useCallback(async () => {
-    setLoading(true);
-    try {
-      const result = await expensesApi.getAll({
-        startDate: range.start,
-        endDate: range.end,
-        category: category || undefined,
-        page,
-      });
-      setExpenses(result.content);
-      setTotalElements(result.totalElements);
-      setTotalPages(result.totalPages);
-      setLoadError(null);
-    } catch (error) {
-      console.error('Failed to load expenses:', error);
-      setLoadError(getApiErrorMessage(error));
-    } finally {
-      setLoading(false);
-    }
-  }, [range.start, range.end, category, page]);
+  const listParams = {
+    page,
+    size: 20,
+    startDate: range.start,
+    endDate: range.end,
+    category: category || undefined,
+  };
 
-  useEffect(() => {
-    void load();
-  }, [load]);
+  const expensesQuery = useQuery({
+    queryKey: queryKeys.expenses.list(listParams),
+    queryFn: () => expensesApi.getAll(listParams),
+    placeholderData: keepPreviousData,
+  });
+
+  const expenses = useMemo(() => expensesQuery.data?.content ?? [], [expensesQuery.data]);
+  const totalElements = expensesQuery.data?.totalElements ?? 0;
+  const totalPages = expensesQuery.data?.totalPages ?? 0;
+  const loadError = expensesQuery.isError ? getApiErrorMessage(expensesQuery.error) : null;
+  const loading = expensesQuery.isPending;
+
+  /**
+   * Xarajat P&L ga bevosita kiradi — saqlangach hisobot ham eskiradi.
+   * Naqd xarajat esa smena Z-hisobotidagi kutilgan kassani o'zgartiradi.
+   */
+  const invalidateExpenses = () => {
+    void queryClient.invalidateQueries({ queryKey: queryKeys.expenses.all });
+    void queryClient.invalidateQueries({ queryKey: queryKeys.shifts.all });
+  };
 
   // Filtr o'zgarganda birinchi sahifaga qaytamiz: aks holda 5-sahifada
   // turgan foydalanuvchi filtrni o'zgartirsa bo'sh ro'yxat ko'rardi.
@@ -153,7 +155,7 @@ export function ExpensesPage() {
         toast.success(t('erp.expenses.created'));
       }
       setShowForm(false);
-      void load();
+      invalidateExpenses();
     } catch (error) {
       toast.error(getApiErrorMessage(error));
     } finally {
@@ -167,7 +169,7 @@ export function ExpensesPage() {
       await expensesApi.remove(deleting.id);
       toast.success(t('erp.expenses.deleted'));
       setDeleting(null);
-      void load();
+      invalidateExpenses();
     } catch (error) {
       toast.error(getApiErrorMessage(error));
     }
@@ -286,7 +288,7 @@ export function ExpensesPage() {
         keyExtractor={(e) => e.id}
         loading={loading}
         error={loadError}
-        onRetry={load}
+        onRetry={() => void expensesQuery.refetch()}
         totalElements={totalElements}
         totalPages={totalPages}
         currentPage={page}
