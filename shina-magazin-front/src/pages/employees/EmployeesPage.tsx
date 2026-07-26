@@ -1,4 +1,5 @@
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useMemo, useState } from 'react';
+import { keepPreviousData, useQuery, useQueryClient } from '@tanstack/react-query';
 import {
   Plus,
   UserCog,
@@ -25,6 +26,7 @@ import toast from 'react-hot-toast';
 import { useTranslation } from 'react-i18next';
 import { employeesApi } from '../../api/employees.api';
 import { rolesApi } from '../../api/roles.api';
+import { queryKeys } from '../../lib/queryKeys';
 import { formatCurrency, formatDate, EMPLOYEE_STATUSES, ROLES, getTashkentToday } from '../../config/constants';
 import { enumLabel } from '@/shared/enumLabel';
 import { DataTable, Column } from '../../components/ui/DataTable';
@@ -38,7 +40,7 @@ import { CredentialsModal } from './components/CredentialsModal';
 import { useHighlight } from '../../hooks/useHighlight';
 import { PermissionGate } from '../../components/common/PermissionGate';
 import { usePermission, PermissionCode } from '../../hooks/usePermission';
-import type { CredentialsInfo, Employee, EmployeeRequest, EmployeeStatus, Role, User } from '../../types';
+import type { CredentialsInfo, Employee, EmployeeRequest, EmployeeStatus } from '../../types';
 
 const emptyFormData: EmployeeRequest = {
   fullName: '',
@@ -70,15 +72,10 @@ const isValidPhone = (phone: string): boolean => {
 
 export function EmployeesPage() {
   const { t } = useTranslation();
-  const [employees, setEmployees] = useState<Employee[]>([]);
-  const [loadError, setLoadError] = useState<string | null>(null);
-  const [initialLoading, setInitialLoading] = useState(true);
-  const [refreshing, setRefreshing] = useState(false);
+  const queryClient = useQueryClient();
   const [search, setSearch] = useState('');
   const [page, setPage] = useState(0);
   const [pageSize, setPageSize] = useState(20);
-  const [totalPages, setTotalPages] = useState(0);
-  const [totalElements, setTotalElements] = useState(0);
   const [showModal, setShowModal] = useState(false);
   const [editingEmployee, setEditingEmployee] = useState<Employee | null>(null);
   const [formData, setFormData] = useState<EmployeeRequest>(emptyFormData);
@@ -87,14 +84,10 @@ export function EmployeesPage() {
   const [modalTab, setModalTab] = useState<ModalTab>('basic');
 
   // Stats
-  const [activeCount, setActiveCount] = useState(0);
-  const [onLeaveCount, setOnLeaveCount] = useState(0);
 
   // Available users for linking
-  const [availableUsers, setAvailableUsers] = useState<User[]>([]);
 
   // Available roles for new user account
-  const [roles, setRoles] = useState<Role[]>([]);
 
   // Credentials modal for newly created user
   const [newCredentials, setNewCredentials] = useState<CredentialsInfo | null>(null);
@@ -137,7 +130,6 @@ export function EmployeesPage() {
       userId: employee.userId,
     });
     setModalTab('basic');
-    void loadRoles(); // Load roles for role display and editing
     setShowModal(true);
   };
 
@@ -259,81 +251,67 @@ export function EmployeesPage() {
     },
   ], [t]);
 
-  const loadEmployees = useCallback(async (isInitial = false) => {
-    if (!isInitial) {
-      setRefreshing(true);
-    }
-    try {
-      const data = await employeesApi.getAll({
-        page,
-        size: pageSize,
-        search: search || undefined,
-      });
-      setEmployees(data.content);
-      setTotalPages(data.totalPages);
-      setTotalElements(data.totalElements);
-      setLoadError(null);
-    } catch (error) {
-      console.error('Failed to load employees:', error);
-      setLoadError(t('erp.employees.loadError'));
-    } finally {
-      setInitialLoading(false);
-      setRefreshing(false);
-    }
-  }, [page, pageSize, search, t]);
+  const listParams = { page, size: pageSize, search: search || undefined };
 
-  const loadStats = useCallback(async () => {
-    try {
+  const employeesQuery = useQuery({
+    queryKey: queryKeys.employees.list(listParams),
+    queryFn: () => employeesApi.getAll(listParams),
+    placeholderData: keepPreviousData,
+  });
+
+  const statsQuery = useQuery({
+    queryKey: queryKeys.employees.stats(),
+    queryFn: async () => {
       const [active, onLeave] = await Promise.all([
         employeesApi.getByStatus('ACTIVE'),
         employeesApi.getByStatus('ON_LEAVE'),
       ]);
-      setActiveCount(active.length);
-      setOnLeaveCount(onLeave.length);
-    } catch (error) {
-      console.error('Failed to load stats:', error);
-    }
-  }, []);
+      return { activeCount: active.length, onLeaveCount: onLeave.length };
+    },
+  });
 
-  const loadAvailableUsers = useCallback(async () => {
-    try {
-      const users = await employeesApi.getAvailableUsers();
-      setAvailableUsers(users);
-    } catch (error) {
-      console.error('Failed to load available users:', error);
-    }
-  }, []);
+  /**
+   * Band bo'lmagan foydalanuvchilar va rollar — FAQAT forma ochilganda.
+   *
+   * <p>Ular xodimlar ro'yxatida ko'rinmaydi, faqat tahrirlash oynasida
+   * kerak. Ilgari `loadAvailableUsers()` oyna ochilganda qo'lda
+   * chaqirilardi; endi shart so'rovning o'zida.
+   */
+  const availableUsersQuery = useQuery({
+    queryKey: queryKeys.employees.availableUsers(),
+    queryFn: () => employeesApi.getAvailableUsers(),
+    enabled: showModal,
+  });
 
-  const loadRoles = useCallback(async () => {
-    try {
-      const data = await rolesApi.getAll();
-      // Filter only active roles
-      setRoles(data.filter(role => role.isActive));
-    } catch (error) {
-      console.error('Failed to load roles:', error);
-    }
-  }, []);
+  const rolesQuery = useQuery({
+    queryKey: queryKeys.roles.list(),
+    queryFn: () => rolesApi.getAll(),
+    enabled: showModal,
+  });
 
-  // Initial load
-  useEffect(() => {
-    loadEmployees(true);
-    void loadStats();
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  const employees = employeesQuery.data?.content ?? [];
+  const totalPages = employeesQuery.data?.totalPages ?? 0;
+  const totalElements = employeesQuery.data?.totalElements ?? 0;
+  const loadError = employeesQuery.isError ? t('erp.employees.loadError') : null;
+  const initialLoading = employeesQuery.isPending;
+  const refreshing = employeesQuery.isFetching && !employeesQuery.isPending;
+  const activeCount = statsQuery.data?.activeCount ?? 0;
+  const onLeaveCount = statsQuery.data?.onLeaveCount ?? 0;
+  const availableUsers = useMemo(() => availableUsersQuery.data ?? [], [availableUsersQuery.data]);
+  // Faqat faol rollar tanlanadi
+  const roles = useMemo(
+    () => (rolesQuery.data ?? []).filter((role) => role.isActive),
+    [rolesQuery.data]
+  );
 
-  // Reload when filters change
-  useEffect(() => {
-    void loadEmployees();
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [page, pageSize, search]);
+  const invalidateEmployees = () =>
+    queryClient.invalidateQueries({ queryKey: queryKeys.employees.all });
 
   const handleOpenNewModal = () => {
     setEditingEmployee(null);
     setFormData(emptyFormData);
     setModalTab('basic');
     setAccessType('none');
-    void loadAvailableUsers();
-    void loadRoles();
     setShowModal(true);
   };
 
@@ -397,8 +375,8 @@ export function EmployeesPage() {
       }
 
       handleCloseModal();
-      void loadEmployees();
-      void loadStats();
+
+      invalidateEmployees();
     } catch (error: unknown) {
       const err = error as { response?: { status?: number; data?: { message?: string; data?: Record<string, string> } } };
 
@@ -442,8 +420,7 @@ export function EmployeesPage() {
       toast.success(t('erp.employees.deletedToast'));
       setConfirmDeleteOpen(false);
       handleCloseModal();
-      void loadEmployees();
-      void loadStats();
+      invalidateEmployees();
     } catch (error: unknown) {
       const err = error as { response?: { status?: number; data?: { message?: string } } };
       // Skip toast for 403 errors (axios interceptor handles them)
@@ -480,7 +457,6 @@ export function EmployeesPage() {
       setIsEditingRole(false);
       setSelectedNewRoleCode('');
       // Reload to get updated data
-      void loadEmployees();
       // Update local state immediately for better UX
       setEditingEmployee(prev => prev ? { ...prev, userRole: selectedNewRoleCode } : null);
     } catch (error: unknown) {
@@ -619,7 +595,7 @@ export function EmployeesPage() {
           keyExtractor={(employee) => employee.id}
           loading={initialLoading && !refreshing}
           error={loadError}
-          onRetry={() => loadEmployees(true)}
+          onRetry={() => void employeesQuery.refetch()}
           highlightId={highlightId}
           onHighlightComplete={clearHighlight}
           emptyIcon={<UserCog className="h-12 w-12" />}

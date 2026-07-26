@@ -59,7 +59,28 @@ export const queryKeys = {
 
   employees: {
     all: ['employees'] as const,
+    list: (params: { page: number; size: number; search?: string }) =>
+      ['employees', 'list', params] as const,
     detail: (id: number) => ['employees', 'detail', id] as const,
+    stats: () => ['employees', 'stats'] as const,
+    /** Xodimga bog'lash uchun band bo'lmagan foydalanuvchilar. */
+    availableUsers: () => ['employees', 'available-users'] as const,
+  },
+
+  roles: {
+    all: ['roles'] as const,
+    list: () => ['roles', 'list'] as const,
+  },
+
+  auditLogs: {
+    all: ['audit-logs'] as const,
+    list: (params: {
+      mode: 'grouped' | 'simple';
+      page: number;
+      entityType?: string;
+      action?: string;
+      search?: string;
+    }) => ['audit-logs', 'list', params] as const,
   },
 
   brands: {

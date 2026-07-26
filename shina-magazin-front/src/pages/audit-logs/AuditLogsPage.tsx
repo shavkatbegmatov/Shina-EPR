@@ -1,4 +1,5 @@
-import { useState, useEffect } from 'react';
+import { useEffect, useState } from 'react';
+import { keepPreviousData, useQuery } from '@tanstack/react-query';
 import {
   Shield,
   Loader2,
@@ -11,8 +12,8 @@ import {
 import toast from 'react-hot-toast';
 import { useTranslation } from 'react-i18next';
 import { auditLogsApi, type AuditLog } from '../../api/audit-logs.api';
-import type { FieldChange, AuditLogGroup } from '../../types';
-import { useDataRefresh } from '../../hooks/useDataRefresh';
+import { queryKeys } from '../../lib/queryKeys';
+import type { FieldChange, AuditLogGroup, PagedResponse } from '../../types';
 import { RefreshButton } from '../../components/common/RefreshButton';
 import { ExportButtons } from '../../components/common/ExportButtons';
 import { LoadingOverlay } from '../../components/common/LoadingOverlay';
@@ -30,14 +31,10 @@ export function AuditLogsPage() {
   const [viewMode, setViewMode] = useState<ViewMode>('grouped');
 
   // Simple view state
-  const [auditLogs, setAuditLogs] = useState<AuditLog[]>([]);
 
   // Grouped view state
-  const [auditLogGroups, setAuditLogGroups] = useState<AuditLogGroup[]>([]);
 
   // Common state
-  const [totalPages, setTotalPages] = useState(0);
-  const [totalElements, setTotalElements] = useState(0);
   const [currentPage, setCurrentPage] = useState(0);
   const [entityTypeFilter, setEntityTypeFilter] = useState<string>('');
   const [actionFilter, setActionFilter] = useState<string>('');
@@ -50,42 +47,57 @@ export function AuditLogsPage() {
     new Map()
   );
 
-  const { initialLoading, refreshing, refreshSuccess, loadData } = useDataRefresh({
-    fetchFn: async () => {
-      if (viewMode === 'grouped') {
-        const data = await auditLogsApi.searchGroupedAuditLogs(
-          currentPage,
-          20,
-          entityTypeFilter || undefined,
-          actionFilter || undefined,
-          undefined,
-          searchQuery || undefined
-        );
-        setAuditLogGroups(data.content);
-        setTotalPages(data.totalPages);
-        setTotalElements(data.totalElements);
-        return data;
-      } else {
-        const data = await auditLogsApi.searchAuditLogs(
-          currentPage,
-          20,
-          entityTypeFilter || undefined,
-          actionFilter || undefined,
-          undefined,
-          searchQuery || undefined
-        );
-        setAuditLogs(data.content);
-        setTotalPages(data.totalPages);
-        setTotalElements(data.totalElements);
-        return data;
-      }
-    },
-    onError: () => toast.error(t('erp.auditLogs.loadError')),
+  const listParams = {
+    mode: viewMode,
+    page: currentPage,
+    entityType: entityTypeFilter || undefined,
+    action: actionFilter || undefined,
+    search: searchQuery || undefined,
+  } as const;
+
+  // Ikki ko'rinish ikki xil tur qaytaradi — birlashtirilgan tur bilan
+  // yozamiz, keyin `viewMode` bo'yicha toraytiramiz.
+  const logsQuery = useQuery<PagedResponse<AuditLog | AuditLogGroup>>({
+    queryKey: queryKeys.auditLogs.list(listParams),
+    queryFn: () =>
+      viewMode === 'grouped'
+        ? auditLogsApi.searchGroupedAuditLogs(
+            currentPage,
+            20,
+            entityTypeFilter || undefined,
+            actionFilter || undefined,
+            undefined,
+            searchQuery || undefined
+          )
+        : auditLogsApi.searchAuditLogs(
+            currentPage,
+            20,
+            entityTypeFilter || undefined,
+            actionFilter || undefined,
+            undefined,
+            searchQuery || undefined
+          ),
+    placeholderData: keepPreviousData,
   });
 
+  // Ikki ko'rinish bir so'rovdan keladi — kalitda `mode` bor, shuning uchun
+  // ular bir-birining keshini bosib ketmaydi.
+  const auditLogGroups = (viewMode === 'grouped' ? logsQuery.data?.content : []) as AuditLogGroup[];
+  const auditLogs = (viewMode === 'grouped' ? [] : logsQuery.data?.content) as AuditLog[];
+  const totalPages = logsQuery.data?.totalPages ?? 0;
+  const totalElements = logsQuery.data?.totalElements ?? 0;
+  const initialLoading = logsQuery.isPending;
+  const refreshing = logsQuery.isFetching && !logsQuery.isPending;
+
   useEffect(() => {
-    loadData(false);
-    // Clear expanded rows and cache when filters change
+    if (logsQuery.isError) {
+      toast.error(t('erp.auditLogs.loadError'));
+    }
+  }, [logsQuery.isError, t]);
+
+  // Filtr o'zgarganda yoyilgan qatorlar va ularning keshi eskiradi —
+  // ular ID bo'yicha saqlanadi, yangi ro'yxatda esa boshqa yozuvlar keladi.
+  useEffect(() => {
     setExpandedRows(new Set());
     setFieldChangesCache(new Map());
   }, [currentPage, entityTypeFilter, actionFilter, searchQuery, viewMode]);
@@ -205,9 +217,9 @@ export function AuditLogsPage() {
           </div>
 
           <RefreshButton
-            onClick={() => loadData(true)}
+            onClick={() => void logsQuery.refetch()}
             loading={refreshing}
-            success={refreshSuccess}
+            success={logsQuery.isSuccess && !refreshing}
             disabled={initialLoading}
             className="flex-1 sm:flex-none"
           />
