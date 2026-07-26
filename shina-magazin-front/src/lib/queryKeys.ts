@@ -78,6 +78,17 @@ export const queryKeys = {
     detail: (id: number) => ['customers', 'detail', id] as const,
   },
 
+  debts: {
+    all: ['debts'] as const,
+    list: (params: { page: number; size: number; status?: string }) =>
+      ['debts', 'list', params] as const,
+    /** Statistika uchun sahifalanmagan to'liq ro'yxat. */
+    forStats: () => ['debts', 'for-stats'] as const,
+    totalActive: () => ['debts', 'total-active'] as const,
+    payments: (debtId: number) => ['debts', 'payments', debtId] as const,
+    detail: (id: number) => ['debts', 'detail', id] as const,
+  },
+
   sales: {
     all: ['sales'] as const,
     list: (params: { page: number; size: number; startDate?: string; endDate?: string }) =>

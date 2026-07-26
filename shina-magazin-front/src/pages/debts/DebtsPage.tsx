@@ -1,4 +1,5 @@
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useMemo, useState } from 'react';
+import { keepPreviousData, useQuery, useQueryClient } from '@tanstack/react-query';
 import {
   Wallet,
   Phone,
@@ -28,9 +29,10 @@ import { Select } from '../../components/ui/Select';
 import { DataTable, Column } from '../../components/ui/DataTable';
 import { ModalPortal } from '../../components/common/Modal';
 import { ExportButtons } from '../../components/common/ExportButtons';
-import type { Debt, DebtStatus, Payment, PaymentMethod } from '../../types';
-import { useNotificationsStore } from '../../store/notificationsStore';
+import type { Debt, DebtStatus, PaymentMethod } from '../../types';
 import { useHighlight } from '../../hooks/useHighlight';
+import { useInvalidateOnNotification } from '../../hooks/useInvalidateOnNotification';
+import { queryKeys } from '../../lib/queryKeys';
 import { PermissionCode } from '../../hooks/usePermission';
 import { PermissionGate } from '../../components/common/PermissionGate';
 import { Button } from '@/ui';
@@ -53,22 +55,12 @@ interface CustomerDebtSummary {
 export function DebtsPage() {
   const { t } = useTranslation();
   const [activeTab, setActiveTab] = useState<TabType>('all');
-  const [debts, setDebts] = useState<Debt[]>([]);
-  const [loadError, setLoadError] = useState<string | null>(null);
-  const [allDebts, setAllDebts] = useState<Debt[]>([]); // For statistics and grouping
-  const [initialLoading, setInitialLoading] = useState(true);
-  const [refreshing, setRefreshing] = useState(false);
-  const { notifications } = useNotificationsStore();
   const [page, setPage] = useState(0);
   const [pageSize, setPageSize] = useState(20);
-  const [totalPages, setTotalPages] = useState(0);
-  const [totalElements, setTotalElements] = useState(0);
   const [statusFilter, setStatusFilter] = useState<DebtStatus | ''>('');
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedDebt, setSelectedDebt] = useState<Debt | null>(null);
   const [showPaymentModal, setShowPaymentModal] = useState(false);
-  const [payments, setPayments] = useState<Payment[]>([]);
-  const [loadingPayments, setLoadingPayments] = useState(false);
   const [expandedCustomer, setExpandedCustomer] = useState<number | null>(null);
 
   // Payment form state
@@ -78,9 +70,8 @@ export function DebtsPage() {
   const [isFullPayment, setIsFullPayment] = useState(false);
   const [submitting, setSubmitting] = useState(false);
 
-  // Stats - used for header display
-  const [, setTotalActiveDebt] = useState(0);
 
+  const queryClient = useQueryClient();
   const { highlightId, clearHighlight } = useHighlight();
   // Tabs configuration
   const tabs = [
@@ -163,70 +154,53 @@ export function DebtsPage() {
     setPage(0);
   };
 
-  const loadDebts = useCallback(async (isInitial = false) => {
-    if (!isInitial) {
-      setRefreshing(true);
-    }
-    try {
-      const data = await debtsApi.getAll({
-        page,
-        size: pageSize,
-        status: statusFilter || undefined,
-      });
-      setDebts(data.content);
-      setTotalPages(data.totalPages);
-      setTotalElements(data.totalElements);
-      setLoadError(null);
-    } catch (error) {
-      console.error('Failed to load debts:', error);
-      setLoadError(getApiErrorMessage(error));
-    } finally {
-      setInitialLoading(false);
-      setRefreshing(false);
-    }
-  }, [page, pageSize, statusFilter]);
+  const listParams = { page, size: pageSize, status: statusFilter || undefined };
 
-  // Load all debts for statistics and grouping (without pagination)
-  const loadAllDebts = useCallback(async () => {
-    try {
-      const data = await debtsApi.getAll({
-        page: 0,
-        size: 1000, // Load more for stats
-        status: undefined,
-      });
-      setAllDebts(data.content);
-    } catch (error) {
-      console.error('Failed to load all debts:', error);
-    }
-  }, []);
+  const debtsQuery = useQuery({
+    queryKey: queryKeys.debts.list(listParams),
+    queryFn: () => debtsApi.getAll(listParams),
+    placeholderData: keepPreviousData,
+  });
 
-  const loadTotalDebt = useCallback(async () => {
-    try {
-      const total = await debtsApi.getTotalActiveDebt();
-      setTotalActiveDebt(total);
-    } catch (error) {
-      console.error('Failed to load total debt:', error);
-    }
-  }, []);
+  /**
+   * Statistika va mijozlar kesimi uchun SAHIFALANMAGAN ro'yxat.
+   *
+   * <p>Sahifalangan ro'yxatdan hisoblab bo'lmaydi: 2-sahifadagi qarzlar
+   * summaga kirmay qolardi.
+   */
+  const allDebtsQuery = useQuery({
+    queryKey: queryKeys.debts.forStats(),
+    queryFn: () => debtsApi.getAll({ page: 0, size: 1000, status: undefined }),
+  });
 
-  const loadDebtPayments = useCallback(async (debtId: number) => {
-    setLoadingPayments(true);
-    try {
-      const data = await debtsApi.getDebtPayments(debtId);
-      setPayments(data);
-    } catch (error) {
-      console.error('Failed to load payments:', error);
-    } finally {
-      setLoadingPayments(false);
-    }
-  }, []);
+  // `debtsApi.getTotalActiveDebt()` ATAYLAB chaqirilmaydi: ekranda
+  // ko'rinadigan "jami qarz" `allDebts` dan MAHALLIY hisoblanadi
+  // (`stats.totalActiveDebt`). Eski kod bu so'rovni har ochilishda va har
+  // bildirishnomada yuborar, natijasini esa hech qayerda ishlatmasdi —
+  // `const [, setTotalActiveDebt]` da faqat setter olingan edi.
 
-  useEffect(() => {
-    loadDebts(true);
-    void loadTotalDebt();
-    void loadAllDebts();
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  // Tanlangan qarzning to'lovlari — qarz tanlanmaguncha so'ralmaydi
+  const paymentsQuery = useQuery({
+    queryKey: queryKeys.debts.payments(selectedDebt?.id ?? 0),
+    queryFn: () => debtsApi.getDebtPayments(selectedDebt!.id),
+    enabled: selectedDebt != null,
+  });
+
+  const debts = useMemo(() => debtsQuery.data?.content ?? [], [debtsQuery.data]);
+  const allDebts = useMemo(() => allDebtsQuery.data?.content ?? [], [allDebtsQuery.data]);
+  const payments = paymentsQuery.data ?? [];
+  const loadingPayments = paymentsQuery.isFetching;
+  const totalPages = debtsQuery.data?.totalPages ?? 0;
+  const totalElements = debtsQuery.data?.totalElements ?? 0;
+  const loadError = debtsQuery.isError ? getApiErrorMessage(debtsQuery.error) : null;
+  const initialLoading = debtsQuery.isPending;
+  const refreshing = debtsQuery.isFetching && !debtsQuery.isPending;
+
+  /** To'lovdan keyin HAMMASI yangilanadi — biri unutilsa eski summa qoladi. */
+  const invalidateDebts = () =>
+    queryClient.invalidateQueries({ queryKey: queryKeys.debts.all });
+
+  useInvalidateOnNotification([queryKeys.debts.all]);
 
   // Customer debt summaries (grouped by customer)
   const customerDebtSummaries = useMemo((): CustomerDebtSummary[] => {
@@ -320,30 +294,12 @@ export function DebtsPage() {
     );
   }, [debts, searchQuery]);
 
-  // Reload when filters change
-  useEffect(() => {
-    void loadDebts();
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [page, pageSize, statusFilter]);
-
-  // WebSocket orqali yangi notification kelganda qarzlarni yangilash
-  useEffect(() => {
-    if (notifications.length > 0) {
-      void loadDebts();
-      void loadTotalDebt();
-      void loadAllDebts();
-    }
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [notifications.length]);
-
   const handleSelectDebt = (debt: Debt) => {
     setSelectedDebt(debt);
-    loadDebtPayments(debt.id);
   };
 
   const handleCloseDetail = () => {
     setSelectedDebt(null);
-    setPayments([]);
   };
 
   const handleOpenPaymentModal = (fullPayment: boolean) => {
@@ -384,14 +340,14 @@ export function DebtsPage() {
       }
 
       handleClosePaymentModal();
-      void loadDebts();
-      void loadTotalDebt();
-      void loadAllDebts();
 
-      // Refresh selected debt
-      const updatedDebt = await debtsApi.getById(selectedDebt.id);
-      setSelectedDebt(updatedDebt);
-      loadDebtPayments(selectedDebt.id);
+      // Prefiks bo'yicha: ro'yxat, statistika ro'yxati va tanlangan qarzning
+      // to'lovlari birdan yangilanadi. Ilgari ularning har biri qo'lda
+      // sanab chiqilardi va birini unutish oson edi.
+      void invalidateDebts();
+
+      // Tanlangan qarz kartochkasi ham yangi qoldiqni ko'rsatishi kerak
+      setSelectedDebt(await debtsApi.getById(selectedDebt.id));
     } catch (error) {
       console.error('Failed to process payment:', error);
     } finally {
@@ -649,7 +605,7 @@ export function DebtsPage() {
                   <DataTable
                     data={filteredDebts}
                     error={loadError}
-                    onRetry={() => loadDebts(true)}
+                    onRetry={() => void debtsQuery.refetch()}
                     columns={columns}
                     keyExtractor={(debt) => debt.id}
                     loading={initialLoading && !refreshing}
