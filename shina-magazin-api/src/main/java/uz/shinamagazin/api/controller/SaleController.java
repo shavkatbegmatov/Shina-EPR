@@ -9,18 +9,23 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.web.PageableDefault;
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.HttpHeaders;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.core.io.ByteArrayResource;
 import org.springframework.core.io.Resource;
+import uz.shinamagazin.api.dto.request.CreateSaleReturnRequest;
 import uz.shinamagazin.api.dto.request.SaleRequest;
 import uz.shinamagazin.api.dto.response.ApiResponse;
 import uz.shinamagazin.api.dto.response.PagedResponse;
+import uz.shinamagazin.api.dto.response.SaleReturnResponse;
 import uz.shinamagazin.api.dto.response.SaleResponse;
 import uz.shinamagazin.api.enums.PermissionCode;
+import uz.shinamagazin.api.security.CustomUserDetails;
 import uz.shinamagazin.api.security.RequiresPermission;
+import uz.shinamagazin.api.service.SaleReturnService;
 import uz.shinamagazin.api.service.SaleService;
 import uz.shinamagazin.api.service.export.ExportSupport;
 import uz.shinamagazin.api.service.export.GenericExportService;
@@ -36,6 +41,7 @@ import java.util.List;
 public class SaleController {
 
     private final SaleService saleService;
+    private final SaleReturnService saleReturnService;
     private final GenericExportService genericExportService;
 
     @GetMapping
@@ -120,5 +126,28 @@ public class SaleController {
     public ResponseEntity<ApiResponse<SaleResponse>> cancelSale(@PathVariable Long id) {
         SaleResponse sale = saleService.cancelSale(id);
         return ResponseEntity.ok(ApiResponse.success("Sotuv bekor qilindi", sale));
+    }
+
+    // ─── Qaytarish ───
+    // SALES_REFUND ataylab SALES_UPDATE dan alohida: qaytarish firibgarlik
+    // yo'li, shuning uchun V11 da u faqat MANAGER/ADMIN ga berilgan.
+
+    @PostMapping("/{id}/returns")
+    @RequiresPermission(PermissionCode.SALES_REFUND)
+    @Operation(summary = "Create sale return", description = "Savdodan tovar qaytarish (qisman yoki to'liq)")
+    public ResponseEntity<ApiResponse<SaleReturnResponse>> createReturn(
+            @PathVariable Long id,
+            @Valid @RequestBody CreateSaleReturnRequest request,
+            @AuthenticationPrincipal CustomUserDetails userDetails) {
+        SaleReturnResponse created = saleReturnService.createReturn(id, userDetails.getId(), request);
+        return ResponseEntity.status(HttpStatus.CREATED)
+                .body(ApiResponse.success("Qaytarish rasmiylashtirildi", created));
+    }
+
+    @GetMapping("/{id}/returns")
+    @RequiresPermission(PermissionCode.SALES_VIEW)
+    @Operation(summary = "Sale returns", description = "Savdo bo'yicha qaytarishlar tarixi")
+    public ResponseEntity<ApiResponse<List<SaleReturnResponse>>> getReturns(@PathVariable Long id) {
+        return ResponseEntity.ok(ApiResponse.success(saleReturnService.getBySale(id)));
     }
 }

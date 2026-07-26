@@ -18,6 +18,7 @@ import uz.shinamagazin.api.enums.PaymentMethod;
 import uz.shinamagazin.api.exception.BadRequestException;
 import uz.shinamagazin.api.exception.ResourceNotFoundException;
 import uz.shinamagazin.api.repository.CashShiftRepository;
+import uz.shinamagazin.api.repository.SaleReturnRepository;
 import uz.shinamagazin.api.repository.UserRepository;
 
 import java.math.BigDecimal;
@@ -41,6 +42,7 @@ public class CashShiftService {
 
     private final CashShiftRepository shiftRepository;
     private final UserRepository userRepository;
+    private final SaleReturnRepository saleReturnRepository;
 
     /** Kassirning ochiq smenasi (bo'lmasa bo'sh). */
     @Transactional(readOnly = true)
@@ -158,7 +160,10 @@ public class CashShiftService {
                     .method(method).count(count).total(total).paid(paid).build());
         }
 
-        BigDecimal expectedCash = shift.getOpeningFloat().add(cashReceived);
+        // Qaytarishlarda kassadan chiqqan pul AYIRILADI — aks holda kassa kam
+        // chiqib, kassirga asossiz kamomad yozilardi.
+        BigDecimal cashRefunded = saleReturnRepository.sumCashRefundedByShift(shift.getId());
+        BigDecimal expectedCash = shift.getOpeningFloat().add(cashReceived).subtract(cashRefunded);
 
         return ZReportResponse.builder()
                 .shift(CashShiftResponse.from(shift))
@@ -169,6 +174,8 @@ public class CashShiftService {
                 .byPaymentMethod(breakdown)
                 .openingFloat(shift.getOpeningFloat())
                 .cashReceived(cashReceived)
+                .cashRefunded(cashRefunded)
+                .returnsCount(saleReturnRepository.countByShift(shift.getId()))
                 .expectedCash(expectedCash)
                 .countedCash(shift.getCountedCash())
                 .difference(shift.getDifference())

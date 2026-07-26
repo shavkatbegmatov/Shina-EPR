@@ -1903,7 +1903,21 @@
       "notes": "Izoh",
       "zReport": "Z-HISOBOT",
       "emptyTitle": "Smenalar yo'q",
-      "emptyDescription": "Birinchi smenani oching."
+      "emptyDescription": "Birinchi smenani oching.",
+      "cashRefunded": "Naqd qaytarishlar",
+      "returnsCount": "Qaytarishlar soni"
+    },
+    "returns": {
+      "title": "Qaytarishlar",
+      "action": "Qaytarish",
+      "modalTitle": "Tovarni qaytarish",
+      "modalHint": "Qaytariladigan miqdorni kiriting. Avval mijozning qarzi kamayadi, qolgani naqd qaytariladi.",
+      "available": "Qaytarish mumkin",
+      "reason": "Sabab",
+      "submit": "Qaytarishni rasmiylashtirish",
+      "created": "Qaytarish rasmiylashtirildi",
+      "cashRefunded": "Naqd qaytarildi",
+      "debtReduced": "Qarzdan ayirildi"
     }
   },
   "shop": {

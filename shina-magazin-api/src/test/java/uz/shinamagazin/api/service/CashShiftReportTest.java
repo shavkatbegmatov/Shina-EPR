@@ -11,11 +11,13 @@ import uz.shinamagazin.api.dto.request.OpenShiftRequest;
 import uz.shinamagazin.api.dto.response.ZReportResponse;
 import uz.shinamagazin.api.entity.CashShift;
 import uz.shinamagazin.api.entity.Sale;
+import uz.shinamagazin.api.entity.SaleReturn;
 import uz.shinamagazin.api.entity.User;
 import uz.shinamagazin.api.enums.*;
 import uz.shinamagazin.api.exception.BadRequestException;
 import uz.shinamagazin.api.repository.CashShiftRepository;
 import uz.shinamagazin.api.repository.SaleRepository;
+import uz.shinamagazin.api.repository.SaleReturnRepository;
 import uz.shinamagazin.api.repository.UserRepository;
 
 import java.math.BigDecimal;
@@ -52,6 +54,7 @@ class CashShiftReportTest {
     @Autowired private CashShiftRepository shiftRepository;
     @Autowired private SaleRepository saleRepository;
     @Autowired private UserRepository userRepository;
+    @Autowired private SaleReturnRepository saleReturnRepository;
 
     private CashShiftService service;
     private User cashier;
@@ -63,7 +66,7 @@ class CashShiftReportTest {
         shiftRepository.deleteAll();
         userRepository.deleteAll();
 
-        service = new CashShiftService(shiftRepository, userRepository);
+        service = new CashShiftService(shiftRepository, userRepository, saleReturnRepository);
         cashier = userRepository.saveAndFlush(user("kassir"));
         invoiceSeq = 0;
     }
@@ -161,6 +164,57 @@ class CashShiftReportTest {
 
         assertThat(service.getReport(second.getId()).getCashReceived()).isEqualByComparingTo("700000");
         assertThat(service.getReport(first.getId()).getCashReceived()).isEqualByComparingTo("100000");
+    }
+
+    // Qaytarishda kassadan pul CHIQADI. Buni ayirmasa kassa kam chiqib,
+    // kassirga asossiz kamomad yozilardi — shuning uchun alohida test.
+    @Test
+    @DisplayName("Naqd qaytarish kutilgan kassani kamaytiradi")
+    void cashRefundReducesExpectedCash() {
+        CashShift shift = openShift("100000");
+        sale(shift, PaymentMethod.CASH, "500000", "500000", "0", SaleStatus.COMPLETED);
+
+        assertThat(service.getReport(shift.getId()).getExpectedCash()).isEqualByComparingTo("600000");
+
+        saleReturnRepository.saveAndFlush(SaleReturn.builder()
+                .returnNumber("SR-TEST-1")
+                .sale(saleRepository.findAll().get(0))
+                .returnDate(LocalDateTime.now())
+                .refundAmount(new BigDecimal("150000"))
+                .debtReduced(BigDecimal.ZERO)
+                .cashRefunded(new BigDecimal("150000"))
+                .shift(shift)
+                .createdBy(cashier)
+                .build());
+
+        ZReportResponse report = service.getReport(shift.getId());
+        assertThat(report.getCashRefunded()).isEqualByComparingTo("150000");
+        assertThat(report.getReturnsCount()).isEqualTo(1);
+        assertThat(report.getExpectedCash())
+                .as("100 000 + 500 000 − 150 000")
+                .isEqualByComparingTo("450000");
+    }
+
+    @Test
+    @DisplayName("Qarzdan qaytarilgan qism kassaga ta'sir qilmaydi")
+    void debtOnlyRefundDoesNotAffectCash() {
+        CashShift shift = openShift("0");
+        sale(shift, PaymentMethod.CASH, "500000", "500000", "0", SaleStatus.COMPLETED);
+
+        saleReturnRepository.saveAndFlush(SaleReturn.builder()
+                .returnNumber("SR-TEST-2")
+                .sale(saleRepository.findAll().get(0))
+                .returnDate(LocalDateTime.now())
+                .refundAmount(new BigDecimal("200000"))
+                .debtReduced(new BigDecimal("200000"))   // faqat qarz kamaydi
+                .cashRefunded(BigDecimal.ZERO)
+                .shift(shift)
+                .createdBy(cashier)
+                .build());
+
+        assertThat(service.getReport(shift.getId()).getExpectedCash())
+                .as("kassadan pul chiqmagan")
+                .isEqualByComparingTo("500000");
     }
 
     // ─── Yopish ───

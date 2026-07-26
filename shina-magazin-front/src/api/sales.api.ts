@@ -1,5 +1,5 @@
 import api from './axios';
-import type { ApiResponse, PagedResponse, Sale, SaleRequest } from '../types';
+import type { CreateSaleReturnRequest, SaleReturn, ApiResponse, PagedResponse, Sale, SaleRequest } from '../types';
 import { createExportApi } from './export.utils';
 
 export interface SaleFilters {
@@ -36,6 +36,17 @@ export const salesApi = {
   create: async (data: SaleRequest): Promise<Sale> => {
     const response = await api.post<ApiResponse<Sale>>('/v1/sales', data);
     return response.data.data;
+  },
+
+  /** Savdodan tovar qaytarish (qisman yoki to'liq). SALES_REFUND talab qiladi. */
+  createReturn: async (saleId: number, data: CreateSaleReturnRequest): Promise<SaleReturn> => {
+    const res = await api.post<ApiResponse<SaleReturn>>(`/v1/sales/${saleId}/returns`, data);
+    return res.data.data;
+  },
+
+  getReturns: async (saleId: number): Promise<SaleReturn[]> => {
+    const res = await api.get<ApiResponse<SaleReturn[]>>(`/v1/sales/${saleId}/returns`);
+    return res.data.data;
   },
 
   cancel: async (id: number): Promise<Sale> => {

@@ -38,7 +38,38 @@ export interface CredentialsInfo {
   mustChangePassword: boolean;
 }
 
-// Settings Types
+// ─── Savdo qaytarish ───
+
+export interface SaleReturnItem {
+  saleItemId: number;
+  productId: number;
+  productName?: string;
+  quantity: number;
+  unitPrice: number;
+  totalPrice: number;
+}
+
+export interface SaleReturn {
+  id: number;
+  returnNumber: string;
+  saleId: number;
+  invoiceNumber?: string;
+  returnDate: string;
+  reason?: string;
+  refundAmount: number;
+  /** Qarzni kamaytirishga ketgan qism (kassadan pul chiqmagan). */
+  debtReduced: number;
+  /** Mijozga haqiqatan qaytarilgan pul. */
+  cashRefunded: number;
+  createdByName?: string;
+  items: SaleReturnItem[];
+}
+
+export interface CreateSaleReturnRequest {
+  items: { saleItemId: number; quantity: number }[];
+  reason?: string;
+}
+
 // ─── Kassa smenasi va Z-hisobot ───
 
 export type CashShiftStatus = 'OPEN' | 'CLOSED';
@@ -77,10 +108,15 @@ export interface ZReport {
   openingFloat: number;
   /** Faqat naqd savdolarning to'langan qismi. */
   cashReceived: number;
+  /** Qaytarishlarda kassadan chiqqan pul. */
+  cashRefunded: number;
+  returnsCount: number;
   expectedCash: number;
   countedCash?: number;
   difference?: number;
 }
+
+// Settings Types
 
 /** Chek (kassa qog'ozi) sarlavhasi. Bo'sh qiymat = chekda o'sha qator chiqmaydi. */
 export interface ReceiptSettings {

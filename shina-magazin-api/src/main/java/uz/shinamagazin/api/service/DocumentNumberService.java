@@ -42,6 +42,8 @@ public class DocumentNumberService {
 
     private static final String PURCHASE_ORDER_KEY = "PO-";
     private static final String PURCHASE_RETURN_KEY = "RT-";
+    /** Savdo qaytarish — ta'minotchiga qaytarishdan (RT-) farqlanadi. */
+    private static final String SALE_RETURN_KEY = "SR-";
 
     /**
      * Atomik "oshir va qaytar".
@@ -82,6 +84,12 @@ public class DocumentNumberService {
     @Transactional(propagation = Propagation.MANDATORY)
     public String nextPurchaseReturnNumber() {
         return String.format("%s%06d", PURCHASE_RETURN_KEY, next(PURCHASE_RETURN_KEY));
+    }
+
+    /** Savdo qaytarish raqami: {@code SR-000001}. */
+    @Transactional(propagation = Propagation.MANDATORY)
+    public String nextSaleReturnNumber() {
+        return String.format("%s%06d", SALE_RETURN_KEY, next(SALE_RETURN_KEY));
     }
 
     private long next(String key) {

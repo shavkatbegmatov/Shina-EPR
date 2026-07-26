@@ -14,13 +14,19 @@ import {
   AlertCircle,
   Hash,
   Printer,
+  Undo2,
 } from 'lucide-react';
 import clsx from 'clsx';
 import { Button } from '@/ui';
+import toast from 'react-hot-toast';
+import { getApiErrorMessage } from '../../utils/apiError';
+import { ModalPortal } from '../../components/common/Modal';
+import { PermissionGate } from '../../components/common/PermissionGate';
+import { PermissionCode } from '../../hooks/usePermission';
 import { salesApi } from '../../api/sales.api';
 import { formatCurrency, formatDate } from '../../config/constants';
 import { useSaleReceipt } from '../../components/receipt/useSaleReceipt';
-import type { Sale } from '../../types';
+import type { Sale, SaleReturn } from '../../types';
 
 export function SaleDetailPage() {
   const { t } = useTranslation();
@@ -31,17 +37,60 @@ export function SaleDetailPage() {
   const { printReceipt, receipt } = useSaleReceipt();
   const [loading, setLoading] = useState(true);
 
+  // Qaytarish
+  const [returns, setReturns] = useState<SaleReturn[]>([]);
+  const [showReturn, setShowReturn] = useState(false);
+  const [returnQty, setReturnQty] = useState<Record<number, number>>({});
+  const [returnReason, setReturnReason] = useState('');
+  const [returning, setReturning] = useState(false);
+
   const loadSale = useCallback(async () => {
     if (!id) return;
     try {
-      const data = await salesApi.getById(Number(id));
+      const [data, history] = await Promise.all([
+        salesApi.getById(Number(id)),
+        salesApi.getReturns(Number(id)),
+      ]);
       setSale(data);
+      setReturns(history);
     } catch (error) {
       console.error('Failed to load sale:', error);
+      toast.error(getApiErrorMessage(error));
     } finally {
       setLoading(false);
     }
   }, [id]);
+
+  /** Qatordan qancha qaytarish mumkin — avvalgi qaytarishlar hisobga olinadi. */
+  const returnableQty = (item: { id?: number; quantity: number }) => {
+    const alreadyReturned = returns
+      .flatMap((r) => r.items)
+      .filter((ri) => ri.saleItemId === item.id)
+      .reduce((sum, ri) => sum + ri.quantity, 0);
+    return item.quantity - alreadyReturned;
+  };
+
+  const handleReturn = async () => {
+    if (!sale) return;
+    const items = Object.entries(returnQty)
+      .filter(([, qty]) => qty > 0)
+      .map(([saleItemId, quantity]) => ({ saleItemId: Number(saleItemId), quantity }));
+    if (items.length === 0) return;
+
+    setReturning(true);
+    try {
+      await salesApi.createReturn(sale.id, { items, reason: returnReason.trim() || undefined });
+      toast.success(t('erp.returns.created'));
+      setShowReturn(false);
+      setReturnQty({});
+      setReturnReason('');
+      void loadSale();
+    } catch (error) {
+      toast.error(getApiErrorMessage(error));
+    } finally {
+      setReturning(false);
+    }
+  };
 
   useEffect(() => {
     void loadSale();
@@ -169,6 +218,16 @@ export function SaleDetailPage() {
             <Printer className="mr-2 h-4 w-4" />
             {t('erp.receipt.print')}
           </Button>
+          {/* Qaytarish faqat SALES_REFUND bilan — bu firibgarlik yo'li,
+              shuning uchun V11 da u SELLER'ga berilmagan. */}
+          {sale.status !== 'CANCELLED' && sale.status !== 'REFUNDED' && (
+            <PermissionGate permission={PermissionCode.SALES_REFUND}>
+              <Button variant="ghost" size="sm" onClick={() => setShowReturn(true)}>
+                <Undo2 className="mr-2 h-4 w-4" />
+                {t('erp.returns.action')}
+              </Button>
+            </PermissionGate>
+          )}
         </div>
       </div>
 
@@ -410,6 +469,39 @@ export function SaleDetailPage() {
         )}
       </div>
 
+      {/* Qaytarishlar tarixi */}
+      {returns.length > 0 && (
+        <div className="surface-card p-4">
+          <h3 className="mb-3 text-sm font-semibold uppercase tracking-[0.15em] text-base-content/60">
+            {t('erp.returns.title')}
+          </h3>
+          <div className="space-y-2">
+            {returns.map((r) => (
+              <div key={r.id} className="flex flex-wrap items-center justify-between gap-2 rounded-xl bg-base-200/60 p-3">
+                <div>
+                  <span className="font-mono text-sm">{r.returnNumber}</span>
+                  <span className="ml-3 text-sm text-base-content/60">{formatDate(r.returnDate)}</span>
+                  {r.reason && <p className="mt-1 text-sm text-base-content/70">{r.reason}</p>}
+                </div>
+                <div className="text-right text-sm">
+                  <div className="font-semibold">{formatCurrency(r.refundAmount)}</div>
+                  {r.cashRefunded > 0 && (
+                    <div className="text-base-content/60">
+                      {t('erp.returns.cashRefunded')}: {formatCurrency(r.cashRefunded)}
+                    </div>
+                  )}
+                  {r.debtReduced > 0 && (
+                    <div className="text-base-content/60">
+                      {t('erp.returns.debtReduced')}: {formatCurrency(r.debtReduced)}
+                    </div>
+                  )}
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
       {/* Back Button */}
       <div className="flex justify-start">
         <Button variant="ghost" onClick={() => navigate('/admin/sales')}>
@@ -417,6 +509,67 @@ export function SaleDetailPage() {
           {t('erp.saleDetail.backToSales')}
         </Button>
       </div>
+
+      {/* Qaytarish modali */}
+      <ModalPortal isOpen={showReturn} onClose={() => setShowReturn(false)}>
+        <div className="w-full max-w-lg rounded-2xl bg-base-100 p-6 shadow-2xl">
+          <h3 className="text-lg font-semibold">{t('erp.returns.modalTitle')}</h3>
+          <p className="mt-1 text-sm text-base-content/60">{t('erp.returns.modalHint')}</p>
+
+          <div className="mt-4 space-y-3">
+            {(sale.items ?? []).map((item) => {
+              const max = returnableQty(item);
+              return (
+                <div key={item.id} className="flex items-center gap-3 rounded-xl bg-base-200/60 p-3">
+                  <div className="min-w-0 flex-1">
+                    <p className="truncate font-medium">{item.productName}</p>
+                    <p className="text-xs text-base-content/60">
+                      {t('erp.returns.available')}: {max} / {item.quantity}
+                    </p>
+                  </div>
+                  <input
+                    type="number"
+                    className="input input-bordered w-24"
+                    min={0}
+                    max={max}
+                    disabled={max === 0}
+                    value={returnQty[item.id!] ?? 0}
+                    onChange={(e) =>
+                      setReturnQty((prev) => ({
+                        ...prev,
+                        [item.id!]: Math.max(0, Math.min(max, Number(e.target.value) || 0)),
+                      }))
+                    }
+                  />
+                </div>
+              );
+            })}
+            <label className="form-control">
+              <span className="label-text mb-1">{t('erp.returns.reason')}</span>
+              <input
+                className="input input-bordered"
+                maxLength={500}
+                value={returnReason}
+                onChange={(e) => setReturnReason(e.target.value)}
+              />
+            </label>
+          </div>
+
+          <div className="mt-6 flex justify-end gap-2">
+            <Button variant="ghost" onClick={() => setShowReturn(false)}>
+              {t('common.cancel')}
+            </Button>
+            <Button
+              variant="primary"
+              onClick={handleReturn}
+              loading={returning}
+              disabled={Object.values(returnQty).every((q) => !q)}
+            >
+              {t('erp.returns.submit')}
+            </Button>
+          </div>
+        </div>
+      </ModalPortal>
     </div>
   );
 }

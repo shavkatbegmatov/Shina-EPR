@@ -57,6 +57,12 @@ export function ZReportPrint({ report, settings }: { report: ZReport; settings?:
 
       {row(t('erp.shifts.openingFloat'), formatCurrency(report.openingFloat))}
       {row(t('erp.shifts.cashReceived'), formatCurrency(report.cashReceived))}
+      {/* Qaytarishlar kassadan pul CHIQARADI — kutilgan summadan ayirilgan */}
+      {report.cashRefunded > 0 &&
+        row(
+          `${t('erp.shifts.cashRefunded')} (${report.returnsCount})`,
+          `−${formatCurrency(report.cashRefunded)}`
+        )}
       {row(t('erp.shifts.expectedCash'), formatCurrency(report.expectedCash), true)}
       {report.countedCash != null && row(t('erp.shifts.countedCash'), formatCurrency(report.countedCash))}
       {report.difference != null &&
