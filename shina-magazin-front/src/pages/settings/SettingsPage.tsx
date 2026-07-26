@@ -12,6 +12,7 @@ import {
   Moon,
   Monitor,
   Clock,
+  Printer,
 } from 'lucide-react';
 import clsx from 'clsx';
 import toast from 'react-hot-toast';
@@ -28,9 +29,9 @@ import { PermissionCode } from '../../hooks/usePermission';
 import { PermissionGate } from '../../components/common/PermissionGate';
 import { Button } from '@/ui';
 import { ProductImage } from '../../shop/components/ProductImage';
-import type { Brand, Category } from '../../types';
+import type { Brand, Category, ReceiptSettings } from '../../types';
 
-type Tab = 'appearance' | 'brands' | 'categories' | 'debts';
+type Tab = 'appearance' | 'brands' | 'categories' | 'debts' | 'receipt';
 
 interface BrandFormData {
   name: string;
@@ -77,14 +78,26 @@ export function SettingsPage() {
   const [settingsLoading, setSettingsLoading] = useState(true);
   const [settingsSaving, setSettingsSaving] = useState(false);
 
+  // Chek sarlavhasi — kassa qog'ozida chiqadigan do'kon ma'lumotlari
+  const [receipt, setReceipt] = useState<ReceiptSettings>({});
+  const setReceiptField = (field: keyof ReceiptSettings) => (value: string) =>
+    setReceipt((prev) => ({ ...prev, [field]: value }));
+
   const loadSettings = useCallback(async () => {
     setSettingsLoading(true);
     try {
       const data = await settingsApi.get();
       setDebtDueDays(data.debtDueDays);
       setImageFallback(data.imageFallback === 'PHOTO' ? 'PHOTO' : 'SVG');
+      setReceipt({
+        receiptShopName: data.receiptShopName ?? '',
+        receiptShopPhone: data.receiptShopPhone ?? '',
+        receiptShopAddress: data.receiptShopAddress ?? '',
+        receiptFooter: data.receiptFooter ?? '',
+      });
     } catch (error) {
       console.error('Failed to load settings:', error);
+      toast.error(getApiErrorMessage(error));
     } finally {
       setSettingsLoading(false);
     }
@@ -254,7 +267,7 @@ export function SettingsPage() {
   const handleSaveSettings = async () => {
     setSettingsSaving(true);
     try {
-      const data = await settingsApi.update({ debtDueDays, imageFallback });
+      const data = await settingsApi.update({ debtDueDays, imageFallback, ...receipt });
       setDebtDueDays(data.debtDueDays);
       setImageFallback(data.imageFallback === 'PHOTO' ? 'PHOTO' : 'SVG');
       toast.success(t('erp.settings.settingsSavedToast'));
@@ -318,7 +331,81 @@ export function SettingsPage() {
           <Clock className="h-4 w-4" />
           {t('erp.settings.tabDebts')}
         </button>
+        <button
+          className={clsx('tab gap-2', activeTab === 'receipt' && 'tab-active')}
+          onClick={() => setActiveTab('receipt')}
+        >
+          <Printer className="h-4 w-4" />
+          {t('erp.settings.receiptTitle')}
+        </button>
       </div>
+
+      {/* Chek sozlamalari */}
+      {activeTab === 'receipt' && (
+        <div className="surface-card p-6">
+          <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+            <div>
+              <h2 className="text-lg font-semibold">{t('erp.settings.receiptTitle')}</h2>
+              <p className="text-sm text-base-content/60">{t('erp.settings.receiptHint')}</p>
+            </div>
+            <PermissionGate permission={PermissionCode.SETTINGS_UPDATE}>
+              <Button
+                variant="primary"
+                onClick={handleSaveSettings}
+                disabled={settingsSaving || settingsLoading}
+              >
+                {settingsSaving && <span className="loading loading-spinner loading-sm" />}
+                {t('common.save')}
+              </Button>
+            </PermissionGate>
+          </div>
+
+          {settingsLoading ? (
+            <div className="mt-6 flex items-center justify-center py-8">
+              <span className="loading loading-spinner loading-lg" />
+            </div>
+          ) : (
+            <div className="mt-6 grid max-w-2xl gap-4 sm:grid-cols-2">
+              <label className="form-control">
+                <span className="label-text mb-1">{t('erp.settings.receiptShopName')}</span>
+                <input
+                  className="input input-bordered"
+                  maxLength={255}
+                  value={receipt.receiptShopName ?? ''}
+                  onChange={(e) => setReceiptField('receiptShopName')(e.target.value)}
+                />
+              </label>
+              <label className="form-control">
+                <span className="label-text mb-1">{t('erp.settings.receiptShopPhone')}</span>
+                <input
+                  className="input input-bordered"
+                  maxLength={255}
+                  value={receipt.receiptShopPhone ?? ''}
+                  onChange={(e) => setReceiptField('receiptShopPhone')(e.target.value)}
+                />
+              </label>
+              <label className="form-control sm:col-span-2">
+                <span className="label-text mb-1">{t('erp.settings.receiptShopAddress')}</span>
+                <input
+                  className="input input-bordered"
+                  maxLength={255}
+                  value={receipt.receiptShopAddress ?? ''}
+                  onChange={(e) => setReceiptField('receiptShopAddress')(e.target.value)}
+                />
+              </label>
+              <label className="form-control sm:col-span-2">
+                <span className="label-text mb-1">{t('erp.settings.receiptFooter')}</span>
+                <input
+                  className="input input-bordered"
+                  maxLength={255}
+                  value={receipt.receiptFooter ?? ''}
+                  onChange={(e) => setReceiptField('receiptFooter')(e.target.value)}
+                />
+              </label>
+            </div>
+          )}
+        </div>
+      )}
 
       {/* Appearance Tab */}
       {activeTab === 'appearance' && (

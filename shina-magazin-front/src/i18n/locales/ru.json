@@ -711,7 +711,8 @@
       "colType": "Тип",
       "colBalance": "Баланс",
       "loadCustomersError": "Ошибка при загрузке клиентов",
-      "saleCompleted": "Продажа успешно завершена!"
+      "saleCompleted": "Продажа успешно завершена!",
+      "newSale": "Новая продажа"
     },
     "settings": {
       "title": "Настройки",
@@ -773,7 +774,14 @@
       "selectParentPlaceholder": "Выберите основную категорию",
       "deleteConfirmTitle": "Подтвердите удаление",
       "deleteBrandConfirm": "Удалить бренд \"{{name}}\"?",
-      "deleteCategoryConfirm": "Удалить категорию \"{{name}}\"?"
+      "deleteCategoryConfirm": "Удалить категорию \"{{name}}\"?",
+      "receiptTitle": "Настройки чека",
+      "receiptHint": "Эти данные печатаются в шапке кассового чека. Пустая строка в чек не попадёт.",
+      "receiptShopName": "Название магазина",
+      "receiptShopPhone": "Телефон",
+      "receiptShopAddress": "Адрес",
+      "receiptFooter": "Текст внизу чека",
+      "receiptSaved": "Настройки чека сохранены"
     },
     "employees": {
       "title": "Сотрудники",
@@ -1848,6 +1856,19 @@
       "fieldCountry": "Страна",
       "emptyTitle": "Брендов пока нет",
       "emptyDescription": "Создайте первый бренд"
+    },
+    "receipt": {
+      "print": "Печать чека",
+      "invoice": "Счёт",
+      "date": "Дата",
+      "customer": "Клиент",
+      "cashier": "Кассир",
+      "subtotal": "Подытог",
+      "discount": "Скидка",
+      "total": "ИТОГО",
+      "paid": "Оплачено",
+      "debt": "Долг",
+      "paymentMethod": "Способ оплаты"
     }
   },
   "shop": {

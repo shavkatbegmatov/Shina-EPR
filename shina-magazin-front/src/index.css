@@ -513,3 +513,100 @@ body:has(.modal-open) {
 .table-container .table thead th {
   @apply bg-base-100 border-b border-base-200;
 }
+
+/* ==========================================================================
+   Kassa cheki (80mm termal printer)
+   --------------------------------------------------------------------------
+   Chop etish `window.print()` orqali — alohida kutubxona yoki drayver kerak
+   emas. Ekranda chek YASHIRIN turadi; `@media print` da esa aksincha, sahifada
+   FAQAT chek qoladi.
+
+   `visibility` ishlatiladi, `display: none` emas: oxirgisi butun daraxtni
+   layoutdan chiqarib, ichidagi chekni ham yo'q qilardi.
+   ========================================================================== */
+
+#receipt-print {
+  display: none;
+}
+
+@media print {
+  /* Hamma narsani yashirib, faqat chekni ko'rsatamiz */
+  body * {
+    visibility: hidden;
+  }
+
+  #receipt-print,
+  #receipt-print * {
+    visibility: visible;
+  }
+
+  #receipt-print {
+    display: block;
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 72mm; /* 80mm qog'oz − chekka bo'shliqlari */
+    color: #000;
+    background: #fff;
+    font-family: ui-monospace, "Courier New", monospace;
+    font-size: 11px;
+    line-height: 1.35;
+  }
+
+  @page {
+    size: 80mm auto; /* uzunligi mazmunga qarab — chek uzunligi oldindan noma'lum */
+    margin: 4mm;
+  }
+}
+
+.receipt-center {
+  text-align: center;
+}
+
+.receipt-title {
+  font-size: 15px;
+  font-weight: 700;
+  margin-bottom: 2px;
+}
+
+.receipt-rule {
+  border: none;
+  border-top: 1px dashed #000;
+  margin: 6px 0;
+}
+
+.receipt-row {
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.receipt-total {
+  font-weight: 700;
+  font-size: 13px;
+}
+
+.receipt-items {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.receipt-item-name {
+  padding: 3px 0;
+  word-break: break-word;
+}
+
+.receipt-item-calc {
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.receipt-item-total {
+  margin-left: auto;
+  font-weight: 600;
+}
+
+.receipt-muted {
+  opacity: 0.75;
+}

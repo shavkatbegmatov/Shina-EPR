@@ -711,7 +711,8 @@
       "colType": "Turi",
       "colBalance": "Balans",
       "loadCustomersError": "Mijozlarni yuklashda xatolik",
-      "saleCompleted": "Sotuv muvaffaqiyatli yakunlandi!"
+      "saleCompleted": "Sotuv muvaffaqiyatli yakunlandi!",
+      "newSale": "Yangi savdo"
     },
     "settings": {
       "title": "Sozlamalar",
@@ -773,7 +774,14 @@
       "selectParentPlaceholder": "Asosiy kategoriyani tanlang",
       "deleteConfirmTitle": "O'chirishni tasdiqlang",
       "deleteBrandConfirm": "\"{{name}}\" brendini o'chirmoqchimisiz?",
-      "deleteCategoryConfirm": "\"{{name}}\" kategoriyasini o'chirmoqchimisiz?"
+      "deleteCategoryConfirm": "\"{{name}}\" kategoriyasini o'chirmoqchimisiz?",
+      "receiptTitle": "Chek sozlamalari",
+      "receiptHint": "Bu ma'lumotlar kassa chekining sarlavhasida chiqadi. Bo'sh qoldirilgan qator chekda ko'rinmaydi.",
+      "receiptShopName": "Do'kon nomi",
+      "receiptShopPhone": "Telefon",
+      "receiptShopAddress": "Manzil",
+      "receiptFooter": "Chek oxiridagi matn",
+      "receiptSaved": "Chek sozlamalari saqlandi"
     },
     "employees": {
       "title": "Xodimlar",
@@ -1848,6 +1856,19 @@
       "fieldCountry": "Davlat",
       "emptyTitle": "Brendlar hali yo'q",
       "emptyDescription": "Birinchi brendni yarating"
+    },
+    "receipt": {
+      "print": "Chek chop etish",
+      "invoice": "Hisob-faktura",
+      "date": "Sana",
+      "customer": "Mijoz",
+      "cashier": "Kassir",
+      "subtotal": "Oraliq jami",
+      "discount": "Chegirma",
+      "total": "JAMI",
+      "paid": "To'landi",
+      "debt": "Qarz",
+      "paymentMethod": "To'lov usuli"
     }
   },
   "shop": {

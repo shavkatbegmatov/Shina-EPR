@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Plus, Minus, Trash2, ShoppingCart, User, X, Users, ArrowRight, Phone } from 'lucide-react';
+import { Plus, Minus, Trash2, ShoppingCart, User, X, Users, ArrowRight, Phone, Check, Printer } from 'lucide-react';
 import toast from 'react-hot-toast';
 import clsx from 'clsx';
 import { productsApi } from '../../api/products.api';
@@ -18,7 +18,8 @@ import { ModalPortal } from '../../components/common/Modal';
 import { SearchInput } from '../../components/ui/SearchInput';
 import { CustomerSearchCombobox } from '../../components/common/NamePhoneSearchCombobox';
 import { Button } from '@/ui';
-import type { Product, PaymentMethod, Customer } from '../../types';
+import { useSaleReceipt } from '../../components/receipt/useSaleReceipt';
+import type { Product, PaymentMethod, Customer, Sale } from '../../types';
 
 export function POSPage() {
   const { t } = useTranslation();
@@ -26,6 +27,9 @@ export function POSPage() {
   const [search, setSearch] = useState('');
   const [loading, setLoading] = useState(false);
   const [showPayment, setShowPayment] = useState(false);
+  /** Yakunlangan savdo — modal chek chop etish holatiga o'tadi. */
+  const [completedSale, setCompletedSale] = useState<Sale | null>(null);
+  const { printReceipt, receipt } = useSaleReceipt();
   const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>('CASH');
   const [paidAmount, setPaidAmount] = useState(0);
 
@@ -184,6 +188,12 @@ export function POSPage() {
     },
   ], [t]);
 
+  /** Modalni yopadi va chek bosqichini tozalaydi (keyingi savdoga tayyor). */
+  const closePayment = () => {
+    setShowPayment(false);
+    setCompletedSale(null);
+  };
+
   const handleCompleteSale = async () => {
     if (cart.items.length === 0) {
       toast.error(t('erp.pos.cartEmpty'));
@@ -192,7 +202,9 @@ export function POSPage() {
 
     setLoading(true);
     try {
-      await salesApi.create({
+      // Javob ilgari tashlab yuborilardi — chek uchun hisob-faktura raqami,
+      // pozitsiyalar va yakuniy summalar aynan shu yerdan keladi.
+      const sale = await salesApi.create({
         customerId: cart.customer?.id,
         items: cart.items.map((item) => ({
           productId: item.product.id,
@@ -206,8 +218,11 @@ export function POSPage() {
       });
 
       toast.success(t('erp.pos.saleCompleted'));
+      // Savat darhol tozalanadi (mahsulot sotildi), lekin modal ochiq qoladi:
+      // kassir chekni chop etishi kerak. Chek AVTOMATIK chiqmaydi — printeri
+      // yo'q do'konda har savdoda brauzer dialogi ochilib turishi noqulay.
+      setCompletedSale(sale);
       cart.clear();
-      setShowPayment(false);
       setPaidAmount(0);
       void loadProducts();
     } catch (error: unknown) {
@@ -523,14 +538,37 @@ export function POSPage() {
       </aside>
 
       {/* Payment Modal */}
-      <ModalPortal isOpen={showPayment} onClose={() => setShowPayment(false)}>
+      <ModalPortal isOpen={showPayment} onClose={closePayment}>
         <div className="w-full max-w-lg bg-base-100 rounded-2xl shadow-2xl relative">
+          {completedSale ? (
+            /* Savdo yakunlandi — chek bosqichi */
+            <div className="p-6 text-center">
+              <div className="mx-auto grid h-14 w-14 place-items-center rounded-2xl bg-success/10 text-success">
+                <Check className="h-7 w-7" />
+              </div>
+              <h3 className="mt-4 text-lg font-semibold">{t('erp.pos.saleCompleted')}</h3>
+              <p className="mt-1 font-mono text-sm text-base-content/70">
+                {completedSale.invoiceNumber}
+              </p>
+              <p className="mt-2 text-2xl font-bold">{formatCurrency(completedSale.totalAmount)}</p>
+
+              <div className="mt-6 flex flex-col gap-2 sm:flex-row sm:justify-center">
+                <Button variant="primary" onClick={() => printReceipt(completedSale)}>
+                  <Printer className="mr-2 h-4 w-4" />
+                  {t('erp.receipt.print')}
+                </Button>
+                <Button variant="ghost" onClick={closePayment}>
+                  {t('erp.pos.newSale')}
+                </Button>
+              </div>
+            </div>
+          ) : (
           <div className="p-4 sm:p-6">
             <Button
               variant="ghost"
               size="sm"
               className="btn-circle absolute right-4 top-4"
-              onClick={() => setShowPayment(false)}
+              onClick={closePayment}
             >
               <X className="h-5 w-5" />
             </Button>
@@ -603,8 +641,12 @@ export function POSPage() {
               </Button>
             </div>
           </div>
+          )}
         </div>
       </ModalPortal>
+
+      {/* Yashirin chek — faqat chop etishda ko'rinadi (@media print) */}
+      {receipt}
 
       {/* Customer Selection Modal */}
       <ModalPortal

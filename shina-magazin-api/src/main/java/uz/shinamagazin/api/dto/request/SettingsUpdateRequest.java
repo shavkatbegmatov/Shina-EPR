@@ -4,6 +4,7 @@ import jakarta.validation.constraints.Max;
 import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Pattern;
+import jakarta.validation.constraints.Size;
 import lombok.Data;
 
 @Data
@@ -17,4 +18,19 @@ public class SettingsUpdateRequest {
     /** Storefront rasmsiz mahsulot ko'rinishi: SVG yoki PHOTO (ixtiyoriy). */
     @Pattern(regexp = "SVG|PHOTO", message = "imageFallback SVG yoki PHOTO bo'lishi kerak")
     private String imageFallback;
+
+    // Chek sozlamalari. null = tegilmaydi, bo'sh satr = chekdan olib tashlash.
+    // Uzunlik app_settings.setting_value (VARCHAR 255) bilan cheklangan.
+
+    @Size(max = 255, message = "Do'kon nomi 255 belgidan oshmasligi kerak")
+    private String receiptShopName;
+
+    @Size(max = 255, message = "Telefon 255 belgidan oshmasligi kerak")
+    private String receiptShopPhone;
+
+    @Size(max = 255, message = "Manzil 255 belgidan oshmasligi kerak")
+    private String receiptShopAddress;
+
+    @Size(max = 255, message = "Chek matni 255 belgidan oshmasligi kerak")
+    private String receiptFooter;
 }

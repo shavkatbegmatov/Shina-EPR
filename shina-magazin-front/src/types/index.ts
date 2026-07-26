@@ -39,12 +39,20 @@ export interface CredentialsInfo {
 }
 
 // Settings Types
-export interface AppSettings {
+/** Chek (kassa qog'ozi) sarlavhasi. Bo'sh qiymat = chekda o'sha qator chiqmaydi. */
+export interface ReceiptSettings {
+  receiptShopName?: string;
+  receiptShopPhone?: string;
+  receiptShopAddress?: string;
+  receiptFooter?: string;
+}
+
+export interface AppSettings extends ReceiptSettings {
   debtDueDays: number;
   imageFallback?: string; // 'SVG' | 'PHOTO' — storefront rasmsiz mahsulot ko'rinishi
 }
 
-export interface SettingsUpdateRequest {
+export interface SettingsUpdateRequest extends ReceiptSettings {
   debtDueDays: number;
   imageFallback?: string; // 'SVG' | 'PHOTO'
 }

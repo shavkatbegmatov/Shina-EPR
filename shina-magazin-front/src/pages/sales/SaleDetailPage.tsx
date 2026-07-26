@@ -13,11 +13,13 @@ import {
   FileText,
   AlertCircle,
   Hash,
+  Printer,
 } from 'lucide-react';
 import clsx from 'clsx';
 import { Button } from '@/ui';
 import { salesApi } from '../../api/sales.api';
 import { formatCurrency, formatDate } from '../../config/constants';
+import { useSaleReceipt } from '../../components/receipt/useSaleReceipt';
 import type { Sale } from '../../types';
 
 export function SaleDetailPage() {
@@ -26,6 +28,7 @@ export function SaleDetailPage() {
   const navigate = useNavigate();
 
   const [sale, setSale] = useState<Sale | null>(null);
+  const { printReceipt, receipt } = useSaleReceipt();
   const [loading, setLoading] = useState(true);
 
   const loadSale = useCallback(async () => {
@@ -161,8 +164,16 @@ export function SaleDetailPage() {
           <span className={clsx('badge', getPaymentStatusBadgeClass(sale.paymentStatus))}>
             {getPaymentStatusLabel(sale.paymentStatus)}
           </span>
+          {/* Chekni qayta chop etish — mijoz yo'qotgan yoki printer ishlamagan holat */}
+          <Button variant="ghost" size="sm" onClick={() => printReceipt(sale)}>
+            <Printer className="mr-2 h-4 w-4" />
+            {t('erp.receipt.print')}
+          </Button>
         </div>
       </div>
+
+      {/* Yashirin chek — faqat chop etishda ko'rinadi (@media print) */}
+      {receipt}
 
       {/* Summary Cards */}
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
