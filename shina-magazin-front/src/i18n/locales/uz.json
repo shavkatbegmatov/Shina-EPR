@@ -1918,6 +1918,22 @@
       "created": "Qaytarish rasmiylashtirildi",
       "cashRefunded": "Naqd qaytarildi",
       "debtReduced": "Qarzdan ayirildi"
+    },
+    "import": {
+      "action": "Excel import",
+      "title": "Mahsulotlarni Excel'dan import qilish",
+      "hint": "Fayl tanlansa avtomatik tekshiriladi. Xato bo'lsa hech nima yozilmaydi — avval faylni tuzating.",
+      "template": "Shablon yuklab olish",
+      "checking": "Fayl tekshirilmoqda...",
+      "rows": "Qatorlar",
+      "created": "Yangi",
+      "updated": "Yangilanadi",
+      "errorsFound": "{{count}} ta xato topildi",
+      "nothingWritten": "Import bajarilmadi — bazada hech narsa o'zgarmadi.",
+      "readyToApply": "Xato yo'q. Import qilishga tayyor.",
+      "apply": "Import qilish",
+      "row": "Qator",
+      "done": "{{created}} ta yangi, {{updated}} ta yangilandi"
     }
   },
   "shop": {

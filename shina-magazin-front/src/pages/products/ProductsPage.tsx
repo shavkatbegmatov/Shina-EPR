@@ -28,6 +28,7 @@ import { SearchInput } from '../../components/ui/SearchInput';
 import { DataTable, Column } from '../../components/ui/DataTable';
 import { ModalPortal } from '../../components/common/Modal';
 import { ExportButtons } from '../../components/common/ExportButtons';
+import { ProductImportModal } from './ProductImportModal';
 import { AttributeValueInputs, type AttributeValueMap } from '../../components/catalog/AttributeValueInputs';
 import { flattenCategoryTree, getEffectiveTemplate, indentLabel } from '../../utils/categoryTree';
 import { useNotificationsStore } from '../../store/notificationsStore';
@@ -106,6 +107,7 @@ export function ProductsPage() {
   const [attrValues, setAttrValues] = useState<AttributeValueMap>({});
   const [initialLoading, setInitialLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
+  const [showImport, setShowImport] = useState(false);
   const [search, setSearch] = useState('');
   const [brandFilter, setBrandFilter] = useState<number | ''>('');
   const [categoryFilter, setCategoryFilter] = useState<number | ''>('');
@@ -498,6 +500,12 @@ export function ProductsPage() {
             disabled={products.length === 0}
             loading={refreshing}
           />
+          <PermissionGate permission={PermissionCode.PRODUCTS_CREATE}>
+            <Button variant="ghost" onClick={() => setShowImport(true)}>
+              <Upload className="mr-2 h-4 w-4" />
+              {t('erp.import.action')}
+            </Button>
+          </PermissionGate>
           <PermissionGate permission={PermissionCode.PRODUCTS_CREATE}>
             <Button variant="primary" onClick={handleOpenNewProductModal}>
               <Plus className="h-5 w-5" />
@@ -934,6 +942,12 @@ export function ProductsPage() {
           </form>
         </div>
       </ModalPortal>
+
+      <ProductImportModal
+        open={showImport}
+        onClose={() => setShowImport(false)}
+        onImported={() => loadProducts(true)}
+      />
     </div>
   );
 }

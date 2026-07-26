@@ -1,5 +1,6 @@
 import api from './axios';
 import type {
+  ProductImportResult,
   ApiResponse,
   Attribute,
   AttributeRequest,
@@ -84,6 +85,31 @@ export const productsApi = {
   },
 
   // Export functionality
+  /**
+   * Excel'dan import. `dryRun` bilan avval ko'rib chiqiladi — bitta qatorda
+   * ham xato bo'lsa server hech nima yozmaydi.
+   */
+  importProducts: async (file: File, dryRun: boolean): Promise<ProductImportResult> => {
+    const form = new FormData();
+    form.append('file', file);
+    const res = await api.post<ApiResponse<ProductImportResult>>(
+      `/v1/products/import?dryRun=${dryRun}`,
+      form,
+      { headers: { 'Content-Type': 'multipart/form-data' } }
+    );
+    return res.data.data;
+  },
+
+  downloadImportTemplate: async (): Promise<void> => {
+    const res = await api.get('/v1/products/import/template', { responseType: 'blob' });
+    const url = URL.createObjectURL(res.data as Blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = 'mahsulotlar-shablon.xlsx';
+    link.click();
+    URL.revokeObjectURL(url);
+  },
+
   export: createExportApi('/v1/products'),
 };
 

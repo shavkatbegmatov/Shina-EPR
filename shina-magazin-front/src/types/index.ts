@@ -38,6 +38,16 @@ export interface CredentialsInfo {
   mustChangePassword: boolean;
 }
 
+/** Excel import natijasi. Xato bo'lsa hech nima yozilmaydi. */
+export interface ProductImportResult {
+  totalRows: number;
+  created: number;
+  updated: number;
+  errors: { row: number; sku?: string; message: string }[];
+  /** true = faqat tekshirildi, baza o'zgarmadi. */
+  dryRun: boolean;
+}
+
 // ─── Savdo qaytarish ───
 
 export interface SaleReturnItem {

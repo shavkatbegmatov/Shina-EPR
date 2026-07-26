@@ -19,10 +19,12 @@ import org.springframework.web.multipart.MultipartFile;
 import uz.shinamagazin.api.dto.request.ProductRequest;
 import uz.shinamagazin.api.dto.response.ApiResponse;
 import uz.shinamagazin.api.dto.response.PagedResponse;
+import uz.shinamagazin.api.dto.response.ProductImportResult;
 import uz.shinamagazin.api.dto.response.ProductResponse;
 import uz.shinamagazin.api.enums.PermissionCode;
 import uz.shinamagazin.api.enums.Season;
 import uz.shinamagazin.api.security.RequiresPermission;
+import uz.shinamagazin.api.service.ProductImportService;
 import uz.shinamagazin.api.service.ProductService;
 import uz.shinamagazin.api.service.export.ExportSupport;
 import uz.shinamagazin.api.service.export.GenericExportService;
@@ -40,6 +42,7 @@ import java.util.Map;
 public class ProductController {
 
     private final ProductService productService;
+    private final ProductImportService productImportService;
     private final GenericExportService genericExportService;
     private final StorageService storageService;
 
@@ -126,6 +129,37 @@ public class ProductController {
             @RequestParam("file") MultipartFile file) {
         String url = storageService.store(file, "products");
         return ResponseEntity.ok(ApiResponse.success("Rasm yuklandi", Map.of("url", url)));
+    }
+
+    // ─── Excel import ───
+
+    @PostMapping(value = "/import", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    @RequiresPermission(PermissionCode.PRODUCTS_CREATE)
+    @Operation(summary = "Import products from Excel",
+            description = "Mahsulotlarni .xlsx dan import qilish. dryRun=true — faqat tekshiradi, "
+                    + "bazani o'zgartirmaydi. Bitta qatorda ham xato bo'lsa hech nima yozilmaydi.")
+    public ResponseEntity<ApiResponse<ProductImportResult>> importProducts(
+            @RequestParam("file") MultipartFile file,
+            @RequestParam(defaultValue = "true") boolean dryRun) {
+
+        ProductImportResult result = productImportService.importProducts(file, dryRun);
+        String message = result.isDryRun()
+                ? "Fayl tekshirildi"
+                : String.format("%d yangi, %d yangilandi", result.getCreated(), result.getUpdated());
+        return ResponseEntity.ok(ApiResponse.success(message, result));
+    }
+
+    @GetMapping("/import/template")
+    @RequiresPermission(PermissionCode.PRODUCTS_CREATE)
+    @Operation(summary = "Import template", description = "Bo'sh Excel shablon (ustun nomlari bilan)")
+    public ResponseEntity<Resource> importTemplate() {
+        ByteArrayResource resource = new ByteArrayResource(productImportService.buildTemplate());
+        return ResponseEntity.ok()
+                .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"mahsulotlar-shablon.xlsx\"")
+                .contentType(MediaType.parseMediaType(
+                        "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"))
+                .contentLength(resource.contentLength())
+                .body(resource);
     }
 
     @GetMapping("/export")
