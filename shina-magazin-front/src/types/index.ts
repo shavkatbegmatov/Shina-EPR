@@ -227,12 +227,46 @@ export interface ReceiptSettings {
   receiptFooter?: string;
 }
 
-export interface AppSettings extends ReceiptSettings {
-  debtDueDays: number;
-  imageFallback?: string; // 'SVG' | 'PHOTO' — storefront rasmsiz mahsulot ko'rinishi
+/**
+ * Telegram xabarnomalari.
+ *
+ * <p>Bot TOKENI bu yerda ATAYLAB yo'q — u serverdagi `TELEGRAM_BOT_TOKEN`
+ * muhit o'zgaruvchisidan olinadi va hech qachon API orqali qaytarilmaydi.
+ */
+export interface TelegramSettings {
+  telegramEnabled?: boolean;
+  /** Chat/kanal ID: raqam yoki @username. */
+  telegramChatId?: string;
+  /** Uzatiladigan voqea turlari, vergul bilan (StaffNotificationType nomlari). */
+  telegramEvents?: string;
 }
 
-export interface SettingsUpdateRequest extends ReceiptSettings {
+export type TelegramEventType =
+  | 'ORDER'
+  | 'PAYMENT'
+  | 'WARNING'
+  | 'CUSTOMER'
+  | 'INFO'
+  | 'SUCCESS';
+
+/** Sozlamalar sahifasida tanlanadigan turlar (PERMISSION_UPDATE — ichki hodisa). */
+export const TELEGRAM_EVENT_TYPES: TelegramEventType[] = [
+  'ORDER',
+  'WARNING',
+  'PAYMENT',
+  'CUSTOMER',
+  'INFO',
+  'SUCCESS',
+];
+
+export interface AppSettings extends ReceiptSettings, TelegramSettings {
+  debtDueDays: number;
+  imageFallback?: string; // 'SVG' | 'PHOTO' — storefront rasmsiz mahsulot ko'rinishi
+  /** Serverda bot tokeni o'rnatilganmi (faqat o'qish uchun). */
+  telegramConfigured?: boolean;
+}
+
+export interface SettingsUpdateRequest extends ReceiptSettings, TelegramSettings {
   debtDueDays: number;
   imageFallback?: string; // 'SVG' | 'PHOTO'
 }

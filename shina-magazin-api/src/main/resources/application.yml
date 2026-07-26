@@ -124,3 +124,11 @@ shop:
       service-id: ${CLICK_SERVICE_ID:}
       secret-key: ${CLICK_SECRET_KEY:}
       pay-url: https://my.click.uz/services/pay
+
+# Telegram xabarnomalari.
+# Token ATAYLAB faqat muhit o'zgaruvchisidan: u botning to'liq kaliti, shuning
+# uchun app_settings'da (sozlamalar API'sida ko'rinadigan, audit jurnaliga
+# tushadigan joyda) saqlanmaydi. Chat ID va yoqish/o'chirish esa sozlamalarda.
+# Bo'sh bo'lsa xabar yuborilmaydi — funksiya jimgina o'chiq turadi.
+telegram:
+  bot-token: ${TELEGRAM_BOT_TOKEN:}

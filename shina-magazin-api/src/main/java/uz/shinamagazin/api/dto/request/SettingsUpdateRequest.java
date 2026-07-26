@@ -33,4 +33,19 @@ public class SettingsUpdateRequest {
 
     @Size(max = 255, message = "Chek matni 255 belgidan oshmasligi kerak")
     private String receiptFooter;
+
+    // ─── Telegram xabarnomalari ───
+    // Bot TOKENI bu yerda yo'q va ataylab: u muhit o'zgaruvchisidan olinadi,
+    // aks holda SETTINGS_VIEW ruxsati bor har bir xodim uni ko'rib qolardi.
+
+    private Boolean telegramEnabled;
+
+    /** Telegram chat/kanal ID: musbat, manfiy (guruh) yoki @username. */
+    @Size(max = 64, message = "Chat ID 64 belgidan oshmasligi kerak")
+    @Pattern(regexp = "^$|^-?\\d+$|^@[A-Za-z0-9_]{4,32}$",
+            message = "Chat ID raqam yoki @username ko'rinishida bo'lishi kerak")
+    private String telegramChatId;
+
+    @Size(max = 255, message = "Voqealar ro'yxati 255 belgidan oshmasligi kerak")
+    private String telegramEvents;
 }

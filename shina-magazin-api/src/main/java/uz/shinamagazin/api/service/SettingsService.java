@@ -2,13 +2,21 @@ package uz.shinamagazin.api.service;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import uz.shinamagazin.api.dto.request.SettingsUpdateRequest;
 import uz.shinamagazin.api.dto.response.PublicSettingsResponse;
 import uz.shinamagazin.api.dto.response.SettingsResponse;
 import uz.shinamagazin.api.entity.AppSetting;
+import uz.shinamagazin.api.enums.StaffNotificationType;
 import uz.shinamagazin.api.repository.AppSettingRepository;
+
+import java.util.Arrays;
+import java.util.EnumSet;
+import java.util.Objects;
+import java.util.Set;
+import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -26,7 +34,26 @@ public class SettingsService {
     public static final String RECEIPT_SHOP_ADDRESS_KEY = "RECEIPT_SHOP_ADDRESS";
     public static final String RECEIPT_FOOTER_KEY = "RECEIPT_FOOTER";
 
+    // Telegram xabarnomalari. Bot TOKENI bu yerda EMAS — u muhit
+    // o'zgaruvchisidan olinadi, chunki app_settings sozlamalar API'sida
+    // ko'rinadi va audit jurnaliga tushadi (qarang: TelegramNotifier).
+    public static final String TELEGRAM_ENABLED_KEY = "TELEGRAM_ENABLED";
+    public static final String TELEGRAM_CHAT_ID_KEY = "TELEGRAM_CHAT_ID";
+    public static final String TELEGRAM_EVENTS_KEY = "TELEGRAM_EVENTS";
+    /** Sukut: harakat talab qiladigan voqealar. To'lov/yangi mijoz — shovqin. */
+    public static final String DEFAULT_TELEGRAM_EVENTS = "ORDER,WARNING";
+
     private final AppSettingRepository appSettingRepository;
+
+    /**
+     * Bot tokeni O'RNATILGANMI — tokenning o'zi emas.
+     *
+     * <p>{@code TelegramNotifier} ni in'ektsiya qilish aylanma bog'liqlik
+     * berardi (u SettingsService'ga tayanadi), shuning uchun bu yerda faqat
+     * xususiyatning bo'sh-bo'shmasligi o'qiladi.
+     */
+    @Value("${telegram.bot-token:}")
+    private String telegramBotToken;
 
     public SettingsResponse getSettings() {
         return SettingsResponse.builder()
@@ -36,6 +63,12 @@ public class SettingsService {
                 .receiptShopPhone(getText(RECEIPT_SHOP_PHONE_KEY))
                 .receiptShopAddress(getText(RECEIPT_SHOP_ADDRESS_KEY))
                 .receiptFooter(getText(RECEIPT_FOOTER_KEY))
+                .telegramEnabled(isTelegramEnabled())
+                .telegramChatId(getTelegramChatId())
+                .telegramEvents(getText(TELEGRAM_EVENTS_KEY).isBlank()
+                        ? DEFAULT_TELEGRAM_EVENTS
+                        : getText(TELEGRAM_EVENTS_KEY))
+                .telegramConfigured(telegramBotToken != null && !telegramBotToken.isBlank())
                 .build();
     }
 
@@ -85,6 +118,18 @@ public class SettingsService {
         saveTextIfPresent(request.getReceiptShopAddress(), RECEIPT_SHOP_ADDRESS_KEY, "Chekdagi manzil");
         saveTextIfPresent(request.getReceiptFooter(), RECEIPT_FOOTER_KEY, "Chek oxiridagi matn");
 
+        // Telegram — null bo'lsa tegilmaydi
+        if (request.getTelegramEnabled() != null) {
+            saveText(TELEGRAM_ENABLED_KEY, String.valueOf(request.getTelegramEnabled()),
+                    "Telegram xabarnomalari yoqilganmi");
+        }
+        saveTextIfPresent(request.getTelegramChatId(), TELEGRAM_CHAT_ID_KEY,
+                "Xabar yuboriladigan Telegram chat ID");
+        if (request.getTelegramEvents() != null) {
+            saveText(TELEGRAM_EVENTS_KEY, normalizeEventTypes(request.getTelegramEvents()),
+                    "Telegramga uzatiladigan bildirishnoma turlari");
+        }
+
         return getSettings();
     }
 
@@ -109,6 +154,64 @@ public class SettingsService {
                         .build());
         setting.setSettingValue(value);
         appSettingRepository.save(setting);
+    }
+
+    // ─── Telegram ───
+
+    @Transactional(readOnly = true)
+    public boolean isTelegramEnabled() {
+        return "true".equalsIgnoreCase(getText(TELEGRAM_ENABLED_KEY));
+    }
+
+    @Transactional(readOnly = true)
+    public String getTelegramChatId() {
+        return getText(TELEGRAM_CHAT_ID_KEY).trim();
+    }
+
+    /**
+     * Telegramga uzatiladigan bildirishnoma turlari.
+     *
+     * <p>Noma'lum nom JIMGINA tashlab yuboriladi: enum'dan tur olib
+     * tashlansa, sozlama butunlay ishlamay qolmasligi kerak.
+     */
+    @Transactional(readOnly = true)
+    public Set<StaffNotificationType> getTelegramEventTypes() {
+        String raw = getText(TELEGRAM_EVENTS_KEY);
+        if (raw.isBlank()) {
+            raw = DEFAULT_TELEGRAM_EVENTS;
+        }
+        return Arrays.stream(raw.split(","))
+                .map(String::trim)
+                .filter(s -> !s.isEmpty())
+                .map(this::parseNotificationType)
+                .filter(Objects::nonNull)
+                .collect(Collectors.toCollection(() -> EnumSet.noneOf(StaffNotificationType.class)));
+    }
+
+    /**
+     * Faqat haqiqiy enum nomlarini saqlaydi.
+     *
+     * <p>Aks holda xato yozilgan tur bazada qolib, sozlama ishlayotgandek
+     * ko'rinardi-yu, hech qachon mos kelmasdi.
+     */
+    private String normalizeEventTypes(String raw) {
+        return Arrays.stream(raw.split(","))
+                .map(String::trim)
+                .filter(s -> !s.isEmpty())
+                .map(this::parseNotificationType)
+                .filter(Objects::nonNull)
+                .map(Enum::name)
+                .distinct()
+                .collect(Collectors.joining(","));
+    }
+
+    private StaffNotificationType parseNotificationType(String name) {
+        try {
+            return StaffNotificationType.valueOf(name.toUpperCase());
+        } catch (IllegalArgumentException e) {
+            log.warn("Noma'lum Telegram voqea turi: '{}'", name);
+            return null;
+        }
     }
 
     private int parsePositiveInt(String value) {

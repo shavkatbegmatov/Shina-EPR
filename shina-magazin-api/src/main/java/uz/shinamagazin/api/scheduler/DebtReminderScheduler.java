@@ -7,10 +7,14 @@ import org.springframework.stereotype.Component;
 import uz.shinamagazin.api.entity.Debt;
 import uz.shinamagazin.api.repository.DebtRepository;
 import uz.shinamagazin.api.service.StaffNotificationService;
+import uz.shinamagazin.api.service.TelegramNotifier;
 
+import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.temporal.ChronoUnit;
+import java.util.Comparator;
 import java.util.List;
+import java.util.function.Function;
 
 /**
  * Qarz muddati yaqinlashganda avtomatik eslatma yuboradi
@@ -20,8 +24,12 @@ import java.util.List;
 @Slf4j
 public class DebtReminderScheduler {
 
+    /** Telegram xulosasida ko'rsatiladigan mijozlar soni. */
+    private static final int DIGEST_LIMIT = 10;
+
     private final DebtRepository debtRepository;
     private final StaffNotificationService notificationService;
+    private final TelegramNotifier telegramNotifier;
 
     /**
      * Har kuni ertalab soat 9:00 da ishga tushadi
@@ -56,6 +64,9 @@ public class DebtReminderScheduler {
                 log.error("Failed to send reminder for debt ID: {}", debt.getId(), e);
             }
         }
+
+        telegramNotifier.send(digest("🔔 <b>Qarz muddati yaqinlashdi</b>", upcomingDebts,
+                d -> "%d kun qoldi".formatted(ChronoUnit.DAYS.between(today, d.getDueDate()))));
 
         log.info("Debt reminder check completed");
     }
@@ -93,7 +104,49 @@ public class DebtReminderScheduler {
             }
         }
 
+        telegramNotifier.send(digest("⚠️ <b>Muddati o'tgan qarzlar</b>", overdueDebts,
+                d -> "%d kun".formatted(ChronoUnit.DAYS.between(d.getDueDate(), today))));
+
         log.info("Overdue debt check completed");
+    }
+
+    /**
+     * Qarzlar bo'yicha BITTA umumiy Telegram xabari.
+     *
+     * <p>Har bir qarz uchun alohida yuborilsa, 50 ta qarzi bor do'kon ertalab
+     * 50 ta xabar olardi — bunday oqim o'qilmaydi va Telegram chegarasiga ham
+     * urilardi. Tizim ichidagi bildirishnomalar esa har bir qarz uchun alohida
+     * qoladi: xodim ro'yxatdan aniq qarzga o'tishi kerak.
+     */
+    private String digest(String heading, List<Debt> debts, Function<Debt, String> detail) {
+        if (debts.isEmpty()) {
+            return null;
+        }
+
+        BigDecimal total = debts.stream()
+                .map(Debt::getRemainingAmount)
+                .reduce(BigDecimal.ZERO, BigDecimal::add);
+
+        StringBuilder sb = new StringBuilder(heading)
+                .append("%n%d ta mijoz, jami %,.0f so'm%n".formatted(debts.size(), total));
+
+        // Faqat eng kattalari — qolgani ro'yxat sifatida ERPda ko'riladi
+        debts.stream()
+                .sorted(Comparator.comparing(Debt::getRemainingAmount).reversed())
+                .limit(DIGEST_LIMIT)
+                .forEach(d -> sb.append("%n• %s — %,.0f so'm (%s)".formatted(
+                        escape(d.getCustomer().getFullName()),
+                        d.getRemainingAmount(),
+                        detail.apply(d))));
+
+        if (debts.size() > DIGEST_LIMIT) {
+            sb.append("%n… va yana %d ta".formatted(debts.size() - DIGEST_LIMIT));
+        }
+        return sb.toString();
+    }
+
+    private static String escape(String text) {
+        return text == null ? "" : text.replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;");
     }
 
     /**

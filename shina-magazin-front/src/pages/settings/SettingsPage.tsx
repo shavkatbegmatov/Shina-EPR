@@ -13,6 +13,7 @@ import {
   Monitor,
   Clock,
   Printer,
+  Send,
 } from 'lucide-react';
 import clsx from 'clsx';
 import toast from 'react-hot-toast';
@@ -29,9 +30,10 @@ import { PermissionCode } from '../../hooks/usePermission';
 import { PermissionGate } from '../../components/common/PermissionGate';
 import { Button } from '@/ui';
 import { ProductImage } from '../../shop/components/ProductImage';
-import type { Brand, Category, ReceiptSettings } from '../../types';
+import { TELEGRAM_EVENT_TYPES } from '../../types';
+import type { Brand, Category, ReceiptSettings, TelegramEventType } from '../../types';
 
-type Tab = 'appearance' | 'brands' | 'categories' | 'debts' | 'receipt';
+type Tab = 'appearance' | 'brands' | 'categories' | 'debts' | 'receipt' | 'telegram';
 
 interface BrandFormData {
   name: string;
@@ -83,6 +85,22 @@ export function SettingsPage() {
   const setReceiptField = (field: keyof ReceiptSettings) => (value: string) =>
     setReceipt((prev) => ({ ...prev, [field]: value }));
 
+  // Telegram xabarnomalari. Bot tokeni bu yerda YO'Q — u serverdagi muhit
+  // o'zgaruvchisidan olinadi; `telegramConfigured` faqat o'rnatilganini
+  // bildiradi, tokenning o'zi hech qachon qaytarilmaydi.
+  const [telegramEnabled, setTelegramEnabled] = useState(false);
+  const [telegramChatId, setTelegramChatId] = useState('');
+  const [telegramEvents, setTelegramEvents] = useState<Set<TelegramEventType>>(new Set());
+  const [telegramConfigured, setTelegramConfigured] = useState(false);
+  const [telegramTesting, setTelegramTesting] = useState(false);
+
+  const toggleTelegramEvent = (type: TelegramEventType) =>
+    setTelegramEvents((prev) => {
+      const next = new Set(prev);
+      if (!next.delete(type)) next.add(type);
+      return next;
+    });
+
   const loadSettings = useCallback(async () => {
     setSettingsLoading(true);
     try {
@@ -95,6 +113,16 @@ export function SettingsPage() {
         receiptShopAddress: data.receiptShopAddress ?? '',
         receiptFooter: data.receiptFooter ?? '',
       });
+      setTelegramEnabled(data.telegramEnabled ?? false);
+      setTelegramChatId(data.telegramChatId ?? '');
+      setTelegramConfigured(data.telegramConfigured ?? false);
+      setTelegramEvents(new Set(
+        (data.telegramEvents ?? '')
+          .split(',')
+          .map((s) => s.trim())
+          .filter((s): s is TelegramEventType =>
+            (TELEGRAM_EVENT_TYPES as string[]).includes(s))
+      ));
     } catch (error) {
       console.error('Failed to load settings:', error);
       toast.error(getApiErrorMessage(error));
@@ -267,7 +295,14 @@ export function SettingsPage() {
   const handleSaveSettings = async () => {
     setSettingsSaving(true);
     try {
-      const data = await settingsApi.update({ debtDueDays, imageFallback, ...receipt });
+      const data = await settingsApi.update({
+        debtDueDays,
+        imageFallback,
+        ...receipt,
+        telegramEnabled,
+        telegramChatId: telegramChatId.trim(),
+        telegramEvents: [...telegramEvents].join(','),
+      });
       setDebtDueDays(data.debtDueDays);
       setImageFallback(data.imageFallback === 'PHOTO' ? 'PHOTO' : 'SVG');
       toast.success(t('erp.settings.settingsSavedToast'));
@@ -276,6 +311,25 @@ export function SettingsPage() {
       toast.error(t('erp.settings.settingsSaveError'));
     } finally {
       setSettingsSaving(false);
+    }
+  };
+
+  /**
+   * Sinov xabari.
+   *
+   * <p>Saqlashdan OLDIN ham ishlashi kerak: foydalanuvchi chat IDni kiritib,
+   * darhol tekshira olsin. Shuning uchun ID so'rovga parametr sifatida
+   * uzatiladi, bazadagi qiymat kutilmaydi.
+   */
+  const handleTestTelegram = async () => {
+    setTelegramTesting(true);
+    try {
+      await settingsApi.testTelegram(telegramChatId.trim());
+      toast.success(t('erp.settings.telegram.testSent'));
+    } catch (error) {
+      toast.error(getApiErrorMessage(error));
+    } finally {
+      setTelegramTesting(false);
     }
   };
 
@@ -337,6 +391,13 @@ export function SettingsPage() {
         >
           <Printer className="h-4 w-4" />
           {t('erp.settings.receiptTitle')}
+        </button>
+        <button
+          className={clsx('tab gap-2', activeTab === 'telegram' && 'tab-active')}
+          onClick={() => setActiveTab('telegram')}
+        >
+          <Send className="h-4 w-4" />
+          Telegram
         </button>
       </div>
 
@@ -404,6 +465,100 @@ export function SettingsPage() {
               </label>
             </div>
           )}
+        </div>
+      )}
+
+      {/* Telegram xabarnomalari */}
+      {activeTab === 'telegram' && !settingsLoading && (
+        <div className="surface-card p-6">
+          <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+            <div>
+              <h2 className="text-lg font-semibold">{t('erp.settings.telegram.title')}</h2>
+              <p className="text-sm text-base-content/60">{t('erp.settings.telegram.hint')}</p>
+            </div>
+            <PermissionGate permission={PermissionCode.SETTINGS_UPDATE}>
+              <Button
+                variant="primary"
+                onClick={handleSaveSettings}
+                disabled={settingsSaving}
+              >
+                {settingsSaving && <span className="loading loading-spinner loading-sm" />}
+                {t('common.save')}
+              </Button>
+            </PermissionGate>
+          </div>
+
+          {/* Token serverda o'rnatilmagan bo'lsa hech narsa ishlamaydi —
+              foydalanuvchi sozlamalarni to'ldirib, nega xabar kelmayotganini
+              tushunmay qolmasligi kerak. */}
+          {!telegramConfigured && (
+            <div className="alert alert-warning mt-4">
+              <AlertTriangle className="h-5 w-5" />
+              <span>{t('erp.settings.telegram.tokenMissing')}</span>
+            </div>
+          )}
+
+          <div className="mt-6 max-w-2xl space-y-4">
+            <label className="flex cursor-pointer items-center gap-3">
+              <input
+                type="checkbox"
+                className="toggle toggle-primary"
+                checked={telegramEnabled}
+                onChange={(e) => setTelegramEnabled(e.target.checked)}
+              />
+              <span>{t('erp.settings.telegram.enabled')}</span>
+            </label>
+
+            <label className="form-control">
+              <span className="label-text mb-1">{t('erp.settings.telegram.chatId')}</span>
+              <div className="flex gap-2">
+                <input
+                  className="input input-bordered flex-1"
+                  maxLength={64}
+                  placeholder="123456789"
+                  value={telegramChatId}
+                  onChange={(e) => setTelegramChatId(e.target.value)}
+                />
+                <Button
+                  variant="outline"
+                  onClick={handleTestTelegram}
+                  loading={telegramTesting}
+                  disabled={!telegramChatId.trim()}
+                >
+                  <Send className="mr-2 h-4 w-4" />
+                  {t('erp.settings.telegram.test')}
+                </Button>
+              </div>
+              <span className="mt-1 text-xs text-base-content/60">
+                {t('erp.settings.telegram.chatIdHint')}
+              </span>
+            </label>
+
+            <div>
+              <span className="label-text mb-2 block">{t('erp.settings.telegram.events')}</span>
+              <div className="flex flex-wrap gap-2">
+                {TELEGRAM_EVENT_TYPES.map((type) => (
+                  <button
+                    key={type}
+                    type="button"
+                    onClick={() => toggleTelegramEvent(type)}
+                    className={clsx(
+                      'rounded-full border px-3 py-1.5 text-sm transition-colors',
+                      telegramEvents.has(type)
+                        ? 'border-primary bg-primary/10 text-primary'
+                        : 'border-base-300 text-base-content/70 hover:bg-base-200'
+                    )}
+                  >
+                    {t(`erp.settings.telegram.eventTypes.${type}`)}
+                  </button>
+                ))}
+              </div>
+              {/* Qarz ogohlantirishlari ATAYLAB birma-bir yuborilmaydi */}
+              <p className="mt-2 text-xs text-base-content/60">
+                {t('erp.settings.telegram.debtDigestHint')}
+              </p>
+            </div>
+          </div>
         </div>
       )}
 

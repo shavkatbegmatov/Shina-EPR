@@ -19,6 +19,18 @@ export const settingsApi = {
     return response.data.data;
   },
 
+  /**
+   * Telegram sozlamasini tekshirish.
+   *
+   * <p>Server xabarni SINXRON yuboradi va yetib bormasa xato qaytaradi —
+   * "yuborildi" degan yolg'on javob berilmaydi.
+   */
+  testTelegram: async (chatId?: string): Promise<void> => {
+    await api.post('/v1/settings/telegram/test', null, {
+      params: chatId ? { chatId } : undefined,
+    });
+  },
+
   // Export functionality
   export: createExportApi('/v1/settings'),
 };

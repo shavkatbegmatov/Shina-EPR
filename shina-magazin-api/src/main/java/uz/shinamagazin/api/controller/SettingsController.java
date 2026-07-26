@@ -9,6 +9,7 @@ import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -21,6 +22,7 @@ import uz.shinamagazin.api.dto.response.ApiResponse;
 import uz.shinamagazin.api.dto.response.PublicSettingsResponse;
 import uz.shinamagazin.api.dto.response.SettingsResponse;
 import uz.shinamagazin.api.service.SettingsService;
+import uz.shinamagazin.api.service.TelegramNotifier;
 import uz.shinamagazin.api.service.export.GenericExportService;
 
 import java.io.ByteArrayOutputStream;
@@ -35,6 +37,7 @@ public class SettingsController {
 
     private final SettingsService settingsService;
     private final GenericExportService genericExportService;
+    private final TelegramNotifier telegramNotifier;
 
     @GetMapping
     @PreAuthorize("hasAuthority('PERM_SETTINGS_VIEW')")
@@ -90,5 +93,22 @@ public class SettingsController {
     public ResponseEntity<ApiResponse<SettingsResponse>> updateSettings(
             @Valid @RequestBody SettingsUpdateRequest request) {
         return ResponseEntity.ok(ApiResponse.success("Sozlamalar yangilandi", settingsService.updateSettings(request)));
+    }
+
+    /**
+     * Telegram sozlamasini tekshirish.
+     *
+     * <p>Xabar SINXRON yuboriladi va xatolik foydalanuvchiga qaytariladi —
+     * "yuborildi" deb yozib, aslida hech narsa yetib bormasligi sozlashning
+     * eng ko'p uchraydigan tuzog'i.
+     */
+    @PostMapping("/telegram/test")
+    @PreAuthorize("hasAuthority('PERM_SETTINGS_UPDATE')")
+    @Operation(summary = "Test Telegram", description = "Telegramga sinov xabari yuborish")
+    public ResponseEntity<ApiResponse<Void>> testTelegram(
+            @RequestParam(required = false) String chatId) {
+        telegramNotifier.sendTestMessage(
+                chatId != null && !chatId.isBlank() ? chatId : settingsService.getTelegramChatId());
+        return ResponseEntity.ok(ApiResponse.success("Sinov xabari yuborildi", null));
     }
 }

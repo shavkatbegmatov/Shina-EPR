@@ -59,6 +59,7 @@ PAT olish: GitHub → Settings → Developer settings → Personal access tokens
 | `DB_NAME` / `DB_USERNAME` | `shina_epr_db` / `shina_epr_user` | default'lar bor |
 | `PAYME_*`, `CLICK_*`, `SHOP_RETURN_URL` | — | jonli to'lov yoqilganda |
 | `SHOP_NOTIFY_SMS/EMAIL`, `SPRING_MAIL_*` | — | jonli xabarnoma yoqilganda |
+| `TELEGRAM_BOT_TOKEN` | (@BotFather tokeni) | Telegram xabarnomalari uchun — pastdagi izohga qarang |
 
 4. **Domen** (Coolify UI'da): `frontend` servisiga `https://<domen>` (port 80) — SSL avtomatik
    (Traefik + Let's Encrypt). Backend'ga domen ULANMAYDI.
@@ -77,6 +78,14 @@ PAT olish: GitHub → Settings → Developer settings → Personal access tokens
 > qo'yiladi; **bo'sh bo'lsa tasodifiy parol generatsiya qilinib backend logiga WARN darajasida
 > bir marta yoziladi** (`docker logs` orqali oling). Har ikki holatda ham birinchi kirishda parolni
 > almashtirish talab qilinadi. `seller` namuna akkaunti har doim tasodifiy parolga o'tkaziladi.
+>
+> **`TELEGRAM_BOT_TOKEN`** — ixtiyoriy; o'rnatilmasa Telegram xabarnomalari jimgina o'chiq turadi.
+> Olish: Telegramda [@BotFather](https://t.me/BotFather) → `/newbot`. Token ATAYLAB faqat env'da
+> saqlanadi — u botning to'liq kaliti, `app_settings` esa sozlamalar API'sida ko'rinadi va audit
+> jurnaliga tushadi, ya'ni `SETTINGS_VIEW` ruxsati bor har bir xodim uni ko'rib qolardi.
+> Chat ID, yoqish/o'chirish va voqea turlari ERP → Sozlamalar → Telegram sahifasidan boshqariladi;
+> o'sha yerda "Sinov" tugmasi sozlashni tekshiradi. **Muhim:** bot sizga xabar yubora olishi uchun
+> avval siz botga `/start` yozishingiz kerak (guruhga qo'shsangiz — botni guruhga a'zo qiling).
 
 > Volume'lar compose'da: `postgres_data` (DB) va `uploads_data` (`/data/uploads` — mahsulot
 > rasmlari). Coolify UI'da `postgres_data` uchun scheduled backup yoqish tavsiya etiladi.

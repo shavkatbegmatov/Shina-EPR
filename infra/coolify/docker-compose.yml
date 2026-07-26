@@ -50,6 +50,9 @@ services:
       # Xabarnoma (jonli qilganda)
       SHOP_NOTIFY_SMS: ${SHOP_NOTIFY_SMS:-false}
       SHOP_NOTIFY_EMAIL: ${SHOP_NOTIFY_EMAIL:-false}
+      # Telegram bot tokeni — MAXFIY, shuning uchun faqat env'da.
+      # Chat ID va yoqish/o'chirish ERP sozlamalar sahifasidan boshqariladi.
+      TELEGRAM_BOT_TOKEN: ${TELEGRAM_BOT_TOKEN:-}
     volumes:
       - uploads_data:/data/uploads
     depends_on:

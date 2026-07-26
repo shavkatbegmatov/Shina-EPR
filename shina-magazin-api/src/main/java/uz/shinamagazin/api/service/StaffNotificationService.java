@@ -2,6 +2,7 @@ package uz.shinamagazin.api.service;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
@@ -10,6 +11,7 @@ import uz.shinamagazin.api.dto.response.StaffNotificationResponse;
 import uz.shinamagazin.api.entity.StaffNotification;
 import uz.shinamagazin.api.entity.User;
 import uz.shinamagazin.api.enums.StaffNotificationType;
+import uz.shinamagazin.api.event.StaffNotificationCreatedEvent;
 import uz.shinamagazin.api.exception.ResourceNotFoundException;
 import uz.shinamagazin.api.repository.StaffNotificationRepository;
 import uz.shinamagazin.api.repository.UserRepository;
@@ -26,6 +28,7 @@ public class StaffNotificationService {
     private final StaffNotificationRepository notificationRepository;
     private final UserRepository userRepository;
     private final NotificationDispatcher notificationDispatcher;
+    private final ApplicationEventPublisher eventPublisher;
 
     /**
      * Foydalanuvchi uchun bildirishnomalarni olish
@@ -126,6 +129,12 @@ public class StaffNotificationService {
 
         // WebSocket orqali real-time yuborish
         notificationDispatcher.notifyAllStaff(saved);
+
+        // Tashqi kanallar (Telegram) — hodisa orqali, chunki ular tranzaksiya
+        // TASDIQLANGANDAN KEYIN ishlashi kerak. Savdo keyin xatolik bilan
+        // qaytarilsa, "kam zaxira" haqidagi soxta xabar ketib bo'lgan bo'lardi.
+        eventPublisher.publishEvent(new StaffNotificationCreatedEvent(
+                title, message, type, referenceType));
 
         return saved;
     }

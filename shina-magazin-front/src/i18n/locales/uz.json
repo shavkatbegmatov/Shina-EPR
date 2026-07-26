@@ -804,7 +804,27 @@
       "receiptShopPhone": "Telefon",
       "receiptShopAddress": "Manzil",
       "receiptFooter": "Chek oxiridagi matn",
-      "receiptSaved": "Chek sozlamalari saqlandi"
+      "receiptSaved": "Chek sozlamalari saqlandi",
+      "telegram": {
+        "title": "Telegram xabarnomalari",
+        "hint": "Muhim voqealar haqida tizimga kirmasdan xabar oling",
+        "enabled": "Telegramga xabar yuborish",
+        "chatId": "Chat ID",
+        "chatIdHint": "Telegramda @userinfobot ga yozing — u sizning ID raqamingizni qaytaradi. Guruh uchun ID manfiy bo‘ladi.",
+        "test": "Sinov",
+        "testSent": "Sinov xabari yuborildi",
+        "events": "Qaysi voqealar yuborilsin",
+        "debtDigestHint": "Qarz eslatmalari har biri alohida emas, kuniga bir marta umumiy xulosa sifatida yuboriladi.",
+        "tokenMissing": "Bot tokeni o‘rnatilmagan. Serverda TELEGRAM_BOT_TOKEN muhit o‘zgaruvchisini kiriting — tokensiz xabarlar yuborilmaydi.",
+        "eventTypes": {
+          "ORDER": "Buyurtmalar",
+          "WARNING": "Ogohlantirishlar",
+          "PAYMENT": "To‘lovlar",
+          "CUSTOMER": "Yangi mijozlar",
+          "INFO": "Ma’lumot",
+          "SUCCESS": "Muvaffaqiyat"
+        }
+      }
     },
     "employees": {
       "title": "Xodimlar",

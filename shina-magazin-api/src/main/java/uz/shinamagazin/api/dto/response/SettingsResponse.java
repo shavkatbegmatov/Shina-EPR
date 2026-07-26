@@ -33,4 +33,26 @@ public class SettingsResponse {
 
     @ExportColumn(header = "Chek: pastki matn", order = 6)
     private String receiptFooter;
+
+    // ─── Telegram xabarnomalari ───
+
+    @ExportColumn(header = "Telegram: yoqilgan", order = 7)
+    private Boolean telegramEnabled;
+
+    @ExportColumn(header = "Telegram: chat ID", order = 8)
+    private String telegramChatId;
+
+    /** Uzatiladigan voqea turlari, vergul bilan (StaffNotificationType nomlari). */
+    @ExportColumn(header = "Telegram: voqealar", order = 9)
+    private String telegramEvents;
+
+    /**
+     * Server tomonda bot tokeni o'rnatilganmi.
+     *
+     * <p>Faqat O'QISH uchun — token hech qachon qaytarilmaydi. Bu bayroqsiz
+     * foydalanuvchi sozlamalarni to'ldirib, nega xabar kelmayotganini
+     * tushunmay qolardi.
+     */
+    @ExportColumn(header = "Telegram: bot sozlangan", order = 10)
+    private Boolean telegramConfigured;
 }
