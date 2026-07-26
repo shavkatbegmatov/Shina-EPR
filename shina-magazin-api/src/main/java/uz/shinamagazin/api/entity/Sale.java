@@ -81,6 +81,17 @@ public class Sale extends BaseEntity implements Auditable {
     @JoinColumn(name = "created_by", nullable = false)
     private User createdBy;
 
+    /**
+     * Savdo qaysi kassa smenasida qilingan.
+     *
+     * <p>NULL bo'lishi mumkin: ochiq smena bo'lmaganda ham savdo bloklanmaydi
+     * (mavjud POS oqimini buzmaslik uchun). Bunday savdolar hech bir
+     * Z-hisobotga tushmaydi — smena sahifasi ularni alohida ko'rsatadi.
+     */
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "shift_id")
+    private CashShift shift;
+
     @OneToMany(mappedBy = "sale", cascade = CascadeType.ALL, orphanRemoval = true)
     @Builder.Default
     private List<SaleItem> items = new ArrayList<>();

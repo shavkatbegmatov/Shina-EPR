@@ -172,7 +172,8 @@
         "supply": "Ta'minot",
         "insights": "Tahlil",
         "management": "Boshqaruv"
-      }
+      },
+      "shifts": "Smenalar"
     },
     "header": {
       "home": "Bosh sahifa",
@@ -1869,6 +1870,40 @@
       "paid": "To'landi",
       "debt": "Qarz",
       "paymentMethod": "To'lov usuli"
+    },
+    "shifts": {
+      "title": "Kassa smenalari",
+      "subtitle": "Smena ochish, yopish va Z-hisobot",
+      "open": "Smena ochish",
+      "openTitle": "Smena ochish",
+      "openHint": "Kassada hozir turgan mayda pulni kiriting (qaytim uchun).",
+      "opened": "Smena ochildi",
+      "close": "Smenani yopish",
+      "closeTitle": "Smenani yopish",
+      "closeHint": "Kassadagi naqd pulni sanang va summani kiriting. Tizim uni kutilgan summa bilan solishtiradi.",
+      "closeAndPrint": "Yopish va Z-hisobot",
+      "closed": "Smena yopildi",
+      "noOpenShift": "Ochiq smena yo'q",
+      "noOpenShiftHint": "Smenasiz ham savdo qilish mumkin, lekin bunday savdolar Z-hisobotga tushmaydi.",
+      "openSince": "Smena ochiq",
+      "cashier": "Kassir",
+      "openedAt": "Ochilgan",
+      "closedAt": "Yopilgan",
+      "openingFloat": "Boshlang'ich qoldiq",
+      "countedCash": "Sanalgan naqd",
+      "expectedCash": "Kutilgan naqd",
+      "cashReceived": "Naqd tushum",
+      "difference": "Farq",
+      "shortage": "Kamomad",
+      "overage": "Ortiqcha",
+      "salesCount": "Savdolar soni",
+      "cancelledCount": "Bekor qilingan",
+      "grossTotal": "Jami savdo",
+      "debtIssued": "Berilgan qarz",
+      "notes": "Izoh",
+      "zReport": "Z-HISOBOT",
+      "emptyTitle": "Smenalar yo'q",
+      "emptyDescription": "Birinchi smenani oching."
     }
   },
   "shop": {

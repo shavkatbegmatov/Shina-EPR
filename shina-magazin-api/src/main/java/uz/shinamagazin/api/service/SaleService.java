@@ -40,6 +40,7 @@ public class SaleService {
     private final NotificationService customerNotificationService;
     private final SettingsService settingsService;
     private final DocumentNumberService documentNumberService;
+    private final CashShiftService cashShiftService;
 
     public Page<SaleResponse> getAllSales(LocalDate startDate, LocalDate endDate, Pageable pageable) {
         LocalDate effectiveStart = startDate;
@@ -97,6 +98,11 @@ public class SaleService {
                 .paymentMethod(request.getPaymentMethod())
                 .notes(request.getNotes())
                 .createdBy(currentUser)
+                // Ochiq smena bo'lsa savdo unga bog'lanadi. Smena YO'Q bo'lsa
+                // savdo TO'SILMAYDI — mavjud POS oqimini buzmaslik uchun.
+                // Bunday savdolar Z-hisobotga tushmaydi; smena sahifasi ularni
+                // alohida ko'rsatadi.
+                .shift(cashShiftService.findOpenShift(currentUser.getId()).orElse(null))
                 .build();
 
         // Calculate subtotal and add items

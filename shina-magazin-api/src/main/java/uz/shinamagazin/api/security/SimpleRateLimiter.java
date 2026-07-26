@@ -56,7 +56,7 @@ public class SimpleRateLimiter {
             log.warn("Rate limiter xaritasi to'ldi ({} kalit) — yangi kalit qabul qilinmadi", MAX_TRACKED_KEYS);
             return false;
         }
-        long now = System.currentTimeMillis();
+        long now = now();
         long[] w = windows.compute(key, (k, v) -> {
             if (v == null || now - v[0] > windowMs) {
                 return new long[]{now, 1};
@@ -76,8 +76,17 @@ public class SimpleRateLimiter {
     public boolean isBlocked(String key, int maxFailures, long windowMs) {
         long[] w = windows.get(key);
         if (w == null) return false;
-        if (System.currentTimeMillis() - w[0] > windowMs) return false;   // oyna eskirgan
+        if (now() - w[0] >= windowMs) return false;   // oyna eskirgan
         return w[1] >= maxFailures;
+    }
+
+    /**
+     * Vaqt manbai. Testlar uni almashtira oladi — aks holda oynaning eskirishini
+     * tekshirish real soatga bog'liq bo'lib, bir xil millisekundda bajarilganda
+     * tasodifan yiqilardi.
+     */
+    protected long now() {
+        return System.currentTimeMillis();
     }
 
     /** Muvaffaqiyatsiz urinishni qayd etadi. */
@@ -85,7 +94,7 @@ public class SimpleRateLimiter {
         if (windows.size() >= MAX_TRACKED_KEYS && !windows.containsKey(key)) {
             return; // xarita to'lgan — bloklash isBlocked orqali baribir ishlamaydi
         }
-        long now = System.currentTimeMillis();
+        long now = now();
         windows.compute(key, (k, v) -> {
             if (v == null || now - v[0] > windowMs) {
                 return new long[]{now, 1};
@@ -113,7 +122,7 @@ public class SimpleRateLimiter {
      */
     @Scheduled(fixedDelay = 5 * 60_000)
     public void evictExpired() {
-        long cutoff = System.currentTimeMillis() - MAX_WINDOW_MS;
+        long cutoff = now() - MAX_WINDOW_MS;
         int before = windows.size();
         windows.entrySet().removeIf(e -> e.getValue()[0] < cutoff);
         int removed = before - windows.size();

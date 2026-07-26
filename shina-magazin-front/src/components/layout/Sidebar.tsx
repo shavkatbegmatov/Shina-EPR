@@ -21,6 +21,7 @@ import {
   SlidersHorizontal,
   BadgeCheck,
   Receipt,
+  Clock,
   ChevronDown,
   ExternalLink,
   type LucideIcon,
@@ -64,6 +65,7 @@ const NAV_GROUPS: NavGroup[] = [
     items: [
       { path: '/admin/pos', icon: ShoppingCart, labelKey: 'erp.nav.pos', permission: PermissionCode.SALES_CREATE },
       { path: '/admin/sales', icon: Receipt, labelKey: 'erp.nav.sales', permission: PermissionCode.SALES_VIEW },
+      { path: '/admin/shifts', icon: Clock, labelKey: 'erp.nav.shifts', permission: PermissionCode.SHIFTS_VIEW },
       { path: '/admin/shop-orders', icon: ClipboardList, labelKey: 'erp.nav.shopOrders', permission: PermissionCode.SALES_VIEW },
       { path: '/admin/customers', icon: Users, labelKey: 'erp.nav.customers', permission: PermissionCode.CUSTOMERS_VIEW },
       { path: '/admin/debts', icon: CreditCard, labelKey: 'erp.nav.debts', permission: PermissionCode.DEBTS_VIEW },

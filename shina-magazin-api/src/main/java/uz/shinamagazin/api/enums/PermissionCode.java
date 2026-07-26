@@ -98,6 +98,10 @@ public enum PermissionCode {
     SETTINGS_VIEW("SETTINGS", "VIEW"),
     SETTINGS_UPDATE("SETTINGS", "UPDATE"),
 
+    // SHIFTS module — kassa smenasi va Z-hisobot
+    SHIFTS_VIEW("SHIFTS", "VIEW"),
+    SHIFTS_MANAGE("SHIFTS", "MANAGE"),
+
     // NOTIFICATIONS module
     NOTIFICATIONS_VIEW("NOTIFICATIONS", "VIEW"),
     NOTIFICATIONS_MANAGE("NOTIFICATIONS", "MANAGE"),

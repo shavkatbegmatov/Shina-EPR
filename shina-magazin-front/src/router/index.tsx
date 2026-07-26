@@ -30,6 +30,7 @@ const SuppliersPage = lazyWithRetry(() => import('../pages/suppliers/SuppliersPa
 const SupplierDetailPage = lazyWithRetry(() => import('../pages/suppliers/SupplierDetailPage').then(m => ({ default: m.SupplierDetailPage })));
 const PurchasesPage = lazyWithRetry(() => import('../pages/purchases/PurchasesPage').then(m => ({ default: m.PurchasesPage })));
 const PurchaseDetailPage = lazyWithRetry(() => import('../pages/purchases/PurchaseDetailPage').then(m => ({ default: m.PurchaseDetailPage })));
+const ShiftsPage = lazyWithRetry(() => import('../pages/shifts/ShiftsPage').then(m => ({ default: m.ShiftsPage })));
 const SettingsPage = lazyWithRetry(() => import('../pages/settings/SettingsPage').then(m => ({ default: m.SettingsPage })));
 const NotificationsPage = lazyWithRetry(() => import('../pages/notifications/NotificationsPage').then(m => ({ default: m.NotificationsPage })));
 const ReportsPage = lazyWithRetry(() => import('../pages/reports/ReportsPage').then(m => ({ default: m.ReportsPage })));
@@ -173,6 +174,17 @@ export const router = createBrowserRouter([
           </ProtectedRoute>
         ),
         handle: { title: 'Kassa (POS)' },
+      },
+      {
+        path: 'shifts',
+        element: (
+          <ProtectedRoute permission={PermissionCode.SHIFTS_VIEW}>
+            <LazyRoute>
+              <ShiftsPage />
+            </LazyRoute>
+          </ProtectedRoute>
+        ),
+        handle: { title: 'Smenalar' },
       },
       {
         path: 'sales',

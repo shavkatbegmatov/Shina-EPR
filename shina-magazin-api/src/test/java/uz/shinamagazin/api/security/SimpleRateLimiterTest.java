@@ -19,11 +19,29 @@ class SimpleRateLimiterTest {
     private static final int MAX = 3;
     private static final long WINDOW = 60_000;
 
-    private SimpleRateLimiter limiter;
+    /**
+     * Boshqariladigan soat: oynaning eskirishini real vaqtga bog'lamasdan
+     * tekshirish uchun. `Thread.sleep` yoki nol uzunlikdagi oyna bilan test
+     * bir xil millisekundda bajarilganda tasodifan yiqilardi.
+     */
+    private static final class FakeClockLimiter extends SimpleRateLimiter {
+        private long millis = 1_000_000;
+
+        @Override
+        protected long now() {
+            return millis;
+        }
+
+        void advance(long by) {
+            millis += by;
+        }
+    }
+
+    private FakeClockLimiter limiter;
 
     @BeforeEach
     void setUp() {
-        limiter = new SimpleRateLimiter();
+        limiter = new FakeClockLimiter();
     }
 
     @Test
@@ -93,8 +111,29 @@ class SimpleRateLimiterTest {
         }
         assertThat(limiter.isBlocked("login:1.1.1.1", MAX, WINDOW)).isTrue();
 
-        // Nol uzunlikdagi oyna = yozuv darhol eskirgan hisoblanadi
-        assertThat(limiter.isBlocked("login:1.1.1.1", MAX, 0)).isFalse();
+        limiter.advance(WINDOW - 1);
+        assertThat(limiter.isBlocked("login:1.1.1.1", MAX, WINDOW))
+                .as("oyna hali tugamagan")
+                .isTrue();
+
+        limiter.advance(1);
+        assertThat(limiter.isBlocked("login:1.1.1.1", MAX, WINDOW))
+                .as("oyna tugadi — blok tushishi kerak")
+                .isFalse();
+    }
+
+    @Test
+    @DisplayName("Oyna tugagach hisoblagich noldan boshlanadi")
+    void counterRestartsAfterWindow() {
+        for (int i = 0; i < MAX; i++) {
+            limiter.recordFailure("login:1.1.1.1", WINDOW);
+        }
+        limiter.advance(WINDOW);
+
+        limiter.recordFailure("login:1.1.1.1", WINDOW);
+        assertThat(limiter.isBlocked("login:1.1.1.1", MAX, WINDOW))
+                .as("yangi oynada bitta xato chegaraga yetmaydi")
+                .isFalse();
     }
 
     @Test

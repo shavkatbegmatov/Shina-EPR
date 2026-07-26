@@ -39,6 +39,49 @@ export interface CredentialsInfo {
 }
 
 // Settings Types
+// ─── Kassa smenasi va Z-hisobot ───
+
+export type CashShiftStatus = 'OPEN' | 'CLOSED';
+
+export interface CashShift {
+  id: number;
+  openedByName?: string;
+  openedAt: string;
+  openingFloat: number;
+  closedByName?: string;
+  closedAt?: string;
+  countedCash?: number;
+  expectedCash?: number;
+  /** countedCash − expectedCash; manfiy = kamomad. */
+  difference?: number;
+  status: CashShiftStatus;
+  notes?: string;
+}
+
+export interface ZReportPaymentBreakdown {
+  method: PaymentMethod;
+  count: number;
+  total: number;
+  /** Haqiqatan to'langan summa (qarzga sotilgan qism bundan tashqarida). */
+  paid: number;
+}
+
+export interface ZReport {
+  shift: CashShift;
+  salesCount: number;
+  cancelledCount: number;
+  grossTotal: number;
+  /** Smenada berilgan qarz — kassaga tushmagan pul. */
+  debtIssued: number;
+  byPaymentMethod: ZReportPaymentBreakdown[];
+  openingFloat: number;
+  /** Faqat naqd savdolarning to'langan qismi. */
+  cashReceived: number;
+  expectedCash: number;
+  countedCash?: number;
+  difference?: number;
+}
+
 /** Chek (kassa qog'ozi) sarlavhasi. Bo'sh qiymat = chekda o'sha qator chiqmaydi. */
 export interface ReceiptSettings {
   receiptShopName?: string;
