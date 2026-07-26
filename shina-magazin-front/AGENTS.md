@@ -42,8 +42,11 @@ a new query means remembering to add it in three places.
 - WebSocket-driven refresh: `useInvalidateOnNotification([...keys])`, not a
   `notifications.length` effect.
 
-`pages/suppliers/` is the reference implementation. Pages still on the manual
-pattern are being migrated incrementally — follow this section for new code.
+`pages/suppliers/` is the reference implementation. Every ERP page now follows
+this pattern with one deliberate exception: `pages/profile/SessionsTab.tsx` stays
+on manual loading because it logs the user out when their session is revoked and
+is driven by a WebSocket event — the migration upside there is small and a subtle
+bug would sign people out unexpectedly.
 
 ## Testing Guidelines
 - Backend uses Spring Boot Starter Test (JUnit 5). Place tests in `shina-magazin-api/src/test/java/...` and name them `*Test.java`.
