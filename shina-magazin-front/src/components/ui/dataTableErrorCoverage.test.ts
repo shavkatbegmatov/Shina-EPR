@@ -24,9 +24,6 @@ const ALLOWED_WITHOUT_ERROR = new Set([
   // Modal ichidagi mijoz tanlagich: xatosi asosiy POS oqimini to'smaydi —
   // kassir modalni yopib, mijozsiz savdoni davom ettira oladi.
   'pages/sales/POSPage.tsx#data={modalCustomers}',
-  // Ta'minotchi kartochkasidagi ichki "xaridlar tarixi" jadvali — asosiy
-  // ro'yxat emas; ta'minotchi yuklanmasa sahifa umuman ochilmaydi.
-  'pages/suppliers/SuppliersPage.tsx#data={purchases}',
 ]);
 
 function tsxFilesUnder(dir: string, prefix = ''): string[] {

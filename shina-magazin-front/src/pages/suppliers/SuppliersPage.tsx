@@ -1,613 +1,122 @@
-import { useCallback, useEffect, useMemo, useState } from 'react';
-import {
-  Plus,
-  Truck,
-  Phone,
-  Mail,
-  MapPin,
-  Building2,
-  X,
-  AlertTriangle,
-  Wallet,
-  Users,
-  CreditCard,
-  ShoppingCart,
-  Package,
-  Calendar,
-  TrendingUp,
-  Trash2,
-} from 'lucide-react';
+import { useCallback, useEffect, useState } from 'react';
+import { Plus, ShoppingCart, Truck } from 'lucide-react';
 import clsx from 'clsx';
 import { useTranslation } from 'react-i18next';
-import toast from 'react-hot-toast';
-import { getApiErrorMessage } from '../../utils/apiError';
 import { Button } from '@/ui';
-import { suppliersApi } from '../../api/suppliers.api';
-import { purchasesApi } from '../../api/purchases.api';
-import { productsApi } from '../../api/products.api';
-import { formatCurrency, formatDate, getTashkentToday } from '../../config/constants';
-import { DataTable, Column } from '../../components/ui/DataTable';
-import { SearchInput } from '../../components/ui/SearchInput';
-import { ModalPortal } from '../../components/common/Modal';
-import { PhoneInput } from '../../components/ui/PhoneInput';
-import { Select } from '../../components/ui/Select';
 import { useNotificationsStore } from '../../store/notificationsStore';
 import { PermissionCode } from '../../hooks/usePermission';
 import { PermissionGate } from '../../components/common/PermissionGate';
 import { useHighlight } from '../../hooks/useHighlight';
-import type {
-  Supplier,
-  SupplierRequest,
-  PurchaseOrder,
-  PurchaseStats,
-  PurchaseRequest,
-  PurchaseItemRequest,
-  Product,
-} from '../../types';
-
-const emptyFormData: SupplierRequest = {
-  name: '',
-  contactPerson: '',
-  phone: '',
-  email: '',
-  address: '',
-  bankDetails: '',
-  notes: '',
-};
-
-// Validate phone: empty is ok (optional), but if provided must be complete
-const isValidPhoneOrEmpty = (phone: string): boolean => {
-  if (!phone || phone.trim() === '') return true;
-  const cleaned = phone.replace(/\D/g, '');
-  return cleaned.length === 12 && cleaned.startsWith('998');
-};
+import { useSuppliersData } from './useSuppliersData';
+import { usePurchasesData } from './usePurchasesData';
+import { SuppliersTab } from './SuppliersTab';
+import { PurchasesTab } from './PurchasesTab';
+import { SupplierFormModal } from './SupplierFormModal';
+import { PurchaseFormModal } from './PurchaseFormModal';
+import type { Supplier } from '../../types';
 
 type TabType = 'suppliers' | 'purchases';
 
-interface CartItem {
-  product: Product;
-  quantity: number;
-  unitPrice: number;
-}
-
+/**
+ * Ta'minotchilar va xaridlar.
+ *
+ * <p>Bu sahifa ilgari 1300 qatordan oshgan va 36 ta `useState` saqlagan yagona
+ * komponent edi: ikkita mustaqil ro'yxat, ikkita statistika to'plami va ikkita
+ * forma bir joyda turardi. `page`/`purchasesPage`, `refreshing`/
+ * `purchasesRefreshing` kabi juftliklarda noto'g'ri o'zgaruvchini ishlatish
+ * oson edi, savat arifmetikasini esa butun sahifani render qilmasdan
+ * sinab bo'lmasdi.
+ *
+ * <p>Endi sahifa faqat KOMPOZITSIYA bilan shug'ullanadi: qaysi bo'lim ochiq,
+ * qaysi oyna ko'rinadi va ma'lumot qachon qayta yuklanadi.
+ */
 export function SuppliersPage() {
   const { t } = useTranslation();
-
-  // Active tab
   const [activeTab, setActiveTab] = useState<TabType>('suppliers');
 
-  // Suppliers state
-  const [suppliers, setSuppliers] = useState<Supplier[]>([]);
-  const [loadError, setLoadError] = useState<string | null>(null);
-  const [initialLoading, setInitialLoading] = useState(true);
-  const [refreshing, setRefreshing] = useState(false);
-  const [search, setSearch] = useState('');
-  const [page, setPage] = useState(0);
-  const [pageSize, setPageSize] = useState(20);
-  const [totalPages, setTotalPages] = useState(0);
-  const [totalElements, setTotalElements] = useState(0);
-  const [showModal, setShowModal] = useState(false);
-  const [editingSupplier, setEditingSupplier] = useState<Supplier | null>(null);
-  const [formData, setFormData] = useState<SupplierRequest>(emptyFormData);
-  const [saving, setSaving] = useState(false);
-
-  // Stats
-  const [totalDebt, setTotalDebt] = useState(0);
-  const [suppliersWithDebt, setSuppliersWithDebt] = useState<Supplier[]>([]);
-
-  // Purchases state
-  const [purchases, setPurchases] = useState<PurchaseOrder[]>([]);
-  const [purchasesInitialLoading, setPurchasesInitialLoading] = useState(true);
-  const [purchasesRefreshing, setPurchasesRefreshing] = useState(false);
-  const [purchasesPage, setPurchasesPage] = useState(0);
-  const [purchasesPageSize, setPurchasesPageSize] = useState(20);
-  const [purchasesTotalPages, setPurchasesTotalPages] = useState(0);
-  const [purchasesTotalElements, setPurchasesTotalElements] = useState(0);
-  const [purchaseStats, setPurchaseStats] = useState<PurchaseStats | null>(null);
-  const [showPurchaseModal, setShowPurchaseModal] = useState(false);
-  const [purchaseSaving, setPurchaseSaving] = useState(false);
-
-  // Purchase form state
-  const [selectedSupplier, setSelectedSupplier] = useState<Supplier | null>(null);
-  const [purchaseDate, setPurchaseDate] = useState(getTashkentToday());
-  const [cartItems, setCartItems] = useState<CartItem[]>([]);
-  const [paidAmount, setPaidAmount] = useState<number>(0);
-  const [purchaseNotes, setPurchaseNotes] = useState('');
-
-  // Product search for purchase modal
-  const [productSearch, setProductSearch] = useState('');
-  const [productResults, setProductResults] = useState<Product[]>([]);
-  const [productSearchLoading, setProductSearchLoading] = useState(false);
-  const [allSuppliers, setAllSuppliers] = useState<Supplier[]>([]);
+  const suppliersData = useSuppliersData();
+  const purchasesData = usePurchasesData();
 
   const { notifications } = useNotificationsStore();
   const { highlightId, clearHighlight } = useHighlight();
 
-  const hasSearch = useMemo(() => search.trim().length > 0, [search]);
+  const [editingSupplier, setEditingSupplier] = useState<Supplier | null>(null);
+  const [showSupplierModal, setShowSupplierModal] = useState(false);
+  const [showPurchaseModal, setShowPurchaseModal] = useState(false);
 
-  // Calculate totals
-  const cartTotal = useMemo(() =>
-    cartItems.reduce((sum, item) => sum + (item.quantity * item.unitPrice), 0),
-    [cartItems]
-  );
-  const cartTotalQuantity = useMemo(() =>
-    cartItems.reduce((sum, item) => sum + item.quantity, 0),
-    [cartItems]
-  );
-  const debtAmount = useMemo(() => cartTotal - paidAmount, [cartTotal, paidAmount]);
+  const { load: loadSuppliers, loadAll: loadAllSuppliers, loadStats } = suppliersData;
+  const { load: loadPurchases, loadStats: loadPurchaseStats } = purchasesData;
 
-  const handlePageSizeChange = (newSize: number) => {
-    setPageSize(newSize);
-    setPage(0);
-  };
-
-  const handleSearchChange = useCallback((value: string) => {
-    setSearch(value);
-    setPage(0);
-  }, []);
-
-  const handlePurchasesPageSizeChange = (newSize: number) => {
-    setPurchasesPageSize(newSize);
-    setPurchasesPage(0);
-  };
-
-  const handleOpenEditModal = (supplier: Supplier) => {
-    setEditingSupplier(supplier);
-    setFormData({
-      name: supplier.name,
-      contactPerson: supplier.contactPerson || '',
-      phone: supplier.phone || '',
-      email: supplier.email || '',
-      address: supplier.address || '',
-      bankDetails: supplier.bankDetails || '',
-      notes: supplier.notes || '',
-    });
-    setShowModal(true);
-  };
-
-  // Suppliers Table columns
-  const suppliersColumns: Column<Supplier>[] = useMemo(() => [
-    {
-      key: 'name',
-      header: t('erp.suppliers.colSupplier'),
-      render: (supplier) => (
-        <div className="flex items-center gap-3">
-          <div className="avatar placeholder">
-            <div className="w-10 rounded-full bg-primary/15 text-primary">
-              <span>{supplier.name.charAt(0).toUpperCase()}</span>
-            </div>
-          </div>
-          <div>
-            <div className="font-medium">{supplier.name}</div>
-            {supplier.contactPerson && (
-              <div className="text-sm text-base-content/70">{supplier.contactPerson}</div>
-            )}
-          </div>
-        </div>
-      ),
-    },
-    {
-      key: 'phone',
-      header: t('erp.suppliers.colContact'),
-      render: (supplier) => (
-        <div className="space-y-1">
-          {supplier.phone && (
-            <div className="flex items-center gap-2">
-              <Phone className="h-4 w-4 text-base-content/50" />
-              <span className="text-sm">{supplier.phone}</span>
-            </div>
-          )}
-          {supplier.email && (
-            <div className="flex items-center gap-2">
-              <Mail className="h-4 w-4 text-base-content/50" />
-              <span className="text-sm text-base-content/70">{supplier.email}</span>
-            </div>
-          )}
-          {!supplier.phone && !supplier.email && (
-            <span className="text-sm text-base-content/50">—</span>
-          )}
-        </div>
-      ),
-    },
-    {
-      key: 'address',
-      header: t('erp.suppliers.colAddress'),
-      className: 'max-w-xs',
-      render: (supplier) => (
-        supplier.address ? (
-          <div className="flex items-start gap-2">
-            <MapPin className="h-4 w-4 text-base-content/50 mt-0.5 shrink-0" />
-            <span className="text-sm truncate">{supplier.address}</span>
-          </div>
-        ) : (
-          <span className="text-sm text-base-content/50">—</span>
-        )
-      ),
-    },
-    {
-      key: 'balance',
-      header: t('erp.suppliers.colBalance'),
-      getValue: (supplier) => supplier.balance,
-      render: (supplier) => (
-        <div>
-          <span className={clsx(
-            'font-medium',
-            supplier.balance > 0 && 'text-error',
-            supplier.balance < 0 && 'text-success',
-            supplier.balance === 0 && 'text-base-content/70'
-          )}>
-            {supplier.balance > 0 && '+'}
-            {formatCurrency(supplier.balance)}
-          </span>
-          {supplier.hasDebt && (
-            <span className="badge badge-error badge-sm ml-2">{t('erp.suppliers.debtBadge')}</span>
-          )}
-        </div>
-      ),
-    },
-    {
-      key: 'actions',
-      header: '',
-      sortable: false,
-      render: (supplier) => (
-        <PermissionGate permission={PermissionCode.SUPPLIERS_UPDATE}>
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={(e) => { e.stopPropagation(); handleOpenEditModal(supplier); }}
-          >
-            {t('common.edit')}
-          </Button>
-        </PermissionGate>
-      ),
-    },
-  ], [t]);
-
-  // Purchases Table columns
-  const purchasesColumns: Column<PurchaseOrder>[] = useMemo(() => [
-    {
-      key: 'orderDate',
-      header: t('erp.suppliers.colDate'),
-      render: (purchase) => (
-        <div className="flex items-center gap-2">
-          <Calendar className="h-4 w-4 text-base-content/50" />
-          <span>{formatDate(purchase.orderDate)}</span>
-        </div>
-      ),
-    },
-    {
-      key: 'supplierName',
-      header: t('erp.suppliers.colSupplier'),
-      render: (purchase) => (
-        <div className="flex items-center gap-2">
-          <Truck className="h-4 w-4 text-base-content/50" />
-          <span className="font-medium">{purchase.supplierName}</span>
-        </div>
-      ),
-    },
-    {
-      key: 'items',
-      header: t('erp.suppliers.colProducts'),
-      render: (purchase) => (
-        <div className="flex items-center gap-2">
-          <Package className="h-4 w-4 text-base-content/50" />
-          <span>{t('erp.suppliers.itemsSummary', { types: purchase.itemCount, quantity: purchase.totalQuantity })}</span>
-        </div>
-      ),
-    },
-    {
-      key: 'totalAmount',
-      header: t('common.amount'),
-      getValue: (purchase) => purchase.totalAmount,
-      render: (purchase) => (
-        <span className="font-semibold">{formatCurrency(purchase.totalAmount)}</span>
-      ),
-    },
-    {
-      key: 'debtAmount',
-      header: t('erp.suppliers.colDebt'),
-      getValue: (purchase) => purchase.debtAmount,
-      render: (purchase) => (
-        <span className={clsx(
-          'font-medium',
-          purchase.debtAmount > 0 ? 'text-error' : 'text-success'
-        )}>
-          {purchase.debtAmount > 0 ? formatCurrency(purchase.debtAmount) : t('erp.suppliers.paid')}
-        </span>
-      ),
-    },
-    {
-      key: 'status',
-      header: t('common.status'),
-      render: (purchase) => (
-        <span className={clsx(
-          'badge badge-sm',
-          purchase.status === 'RECEIVED' && 'badge-success',
-          purchase.status === 'DRAFT' && 'badge-warning',
-          purchase.status === 'CANCELLED' && 'badge-error'
-        )}>
-          {purchase.status === 'RECEIVED' && t('erp.suppliers.statusReceived')}
-          {purchase.status === 'DRAFT' && t('erp.suppliers.statusDraft')}
-          {purchase.status === 'CANCELLED' && t('erp.suppliers.statusCancelled')}
-        </span>
-      ),
-    },
-  ], [t]);
-
-  // Load suppliers
-  const loadSuppliers = useCallback(async (isInitial = false) => {
-    if (!isInitial) {
-      setRefreshing(true);
-    }
-    try {
-      const data = await suppliersApi.getAll({
-        page,
-        size: pageSize,
-        search: search || undefined,
-      });
-      setSuppliers(data.content);
-      setTotalPages(data.totalPages);
-      setTotalElements(data.totalElements);
-      setLoadError(null);
-    } catch (error) {
-      console.error('Failed to load suppliers:', error);
-      setLoadError(getApiErrorMessage(error));
-    } finally {
-      setInitialLoading(false);
-      setRefreshing(false);
-    }
-  }, [page, pageSize, search]);
-
-  // Load all active suppliers (for dropdown)
-  const loadAllSuppliers = useCallback(async () => {
-    try {
-      const data = await suppliersApi.getActive();
-      setAllSuppliers(data);
-    } catch (error) {
-      console.error('Failed to load all suppliers:', error);
-    }
-  }, []);
-
-  // Load stats
-  const loadStats = useCallback(async () => {
-    try {
-      const [debt, withDebt] = await Promise.all([
-        suppliersApi.getTotalDebt(),
-        suppliersApi.getWithDebt(),
-      ]);
-      setTotalDebt(debt);
-      setSuppliersWithDebt(withDebt);
-    } catch (error) {
-      console.error('Failed to load stats:', error);
-    }
-  }, []);
-
-  // Load purchases
-  const loadPurchases = useCallback(async (isInitial = false) => {
-    if (!isInitial) {
-      setPurchasesRefreshing(true);
-    }
-    try {
-      const data = await purchasesApi.getAll({
-        page: purchasesPage,
-        size: purchasesPageSize,
-      });
-      setPurchases(data.content);
-      setPurchasesTotalPages(data.totalPages);
-      setPurchasesTotalElements(data.totalElements);
-    } catch (error) {
-      console.error('Failed to load purchases:', error);
-    } finally {
-      setPurchasesInitialLoading(false);
-      setPurchasesRefreshing(false);
-    }
-  }, [purchasesPage, purchasesPageSize]);
-
-  // Load purchase stats
-  const loadPurchaseStats = useCallback(async () => {
-    try {
-      const stats = await purchasesApi.getStats();
-      setPurchaseStats(stats);
-    } catch (error) {
-      console.error('Failed to load purchase stats:', error);
-    }
-  }, []);
-
-  // Search products
-  const searchProducts = useCallback(async (query: string) => {
-    if (!query.trim()) {
-      setProductResults([]);
-      return;
-    }
-    setProductSearchLoading(true);
-    try {
-      const data = await productsApi.getAll({ search: query, size: 10 });
-      setProductResults(data.content);
-    } catch (error) {
-      console.error('Failed to search products:', error);
-    } finally {
-      setProductSearchLoading(false);
-    }
-  }, []);
-
-  // Debounced product search
+  // Boshlang'ich yuklash
   useEffect(() => {
-    const timer = setTimeout(() => {
-      searchProducts(productSearch);
-    }, 300);
-    return () => clearTimeout(timer);
-  }, [productSearch, searchProducts]);
-
-  // Initial load for suppliers
-  useEffect(() => {
-    loadSuppliers(true);
+    void loadSuppliers(true);
     void loadStats();
     void loadAllSuppliers();
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  // Reload when supplier filters change
+  // Ta'minotchi filtrlari o'zgarganda — `load` ning o'zi sahifa/qidiruvga
+  // bog'langan, shuning uchun uni kuzatish yetarli.
   useEffect(() => {
     void loadSuppliers();
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [page, pageSize, search]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [suppliersData.page, suppliersData.pageSize, suppliersData.search]);
 
-  // Initial load for purchases tab
+  // Xaridlar bo'limi FAQAT ochilganda yuklanadi: ko'pchilik foydalanuvchi
+  // ta'minotchilar bo'limida ishlaydi, ikkinchi so'rovni oldindan yuborish
+  // ortiqcha edi.
   useEffect(() => {
     if (activeTab === 'purchases') {
-      loadPurchases(true);
+      void loadPurchases(true);
       void loadPurchaseStats();
     }
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [activeTab]);
 
-  // Reload when purchase filters change
   useEffect(() => {
     if (activeTab === 'purchases') {
       void loadPurchases();
     }
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [purchasesPage, purchasesPageSize]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [purchasesData.page, purchasesData.pageSize]);
 
-  // Real-time updates
+  // Real-time yangilanish (WebSocket bildirishnomasi kelganda)
   useEffect(() => {
-    if (notifications.length > 0) {
-      void loadSuppliers();
-      void loadStats();
-      if (activeTab === 'purchases') {
-        void loadPurchases();
-        void loadPurchaseStats();
-      }
-    }
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [notifications.length, activeTab]);
-
-  // Supplier handlers
-  const handleOpenNewModal = () => {
-    setEditingSupplier(null);
-    setFormData(emptyFormData);
-    setShowModal(true);
-  };
-
-  const handleCloseModal = () => {
-    setShowModal(false);
-    setEditingSupplier(null);
-    setFormData(emptyFormData);
-  };
-
-  const handleFormChange = (field: keyof SupplierRequest, value: string) => {
-    setFormData((prev) => ({ ...prev, [field]: value }));
-  };
-
-  const handleSaveSupplier = async () => {
-    if (!formData.name.trim()) return;
-    setSaving(true);
-    try {
-      if (editingSupplier) {
-        await suppliersApi.update(editingSupplier.id, formData);
-      } else {
-        await suppliersApi.create(formData);
-      }
-      handleCloseModal();
-      void loadSuppliers();
-      void loadStats();
-      void loadAllSuppliers();
-    } catch (error) {
-      console.error('Failed to save supplier:', error);
-      toast.error(getApiErrorMessage(error));
-    } finally {
-      setSaving(false);
-    }
-  };
-
-  // Purchase handlers
-  const handleOpenPurchaseModal = () => {
-    setSelectedSupplier(null);
-    setPurchaseDate(getTashkentToday());
-    setCartItems([]);
-    setPaidAmount(0);
-    setPurchaseNotes('');
-    setProductSearch('');
-    setProductResults([]);
-    setShowPurchaseModal(true);
-  };
-
-  const handleClosePurchaseModal = () => {
-    setShowPurchaseModal(false);
-    setSelectedSupplier(null);
-    setCartItems([]);
-    setPaidAmount(0);
-    setPurchaseNotes('');
-    setProductSearch('');
-    setProductResults([]);
-  };
-
-  const handleAddToCart = (product: Product) => {
-    const existing = cartItems.find(item => item.product.id === product.id);
-    if (existing) {
-      setCartItems(prev => prev.map(item =>
-        item.product.id === product.id
-          ? { ...item, quantity: item.quantity + 1 }
-          : item
-      ));
-    } else {
-      setCartItems(prev => [...prev, {
-        product,
-        quantity: 1,
-        unitPrice: product.purchasePrice || product.sellingPrice * 0.7,
-      }]);
-    }
-    setProductSearch('');
-    setProductResults([]);
-  };
-
-  const handleUpdateCartItem = (productId: number, field: 'quantity' | 'unitPrice', value: number) => {
-    setCartItems(prev => prev.map(item =>
-      item.product.id === productId
-        ? { ...item, [field]: value }
-        : item
-    ));
-  };
-
-  const handleRemoveFromCart = (productId: number) => {
-    setCartItems(prev => prev.filter(item => item.product.id !== productId));
-  };
-
-  const handleSavePurchase = async () => {
-    if (!selectedSupplier || cartItems.length === 0) return;
-
-    setPurchaseSaving(true);
-    try {
-      const items: PurchaseItemRequest[] = cartItems.map(item => ({
-        productId: item.product.id,
-        quantity: item.quantity,
-        unitPrice: item.unitPrice,
-      }));
-
-      const request: PurchaseRequest = {
-        supplierId: selectedSupplier.id,
-        orderDate: purchaseDate,
-        paidAmount,
-        notes: purchaseNotes || undefined,
-        items,
-      };
-
-      await purchasesApi.create(request);
-      handleClosePurchaseModal();
+    if (notifications.length === 0) return;
+    void loadSuppliers();
+    void loadStats();
+    if (activeTab === 'purchases') {
       void loadPurchases();
       void loadPurchaseStats();
-      void loadStats();
-    } catch (error) {
-      console.error('Failed to save purchase:', error);
-      toast.error(getApiErrorMessage(error));
-    } finally {
-      setPurchaseSaving(false);
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [notifications.length, activeTab]);
+
+  const openNewSupplier = () => {
+    setEditingSupplier(null);
+    setShowSupplierModal(true);
+  };
+
+  const openEditSupplier = useCallback((supplier: Supplier) => {
+    setEditingSupplier(supplier);
+    setShowSupplierModal(true);
+  }, []);
+
+  const handleSupplierSaved = () => {
+    void loadSuppliers();
+    void loadStats();
+    void loadAllSuppliers();
+  };
+
+  const handlePurchaseSaved = () => {
+    void loadPurchases();
+    void loadPurchaseStats();
+    // Xarid ta'minotchi balansini o'zgartiradi — qarz statistikasi ham yangilanadi
+    void loadStats();
   };
 
   return (
     <div className="space-y-6">
-      {/* Header */}
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <h1 className="section-title">{t('erp.suppliers.title')}</h1>
@@ -616,9 +125,11 @@ export function SuppliersPage() {
         <div className="flex items-center gap-2">
           {activeTab === 'suppliers' ? (
             <>
-              <span className="pill">{t('erp.suppliers.supplierCount', { count: totalElements })}</span>
+              <span className="pill">
+                {t('erp.suppliers.supplierCount', { count: suppliersData.totalElements })}
+              </span>
               <PermissionGate permission={PermissionCode.SUPPLIERS_CREATE}>
-                <Button variant="primary" onClick={handleOpenNewModal}>
+                <Button variant="primary" onClick={openNewSupplier}>
                   <Plus className="h-5 w-5" />
                   {t('erp.suppliers.newSupplier')}
                 </Button>
@@ -626,9 +137,11 @@ export function SuppliersPage() {
             </>
           ) : (
             <>
-              <span className="pill">{t('erp.suppliers.purchaseCount', { count: purchasesTotalElements })}</span>
+              <span className="pill">
+                {t('erp.suppliers.purchaseCount', { count: purchasesData.totalElements })}
+              </span>
               <PermissionGate permission={PermissionCode.PURCHASES_CREATE}>
-                <Button variant="primary" onClick={handleOpenPurchaseModal}>
+                <Button variant="primary" onClick={() => setShowPurchaseModal(true)}>
                   <Plus className="h-5 w-5" />
                   {t('erp.suppliers.newPurchase')}
                 </Button>
@@ -638,7 +151,6 @@ export function SuppliersPage() {
         </div>
       </div>
 
-      {/* Tabs */}
       <div className="tabs tabs-boxed bg-base-200 p-1 w-fit">
         <button
           className={clsx('tab', activeTab === 'suppliers' && 'tab-active')}
@@ -656,663 +168,30 @@ export function SuppliersPage() {
         </button>
       </div>
 
-      {/* Tab Content */}
       {activeTab === 'suppliers' ? (
-        <>
-          {/* Stats Cards */}
-          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
-            <div className="surface-card p-4">
-              <div className="flex items-center gap-3">
-                <div className="rounded-lg bg-primary/10 p-2.5">
-                  <Users className="h-5 w-5 text-primary" />
-                </div>
-                <div>
-                  <p className="text-xs text-base-content/60">{t('erp.suppliers.statTotalSuppliers')}</p>
-                  <p className="text-xl font-bold">{totalElements}</p>
-                </div>
-              </div>
-            </div>
-
-            <div className="surface-card p-4">
-              <div className="flex items-center gap-3">
-                <div className="rounded-lg bg-warning/10 p-2.5">
-                  <AlertTriangle className="h-5 w-5 text-warning" />
-                </div>
-                <div>
-                  <p className="text-xs text-base-content/60">{t('erp.suppliers.statDebtSuppliers')}</p>
-                  <p className="text-xl font-bold">{suppliersWithDebt.length}</p>
-                </div>
-              </div>
-            </div>
-
-            <div className="surface-card p-4">
-              <div className="flex items-center gap-3">
-                <div className="rounded-lg bg-error/10 p-2.5">
-                  <Wallet className="h-5 w-5 text-error" />
-                </div>
-                <div>
-                  <p className="text-xs text-base-content/60">{t('erp.suppliers.statTotalDebt')}</p>
-                  <p className="text-xl font-bold text-error">{formatCurrency(totalDebt)}</p>
-                </div>
-              </div>
-            </div>
-
-            <div className="surface-card p-4">
-              <div className="flex items-center gap-3">
-                <div className="rounded-lg bg-success/10 p-2.5">
-                  <CreditCard className="h-5 w-5 text-success" />
-                </div>
-                <div>
-                  <p className="text-xs text-base-content/60">{t('erp.suppliers.statActivePartners')}</p>
-                  <p className="text-xl font-bold text-success">{totalElements - suppliersWithDebt.length}</p>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          {/* Search */}
-          <div className="surface-card p-4">
-            <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
-              <div>
-                <h2 className="text-sm font-semibold uppercase tracking-[0.2em] text-base-content/50">
-                  {t('erp.suppliers.searchHeading')}
-                </h2>
-                <p className="text-xs text-base-content/60">
-                  {hasSearch ? t('erp.suppliers.searchResultsShown') : t('erp.suppliers.allSuppliers')}
-                </p>
-              </div>
-            </div>
-            <SearchInput
-              value={search}
-              onValueChange={handleSearchChange}
-              label={t('erp.suppliers.searchLabel')}
-              placeholder={t('common.search')}
-              className="mt-4 max-w-md"
-            />
-          </div>
-
-          {/* Suppliers Table */}
-          <div className="relative">
-            {refreshing && (
-              <div className="absolute inset-0 z-10 flex items-center justify-center rounded-xl bg-base-100/60 backdrop-blur-sm">
-                <div className="flex flex-col items-center gap-3">
-                  <span className="loading loading-spinner loading-lg text-primary"></span>
-                  <span className="text-sm font-medium text-base-content/70">{t('erp.suppliers.refreshing')}</span>
-                </div>
-              </div>
-            )}
-            <DataTable
-              data={suppliers}
-              error={loadError}
-              onRetry={() => loadSuppliers(true)}
-              columns={suppliersColumns}
-              keyExtractor={(supplier) => supplier.id}
-              loading={initialLoading && !refreshing}
-              highlightId={highlightId}
-              onHighlightComplete={clearHighlight}
-              emptyIcon={<Truck className="h-12 w-12" />}
-              emptyTitle={t('erp.suppliers.emptyTitle')}
-              emptyDescription={t('erp.suppliers.emptyDescription')}
-              rowClassName={(supplier) => (supplier.hasDebt ? 'bg-error/5' : '')}
-            currentPage={page}
-            totalPages={totalPages}
-            totalElements={totalElements}
-            pageSize={pageSize}
-            onPageChange={setPage}
-            onPageSizeChange={handlePageSizeChange}
-            renderMobileCard={(supplier) => (
-              <div className="surface-panel flex flex-col gap-3 rounded-xl p-4">
-                <div className="flex items-start justify-between gap-3">
-                  <div className="flex items-center gap-3">
-                    <div className="avatar placeholder">
-                      <div className="w-10 rounded-full bg-primary/15 text-primary">
-                        <span>{supplier.name.charAt(0).toUpperCase()}</span>
-                      </div>
-                    </div>
-                    <div>
-                      <p className="font-semibold">{supplier.name}</p>
-                      <p className="text-xs text-base-content/60">
-                        {supplier.contactPerson || t('erp.suppliers.contactNotSet')}
-                      </p>
-                    </div>
-                  </div>
-                  <span className={clsx(
-                    'badge badge-sm',
-                    supplier.hasDebt ? 'badge-error' : 'badge-success'
-                  )}>
-                    {supplier.hasDebt ? t('erp.suppliers.debtBadge') : t('erp.suppliers.cleanBadge')}
-                  </span>
-                </div>
-
-                <div className="space-y-1.5">
-                  {supplier.phone && (
-                    <div className="flex items-center gap-2 text-sm text-base-content/70">
-                      <Phone className="h-4 w-4" />
-                      {supplier.phone}
-                    </div>
-                  )}
-                  {supplier.email && (
-                    <div className="flex items-center gap-2 text-sm text-base-content/70">
-                      <Mail className="h-4 w-4" />
-                      {supplier.email}
-                    </div>
-                  )}
-                </div>
-
-                <div className="flex items-center justify-between pt-2 border-t border-base-200">
-                  <span className={clsx(
-                    'font-semibold',
-                    supplier.balance > 0 && 'text-error',
-                    supplier.balance <= 0 && 'text-success'
-                  )}>
-                    {supplier.balance > 0 && '+'}
-                    {formatCurrency(supplier.balance)}
-                  </span>
-                  <PermissionGate permission={PermissionCode.SUPPLIERS_UPDATE}>
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      className="min-h-[44px]"
-                      onClick={() => handleOpenEditModal(supplier)}
-                    >
-                      {t('common.edit')}
-                    </Button>
-                  </PermissionGate>
-                </div>
-              </div>
-            )}
-          />
-          </div>
-        </>
+        <SuppliersTab
+          data={suppliersData}
+          highlightId={highlightId}
+          onHighlightComplete={clearHighlight}
+          onEdit={openEditSupplier}
+        />
       ) : (
-        <>
-          {/* Purchase Stats */}
-          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
-            <div className="surface-card p-4">
-              <div className="flex items-center gap-3">
-                <div className="rounded-lg bg-primary/10 p-2.5">
-                  <ShoppingCart className="h-5 w-5 text-primary" />
-                </div>
-                <div>
-                  <p className="text-xs text-base-content/60">{t('erp.suppliers.statTotalPurchases')}</p>
-                  <p className="text-xl font-bold">{purchaseStats?.totalPurchases || 0}</p>
-                </div>
-              </div>
-            </div>
-
-            <div className="surface-card p-4">
-              <div className="flex items-center gap-3">
-                <div className="rounded-lg bg-info/10 p-2.5">
-                  <Calendar className="h-5 w-5 text-info" />
-                </div>
-                <div>
-                  <p className="text-xs text-base-content/60">{t('erp.suppliers.statTodayPurchases')}</p>
-                  <p className="text-xl font-bold">{purchaseStats?.todayPurchases || 0}</p>
-                </div>
-              </div>
-            </div>
-
-            <div className="surface-card p-4">
-              <div className="flex items-center gap-3">
-                <div className="rounded-lg bg-success/10 p-2.5">
-                  <TrendingUp className="h-5 w-5 text-success" />
-                </div>
-                <div>
-                  <p className="text-xs text-base-content/60">{t('erp.suppliers.statTotalAmount')}</p>
-                  <p className="text-xl font-bold">{formatCurrency(purchaseStats?.totalAmount || 0)}</p>
-                </div>
-              </div>
-            </div>
-
-            <div className="surface-card p-4">
-              <div className="flex items-center gap-3">
-                <div className="rounded-lg bg-error/10 p-2.5">
-                  <Wallet className="h-5 w-5 text-error" />
-                </div>
-                <div>
-                  <p className="text-xs text-base-content/60">{t('erp.suppliers.statTotalDebt')}</p>
-                  <p className="text-xl font-bold text-error">{formatCurrency(purchaseStats?.totalDebt || 0)}</p>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          {/* Purchases Table */}
-          <div className="relative">
-            {purchasesRefreshing && (
-              <div className="absolute inset-0 z-10 flex items-center justify-center rounded-xl bg-base-100/60 backdrop-blur-sm">
-                <div className="flex flex-col items-center gap-3">
-                  <span className="loading loading-spinner loading-lg text-primary"></span>
-                  <span className="text-sm font-medium text-base-content/70">{t('erp.suppliers.refreshing')}</span>
-                </div>
-              </div>
-            )}
-            <DataTable
-              data={purchases}
-              columns={purchasesColumns}
-              keyExtractor={(purchase) => purchase.id}
-              loading={purchasesInitialLoading}
-              emptyIcon={<ShoppingCart className="h-12 w-12" />}
-            emptyTitle={t('erp.suppliers.purchasesEmptyTitle')}
-            emptyDescription={t('erp.suppliers.purchasesEmptyDescription')}
-            currentPage={purchasesPage}
-            totalPages={purchasesTotalPages}
-            totalElements={purchasesTotalElements}
-            pageSize={purchasesPageSize}
-            onPageChange={setPurchasesPage}
-            onPageSizeChange={handlePurchasesPageSizeChange}
-            renderMobileCard={(purchase) => (
-              <div className="surface-panel flex flex-col gap-3 rounded-xl p-4">
-                <div className="flex items-start justify-between gap-3">
-                  <div>
-                    <p className="font-semibold">{purchase.supplierName}</p>
-                    <p className="text-xs text-base-content/60">
-                      {formatDate(purchase.orderDate)}
-                    </p>
-                  </div>
-                  <span className={clsx(
-                    'badge badge-sm',
-                    purchase.status === 'RECEIVED' && 'badge-success',
-                    purchase.status === 'DRAFT' && 'badge-warning',
-                    purchase.status === 'CANCELLED' && 'badge-error'
-                  )}>
-                    {purchase.status === 'RECEIVED' && t('erp.suppliers.statusReceivedShort')}
-                    {purchase.status === 'DRAFT' && t('erp.suppliers.statusDraftShort')}
-                    {purchase.status === 'CANCELLED' && t('erp.suppliers.statusCancelledShort')}
-                  </span>
-                </div>
-
-                <div className="flex items-center gap-2 text-sm text-base-content/70">
-                  <Package className="h-4 w-4" />
-                  {t('erp.suppliers.itemsSummary', { types: purchase.itemCount, quantity: purchase.totalQuantity })}
-                </div>
-
-                <div className="flex items-center justify-between pt-2 border-t border-base-200">
-                  <div>
-                    <p className="text-sm font-semibold">{formatCurrency(purchase.totalAmount)}</p>
-                    {purchase.debtAmount > 0 && (
-                      <p className="text-xs text-error">{t('erp.suppliers.debtLabel', { amount: formatCurrency(purchase.debtAmount) })}</p>
-                    )}
-                  </div>
-                </div>
-              </div>
-            )}
-          />
-          </div>
-        </>
+        <PurchasesTab data={purchasesData} />
       )}
 
-      {/* Supplier Modal */}
-      <ModalPortal isOpen={showModal} onClose={handleCloseModal}>
-        <div className="w-full max-w-2xl bg-base-100 rounded-2xl shadow-2xl max-h-[90vh] overflow-y-auto">
-          <div className="p-4 sm:p-6">
-            <div className="flex items-start justify-between gap-4">
-              <div>
-                <h3 className="text-xl font-semibold">
-                  {editingSupplier ? t('erp.suppliers.editSupplierTitle') : t('erp.suppliers.newSupplier')}
-                </h3>
-                <p className="text-sm text-base-content/60">
-                  {editingSupplier ? t('erp.suppliers.editSupplierSubtitle') : t('erp.suppliers.newSupplierSubtitle')}
-                </p>
-              </div>
-              <Button variant="ghost" size="sm" onClick={handleCloseModal}>
-                <X className="h-4 w-4" />
-              </Button>
-            </div>
+      <SupplierFormModal
+        isOpen={showSupplierModal}
+        supplier={editingSupplier}
+        onClose={() => setShowSupplierModal(false)}
+        onSaved={handleSupplierSaved}
+      />
 
-            <div className="mt-6 space-y-5">
-              {/* Asosiy ma'lumotlar */}
-              <div className="surface-soft rounded-xl p-4">
-                <h4 className="text-sm font-semibold uppercase tracking-[0.15em] text-base-content/60 mb-4 flex items-center gap-2">
-                  <Building2 className="h-4 w-4" />
-                  {t('erp.suppliers.sectionBasicInfo')}
-                </h4>
-                <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-                  <label className="form-control sm:col-span-2">
-                    <span className="label-text mb-1 text-xs font-semibold uppercase tracking-[0.18em] text-base-content/50">
-                      {t('erp.suppliers.fieldSupplierName')}
-                    </span>
-                    <input
-                      type="text"
-                      className="input input-bordered w-full"
-                      value={formData.name}
-                      onChange={(e) => handleFormChange('name', e.target.value)}
-                      placeholder={t('erp.suppliers.phCompanyName')}
-                    />
-                  </label>
-                  <label className="form-control">
-                    <span className="label-text mb-1 text-xs font-semibold uppercase tracking-[0.18em] text-base-content/50">
-                      {t('erp.suppliers.fieldContactPerson')}
-                    </span>
-                    <input
-                      type="text"
-                      className="input input-bordered w-full"
-                      value={formData.contactPerson}
-                      onChange={(e) => handleFormChange('contactPerson', e.target.value)}
-                      placeholder={t('erp.suppliers.phFullName')}
-                    />
-                  </label>
-                  <PhoneInput
-                    label={t('erp.suppliers.fieldPhone')}
-                    value={formData.phone || ''}
-                    onChange={(value) => handleFormChange('phone', value)}
-                  />
-                </div>
-              </div>
-
-              {/* Aloqa ma'lumotlari */}
-              <div className="surface-soft rounded-xl p-4">
-                <h4 className="text-sm font-semibold uppercase tracking-[0.15em] text-base-content/60 mb-4 flex items-center gap-2">
-                  <Mail className="h-4 w-4" />
-                  {t('erp.suppliers.sectionContactInfo')}
-                </h4>
-                <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-                  <label className="form-control">
-                    <span className="label-text mb-1 text-xs font-semibold uppercase tracking-[0.18em] text-base-content/50">
-                      {t('erp.suppliers.fieldEmail')}
-                    </span>
-                    <input
-                      type="email"
-                      className="input input-bordered w-full"
-                      value={formData.email}
-                      onChange={(e) => handleFormChange('email', e.target.value)}
-                      placeholder="email@example.com"
-                    />
-                  </label>
-                  <label className="form-control">
-                    <span className="label-text mb-1 text-xs font-semibold uppercase tracking-[0.18em] text-base-content/50">
-                      {t('erp.suppliers.fieldAddress')}
-                    </span>
-                    <input
-                      type="text"
-                      className="input input-bordered w-full"
-                      value={formData.address}
-                      onChange={(e) => handleFormChange('address', e.target.value)}
-                      placeholder={t('erp.suppliers.phAddress')}
-                    />
-                  </label>
-                </div>
-              </div>
-
-              {/* Qo'shimcha ma'lumotlar */}
-              <div className="surface-soft rounded-xl p-4">
-                <h4 className="text-sm font-semibold uppercase tracking-[0.15em] text-base-content/60 mb-4 flex items-center gap-2">
-                  <CreditCard className="h-4 w-4" />
-                  {t('erp.suppliers.sectionAdditionalInfo')}
-                </h4>
-                <div className="space-y-4">
-                  <label className="form-control">
-                    <span className="label-text mb-1 text-xs font-semibold uppercase tracking-[0.18em] text-base-content/50">
-                      {t('erp.suppliers.fieldBankDetails')}
-                    </span>
-                    <textarea
-                      className="textarea textarea-bordered w-full"
-                      rows={2}
-                      value={formData.bankDetails}
-                      onChange={(e) => handleFormChange('bankDetails', e.target.value)}
-                      placeholder={t('erp.suppliers.phBankDetails')}
-                    />
-                  </label>
-                  <label className="form-control">
-                    <span className="label-text mb-1 text-xs font-semibold uppercase tracking-[0.18em] text-base-content/50">
-                      {t('erp.suppliers.fieldNotes')}
-                    </span>
-                    <textarea
-                      className="textarea textarea-bordered w-full"
-                      rows={2}
-                      value={formData.notes}
-                      onChange={(e) => handleFormChange('notes', e.target.value)}
-                      placeholder={t('erp.suppliers.phNotes')}
-                    />
-                  </label>
-                </div>
-              </div>
-            </div>
-
-            <div className="mt-6 flex justify-end gap-2">
-              <Button variant="ghost" onClick={handleCloseModal} disabled={saving}>
-                {t('common.cancel')}
-              </Button>
-              <Button
-                variant="primary"
-                onClick={handleSaveSupplier}
-                disabled={saving || !formData.name.trim() || !isValidPhoneOrEmpty(formData.phone || '')}
-              >
-                {saving && <span className="loading loading-spinner loading-sm" />}
-                {editingSupplier ? t('common.update') : t('common.save')}
-              </Button>
-            </div>
-          </div>
-        </div>
-      </ModalPortal>
-
-      {/* Purchase Modal */}
-      <ModalPortal isOpen={showPurchaseModal} onClose={handleClosePurchaseModal}>
-        <div className="w-full max-w-4xl bg-base-100 rounded-2xl shadow-2xl max-h-[90vh] overflow-y-auto">
-          <div className="p-4 sm:p-6">
-            <div className="flex items-start justify-between gap-4">
-              <div>
-                <h3 className="text-xl font-semibold">{t('erp.suppliers.newPurchase')}</h3>
-                <p className="text-sm text-base-content/60">
-                  {t('erp.suppliers.newPurchaseSubtitle')}
-                </p>
-              </div>
-              <Button variant="ghost" size="sm" onClick={handleClosePurchaseModal}>
-                <X className="h-4 w-4" />
-              </Button>
-            </div>
-
-            <div className="mt-6 space-y-5">
-              {/* Ta'minotchi va sana */}
-              <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-                <Select
-                  label={t('erp.suppliers.fieldSupplierSelect')}
-                  value={selectedSupplier?.id || ''}
-                  onChange={(value) => {
-                    const supplier = allSuppliers.find(s => s.id === Number(value));
-                    setSelectedSupplier(supplier || null);
-                  }}
-                  placeholder={t('erp.suppliers.phSelectSupplier')}
-                  options={allSuppliers.map(supplier => ({
-                    value: supplier.id,
-                    label: supplier.name,
-                  }))}
-                />
-                <label className="form-control">
-                  <span className="label-text mb-1 text-xs font-semibold uppercase tracking-[0.18em] text-base-content/50">
-                    {t('erp.suppliers.fieldDate')}
-                  </span>
-                  <input
-                    type="date"
-                    className="input input-bordered w-full"
-                    value={purchaseDate}
-                    onChange={(e) => setPurchaseDate(e.target.value)}
-                  />
-                </label>
-              </div>
-
-              {/* Mahsulotlar */}
-              <div className="surface-soft rounded-xl p-4">
-                <h4 className="text-sm font-semibold uppercase tracking-[0.15em] text-base-content/60 mb-4 flex items-center gap-2">
-                  <Package className="h-4 w-4" />
-                  {t('erp.suppliers.sectionProducts')}
-                </h4>
-
-                {/* Product search */}
-                <div className="relative mb-4">
-                  <SearchInput
-                    value={productSearch}
-                    onValueChange={setProductSearch}
-                    label={t('erp.suppliers.productSearchLabel')}
-                    placeholder={t('erp.suppliers.productSearchPlaceholder')}
-                    onClear={() => {
-                      setProductSearch('');
-                      setProductResults([]);
-                    }}
-                  />
-                  {/* Search results dropdown */}
-                  {productResults.length > 0 && (
-                    <div className="absolute z-50 top-full left-0 right-0 mt-1 bg-base-100 border border-base-300 rounded-lg shadow-lg max-h-60 overflow-y-auto">
-                      {productResults.map(product => (
-                        <button
-                          key={product.id}
-                          className="w-full p-3 text-left hover:bg-base-200 flex items-center justify-between"
-                          onClick={() => handleAddToCart(product)}
-                        >
-                          <div>
-                            <p className="font-medium">{product.name}</p>
-                            <p className="text-xs text-base-content/60">
-                              {product.sku} • {t('erp.suppliers.stockLabel', { quantity: product.quantity })}
-                            </p>
-                          </div>
-                          <span className="text-sm font-semibold">
-                            {formatCurrency(product.purchasePrice || product.sellingPrice * 0.7)}
-                          </span>
-                        </button>
-                      ))}
-                    </div>
-                  )}
-                  {productSearchLoading && (
-                    <div className="absolute z-50 top-full left-0 right-0 mt-1 bg-base-100 border border-base-300 rounded-lg p-4 text-center">
-                      <span className="loading loading-spinner loading-sm" />
-                    </div>
-                  )}
-                </div>
-
-                {/* Cart items table */}
-                {cartItems.length > 0 ? (
-                  <div className="overflow-x-auto">
-                    <table className="table table-sm">
-                      <thead>
-                        <tr>
-                          <th>{t('erp.suppliers.colProduct')}</th>
-                          <th className="w-28">{t('erp.suppliers.colQuantity')}</th>
-                          <th className="w-36">{t('erp.suppliers.colPrice')}</th>
-                          <th className="w-32 text-right">{t('common.amount')}</th>
-                          <th className="w-12"></th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {cartItems.map(item => (
-                          <tr key={item.product.id}>
-                            <td>
-                              <div>
-                                <p className="font-medium">{item.product.name}</p>
-                                <p className="text-xs text-base-content/60">{item.product.sku}</p>
-                              </div>
-                            </td>
-                            <td>
-                              <input
-                                type="number"
-                                min={1}
-                                className="input input-bordered input-sm w-full"
-                                value={item.quantity}
-                                onChange={(e) => handleUpdateCartItem(item.product.id, 'quantity', Number(e.target.value) || 1)}
-                              />
-                            </td>
-                            <td>
-                              <input
-                                type="number"
-                                min={0}
-                                className="input input-bordered input-sm w-full"
-                                value={item.unitPrice}
-                                onChange={(e) => handleUpdateCartItem(item.product.id, 'unitPrice', Number(e.target.value) || 0)}
-                              />
-                            </td>
-                            <td className="text-right font-semibold">
-                              {formatCurrency(item.quantity * item.unitPrice)}
-                            </td>
-                            <td>
-                              <Button
-                                variant="ghost"
-                                size="sm"
-                                iconOnly
-                                className="text-error"
-                                onClick={() => handleRemoveFromCart(item.product.id)}
-                              >
-                                <Trash2 className="h-4 w-4" />
-                              </Button>
-                            </td>
-                          </tr>
-                        ))}
-                      </tbody>
-                    </table>
-                  </div>
-                ) : (
-                  <div className="text-center py-8 text-base-content/50">
-                    <Package className="h-12 w-12 mx-auto mb-2 opacity-50" />
-                    <p>{t('erp.suppliers.cartEmpty')}</p>
-                  </div>
-                )}
-              </div>
-
-              {/* Summary */}
-              {cartItems.length > 0 && (
-                <div className="surface-soft rounded-xl p-4">
-                  <div className="space-y-3">
-                    <div className="flex justify-between text-sm">
-                      <span className="text-base-content/70">{t('erp.suppliers.summaryTotalProducts')}</span>
-                      <span className="font-medium">{t('erp.suppliers.quantityPcs', { quantity: cartTotalQuantity })}</span>
-                    </div>
-                    <div className="flex justify-between text-lg font-semibold">
-                      <span>{t('erp.suppliers.summaryTotalAmount')}</span>
-                      <span>{formatCurrency(cartTotal)}</span>
-                    </div>
-                    <div className="divider my-2"></div>
-                    <label className="form-control">
-                      <span className="label-text mb-1 text-xs font-semibold uppercase tracking-[0.18em] text-base-content/50">
-                        {t('erp.suppliers.fieldPaidAmount')}
-                      </span>
-                      <input
-                        type="number"
-                        min={0}
-                        max={cartTotal}
-                        className="input input-bordered w-full"
-                        value={paidAmount}
-                        onChange={(e) => setPaidAmount(Number(e.target.value) || 0)}
-                      />
-                    </label>
-                    <div className="flex justify-between text-lg">
-                      <span className="text-base-content/70">{t('erp.suppliers.summaryDebt')}</span>
-                      <span className={clsx('font-semibold', debtAmount > 0 ? 'text-error' : 'text-success')}>
-                        {formatCurrency(debtAmount)}
-                      </span>
-                    </div>
-                  </div>
-                </div>
-              )}
-
-              {/* Notes */}
-              <label className="form-control">
-                <span className="label-text mb-1 text-xs font-semibold uppercase tracking-[0.18em] text-base-content/50">
-                  {t('erp.suppliers.fieldNotes')}
-                </span>
-                <textarea
-                  className="textarea textarea-bordered w-full"
-                  rows={2}
-                  value={purchaseNotes}
-                  onChange={(e) => setPurchaseNotes(e.target.value)}
-                  placeholder={t('erp.suppliers.phNotes')}
-                />
-              </label>
-            </div>
-
-            <div className="mt-6 flex justify-end gap-2">
-              <Button variant="ghost" onClick={handleClosePurchaseModal} disabled={purchaseSaving}>
-                {t('common.cancel')}
-              </Button>
-              <Button
-                variant="primary"
-                onClick={handleSavePurchase}
-                disabled={purchaseSaving || !selectedSupplier || cartItems.length === 0}
-              >
-                {purchaseSaving && <span className="loading loading-spinner loading-sm" />}
-                {t('erp.suppliers.savePurchase')}
-              </Button>
-            </div>
-          </div>
-        </div>
-      </ModalPortal>
+      <PurchaseFormModal
+        isOpen={showPurchaseModal}
+        suppliers={suppliersData.allSuppliers}
+        onClose={() => setShowPurchaseModal(false)}
+        onSaved={handlePurchaseSaved}
+      />
     </div>
   );
 }
