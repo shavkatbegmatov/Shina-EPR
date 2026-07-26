@@ -43,4 +43,21 @@ export const queryKeys = {
     all: ['products'] as const,
     search: (term: string) => ['products', 'search', term] as const,
   },
+
+  brands: {
+    all: ['brands'] as const,
+    list: () => ['brands', 'list'] as const,
+  },
+
+  categories: {
+    all: ['categories'] as const,
+    tree: () => ['categories', 'tree'] as const,
+    /** Kategoriyaning meros bilan hisoblangan atributlari. */
+    attributes: (id: number) => ['categories', 'attributes', id] as const,
+  },
+
+  attributes: {
+    all: ['attributes'] as const,
+    list: () => ['attributes', 'list'] as const,
+  },
 } as const;

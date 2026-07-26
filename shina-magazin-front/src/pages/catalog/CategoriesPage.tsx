@@ -1,4 +1,5 @@
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
 import toast from 'react-hot-toast';
 import { getApiErrorMessage } from '../../utils/apiError';
@@ -16,6 +17,7 @@ import {
 } from 'lucide-react';
 import clsx from 'clsx';
 import { categoriesApi, attributesApi } from '../../api/products.api';
+import { queryKeys } from '../../lib/queryKeys';
 import { PermissionCode } from '../../hooks/usePermission';
 import { PermissionGate } from '../../components/common/PermissionGate';
 import { Select } from '../../components/ui/Select';
@@ -60,10 +62,9 @@ interface BindingRow {
 
 export function CategoriesPage() {
   const { t } = useTranslation();
-  const [tree, setTree] = useState<Category[]>([]);
-  const [loading, setLoading] = useState(true);
+  const queryClient = useQueryClient();
+
   const [expanded, setExpanded] = useState<Set<number>>(new Set());
-  const [allAttributes, setAllAttributes] = useState<Attribute[]>([]);
 
   // Modal holati
   const [modalOpen, setModalOpen] = useState(false);
@@ -72,31 +73,45 @@ export function CategoriesPage() {
   const [ownBindings, setOwnBindings] = useState<BindingRow[]>([]);
   const [inheritedAttrs, setInheritedAttrs] = useState<CategoryAttribute[]>([]);
   const [attrToAdd, setAttrToAdd] = useState<number | ''>('');
-  const [saving, setSaving] = useState(false);
 
   // O'chirish dialogi
   const [deleteTarget, setDeleteTarget] = useState<Category | null>(null);
-  const [deleting, setDeleting] = useState(false);
 
-  const loadTree = useCallback(async (isInitial = false) => {
-    try {
-      const data = await categoriesApi.getTree();
-      setTree(data);
-      if (isInitial) {
-        // Boshlanishda 1-daraja ochiq bo'lsin
-        setExpanded(new Set(data.map((c) => c.id)));
-      }
-    } catch (error) {
-      console.error('Failed to load categories:', error);
-    } finally {
-      setLoading(false);
-    }
-  }, []);
+  const treeQuery = useQuery({
+    queryKey: queryKeys.categories.tree(),
+    queryFn: () => categoriesApi.getTree(),
+  });
 
+  const attributesQuery = useQuery({
+    queryKey: queryKeys.attributes.list(),
+    queryFn: () => attributesApi.getAll(),
+  });
+
+  // `?? []` har renderda YANGI massiv beradi — uni to'g'ridan-to'g'ri
+  // quyidagi `useMemo` larga bersak, ular hech qachon keshlanmasdi.
+  const tree = useMemo(() => treeQuery.data ?? [], [treeQuery.data]);
+  const allAttributes = useMemo(() => attributesQuery.data ?? [], [attributesQuery.data]);
+  const loading = treeQuery.isPending;
+
+  /**
+   * Birinchi darajani BIR MARTA ochib qo'yish.
+   *
+   * <p>Har yuklashda emas: kategoriya saqlangandan keyin daraxt qayta
+   * olinadi, va o'shanda qayta ochish foydalanuvchi yiqqan tarmoqlarni
+   * majburan yozib yuborardi.
+   */
+  const didAutoExpand = useRef(false);
   useEffect(() => {
-    void loadTree(true);
-    attributesApi.getAll().then(setAllAttributes).catch(console.error);
-  }, [loadTree]);
+    if (didAutoExpand.current || !treeQuery.data) return;
+    didAutoExpand.current = true;
+    setExpanded(new Set(treeQuery.data.map((c) => c.id)));
+  }, [treeQuery.data]);
+
+  const invalidateTree = () => {
+    void queryClient.invalidateQueries({ queryKey: queryKeys.categories.all });
+    // Kategoriya mahsulot formasida va vitrina filtrida ko'rinadi
+    void queryClient.invalidateQueries({ queryKey: queryKeys.products.all });
+  };
 
   const flat = useMemo(() => flattenCategoryTree(tree), [tree]);
 
@@ -170,17 +185,8 @@ export function CategoriesPage() {
 
   // ─── Saqlash ───
 
-  const handleSave = async () => {
-    if (!form.name.trim()) return;
-    setSaving(true);
-    try {
-      const payload: CategoryRequest = {
-        name: form.name.trim(),
-        description: form.description.trim() || undefined,
-        parentId: form.parentId,
-        icon: form.icon,
-        template: form.template || null,
-      };
+  const saveMutation = useMutation({
+    mutationFn: async (payload: CategoryRequest) => {
       const saved = editingId
         ? await categoriesApi.update(editingId, payload)
         : await categoriesApi.create(payload);
@@ -192,41 +198,69 @@ export function CategoriesPage() {
         sortOrder: index,
       }));
       await categoriesApi.updateAttributes(saved.id, bindings);
-
+      return saved;
+    },
+    onSuccess: () => {
       toast.success(editingId ? t('erp.categories.updated') : t('erp.categories.created'));
+      invalidateTree();
       closeModal();
-      void loadTree();
-    } catch (error) {
+    },
+    onError: (error) => {
       console.error('Failed to save category:', error);
       toast.error(getApiErrorMessage(error));
-    } finally {
-      setSaving(false);
-    }
-  };
+    },
+  });
 
-  const handleDelete = async () => {
-    if (!deleteTarget) return;
-    setDeleting(true);
-    try {
-      await categoriesApi.delete(deleteTarget.id);
+  const deleteMutation = useMutation({
+    mutationFn: (id: number) => categoriesApi.delete(id),
+    onSuccess: () => {
       toast.success(t('erp.categories.deleted'));
+      invalidateTree();
       setDeleteTarget(null);
-      void loadTree();
-    } catch (error) {
+    },
+    onError: (error) => {
       console.error('Failed to delete category:', error);
       toast.error(getApiErrorMessage(error));
-    } finally {
-      setDeleting(false);
-    }
+    },
+  });
+
+  /**
+   * Tartibni ko'chirish. API yangi daraxtni QAYTARADI, shuning uchun uni
+   * to'g'ridan-to'g'ri keshga yozamiz — qayta so'rov ortiqcha va ko'chirish
+   * ko'zga tashlanadigan sakrashsiz bo'ladi.
+   */
+  const moveMutation = useMutation({
+    mutationFn: ({ id, direction }: { id: number; direction: 'up' | 'down' }) =>
+      categoriesApi.move(id, direction),
+    onSuccess: (newTree) => {
+      queryClient.setQueryData(queryKeys.categories.tree(), newTree);
+    },
+    onError: (error) => {
+      console.error('Failed to move category:', error);
+    },
+  });
+
+  const saving = saveMutation.isPending;
+  const deleting = deleteMutation.isPending;
+
+  const handleSave = () => {
+    if (!form.name.trim()) return;
+    saveMutation.mutate({
+      name: form.name.trim(),
+      description: form.description.trim() || undefined,
+      parentId: form.parentId,
+      icon: form.icon,
+      template: form.template || null,
+    });
   };
 
-  const handleMove = async (id: number, direction: 'up' | 'down') => {
-    try {
-      const newTree = await categoriesApi.move(id, direction);
-      setTree(newTree);
-    } catch (error) {
-      console.error('Failed to move category:', error);
-    }
+  const handleDelete = () => {
+    if (!deleteTarget) return;
+    deleteMutation.mutate(deleteTarget.id);
+  };
+
+  const handleMove = (id: number, direction: 'up' | 'down') => {
+    moveMutation.mutate({ id, direction });
   };
 
   // ─── Modal ichidagi atribut bog'lanishlari ───

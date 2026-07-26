@@ -1,9 +1,11 @@
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useMemo, useState } from 'react';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
 import toast from 'react-hot-toast';
 import { getApiErrorMessage } from '../../utils/apiError';
 import { Plus, Pencil, Trash2, SlidersHorizontal, GripVertical, X } from 'lucide-react';
 import { attributesApi } from '../../api/products.api';
+import { queryKeys } from '../../lib/queryKeys';
 import { PermissionCode } from '../../hooks/usePermission';
 import { PermissionGate } from '../../components/common/PermissionGate';
 import { Select } from '../../components/ui/Select';
@@ -38,34 +40,60 @@ const emptyForm: AttributeFormState = {
 
 export function AttributesPage() {
   const { t } = useTranslation();
-  const [attributes, setAttributes] = useState<Attribute[]>([]);
-  const [loadError, setLoadError] = useState<string | null>(null);
-  const [loading, setLoading] = useState(true);
+  const queryClient = useQueryClient();
 
   const [modalOpen, setModalOpen] = useState(false);
   const [editing, setEditing] = useState<Attribute | null>(null);
   const [form, setForm] = useState<AttributeFormState>(emptyForm);
-  const [saving, setSaving] = useState(false);
-
   const [deleteTarget, setDeleteTarget] = useState<Attribute | null>(null);
-  const [deleting, setDeleting] = useState(false);
 
-  const load = useCallback(async () => {
-    try {
-      const data = await attributesApi.getAll();
-      setAttributes(data);
-      setLoadError(null);
-    } catch (error) {
-      console.error('Failed to load attributes:', error);
-      setLoadError(getApiErrorMessage(error));
-    } finally {
-      setLoading(false);
-    }
-  }, []);
+  const attributesQuery = useQuery({
+    queryKey: queryKeys.attributes.list(),
+    queryFn: () => attributesApi.getAll(),
+  });
 
-  useEffect(() => {
-    void load();
-  }, [load]);
+  const attributes = attributesQuery.data ?? [];
+  const loadError = attributesQuery.isError ? getApiErrorMessage(attributesQuery.error) : null;
+
+  /**
+   * Atribut o'zgarsa kategoriya bog'lanishlari va mahsulot filtrlari ham
+   * eskiradi — ular o'sha atribut nomlari/variantlarini ko'rsatadi.
+   */
+  const invalidateAttributes = () => {
+    void queryClient.invalidateQueries({ queryKey: queryKeys.attributes.all });
+    void queryClient.invalidateQueries({ queryKey: queryKeys.categories.all });
+    void queryClient.invalidateQueries({ queryKey: queryKeys.products.all });
+  };
+
+  const saveMutation = useMutation({
+    mutationFn: (payload: AttributeRequest) =>
+      editing ? attributesApi.update(editing.id, payload) : attributesApi.create(payload),
+    onSuccess: () => {
+      toast.success(editing ? t('erp.attributes.updated') : t('erp.attributes.created'));
+      invalidateAttributes();
+      closeModal();
+    },
+    onError: (error) => {
+      console.error('Failed to save attribute:', error);
+      toast.error(getApiErrorMessage(error));
+    },
+  });
+
+  const deleteMutation = useMutation({
+    mutationFn: (id: number) => attributesApi.delete(id),
+    onSuccess: () => {
+      toast.success(t('erp.attributes.deleted'));
+      invalidateAttributes();
+      setDeleteTarget(null);
+    },
+    onError: (error) => {
+      console.error('Failed to delete attribute:', error);
+      toast.error(getApiErrorMessage(error));
+    },
+  });
+
+  const saving = saveMutation.isPending;
+  const deleting = deleteMutation.isPending;
 
   const isSelectable = form.type === 'SELECT' || form.type === 'MULTI_SELECT';
 
@@ -105,49 +133,22 @@ export function AttributesPage() {
       toast.error(t('erp.attributes.optionsRequired'));
       return;
     }
-    setSaving(true);
-    try {
-      const payload: AttributeRequest = {
-        name: form.name.trim(),
-        code: form.code.trim() || undefined,
-        type: form.type,
-        unit: form.unit.trim() || undefined,
-        filterable: form.filterable,
-        options: isSelectable
-          ? options.map((o, index) => ({ id: o.id, value: o.value, sortOrder: index }))
-          : [],
-      };
-      if (editing) {
-        await attributesApi.update(editing.id, payload);
-        toast.success(t('erp.attributes.updated'));
-      } else {
-        await attributesApi.create(payload);
-        toast.success(t('erp.attributes.created'));
-      }
-      closeModal();
-      void load();
-    } catch (error) {
-      console.error('Failed to save attribute:', error);
-      toast.error(getApiErrorMessage(error));
-    } finally {
-      setSaving(false);
-    }
+
+    saveMutation.mutate({
+      name: form.name.trim(),
+      code: form.code.trim() || undefined,
+      type: form.type,
+      unit: form.unit.trim() || undefined,
+      filterable: form.filterable,
+      options: isSelectable
+        ? options.map((o, index) => ({ id: o.id, value: o.value, sortOrder: index }))
+        : [],
+    });
   };
 
-  const handleDelete = async () => {
+  const handleDelete = () => {
     if (!deleteTarget) return;
-    setDeleting(true);
-    try {
-      await attributesApi.delete(deleteTarget.id);
-      toast.success(t('erp.attributes.deleted'));
-      setDeleteTarget(null);
-      void load();
-    } catch (error) {
-      console.error('Failed to delete attribute:', error);
-      toast.error(getApiErrorMessage(error));
-    } finally {
-      setDeleting(false);
-    }
+    deleteMutation.mutate(deleteTarget.id);
   };
 
   const typeTone = (type: AttributeType) =>
@@ -267,10 +268,10 @@ export function AttributesPage() {
       <DataTable
         data={attributes}
         error={loadError}
-        onRetry={() => load()}
+        onRetry={() => void attributesQuery.refetch()}
         columns={columns}
         keyExtractor={(attribute) => attribute.id}
-        loading={loading}
+        loading={attributesQuery.isPending}
         emptyIcon={<SlidersHorizontal className="h-12 w-12" />}
         emptyTitle={t('erp.attributes.emptyTitle')}
         emptyDescription={t('erp.attributes.emptyDescription')}

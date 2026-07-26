@@ -1,9 +1,11 @@
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useMemo, useState } from 'react';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
 import toast from 'react-hot-toast';
 import { getApiErrorMessage } from '../../utils/apiError';
 import { Plus, Pencil, Trash2, BadgeCheck } from 'lucide-react';
 import { brandsApi } from '../../api/products.api';
+import { queryKeys } from '../../lib/queryKeys';
 import { PermissionCode } from '../../hooks/usePermission';
 import { PermissionGate } from '../../components/common/PermissionGate';
 import { DataTable, Column } from '../../components/ui/DataTable';
@@ -19,34 +21,29 @@ const emptyForm: BrandFormState = { name: '', country: '' };
 
 export function BrandsPage() {
   const { t } = useTranslation();
-  const [brands, setBrands] = useState<Brand[]>([]);
-  const [loadError, setLoadError] = useState<string | null>(null);
-  const [loading, setLoading] = useState(true);
+  const queryClient = useQueryClient();
 
   const [modalOpen, setModalOpen] = useState(false);
   const [editing, setEditing] = useState<Brand | null>(null);
   const [form, setForm] = useState<BrandFormState>(emptyForm);
-  const [saving, setSaving] = useState(false);
-
   const [deleteTarget, setDeleteTarget] = useState<Brand | null>(null);
-  const [deleting, setDeleting] = useState(false);
 
-  const load = useCallback(async () => {
-    try {
-      const data = await brandsApi.getAll();
-      setBrands(data);
-      setLoadError(null);
-    } catch (error) {
-      console.error('Failed to load brands:', error);
-      setLoadError(getApiErrorMessage(error));
-    } finally {
-      setLoading(false);
-    }
-  }, []);
+  const brandsQuery = useQuery({
+    queryKey: queryKeys.brands.list(),
+    queryFn: () => brandsApi.getAll(),
+  });
 
-  useEffect(() => {
-    void load();
-  }, [load]);
+  const brands = brandsQuery.data ?? [];
+  const loadError = brandsQuery.isError ? getApiErrorMessage(brandsQuery.error) : null;
+
+  /**
+   * Brend katalogning boshqa joylarida ham ishlatiladi (mahsulot formasi,
+   * vitrina filtri), shuning uchun o'zgarishda `products` ham eskiradi.
+   */
+  const invalidateBrands = () => {
+    void queryClient.invalidateQueries({ queryKey: queryKeys.brands.all });
+    void queryClient.invalidateQueries({ queryKey: queryKeys.products.all });
+  };
 
   const openCreate = () => {
     setEditing(null);
@@ -66,41 +63,47 @@ export function BrandsPage() {
     setForm(emptyForm);
   };
 
-  const handleSave = async () => {
-    if (!form.name.trim()) return;
-    setSaving(true);
-    try {
-      if (editing) {
-        await brandsApi.update(editing.id, form.name.trim(), form.country.trim() || undefined);
-        toast.success(t('erp.brands.updated'));
-      } else {
-        await brandsApi.create(form.name.trim(), form.country.trim() || undefined);
-        toast.success(t('erp.brands.created'));
-      }
+  const saveMutation = useMutation({
+    mutationFn: (data: BrandFormState) => {
+      const name = data.name.trim();
+      const country = data.country.trim() || undefined;
+      return editing ? brandsApi.update(editing.id, name, country) : brandsApi.create(name, country);
+    },
+    onSuccess: () => {
+      toast.success(editing ? t('erp.brands.updated') : t('erp.brands.created'));
+      invalidateBrands();
       closeModal();
-      void load();
-    } catch (error) {
+    },
+    onError: (error) => {
       console.error('Failed to save brand:', error);
       toast.error(getApiErrorMessage(error));
-    } finally {
-      setSaving(false);
-    }
-  };
+    },
+  });
 
-  const handleDelete = async () => {
-    if (!deleteTarget) return;
-    setDeleting(true);
-    try {
-      await brandsApi.delete(deleteTarget.id);
+  const deleteMutation = useMutation({
+    mutationFn: (brand: Brand) => brandsApi.delete(brand.id),
+    onSuccess: () => {
       toast.success(t('erp.brands.deleted'));
+      invalidateBrands();
       setDeleteTarget(null);
-      void load();
-    } catch (error) {
+    },
+    onError: (error) => {
       console.error('Failed to delete brand:', error);
       toast.error(getApiErrorMessage(error));
-    } finally {
-      setDeleting(false);
-    }
+    },
+  });
+
+  const saving = saveMutation.isPending;
+  const deleting = deleteMutation.isPending;
+
+  const handleSave = () => {
+    if (!form.name.trim()) return;
+    saveMutation.mutate(form);
+  };
+
+  const handleDelete = () => {
+    if (!deleteTarget) return;
+    deleteMutation.mutate(deleteTarget);
   };
 
   const columns: Column<Brand>[] = useMemo(
@@ -162,10 +165,10 @@ export function BrandsPage() {
       <DataTable
         data={brands}
         error={loadError}
-        onRetry={() => load()}
+        onRetry={() => void brandsQuery.refetch()}
         columns={columns}
         keyExtractor={(brand) => brand.id}
-        loading={loading}
+        loading={brandsQuery.isPending}
         emptyIcon={<BadgeCheck className="h-12 w-12" />}
         emptyTitle={t('erp.brands.emptyTitle')}
         emptyDescription={t('erp.brands.emptyDescription')}
