@@ -101,7 +101,7 @@ public class SaleReturnService {
 
             // Narx AYNAN o'sha qatordan: bir mahsulot bitta savdoda turli
             // chegirma bilan ikki qatorda bo'lishi mumkin.
-            BigDecimal unitPrice = effectiveUnitPrice(soldItem);
+            BigDecimal unitPrice = effectiveUnitPrice(sale, soldItem);
             BigDecimal lineTotal = unitPrice.multiply(BigDecimal.valueOf(requested.getQuantity()));
             refundAmount = refundAmount.add(lineTotal);
 
@@ -114,6 +114,15 @@ public class SaleReturnService {
                     .build());
 
             restoreStock(soldItem.getProduct(), requested.getQuantity(), sale, currentUser);
+        }
+
+        // Jami qaytarish savdo summasidan oshmasligi kerak. Miqdor chegarasi
+        // yuqorida tekshirilgan, lekin qatorlar bo'yicha yaxlitlash tiyinlik
+        // farq berishi mumkin — u esa `paidAmount` ni manfiyga olib chiqardi.
+        BigDecimal maxRefundable = sale.getTotalAmount()
+                .subtract(saleReturnRepository.sumRefundedBySale(saleId));
+        if (refundAmount.compareTo(maxRefundable) > 0) {
+            refundAmount = maxRefundable.max(BigDecimal.ZERO);
         }
 
         // ─── Pul taqsimoti ───
@@ -155,18 +164,42 @@ public class SaleReturnService {
     }
 
     /**
-     * Qator uchun haqiqiy birlik narxi — chegirma hisobga olingan holda.
+     * Qator uchun haqiqiy birlik narxi — HAR IKKALA chegirma hisobga olingan.
      *
-     * <p>{@code totalPrice / quantity} olinadi, {@code unitPrice} emas: qatorga
-     * chegirma qo'llangan bo'lsa mijoz kamroq to'lagan va aynan shuncha
-     * qaytarilishi kerak.
+     * <p>Ikki daraja chegirma bo'lishi mumkin:
+     * <ul>
+     *   <li>QATOR chegirmasi — u {@code totalPrice} da allaqachon hisobga
+     *       olingan, shuning uchun {@code unitPrice} emas, {@code totalPrice /
+     *       quantity} olinadi;
+     *   <li>SAVDO chegirmasi ({@code sale.discountAmount}, masalan
+     *       "yaxlitladik") — u qatorlarda umuman ko'rinmaydi. Uni hisobga
+     *       olmaslik do'konga real ZARAR keltirardi: 2 000 000 lik tovarni
+     *       200 000 chegirma bilan 1 800 000 ga olgan mijoz hammasini
+     *       qaytarganda kassadan 2 000 000 chiqib ketardi.
+     * </ul>
+     *
+     * <p>Savdo chegirmasi qatorlarga ulushga qarab taqsimlanadi.
      */
-    private BigDecimal effectiveUnitPrice(SaleItem item) {
+    private BigDecimal effectiveUnitPrice(Sale sale, SaleItem item) {
         if (item.getQuantity() == null || item.getQuantity() == 0) {
             return item.getUnitPrice();
         }
-        return item.getTotalPrice().divide(
+        BigDecimal lineTotal = applySaleDiscount(sale, item.getTotalPrice());
+        return lineTotal.divide(
                 BigDecimal.valueOf(item.getQuantity()), 2, java.math.RoundingMode.HALF_UP);
+    }
+
+    /** {@code lineTotal × totalAmount / subtotal} — savdo chegirmasining qatordagi ulushi. */
+    private BigDecimal applySaleDiscount(Sale sale, BigDecimal lineTotal) {
+        BigDecimal subtotal = sale.getSubtotal();
+        BigDecimal total = sale.getTotalAmount();
+
+        if (subtotal == null || subtotal.signum() == 0 || total == null
+                || subtotal.compareTo(total) == 0) {
+            return lineTotal;
+        }
+        return lineTotal.multiply(total)
+                .divide(subtotal, 2, java.math.RoundingMode.HALF_UP);
     }
 
     private void restoreStock(Product product, int quantity, Sale sale, User user) {

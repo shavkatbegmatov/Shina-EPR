@@ -211,7 +211,91 @@ class SaleReturnServiceTest {
                 });
     }
 
+    // ─── Savdo darajasidagi chegirma ───
+    // `sale.discountAmount` (masalan "yaxlitladik") qatorlarda umuman
+    // ko'rinmaydi. Uni hisobga olmaslik do'konga REAL ZARAR keltirardi:
+    // mijoz chegirma bilan arzon olib, qaytarganda to'liq narxni olardi.
+
+    @Test
+    @DisplayName("To'liq qaytarishda mijoz AYNAN to'lagan summasini oladi")
+    void fullReturnRefundsExactlyWhatWasPaid() {
+        // Qatorlar 2 000 000, savdoga 200 000 chegirma → mijoz 1 800 000 to'ladi
+        Sale sale = discountedSale(2, "1000000", "2000000", "1800000");
+
+        SaleReturnResponse result = service.createReturn(sale.getId(), cashier.getId(), request(sale, 2));
+
+        assertThat(result.getRefundAmount())
+                .as("aks holda do'kon 200 000 zarar ko'rardi")
+                .isEqualByComparingTo("1800000");
+        assertThat(result.getCashRefunded()).isEqualByComparingTo("1800000");
+    }
+
+    @Test
+    @DisplayName("Qisman qaytarishda chegirma ulushga qarab taqsimlanadi")
+    void partialReturnAllocatesSaleDiscount() {
+        Sale sale = discountedSale(2, "1000000", "2000000", "1800000");
+
+        SaleReturnResponse result = service.createReturn(sale.getId(), cashier.getId(), request(sale, 1));
+
+        assertThat(result.getRefundAmount())
+                .as("bitta donaga to'g'ri keladigan haqiqiy narx")
+                .isEqualByComparingTo("900000");
+    }
+
+    @Test
+    @DisplayName("Chegirmasiz savdoda summa o'zgarmaydi")
+    void undiscountedSaleRefundsLineTotal() {
+        Sale sale = saleWithItem(2, "1000000", "2000000", "2000000", "0");
+
+        assertThat(service.createReturn(sale.getId(), cashier.getId(), request(sale, 2)).getRefundAmount())
+                .isEqualByComparingTo("2000000");
+    }
+
+    @Test
+    @DisplayName("Ikki bosqichli qaytarish jami savdo summasidan oshmaydi")
+    void repeatedReturnsNeverExceedSaleTotal() {
+        Sale sale = discountedSale(3, "1000000", "3000000", "2500000");
+
+        BigDecimal first = service.createReturn(sale.getId(), cashier.getId(), request(sale, 2))
+                .getRefundAmount();
+        BigDecimal second = service.createReturn(sale.getId(), cashier.getId(), request(sale, 1))
+                .getRefundAmount();
+
+        assertThat(first.add(second))
+                .as("yaxlitlash ham savdo summasidan oshirib yubormasligi kerak")
+                .isLessThanOrEqualTo(new BigDecimal("2500000"));
+        assertThat(reload(sale).getPaidAmount())
+                .as("to'langan summa manfiyga tushmaydi")
+                .isGreaterThanOrEqualTo(BigDecimal.ZERO);
+    }
+
     // --- helpers ---
+
+    /** Savdo darajasida chegirma berilgan savdo: {@code subtotal} > {@code totalAmount}. */
+    private Sale discountedSale(int quantity, String unitPrice, String subtotal, String total) {
+        Sale sale = Sale.builder()
+                .invoiceNumber("INV-" + (++seq))
+                .saleDate(LocalDateTime.now())
+                .subtotal(new BigDecimal(subtotal))
+                .discountAmount(new BigDecimal(subtotal).subtract(new BigDecimal(total)))
+                .totalAmount(new BigDecimal(total))
+                .paidAmount(new BigDecimal(total))
+                .debtAmount(BigDecimal.ZERO)
+                .paymentMethod(PaymentMethod.CASH)
+                .paymentStatus(PaymentStatus.PAID)
+                .status(SaleStatus.COMPLETED)
+                .createdBy(cashier)
+                .build();
+        sale.getItems().add(SaleItem.builder()
+                .sale(sale)
+                .product(product)
+                .quantity(quantity)
+                .unitPrice(new BigDecimal(unitPrice))
+                .discount(BigDecimal.ZERO)
+                .totalPrice(new BigDecimal(subtotal))
+                .build());
+        return saleRepository.saveAndFlush(sale);
+    }
 
     private CreateSaleReturnRequest request(Sale sale, int quantity) {
         Sale fresh = saleRepository.findByIdWithItems(sale.getId()).orElseThrow();

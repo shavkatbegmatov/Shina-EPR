@@ -1940,7 +1940,8 @@
       "submit": "Оформить возврат",
       "created": "Возврат оформлен",
       "cashRefunded": "Возвращено наличными",
-      "debtReduced": "Списано с долга"
+      "debtReduced": "Списано с долга",
+      "estimatedRefund": "Сумма к возврату"
     },
     "import": {
       "action": "Импорт Excel",

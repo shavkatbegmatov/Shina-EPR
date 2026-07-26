@@ -1940,7 +1940,8 @@
       "submit": "Qaytarishni rasmiylashtirish",
       "created": "Qaytarish rasmiylashtirildi",
       "cashRefunded": "Naqd qaytarildi",
-      "debtReduced": "Qarzdan ayirildi"
+      "debtReduced": "Qarzdan ayirildi",
+      "estimatedRefund": "Qaytariladigan summa"
     },
     "import": {
       "action": "Excel import",

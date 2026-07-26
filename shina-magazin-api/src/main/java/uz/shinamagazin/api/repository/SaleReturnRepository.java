@@ -52,6 +52,18 @@ public interface SaleReturnRepository extends JpaRepository<SaleReturn, Long> {
     long countByShift(@Param("shiftId") Long shiftId);
 
     /**
+     * Savdo bo'yicha allaqachon qaytarilgan PUL.
+     *
+     * <p>Miqdor chegarasidan tashqari summa chegarasi ham kerak: qatorlar
+     * bo'yicha yaxlitlash tiyinlik farq berishi mumkin, u esa savdo
+     * summasidan ortiq qaytarishga yo'l ochardi.
+     */
+    @Query("""
+            SELECT COALESCE(SUM(r.refundAmount), 0) FROM SaleReturn r
+            WHERE r.sale.id = :saleId""")
+    BigDecimal sumRefundedBySale(@Param("saleId") Long saleId);
+
+    /**
      * Davrdagi qaytarishlar — P&amp;L uchun qatorlari bilan.
      *
      * <p>Qatorlar kerak, chunki qaytarish faqat tushumni emas, TANNARXNI ham

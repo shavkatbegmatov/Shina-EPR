@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import {
@@ -69,6 +69,24 @@ export function SaleDetailPage() {
       .reduce((sum, ri) => sum + ri.quantity, 0);
     return item.quantity - alreadyReturned;
   };
+
+  /**
+   * Kutilayotgan qaytarish summasi — server bilan bir xil formula.
+   *
+   * <p>Savdoga umumiy chegirma berilgan bo'lsa qatordagi narx mijoz to'lagan
+   * narx EMAS. Buni ko'rsatmasa, kassir jadvalda 2 000 000 ni ko'rib, keyin
+   * 1 800 000 qaytganini xato deb o'ylardi.
+   */
+  const estimatedRefund = useMemo(() => {
+    if (!sale) return 0;
+    const ratio = sale.subtotal > 0 ? sale.totalAmount / sale.subtotal : 1;
+
+    return (sale.items ?? []).reduce((sum, item) => {
+      const qty = returnQty[item.id!] ?? 0;
+      if (qty <= 0 || !item.quantity) return sum;
+      return sum + (item.totalPrice * ratio * qty) / item.quantity;
+    }, 0);
+  }, [sale, returnQty]);
 
   const handleReturn = async () => {
     if (!sale) return;
@@ -554,6 +572,13 @@ export function SaleDetailPage() {
               />
             </label>
           </div>
+
+          {estimatedRefund > 0 && (
+            <div className="mt-4 flex items-center justify-between rounded-xl bg-base-200 px-4 py-3">
+              <span className="font-medium">{t('erp.returns.estimatedRefund')}</span>
+              <span className="text-lg font-semibold">{formatCurrency(estimatedRefund)}</span>
+            </div>
+          )}
 
           <div className="mt-6 flex justify-end gap-2">
             <Button variant="ghost" onClick={() => setShowReturn(false)}>
