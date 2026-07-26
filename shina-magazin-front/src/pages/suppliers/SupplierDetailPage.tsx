@@ -1,4 +1,5 @@
-import { useCallback, useEffect, useState } from 'react';
+import {  } from 'react';
+import { useQuery } from '@tanstack/react-query';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import {
@@ -18,31 +19,21 @@ import clsx from 'clsx';
 import { Button } from '@/ui';
 import { suppliersApi } from '../../api/suppliers.api';
 import { formatCurrency, formatDate } from '../../config/constants';
-import type { Supplier } from '../../types';
+import { queryKeys } from '../../lib/queryKeys';
 
 export function SupplierDetailPage() {
   const { t } = useTranslation();
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
 
-  const [supplier, setSupplier] = useState<Supplier | null>(null);
-  const [loading, setLoading] = useState(true);
+  const supplierQuery = useQuery({
+    queryKey: queryKeys.suppliers.detail(Number(id)),
+    queryFn: () => suppliersApi.getById(Number(id)),
+    enabled: !!id,
+  });
 
-  const loadSupplier = useCallback(async () => {
-    if (!id) return;
-    try {
-      const data = await suppliersApi.getById(Number(id));
-      setSupplier(data);
-    } catch (error) {
-      console.error('Failed to load supplier:', error);
-    } finally {
-      setLoading(false);
-    }
-  }, [id]);
-
-  useEffect(() => {
-    void loadSupplier();
-  }, [loadSupplier]);
+  const supplier = supplierQuery.data ?? null;
+  const loading = supplierQuery.isPending;
 
   if (loading) {
     return (

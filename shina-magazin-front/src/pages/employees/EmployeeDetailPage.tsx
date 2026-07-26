@@ -1,4 +1,5 @@
-import { useCallback, useEffect, useState } from 'react';
+import {  } from 'react';
+import { useQuery } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
 import { useParams, useNavigate } from 'react-router-dom';
 import {
@@ -20,31 +21,21 @@ import clsx from 'clsx';
 import { Button } from '@/ui';
 import { employeesApi } from '../../api/employees.api';
 import { formatCurrency, formatDate } from '../../config/constants';
-import type { Employee } from '../../types';
+import { queryKeys } from '../../lib/queryKeys';
 
 export function EmployeeDetailPage() {
   const { t } = useTranslation();
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
 
-  const [employee, setEmployee] = useState<Employee | null>(null);
-  const [loading, setLoading] = useState(true);
+  const employeeQuery = useQuery({
+    queryKey: queryKeys.employees.detail(Number(id)),
+    queryFn: () => employeesApi.getById(Number(id)),
+    enabled: !!id,
+  });
 
-  const loadEmployee = useCallback(async () => {
-    if (!id) return;
-    try {
-      const data = await employeesApi.getById(Number(id));
-      setEmployee(data);
-    } catch (error) {
-      console.error('Failed to load employee:', error);
-    } finally {
-      setLoading(false);
-    }
-  }, [id]);
-
-  useEffect(() => {
-    void loadEmployee();
-  }, [loadEmployee]);
+  const employee = employeeQuery.data ?? null;
+  const loading = employeeQuery.isPending;
 
   // Status label helper
   const getStatusLabel = (status?: string) => {

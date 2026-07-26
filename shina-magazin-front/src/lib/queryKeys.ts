@@ -52,6 +52,12 @@ export const queryKeys = {
     all: ['products'] as const,
     list: (params: ProductListParams) => ['products', 'list', params] as const,
     search: (term: string) => ['products', 'search', term] as const,
+    detail: (id: number) => ['products', 'detail', id] as const,
+  },
+
+  employees: {
+    all: ['employees'] as const,
+    detail: (id: number) => ['employees', 'detail', id] as const,
   },
 
   brands: {
@@ -94,5 +100,7 @@ export const queryKeys = {
     list: (params: { page: number; size: number; startDate?: string; endDate?: string }) =>
       ['sales', 'list', params] as const,
     detail: (id: number) => ['sales', 'detail', id] as const,
+    /** Savdo bo'yicha qaytarishlar tarixi. */
+    returns: (id: number) => ['sales', 'returns', id] as const,
   },
 } as const;

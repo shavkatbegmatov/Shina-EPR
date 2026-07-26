@@ -1,4 +1,5 @@
-import { useCallback, useEffect, useState } from 'react';
+import {  } from 'react';
+import { useQuery } from '@tanstack/react-query';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import {
@@ -18,31 +19,21 @@ import clsx from 'clsx';
 import { Button } from '@/ui';
 import { productsApi } from '../../api/products.api';
 import { formatCurrency } from '../../config/constants';
-import type { Product } from '../../types';
+import { queryKeys } from '../../lib/queryKeys';
 
 export function ProductDetailPage() {
   const { t } = useTranslation();
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
 
-  const [product, setProduct] = useState<Product | null>(null);
-  const [loading, setLoading] = useState(true);
+  const productQuery = useQuery({
+    queryKey: queryKeys.products.detail(Number(id)),
+    queryFn: () => productsApi.getById(Number(id)),
+    enabled: !!id,
+  });
 
-  const loadProduct = useCallback(async () => {
-    if (!id) return;
-    try {
-      const data = await productsApi.getById(Number(id));
-      setProduct(data);
-    } catch (error) {
-      console.error('Failed to load product:', error);
-    } finally {
-      setLoading(false);
-    }
-  }, [id]);
-
-  useEffect(() => {
-    void loadProduct();
-  }, [loadProduct]);
+  const product = productQuery.data ?? null;
+  const loading = productQuery.isPending;
 
   // Season label helper
   const getSeasonLabel = (season?: string) => {

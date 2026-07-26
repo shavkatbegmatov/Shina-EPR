@@ -1,4 +1,5 @@
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import {
@@ -26,40 +27,47 @@ import { PermissionCode } from '../../hooks/usePermission';
 import { salesApi } from '../../api/sales.api';
 import { formatCurrency, formatDate } from '../../config/constants';
 import { useSaleReceipt } from '../../components/receipt/useSaleReceipt';
-import type { Sale, SaleReturn } from '../../types';
+import { queryKeys } from '../../lib/queryKeys';
 
 export function SaleDetailPage() {
   const { t } = useTranslation();
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
 
-  const [sale, setSale] = useState<Sale | null>(null);
+  const queryClient = useQueryClient();
   const { printReceipt, receipt } = useSaleReceipt();
-  const [loading, setLoading] = useState(true);
 
   // Qaytarish
-  const [returns, setReturns] = useState<SaleReturn[]>([]);
   const [showReturn, setShowReturn] = useState(false);
   const [returnQty, setReturnQty] = useState<Record<number, number>>({});
   const [returnReason, setReturnReason] = useState('');
   const [returning, setReturning] = useState(false);
 
-  const loadSale = useCallback(async () => {
-    if (!id) return;
-    try {
-      const [data, history] = await Promise.all([
-        salesApi.getById(Number(id)),
-        salesApi.getReturns(Number(id)),
-      ]);
-      setSale(data);
-      setReturns(history);
-    } catch (error) {
-      console.error('Failed to load sale:', error);
-      toast.error(getApiErrorMessage(error));
-    } finally {
-      setLoading(false);
+  const saleQuery = useQuery({
+    queryKey: queryKeys.sales.detail(Number(id)),
+    queryFn: () => salesApi.getById(Number(id)),
+    enabled: !!id,
+  });
+
+  // Qaytarishlar tarixi ALOHIDA so'rov: qaytarish rasmiylashtirilganda
+  // faqat shu ro'yxat emas, savdoning qoldiq summasi ham o'zgaradi —
+  // ikkalasi bitta prefiks (`sales`) ostida birga bekor qilinadi.
+  const returnsQuery = useQuery({
+    queryKey: queryKeys.sales.returns(Number(id)),
+    queryFn: () => salesApi.getReturns(Number(id)),
+    enabled: !!id,
+  });
+
+  const sale = saleQuery.data ?? null;
+  const returns = useMemo(() => returnsQuery.data ?? [], [returnsQuery.data]);
+  const loading = saleQuery.isPending;
+
+  useEffect(() => {
+    if (saleQuery.isError) {
+      console.error('Failed to load sale:', saleQuery.error);
+      toast.error(getApiErrorMessage(saleQuery.error));
     }
-  }, [id]);
+  }, [saleQuery.isError, saleQuery.error]);
 
   /** Qatordan qancha qaytarish mumkin — avvalgi qaytarishlar hisobga olinadi. */
   const returnableQty = (item: { id?: number; quantity: number }) => {
@@ -102,17 +110,16 @@ export function SaleDetailPage() {
       setShowReturn(false);
       setReturnQty({});
       setReturnReason('');
-      void loadSale();
+      // Savdo va qaytarishlar tarixi bitta prefiks ostida — ikkalasi birga
+      // yangilanadi. Ilgari faqat `loadSale()` chaqirilardi va u ikkalasini
+      // birga olardi; endi bu bog'liqlik kalitlar ierarxiyasida ifodalangan.
+      void queryClient.invalidateQueries({ queryKey: queryKeys.sales.all });
     } catch (error) {
       toast.error(getApiErrorMessage(error));
     } finally {
       setReturning(false);
     }
   };
-
-  useEffect(() => {
-    void loadSale();
-  }, [loadSale]);
 
   // Status helpers
   const getStatusLabel = (status?: string) => {
