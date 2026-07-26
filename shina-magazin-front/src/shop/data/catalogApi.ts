@@ -19,6 +19,14 @@ const toProduct = (c: PublicProduct): Product => ({
 /** Server tomonda filtrlash parametrlari (kategoriya subtree bilan qamrab olinadi). */
 export interface CatalogFilterParams {
   categoryId?: number;
+  /**
+   * Brend — nom emas, ID.
+   *
+   * <p>Ilgari brend brauzerda nom bo'yicha filtrlanardi, ya'ni faqat
+   * server qaytargan sahifa ichida ishlardi: brendning qolgan mahsulotlari
+   * jimgina tushib qolardi.
+   */
+  brandId?: number;
   season?: Season | '';
   priceMin?: number;
   priceMax?: number;
@@ -47,6 +55,7 @@ export const catalogApi = {
   listFiltered: async (filters: CatalogFilterParams): Promise<Product[]> => {
     const params = new URLSearchParams({ size: '200' });
     if (filters.categoryId) params.append('categoryId', String(filters.categoryId));
+    if (filters.brandId) params.append('brandId', String(filters.brandId));
     if (filters.season) params.append('season', filters.season);
     if (filters.priceMin !== undefined) params.append('priceMin', String(filters.priceMin));
     if (filters.priceMax !== undefined) params.append('priceMax', String(filters.priceMax));

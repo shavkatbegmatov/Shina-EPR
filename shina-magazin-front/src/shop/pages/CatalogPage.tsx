@@ -90,9 +90,34 @@ export function CatalogPage() {
   // qidirilardi va katalog o'sganda qolganlari umuman topilmasdi. Bundan
   // tashqari "205/55R16" kabi so'rov mahsulot NOMIDA bo'lmasa ishlamasdi;
   // backend endi uni o'lcham ustunlariga tarjima qiladi.
+  // URL'da brend NOMI qoladi (`?brand=Michelin` ulashishga qulay va SEO uchun
+  // yaxshi), serverga esa ID uzatiladi. Moslashtiruv facetlardan.
+  const brandOptions = useMemo(
+    () => facets?.brands ?? [],
+    [facets]
+  );
+  const brandId = useMemo(
+    () => brandOptions.find((b) => b.name === brand)?.id,
+    [brandOptions, brand]
+  );
+
+  /**
+   * Tanlagichdagi brendlar. Facetlar bo'lmasa (demo rejim yoki backend
+   * yo'q) yuklangan mahsulotlardan qurilgan eski ro'yxatga qaytamiz —
+   * aks holda demo vitrinada tanlagich bo'sh qolardi.
+   */
+  const brandChoices = useMemo(
+    () =>
+      brandOptions.length > 0
+        ? brandOptions
+        : brands.map((name) => ({ id: 0, name, count: 0 })),
+    [brandOptions, brands]
+  );
+
   const serverParams = useMemo(
     () => ({
       categoryId,
+      brandId,
       season: (season || undefined) as Season | undefined,
       priceMin,
       priceMax,
@@ -104,7 +129,7 @@ export function CatalogPage() {
       attrs: attrsParam || undefined,
       sort: SORT_TO_SERVER[sort],
     }),
-    [categoryId, season, priceMin, priceMax, inStock, debouncedQ, width, profile, diameter, attrsParam, sort]
+    [categoryId, brandId, season, priceMin, priceMax, inStock, debouncedQ, width, profile, diameter, attrsParam, sort]
   );
   const { products: serverProducts, isLoading: serverLoading, serverMode } = useFilteredCatalog(serverParams);
   const { products: allProducts, isError: catalogError, retry: retryCatalog } = useCatalogProducts();
@@ -124,11 +149,14 @@ export function CatalogPage() {
     };
 
     if (serverMode) {
-      // Server: kategoriya shajarasi, narx, mavjudlik, atributlar, mavsum,
-      // saralash, QIDIRUV va SHINA O'LCHAMI.
-      // Client: faqat brend nomi — panel brendni nom bo'yicha beradi, backend
-      // esa brandId kutadi (nom -> id moslashtiruvi hali yo'q).
-      return (serverProducts ?? []).filter((p) => !brand || p.brandName === brand);
+      // Hamma filtr SERVERDA: kategoriya shajarasi, brend, narx, mavjudlik,
+      // atributlar, mavsum, saralash, qidiruv va shina o'lchami.
+      //
+      // Brend faqat facetlar hali yuklanmagan bo'lsa (id topilmagan) brauzerda
+      // filtrlanadi — bu vaqtincha holat, aks holda tanlangan brend bir
+      // lahzaga e'tiborsiz qolib ko'rinardi.
+      const list = serverProducts ?? [];
+      return brand && !brandId ? list.filter((p) => p.brandName === brand) : list;
     }
 
     // Fallback (backend yo'q): eski to'liq client-side yo'l — demo rejim ishlayveradi
@@ -142,7 +170,7 @@ export function CatalogPage() {
       if (sort === 'price-desc') return b.sellingPrice - a.sellingPrice;
       return b.id - a.id;
     });
-  }, [serverMode, serverProducts, allProducts, q, brand, season, sort, width, profile, diameter]);
+  }, [serverMode, serverProducts, allProducts, q, brand, brandId, season, sort, width, profile, diameter]);
 
   const showSkeleton = serverMode && serverLoading && !serverProducts;
 
@@ -296,7 +324,14 @@ export function CatalogPage() {
         />
         <select value={brand} onChange={(e) => setBrand(e.target.value)} aria-label={t('shop.catalog.brand')} className={selectClass}>
           <option value="">{t('shop.catalog.allBrands')}</option>
-          {brands.map((b) => <option key={b} value={b}>{b}</option>)}
+          {/* Ro'yxat facetlardan — BUTUN katalogdan. Ilgari u yuklangan
+              mahsulotlardan qurilardi, ya'ni birinchi sahifada mahsuloti
+              yo'q brend tanlagichda umuman ko'rinmasdi. */}
+          {brandChoices.map((b) => (
+            <option key={b.name} value={b.name}>
+              {b.count > 0 ? `${b.name} (${b.count})` : b.name}
+            </option>
+          ))}
         </select>
         {isTireContext && (
           <select value={season} onChange={(e) => setSeason(e.target.value)} aria-label={t('shop.catalog.season')} className={selectClass}>

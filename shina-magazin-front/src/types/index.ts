@@ -480,6 +480,19 @@ export interface CatalogFacets {
     profiles: number[];
     diameters: number[];
   };
+  /**
+   * Brend tanlagichi — BUTUN katalogdan, mahsulot soni bilan.
+   *
+   * <p>`id` kerak: filtr serverga `brandId` sifatida uzatiladi. Nom bo'yicha
+   * brauzerda filtrlash faqat yuklangan sahifa ichida ishlardi.
+   */
+  brands?: CatalogBrandFacet[];
+}
+
+export interface CatalogBrandFacet {
+  id: number;
+  name: string;
+  count: number;
 }
 
 export interface Product {

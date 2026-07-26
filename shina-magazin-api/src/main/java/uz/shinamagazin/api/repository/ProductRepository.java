@@ -69,6 +69,22 @@ public interface ProductRepository extends JpaRepository<Product, Long>, JpaSpec
     @Query("SELECT SUM(p.quantity) FROM Product p WHERE p.active = true")
     Long getTotalStock();
 
+    /**
+     * Brend facetlari — mahsulot soni bilan.
+     *
+     * <p>Ilgari brend ro'yxati vitrinaga yuklangan mahsulotlardan qurilardi:
+     * birinchi sahifada mahsuloti yo'q brend tanlagichda UMUMAN ko'rinmasdi.
+     */
+    @Query("""
+            SELECT b.id, b.name, COUNT(p) FROM Product p
+            JOIN p.brand b
+            WHERE p.active = true
+              AND (:allCategories = true OR p.category.id IN (:categoryIds))
+            GROUP BY b.id, b.name
+            ORDER BY b.name""")
+    List<Object[]> brandFacets(@Param("allCategories") boolean allCategories,
+                               @Param("categoryIds") List<Long> categoryIds);
+
     // ─── O'lcham facetlari (o'lcham tanlagich ro'yxatlari) ───
     // Ilgari tanlagich ro'yxatlari vitrinaga yuklangan birinchi 200 mahsulotdan
     // qurilardi, ya'ni katalog kattaroq bo'lsa ba'zi o'lchamlar umuman

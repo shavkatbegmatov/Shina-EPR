@@ -156,11 +156,21 @@ public class CatalogService {
             }
         }
 
+        List<CatalogFacetsResponse.BrandFacet> brands = productRepository
+                .brandFacets(allCategories, categoryIds).stream()
+                .map(row -> CatalogFacetsResponse.BrandFacet.builder()
+                        .id((Long) row[0])
+                        .name((String) row[1])
+                        .count(((Number) row[2]).longValue())
+                        .build())
+                .toList();
+
         return CatalogFacetsResponse.builder()
                 .categories(categoryService.getCategoryTree())
                 .priceMin(priceMin)
                 .priceMax(priceMax)
                 .attributes(facets)
+                .brands(brands)
                 .sizes(CatalogFacetsResponse.SizeFacet.builder()
                         .widths(productRepository.distinctWidths(allCategories, categoryIds))
                         .profiles(productRepository.distinctProfiles(allCategories, categoryIds))

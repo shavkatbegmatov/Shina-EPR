@@ -25,6 +25,24 @@ public class CatalogFacetsResponse {
     private List<AttributeFacet> attributes;
     /** Shina o'lchami tanlagichi uchun mavjud qiymatlar (butun katalogdan). */
     private SizeFacet sizes;
+    /**
+     * Brend tanlagichi — butun katalogdan, mahsulot soni bilan.
+     *
+     * <p>{@code id} kerak: filtr serverga {@code brandId} sifatida uzatiladi.
+     * Nom bo'yicha brauzerda filtrlash faqat yuklangan sahifa ichida
+     * ishlardi, ya'ni natija jimgina to'liq bo'lmasdi.
+     */
+    private List<BrandFacet> brands;
+
+    @Data
+    @Builder
+    @NoArgsConstructor
+    @AllArgsConstructor
+    public static class BrandFacet {
+        private Long id;
+        private String name;
+        private long count;
+    }
 
     @Data
     @Builder
