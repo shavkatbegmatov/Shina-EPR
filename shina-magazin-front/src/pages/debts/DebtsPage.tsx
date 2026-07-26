@@ -18,6 +18,7 @@ import {
 } from 'lucide-react';
 import clsx from 'clsx';
 import { useTranslation } from 'react-i18next';
+import { getApiErrorMessage } from '../../utils/apiError';
 import { debtsApi } from '../../api/debts.api';
 import { formatCurrency, formatDate, formatDateTime, DEBT_STATUSES, PAYMENT_METHODS } from '../../config/constants';
 import { enumLabel } from '@/shared/enumLabel';
@@ -53,6 +54,7 @@ export function DebtsPage() {
   const { t } = useTranslation();
   const [activeTab, setActiveTab] = useState<TabType>('all');
   const [debts, setDebts] = useState<Debt[]>([]);
+  const [loadError, setLoadError] = useState<string | null>(null);
   const [allDebts, setAllDebts] = useState<Debt[]>([]); // For statistics and grouping
   const [initialLoading, setInitialLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
@@ -174,8 +176,10 @@ export function DebtsPage() {
       setDebts(data.content);
       setTotalPages(data.totalPages);
       setTotalElements(data.totalElements);
+      setLoadError(null);
     } catch (error) {
       console.error('Failed to load debts:', error);
+      setLoadError(getApiErrorMessage(error));
     } finally {
       setInitialLoading(false);
       setRefreshing(false);
@@ -644,6 +648,8 @@ export function DebtsPage() {
                   )}
                   <DataTable
                     data={filteredDebts}
+                    error={loadError}
+                    onRetry={() => loadDebts(true)}
                     columns={columns}
                     keyExtractor={(debt) => debt.id}
                     loading={initialLoading && !refreshing}

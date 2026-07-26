@@ -4,6 +4,7 @@ import { Link } from 'react-router-dom';
 import { ShoppingCart, Receipt, Eye, XCircle, Calendar, User, X, CreditCard, Banknote, ArrowRightLeft, Layers } from 'lucide-react';
 import clsx from 'clsx';
 import toast from 'react-hot-toast';
+import { getApiErrorMessage } from '../../utils/apiError';
 import { salesApi } from '../../api/sales.api';
 import {
   formatCurrency,
@@ -39,6 +40,7 @@ const paymentMethodIcons: Record<PaymentMethod, React.ReactNode> = {
 export function SalesPage() {
   const { t } = useTranslation();
   const [sales, setSales] = useState<Sale[]>([]);
+  const [loadError, setLoadError] = useState<string | null>(null);
   const [initialLoading, setInitialLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [page, setPage] = useState(0);
@@ -258,8 +260,10 @@ export function SalesPage() {
       setSales(data.content);
       setTotalPages(data.totalPages);
       setTotalElements(data.totalElements);
+      setLoadError(null);
     } catch (error) {
       console.error('Failed to load sales:', error);
+      setLoadError(getApiErrorMessage(error));
       toast.error(t('erp.sales.loadError'));
     } finally {
       setInitialLoading(false);
@@ -430,6 +434,8 @@ export function SalesPage() {
         )}
         <DataTable
           data={filteredSales}
+          error={loadError}
+          onRetry={() => loadSales(true)}
           columns={columns}
           keyExtractor={(sale) => sale.id}
           loading={initialLoading && !refreshing}

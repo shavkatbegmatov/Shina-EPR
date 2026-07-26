@@ -3,6 +3,7 @@ import { useTranslation } from 'react-i18next';
 import { KeyRound, Phone, Plus, ShieldCheck, ShieldOff, Users, X } from 'lucide-react';
 import clsx from 'clsx';
 import toast from 'react-hot-toast';
+import { getApiErrorMessage } from '../../utils/apiError';
 import { customersApi } from '../../api/customers.api';
 import { formatCurrency, CUSTOMER_TYPES } from '../../config/constants';
 import { enumLabel } from '@/shared/enumLabel';
@@ -33,6 +34,7 @@ const isValidPhone = (phone: string): boolean => {
 export function CustomersPage() {
   const { t } = useTranslation();
   const [customers, setCustomers] = useState<Customer[]>([]);
+  const [loadError, setLoadError] = useState<string | null>(null);
   const [initialLoading, setInitialLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [search, setSearch] = useState('');
@@ -194,8 +196,12 @@ export function CustomersPage() {
       setCustomers(data.content);
       setTotalPages(data.totalPages);
       setTotalElements(data.totalElements);
+      setLoadError(null);
     } catch (error) {
       console.error('Failed to load customers:', error);
+      // Xatoni jadvalga uzatamiz — aks holda bo'sh ro'yxat ko'rinib, operator
+      // mijozlar yo'q deb o'ylardi.
+      setLoadError(getApiErrorMessage(error));
     } finally {
       setInitialLoading(false);
       setRefreshing(false);
@@ -393,6 +399,8 @@ export function CustomersPage() {
           columns={columns}
           keyExtractor={(customer) => customer.id}
           loading={initialLoading && !refreshing}
+          error={loadError}
+          onRetry={() => loadCustomers(true)}
           highlightId={highlightId}
           onHighlightComplete={clearHighlight}
           emptyIcon={<Users className="h-12 w-12" />}

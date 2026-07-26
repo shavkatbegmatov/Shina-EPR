@@ -98,6 +98,7 @@ function toValueMap(attrs?: ProductAttributeValue[]): AttributeValueMap {
 export function ProductsPage() {
   const { t } = useTranslation();
   const [products, setProducts] = useState<Product[]>([]);
+  const [loadError, setLoadError] = useState<string | null>(null);
   const [brands, setBrands] = useState<Brand[]>([]);
   const [categoryTree, setCategoryTree] = useState<Category[]>([]);
   // Kategoriyaning effektiv (merosi bilan) atributlari — forma uchun
@@ -284,8 +285,10 @@ export function ProductsPage() {
       setProducts(data.content);
       setTotalPages(data.totalPages);
       setTotalElements(data.totalElements);
+      setLoadError(null);
     } catch (error) {
       console.error('Failed to load products:', error);
+      setLoadError(getApiErrorMessage(error));
     } finally {
       setInitialLoading(false);
       setRefreshing(false);
@@ -570,6 +573,8 @@ export function ProductsPage() {
         )}
         <DataTable
           data={products}
+          error={loadError}
+          onRetry={() => loadProducts(true)}
           columns={columns}
           keyExtractor={(product) => product.id}
           loading={initialLoading && !refreshing}

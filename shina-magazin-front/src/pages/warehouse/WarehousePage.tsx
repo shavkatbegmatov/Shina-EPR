@@ -46,6 +46,7 @@ export function WarehousePage() {
   const { t } = useTranslation();
   const [stats, setStats] = useState<WarehouseStats | null>(null);
   const [movements, setMovements] = useState<StockMovement[]>([]);
+  const [loadError, setLoadError] = useState<string | null>(null);
   const [lowStockProducts, setLowStockProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
   const [initialLoadingMovements, setInitialLoadingMovements] = useState(true);
@@ -188,8 +189,10 @@ export function WarehousePage() {
       setMovements(data.content);
       setTotalPages(data.totalPages);
       setTotalElements(data.totalElements);
+      setLoadError(null);
     } catch (error) {
       console.error('Failed to load movements:', error);
+      setLoadError(getApiErrorMessage(error));
     } finally {
       setInitialLoadingMovements(false);
       setRefreshingMovements(false);
@@ -480,6 +483,8 @@ export function WarehousePage() {
             )}
             <DataTable
               data={movements}
+              error={loadError}
+              onRetry={() => loadMovements(true)}
               columns={columns}
               keyExtractor={(movement) => movement.id}
               loading={initialLoadingMovements}

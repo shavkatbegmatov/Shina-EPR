@@ -20,6 +20,7 @@ const emptyForm: BrandFormState = { name: '', country: '' };
 export function BrandsPage() {
   const { t } = useTranslation();
   const [brands, setBrands] = useState<Brand[]>([]);
+  const [loadError, setLoadError] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
 
   const [modalOpen, setModalOpen] = useState(false);
@@ -34,8 +35,10 @@ export function BrandsPage() {
     try {
       const data = await brandsApi.getAll();
       setBrands(data);
+      setLoadError(null);
     } catch (error) {
       console.error('Failed to load brands:', error);
+      setLoadError(getApiErrorMessage(error));
     } finally {
       setLoading(false);
     }
@@ -158,6 +161,8 @@ export function BrandsPage() {
 
       <DataTable
         data={brands}
+        error={loadError}
+        onRetry={() => load()}
         columns={columns}
         keyExtractor={(brand) => brand.id}
         loading={loading}

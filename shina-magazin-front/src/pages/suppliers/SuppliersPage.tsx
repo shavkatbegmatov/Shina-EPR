@@ -78,6 +78,7 @@ export function SuppliersPage() {
 
   // Suppliers state
   const [suppliers, setSuppliers] = useState<Supplier[]>([]);
+  const [loadError, setLoadError] = useState<string | null>(null);
   const [initialLoading, setInitialLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [search, setSearch] = useState('');
@@ -347,8 +348,10 @@ export function SuppliersPage() {
       setSuppliers(data.content);
       setTotalPages(data.totalPages);
       setTotalElements(data.totalElements);
+      setLoadError(null);
     } catch (error) {
       console.error('Failed to load suppliers:', error);
+      setLoadError(getApiErrorMessage(error));
     } finally {
       setInitialLoading(false);
       setRefreshing(false);
@@ -740,6 +743,8 @@ export function SuppliersPage() {
             )}
             <DataTable
               data={suppliers}
+              error={loadError}
+              onRetry={() => loadSuppliers(true)}
               columns={suppliersColumns}
               keyExtractor={(supplier) => supplier.id}
               loading={initialLoading && !refreshing}

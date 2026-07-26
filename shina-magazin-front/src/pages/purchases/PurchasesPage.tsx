@@ -65,6 +65,7 @@ export function PurchasesPage() {
   const { notifications } = useNotificationsStore();
   // Purchases state
   const [purchases, setPurchases] = useState<PurchaseOrder[]>([]);
+  const [loadError, setLoadError] = useState<string | null>(null);
   const [initialLoading, setInitialLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [page, setPage] = useState(0);
@@ -160,8 +161,10 @@ export function PurchasesPage() {
       setPurchases(data.content);
       setTotalPages(data.totalPages);
       setTotalElements(data.totalElements);
+      setLoadError(null);
     } catch (error) {
       console.error('Failed to load purchases:', error);
+      setLoadError(getApiErrorMessage(error));
     } finally {
       setInitialLoading(false);
       setRefreshing(false);
@@ -672,6 +675,8 @@ export function PurchasesPage() {
         )}
         <DataTable
           data={purchases}
+          error={loadError}
+          onRetry={() => loadPurchases(true)}
           columns={columns}
           keyExtractor={(purchase) => purchase.id}
           loading={initialLoading && !refreshing}

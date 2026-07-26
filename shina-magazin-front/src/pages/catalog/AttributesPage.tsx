@@ -39,6 +39,7 @@ const emptyForm: AttributeFormState = {
 export function AttributesPage() {
   const { t } = useTranslation();
   const [attributes, setAttributes] = useState<Attribute[]>([]);
+  const [loadError, setLoadError] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
 
   const [modalOpen, setModalOpen] = useState(false);
@@ -53,8 +54,10 @@ export function AttributesPage() {
     try {
       const data = await attributesApi.getAll();
       setAttributes(data);
+      setLoadError(null);
     } catch (error) {
       console.error('Failed to load attributes:', error);
+      setLoadError(getApiErrorMessage(error));
     } finally {
       setLoading(false);
     }
@@ -263,6 +266,8 @@ export function AttributesPage() {
 
       <DataTable
         data={attributes}
+        error={loadError}
+        onRetry={() => load()}
         columns={columns}
         keyExtractor={(attribute) => attribute.id}
         loading={loading}
