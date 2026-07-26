@@ -1,12 +1,13 @@
-import { useState, useEffect } from 'react';
+import { useEffect, useState } from 'react';
+import { keepPreviousData, useQuery } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
 import { Activity, Loader2, Filter } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { usersApi, type UserActivity } from '../../api/users.api';
+import { queryKeys } from '../../lib/queryKeys';
 import type { AuditLog } from '../../api/audit-logs.api';
 import type { FieldChange } from '../../types';
 import { useAuthStore } from '../../store/authStore';
-import { useDataRefresh } from '../../hooks/useDataRefresh';
 import { RefreshButton } from '../../components/common/RefreshButton';
 import { ExportButtons } from '../../components/common/ExportButtons';
 import { LoadingOverlay } from '../../components/common/LoadingOverlay';
@@ -16,8 +17,6 @@ import { Button } from '@/ui';
 
 export function ActivityHistoryTab() {
   const { t } = useTranslation();
-  const [activities, setActivities] = useState<UserActivity[]>([]);
-  const [totalPages, setTotalPages] = useState(0);
   const [currentPage, setCurrentPage] = useState(0);
   const [entityTypeFilter, setEntityTypeFilter] = useState<string>('');
   const [actionFilter, setActionFilter] = useState<string>('');
@@ -29,33 +28,41 @@ export function ActivityHistoryTab() {
     new Map()
   );
 
-  const { initialLoading, refreshing, refreshSuccess, loadData } = useDataRefresh({
-    fetchFn: async () => {
-      if (!user?.id) return;
-
-      const data = await usersApi.getUserActivity(
-        user.id,
+  const activityQuery = useQuery({
+    queryKey: [
+      ...queryKeys.profile.activity(user?.id ?? 0, currentPage),
+      entityTypeFilter,
+      actionFilter,
+    ],
+    queryFn: () =>
+      usersApi.getUserActivity(
+        user!.id,
         currentPage,
         20,
         entityTypeFilter || undefined,
         actionFilter || undefined
-      );
-
-      setActivities(data.content);
-      setTotalPages(data.totalPages);
-      return data;
-    },
-    onError: () => toast.error(t('erp.activityHistory.loadError')),
+      ),
+    enabled: !!user?.id,
+    placeholderData: keepPreviousData,
   });
 
+  const activities = activityQuery.data?.content ?? [];
+  const totalPages = activityQuery.data?.totalPages ?? 0;
+  const initialLoading = !!user?.id && activityQuery.isPending;
+  const refreshing = activityQuery.isFetching && !activityQuery.isPending;
+
   useEffect(() => {
-    if (user?.id) {
-      loadData(false);
-      // Clear expanded rows and cache when filters change
-      setExpandedRows(new Set());
-      setFieldChangesCache(new Map());
+    if (activityQuery.isError) {
+      toast.error(t('erp.activityHistory.loadError'));
     }
-  }, [currentPage, entityTypeFilter, actionFilter, user]);
+  }, [activityQuery.isError, t]);
+
+  // Filtr o'zgarganda yoyilgan qatorlar va ularning keshi eskiradi —
+  // ular ID bo'yicha saqlanadi, yangi ro'yxatda boshqa yozuvlar keladi.
+  useEffect(() => {
+    setExpandedRows(new Set());
+    setFieldChangesCache(new Map());
+  }, [currentPage, entityTypeFilter, actionFilter, user?.id]);
 
   const resetFilters = () => {
     setEntityTypeFilter('');
@@ -148,9 +155,9 @@ export function ActivityHistoryTab() {
         </div>
         <div className="flex gap-2 w-full sm:w-auto">
           <RefreshButton
-            onClick={() => loadData(true)}
+            onClick={() => void activityQuery.refetch()}
             loading={refreshing}
-            success={refreshSuccess}
+            success={activityQuery.isSuccess && !refreshing}
             disabled={initialLoading}
             className="flex-1 sm:flex-none"
           />

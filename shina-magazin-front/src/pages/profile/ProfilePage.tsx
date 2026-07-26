@@ -1,4 +1,5 @@
-import { useState, useEffect } from 'react';
+import { useEffect, useMemo, useState } from 'react';
+import { useQuery } from '@tanstack/react-query';
 import { useNavigate } from 'react-router-dom';
 import { useForm } from 'react-hook-form';
 import { useTranslation } from 'react-i18next';
@@ -23,9 +24,10 @@ import toast from 'react-hot-toast';
 import clsx from 'clsx';
 import { authApi } from '../../api/auth.api';
 import { rolesApi } from '../../api/roles.api';
+import { queryKeys } from '../../lib/queryKeys';
 import { useAuthStore } from '../../store/authStore';
 import { ROLES } from '../../config/constants';
-import type { ChangePasswordRequest, User as UserType, Role } from '../../types';
+import type { ChangePasswordRequest } from '../../types';
 import { Button } from '@/ui';
 import { SessionsTab } from './SessionsTab';
 import { LoginActivityTab } from './LoginActivityTab';
@@ -42,9 +44,6 @@ interface PasswordFormData {
 export function ProfilePage() {
   const { t } = useTranslation();
   const [activeTab, setActiveTab] = useState<Tab>('profile');
-  const [userData, setUserData] = useState<UserType | null>(null);
-  const [roles, setRoles] = useState<Role[]>([]);
-  const [loading, setLoading] = useState(true);
   const [showCurrentPassword, setShowCurrentPassword] = useState(false);
   const [showNewPassword, setShowNewPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
@@ -84,24 +83,25 @@ export function ProfilePage() {
     return t('erp.profile.strengthStrong');
   };
 
-  // Fetch user data and roles
+  const userQuery = useQuery({
+    queryKey: queryKeys.profile.currentUser(),
+    queryFn: () => authApi.getCurrentUser(),
+  });
+
+  const rolesQuery = useQuery({
+    queryKey: queryKeys.roles.list(),
+    queryFn: () => rolesApi.getAll(),
+  });
+
+  const userData = userQuery.data ?? null;
+  const roles = useMemo(() => rolesQuery.data ?? [], [rolesQuery.data]);
+  const loading = userQuery.isPending || rolesQuery.isPending;
+
   useEffect(() => {
-    const fetchData = async () => {
-      try {
-        const [userData, rolesData] = await Promise.all([
-          authApi.getCurrentUser(),
-          rolesApi.getAll(),
-        ]);
-        setUserData(userData);
-        setRoles(rolesData);
-      } catch {
-        toast.error(t('erp.profile.loadError'));
-      } finally {
-        setLoading(false);
-      }
-    };
-    void fetchData();
-  }, []);
+    if (userQuery.isError || rolesQuery.isError) {
+      toast.error(t('erp.profile.loadError'));
+    }
+  }, [userQuery.isError, rolesQuery.isError, t]);
 
   // Helper function to get role label
   const getRoleLabel = (roleCode: string): string => {

@@ -91,6 +91,8 @@ export const queryKeys = {
   categories: {
     all: ['categories'] as const,
     tree: () => ['categories', 'tree'] as const,
+    /** Tekis ro'yxat (daraxt emas) — sozlamalar sahifasidagi jadval uchun. */
+    list: () => ['categories', 'list'] as const,
     /** Kategoriyaning meros bilan hisoblangan atributlari. */
     attributes: (id: number) => ['categories', 'attributes', id] as const,
   },
@@ -138,6 +140,14 @@ export const queryKeys = {
   settings: {
     all: ['settings'] as const,
     detail: () => ['settings', 'detail'] as const,
+  },
+
+  profile: {
+    all: ['profile'] as const,
+    currentUser: () => ['profile', 'current-user'] as const,
+    sessions: () => ['profile', 'sessions'] as const,
+    loginActivity: (page: number) => ['profile', 'login-activity', page] as const,
+    activity: (userId: number, page: number) => ['profile', 'activity', userId, page] as const,
   },
 
   customers: {

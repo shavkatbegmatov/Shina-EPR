@@ -1,12 +1,13 @@
-import { useState, useEffect } from 'react';
+import { useEffect, useState } from 'react';
+import { keepPreviousData, useQuery } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
 import { Shield, CheckCircle, XCircle, Calendar, MapPin, Loader2 } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { loginActivityApi, type LoginAttempt } from '../../api/login-activity.api';
+import { queryKeys } from '../../lib/queryKeys';
 import { formatDistanceToNow } from 'date-fns';
 import { uz } from 'date-fns/locale';
 import api from '../../api/axios';
-import { useDataRefresh } from '../../hooks/useDataRefresh';
 import { RefreshButton } from '../../components/common/RefreshButton';
 import { ExportButtons } from '../../components/common/ExportButtons';
 import { LoadingOverlay } from '../../components/common/LoadingOverlay';
@@ -14,23 +15,24 @@ import { Button, buttonVariants } from '@/ui';
 
 export function LoginActivityTab() {
   const { t } = useTranslation();
-  const [attempts, setAttempts] = useState<LoginAttempt[]>([]);
-  const [totalPages, setTotalPages] = useState(0);
   const [currentPage, setCurrentPage] = useState(0);
 
-  const { initialLoading, refreshing, refreshSuccess, loadData } = useDataRefresh({
-    fetchFn: async () => {
-      const data = await loginActivityApi.getMyLoginHistory(currentPage, 20);
-      setAttempts(data.content);
-      setTotalPages(data.totalPages);
-      return data;
-    },
-    onError: () => toast.error(t('erp.loginActivity.loadError')),
+  const activityQuery = useQuery({
+    queryKey: queryKeys.profile.loginActivity(currentPage),
+    queryFn: () => loginActivityApi.getMyLoginHistory(currentPage, 20),
+    placeholderData: keepPreviousData,
   });
 
+  const attempts: LoginAttempt[] = activityQuery.data?.content ?? [];
+  const totalPages = activityQuery.data?.totalPages ?? 0;
+  const initialLoading = activityQuery.isPending;
+  const refreshing = activityQuery.isFetching && !activityQuery.isPending;
+
   useEffect(() => {
-    loadData(false);
-  }, [currentPage, loadData]);
+    if (activityQuery.isError) {
+      toast.error(t('erp.loginActivity.loadError'));
+    }
+  }, [activityQuery.isError, t]);
 
   const getStatusBadge = (attempt: LoginAttempt) => {
     if (attempt.status === 'SUCCESS') {
@@ -98,9 +100,9 @@ export function LoginActivityTab() {
         </div>
         <div className="flex gap-2 w-full sm:w-auto">
           <RefreshButton
-            onClick={() => loadData(true)}
+            onClick={() => void activityQuery.refetch()}
             loading={refreshing}
-            success={refreshSuccess}
+            success={activityQuery.isSuccess && !refreshing}
             disabled={initialLoading}
             className="flex-1 sm:flex-none"
           />

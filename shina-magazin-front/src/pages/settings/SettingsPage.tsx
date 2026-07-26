@@ -1,4 +1,5 @@
-import { useCallback, useEffect, useState } from 'react';
+import { useEffect, useState } from 'react';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import {
   Plus,
   X,
@@ -21,6 +22,7 @@ import { getApiErrorMessage } from '../../utils/apiError';
 import { useTranslation } from 'react-i18next';
 import { brandsApi, categoriesApi } from '../../api/products.api';
 import { settingsApi } from '../../api/settings.api';
+import { queryKeys } from '../../lib/queryKeys';
 import { NumberInput } from '../../components/ui/NumberInput';
 import { Select } from '../../components/ui/Select';
 import { ModalPortal } from '../../components/common/Modal';
@@ -52,11 +54,10 @@ const DEFAULT_DEBT_DUE_DAYS = 30;
 
 export function SettingsPage() {
   const { t } = useTranslation();
+  const queryClient = useQueryClient();
   const [activeTab, setActiveTab] = useState<Tab>('appearance');
   const { mode: themeMode, setMode: setThemeMode } = useThemeStore();
   // Brands state
-  const [brands, setBrands] = useState<Brand[]>([]);
-  const [brandsLoading, setBrandsLoading] = useState(true);
   const [showBrandModal, setShowBrandModal] = useState(false);
   const [editingBrand, setEditingBrand] = useState<Brand | null>(null);
   const [brandForm, setBrandForm] = useState<BrandFormData>(emptyBrandForm);
@@ -65,8 +66,6 @@ export function SettingsPage() {
   const [brandDeleting, setBrandDeleting] = useState(false);
 
   // Categories state
-  const [categories, setCategories] = useState<Category[]>([]);
-  const [categoriesLoading, setCategoriesLoading] = useState(true);
   const [showCategoryModal, setShowCategoryModal] = useState(false);
   const [editingCategory, setEditingCategory] = useState<Category | null>(null);
   const [categoryForm, setCategoryForm] = useState<CategoryFormData>(emptyCategoryForm);
@@ -77,7 +76,6 @@ export function SettingsPage() {
   // Debt settings
   const [debtDueDays, setDebtDueDays] = useState(DEFAULT_DEBT_DUE_DAYS);
   const [imageFallback, setImageFallback] = useState<'SVG' | 'PHOTO'>('SVG');
-  const [settingsLoading, setSettingsLoading] = useState(true);
   const [settingsSaving, setSettingsSaving] = useState(false);
 
   // Chek sarlavhasi — kassa qog'ozida chiqadigan do'kon ma'lumotlari
@@ -101,67 +99,76 @@ export function SettingsPage() {
       return next;
     });
 
-  const loadSettings = useCallback(async () => {
-    setSettingsLoading(true);
-    try {
-      const data = await settingsApi.get();
-      setDebtDueDays(data.debtDueDays);
-      setImageFallback(data.imageFallback === 'PHOTO' ? 'PHOTO' : 'SVG');
-      setReceipt({
-        receiptShopName: data.receiptShopName ?? '',
-        receiptShopPhone: data.receiptShopPhone ?? '',
-        receiptShopAddress: data.receiptShopAddress ?? '',
-        receiptFooter: data.receiptFooter ?? '',
-      });
-      setTelegramEnabled(data.telegramEnabled ?? false);
-      setTelegramChatId(data.telegramChatId ?? '');
-      setTelegramConfigured(data.telegramConfigured ?? false);
-      setTelegramEvents(new Set(
-        (data.telegramEvents ?? '')
-          .split(',')
-          .map((s) => s.trim())
-          .filter((s): s is TelegramEventType =>
-            (TELEGRAM_EVENT_TYPES as string[]).includes(s))
-      ));
-    } catch (error) {
-      console.error('Failed to load settings:', error);
-      toast.error(getApiErrorMessage(error));
-    } finally {
-      setSettingsLoading(false);
-    }
-  }, []);
+  // Brendlar va kategoriyalar KATALOG sahifalari bilan bir xil kalitda —
+  // bo'limlar orasida yurganda qaytadan so'ralmaydi.
+  const brandsQuery = useQuery({
+    queryKey: queryKeys.brands.list(),
+    queryFn: () => brandsApi.getAll(),
+  });
 
-  // Load brands
-  const loadBrands = useCallback(async () => {
-    setBrandsLoading(true);
-    try {
-      const data = await brandsApi.getAll();
-      setBrands(data);
-    } catch (error) {
-      console.error('Failed to load brands:', error);
-    } finally {
-      setBrandsLoading(false);
-    }
-  }, []);
+  const categoriesQuery = useQuery({
+    queryKey: queryKeys.categories.list(),
+    queryFn: () => categoriesApi.getAll(),
+  });
 
-  // Load categories
-  const loadCategories = useCallback(async () => {
-    setCategoriesLoading(true);
-    try {
-      const data = await categoriesApi.getAll();
-      setCategories(data);
-    } catch (error) {
-      console.error('Failed to load categories:', error);
-    } finally {
-      setCategoriesLoading(false);
-    }
-  }, []);
+  const settingsQuery = useQuery({
+    queryKey: queryKeys.settings.detail(),
+    queryFn: () => settingsApi.get(),
+  });
+
+  const brands = brandsQuery.data ?? [];
+  const categories = categoriesQuery.data ?? [];
+  const brandsLoading = brandsQuery.isPending;
+  const categoriesLoading = categoriesQuery.isPending;
+  const settingsLoading = settingsQuery.isPending;
+
+  /**
+   * Server sozlamalarini FORMA holatiga ko'chiradi.
+   *
+   * <p>Sozlamalar tahrirlanadi, ya'ni ular so'rov natijasidan bevosita
+   * o'qilmaydi — foydalanuvchi kiritayotgan qiymat ustiga yozib yuborardi.
+   * Shuning uchun ko'chirish faqat ma'lumot YANGI kelganda bajariladi.
+   */
+  useEffect(() => {
+    const data = settingsQuery.data;
+    if (!data) return;
+
+    setDebtDueDays(data.debtDueDays);
+    setImageFallback(data.imageFallback === 'PHOTO' ? 'PHOTO' : 'SVG');
+    setReceipt({
+      receiptShopName: data.receiptShopName ?? '',
+      receiptShopPhone: data.receiptShopPhone ?? '',
+      receiptShopAddress: data.receiptShopAddress ?? '',
+      receiptFooter: data.receiptFooter ?? '',
+    });
+    setTelegramEnabled(data.telegramEnabled ?? false);
+    setTelegramChatId(data.telegramChatId ?? '');
+    setTelegramConfigured(data.telegramConfigured ?? false);
+    setTelegramEvents(new Set(
+      (data.telegramEvents ?? '')
+        .split(',')
+        .map((s) => s.trim())
+        .filter((s): s is TelegramEventType =>
+          (TELEGRAM_EVENT_TYPES as string[]).includes(s))
+    ));
+  }, [settingsQuery.data]);
 
   useEffect(() => {
-    void loadBrands();
-    void loadCategories();
-    void loadSettings();
-  }, [loadBrands, loadCategories, loadSettings]);
+    if (settingsQuery.isError) {
+      console.error('Failed to load settings:', settingsQuery.error);
+      toast.error(getApiErrorMessage(settingsQuery.error));
+    }
+  }, [settingsQuery.isError, settingsQuery.error]);
+
+  const invalidateBrands = () => {
+    void queryClient.invalidateQueries({ queryKey: queryKeys.brands.all });
+    void queryClient.invalidateQueries({ queryKey: queryKeys.products.all });
+  };
+
+  const invalidateCategories = () => {
+    void queryClient.invalidateQueries({ queryKey: queryKeys.categories.all });
+    void queryClient.invalidateQueries({ queryKey: queryKeys.products.all });
+  };
 
   // Export handlers
   const handleExportBrands = async (format: 'excel' | 'pdf') => {
@@ -204,7 +211,7 @@ export function SettingsPage() {
         await brandsApi.create(brandForm.name, brandForm.country || undefined);
       }
       handleCloseBrandModal();
-      void loadBrands();
+      invalidateBrands();
     } catch (error) {
       console.error('Failed to save brand:', error);
       toast.error(getApiErrorMessage(error));
@@ -219,7 +226,7 @@ export function SettingsPage() {
     try {
       await brandsApi.delete(deletingBrand.id);
       setDeletingBrand(null);
-      void loadBrands();
+      invalidateBrands();
     } catch (error) {
       console.error('Failed to delete brand:', error);
       toast.error(getApiErrorMessage(error));
@@ -268,7 +275,7 @@ export function SettingsPage() {
         });
       }
       handleCloseCategoryModal();
-      void loadCategories();
+      invalidateCategories();
     } catch (error) {
       console.error('Failed to save category:', error);
       toast.error(getApiErrorMessage(error));
@@ -283,7 +290,7 @@ export function SettingsPage() {
     try {
       await categoriesApi.delete(deletingCategory.id);
       setDeletingCategory(null);
-      void loadCategories();
+      invalidateCategories();
     } catch (error) {
       console.error('Failed to delete category:', error);
       toast.error(getApiErrorMessage(error));
