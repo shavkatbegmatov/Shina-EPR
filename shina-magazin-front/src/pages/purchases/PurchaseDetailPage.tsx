@@ -1,7 +1,10 @@
-import { useCallback, useEffect, useState } from 'react';
+import { useMemo, useState } from 'react';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
 import toast from 'react-hot-toast';
 import { getApiErrorMessage } from '../../utils/apiError';
+import { queryKeys } from '../../lib/queryKeys';
+import { useInvalidateOnNotification } from '../../hooks/useInvalidateOnNotification';
 import { useParams, useNavigate } from 'react-router-dom';
 import {
   ArrowLeft,
@@ -25,12 +28,11 @@ import { formatCurrency, formatDate, getTashkentToday } from '../../config/const
 import { ModalPortal } from '../../components/common/Modal';
 import { Select } from '../../components/ui/Select';
 import { CurrencyInput } from '../../components/ui/CurrencyInput';
-import { useNotificationsStore } from '../../store/notificationsStore';
 import { Button } from '@/ui';
 import type {
-  PurchaseOrder,
-  PurchasePayment,
-  PurchaseReturn,
+
+
+
   PurchasePaymentRequest,
   PurchaseReturnRequest,
   PurchaseReturnItemRequest,
@@ -50,16 +52,11 @@ interface ReturnCartItem {
 
 export function PurchaseDetailPage() {
   const { t } = useTranslation();
+  const queryClient = useQueryClient();
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
-  const { notifications } = useNotificationsStore();
 
   // Main data
-  const [purchase, setPurchase] = useState<PurchaseOrder | null>(null);
-  const [payments, setPayments] = useState<PurchasePayment[]>([]);
-  const [returns, setReturns] = useState<PurchaseReturn[]>([]);
-  const [initialLoading, setInitialLoading] = useState(true);
-  const [refreshing, setRefreshing] = useState(false);
   const [activeTab, setActiveTab] = useState<TabType>('items');
 
   // Payment modal
@@ -78,62 +75,43 @@ export function PurchaseDetailPage() {
   const [returnItems, setReturnItems] = useState<ReturnCartItem[]>([]);
   const [returnSaving, setReturnSaving] = useState(false);
 
-  // Load purchase details
-  const loadPurchase = useCallback(async (isInitial = false) => {
-    if (!id) return;
-    if (!isInitial) {
-      setRefreshing(true);
-    }
-    try {
-      const data = await purchasesApi.getById(Number(id));
-      setPurchase(data);
-    } catch (error) {
-      console.error('Failed to load purchase:', error);
-    } finally {
-      setInitialLoading(false);
-      setRefreshing(false);
-    }
-  }, [id]);
+  const purchaseQuery = useQuery({
+    queryKey: queryKeys.purchases.detail(Number(id)),
+    queryFn: () => purchasesApi.getById(Number(id)),
+    enabled: !!id,
+  });
 
-  // Load payments
-  const loadPayments = useCallback(async () => {
-    if (!id) return;
-    try {
-      const data = await purchasesApi.getPayments(Number(id));
-      setPayments(data);
-    } catch (error) {
-      console.error('Failed to load payments:', error);
-    }
-  }, [id]);
+  const paymentsQuery = useQuery({
+    queryKey: queryKeys.purchases.payments(Number(id)),
+    queryFn: () => purchasesApi.getPayments(Number(id)),
+    enabled: !!id,
+  });
 
-  // Load returns
-  const loadReturns = useCallback(async () => {
-    if (!id) return;
-    try {
-      const data = await purchasesApi.getReturns(Number(id));
-      setReturns(data);
-    } catch (error) {
-      console.error('Failed to load returns:', error);
-    }
-  }, [id]);
+  const returnsQuery = useQuery({
+    queryKey: queryKeys.purchases.returns(Number(id)),
+    queryFn: () => purchasesApi.getReturns(Number(id)),
+    enabled: !!id,
+  });
 
-  // Initial load
-  useEffect(() => {
-    loadPurchase(true);
-    void loadPayments();
-    void loadReturns();
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [id]);
+  const purchase = purchaseQuery.data ?? null;
+  const payments = useMemo(() => paymentsQuery.data ?? [], [paymentsQuery.data]);
+  const returns = useMemo(() => returnsQuery.data ?? [], [returnsQuery.data]);
+  const initialLoading = purchaseQuery.isPending;
+  const refreshing = purchaseQuery.isFetching && !purchaseQuery.isPending;
 
-  // Real-time updates
-  useEffect(() => {
-    if (notifications.length > 0) {
-      void loadPurchase();
-      void loadPayments();
-      void loadReturns();
-    }
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [notifications.length]);
+  /**
+   * Xaridning har qanday o'zgarishi (to'lov, qaytarish) uchtala so'rovga ham
+   * tegadi: to'lov qarzni, qaytarish esa zaxira va summani o'zgartiradi.
+   * Prefiks bo'yicha bekor qilish ularni birga yangilaydi.
+   */
+  const invalidatePurchase = () => {
+    void queryClient.invalidateQueries({ queryKey: queryKeys.purchases.all });
+    void queryClient.invalidateQueries({ queryKey: queryKeys.suppliers.all });
+    void queryClient.invalidateQueries({ queryKey: queryKeys.warehouse.all });
+    void queryClient.invalidateQueries({ queryKey: queryKeys.products.all });
+  };
+
+  useInvalidateOnNotification([queryKeys.purchases.all]);
 
   // Payment modal handlers
   const handleOpenPaymentModal = () => {
@@ -167,8 +145,7 @@ export function PurchaseDetailPage() {
 
       await purchasesApi.addPayment(Number(id), request);
       handleClosePaymentModal();
-      void loadPurchase();
-      void loadPayments();
+      invalidatePurchase();
     } catch (error) {
       console.error('Failed to save payment:', error);
     } finally {
@@ -230,8 +207,7 @@ export function PurchaseDetailPage() {
 
       await purchasesApi.createReturn(Number(id), request);
       handleCloseReturnModal();
-      void loadPurchase();
-      void loadReturns();
+      invalidatePurchase();
     } catch (error) {
       console.error('Failed to save return:', error);
       toast.error(getApiErrorMessage(error));
@@ -244,7 +220,7 @@ export function PurchaseDetailPage() {
   const handleApproveReturn = async (returnId: number) => {
     try {
       await purchasesApi.approveReturn(returnId);
-      void loadReturns();
+      invalidatePurchase();
     } catch (error) {
       console.error('Failed to approve return:', error);
       toast.error(getApiErrorMessage(error));
@@ -255,8 +231,7 @@ export function PurchaseDetailPage() {
   const handleCompleteReturn = async (returnId: number) => {
     try {
       await purchasesApi.completeReturn(returnId);
-      void loadReturns();
-      void loadPurchase();
+      invalidatePurchase();
     } catch (error) {
       console.error('Failed to complete return:', error);
       toast.error(getApiErrorMessage(error));
@@ -268,7 +243,7 @@ export function PurchaseDetailPage() {
     if (!confirm(t('erp.purchaseDetail.deleteReturnConfirm'))) return;
     try {
       await purchasesApi.deleteReturn(returnId);
-      void loadReturns();
+      invalidatePurchase();
     } catch (error) {
       console.error('Failed to delete return:', error);
       toast.error(getApiErrorMessage(error));

@@ -46,6 +46,8 @@ export const queryKeys = {
     list: (params: PurchaseListParams) => ['purchases', 'list', params] as const,
     stats: () => ['purchases', 'stats'] as const,
     detail: (id: number) => ['purchases', 'detail', id] as const,
+    payments: (id: number) => ['purchases', 'payments', id] as const,
+    returns: (id: number) => ['purchases', 'returns', id] as const,
   },
 
   products: {

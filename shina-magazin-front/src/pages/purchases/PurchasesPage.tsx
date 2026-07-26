@@ -1,8 +1,12 @@
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useMemo, useState } from 'react';
+import { keepPreviousData, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import toast from 'react-hot-toast';
 import { getApiErrorMessage } from '../../utils/apiError';
+import { queryKeys } from '../../lib/queryKeys';
+import { useInvalidateOnNotification } from '../../hooks/useInvalidateOnNotification';
+import { useDebouncedValue } from '../../hooks/useDebouncedValue';
 import {
   Plus,
   ShoppingCart,
@@ -38,14 +42,13 @@ import { ProductSearchCombobox } from '../../components/common/ProductSearchComb
 import { CurrencyInput } from '../../components/ui/CurrencyInput';
 import { Select } from '../../components/ui/Select';
 import { Button } from '@/ui';
-import { useNotificationsStore } from '../../store/notificationsStore';
 import { useHighlight } from '../../hooks/useHighlight';
 import { PermissionCode } from '../../hooks/usePermission';
 import { PermissionGate } from '../../components/common/PermissionGate';
 import type {
   Supplier,
   PurchaseOrder,
-  PurchaseStats,
+
   PurchaseRequest,
   PurchaseItemRequest,
   Product,
@@ -61,18 +64,11 @@ interface CartItem {
 
 export function PurchasesPage() {
   const { t } = useTranslation();
+  const queryClient = useQueryClient();
   const navigate = useNavigate();
-  const { notifications } = useNotificationsStore();
   // Purchases state
-  const [purchases, setPurchases] = useState<PurchaseOrder[]>([]);
-  const [loadError, setLoadError] = useState<string | null>(null);
-  const [initialLoading, setInitialLoading] = useState(true);
-  const [refreshing, setRefreshing] = useState(false);
   const [page, setPage] = useState(0);
   const [pageSize, setPageSize] = useState(20);
-  const [totalPages, setTotalPages] = useState(0);
-  const [totalElements, setTotalElements] = useState(0);
-  const [purchaseStats, setPurchaseStats] = useState<PurchaseStats | null>(null);
 
   // Filter state
   const [dateRangePreset, setDateRangePreset] = useState<DateRangePreset>('all');
@@ -82,7 +78,6 @@ export function PurchasesPage() {
   const [selectedPaymentStatus, setSelectedPaymentStatus] = useState<PaymentStatus | ''>('');
 
   // Suppliers for filter dropdown
-  const [suppliers, setSuppliers] = useState<Supplier[]>([]);
 
   // Purchase modal state
   const [showPurchaseModal, setShowPurchaseModal] = useState(false);
@@ -95,8 +90,6 @@ export function PurchasesPage() {
 
   // Product search
   const [productSearch, setProductSearch] = useState('');
-  const [productResults, setProductResults] = useState<Product[]>([]);
-  const [productSearchLoading, setProductSearchLoading] = useState(false);
 
   // Calculate cart totals
   const cartTotal = useMemo(() =>
@@ -141,104 +134,70 @@ export function PurchasesPage() {
   }, [customRange.start, customRange.end]);
 
   // Load purchases
-  const loadPurchases = useCallback(async (isInitial = false) => {
-    if (!isInitial) {
-      setRefreshing(true);
-    }
-    try {
-      const dateRange = getDateRangeValues(dateRangePreset);
+  const dateRange = getDateRangeValues(dateRangePreset);
+  const listParams: PurchaseFilters = {
+    page,
+    size: pageSize,
+    supplierId: selectedSupplierId,
+    status: selectedStatus || undefined,
+    startDate: dateRange?.start,
+    endDate: dateRange?.end,
+  };
 
-      const filters: PurchaseFilters = {
-        page,
-        size: pageSize,
-        supplierId: selectedSupplierId,
-        status: selectedStatus || undefined,
-        startDate: dateRange?.start,
-        endDate: dateRange?.end,
-      };
+  /**
+   * Maxsus sana oralig'i to'liq tanlanmaguncha so'rov yubormaymiz.
+   *
+   * <p>Aks holda foydalanuvchi boshlanish sanasini tanlagan zahoti
+   * yarim-tayyor filtr bilan so'rov ketardi.
+   */
+  const rangeReady = dateRangePreset !== 'custom' || (!!customRange.start && !!customRange.end);
 
-      const data = await purchasesApi.getAll(filters);
-      setPurchases(data.content);
-      setTotalPages(data.totalPages);
-      setTotalElements(data.totalElements);
-      setLoadError(null);
-    } catch (error) {
-      console.error('Failed to load purchases:', error);
-      setLoadError(getApiErrorMessage(error));
-    } finally {
-      setInitialLoading(false);
-      setRefreshing(false);
-    }
-  }, [page, pageSize, selectedSupplierId, selectedStatus, dateRangePreset, getDateRangeValues]);
+  const purchasesQuery = useQuery({
+    queryKey: queryKeys.purchases.list(listParams as never),
+    queryFn: () => purchasesApi.getAll(listParams),
+    enabled: rangeReady,
+    placeholderData: keepPreviousData,
+  });
 
-  // Load purchase stats
-  const loadPurchaseStats = useCallback(async () => {
-    try {
-      const stats = await purchasesApi.getStats();
-      setPurchaseStats(stats);
-    } catch (error) {
-      console.error('Failed to load purchase stats:', error);
-    }
-  }, []);
+  const statsQuery = useQuery({
+    queryKey: queryKeys.purchases.stats(),
+    queryFn: () => purchasesApi.getStats(),
+  });
 
-  // Load suppliers for filter dropdown
-  const loadSuppliers = useCallback(async () => {
-    try {
-      const data = await suppliersApi.getActive();
-      setSuppliers(data);
-    } catch (error) {
-      console.error('Failed to load suppliers:', error);
-    }
-  }, []);
+  const suppliersQuery = useQuery({
+    queryKey: queryKeys.suppliers.active(),
+    queryFn: () => suppliersApi.getActive(),
+  });
 
-  // Search products
-  const searchProducts = useCallback(async (query: string) => {
-    if (!query.trim()) {
-      setProductResults([]);
-      return;
-    }
-    setProductSearchLoading(true);
-    try {
-      const data = await productsApi.getAll({ search: query, size: 10 });
-      setProductResults(data.content);
-    } catch (error) {
-      console.error('Failed to search products:', error);
-    } finally {
-      setProductSearchLoading(false);
-    }
-  }, []);
+  // Har bosilgan harfda so'rov yubormaslik uchun kechiktiriladi
+  const debouncedProductSearch = useDebouncedValue(productSearch.trim(), 300);
+  const productQuery = useQuery({
+    queryKey: queryKeys.products.search(debouncedProductSearch),
+    queryFn: () => productsApi.getAll({ search: debouncedProductSearch, size: 10 }),
+    enabled: debouncedProductSearch.length > 0,
+  });
 
-  // Debounced product search
-  useEffect(() => {
-    const timer = setTimeout(() => {
-      searchProducts(productSearch);
-    }, 300);
-    return () => clearTimeout(timer);
-  }, [productSearch, searchProducts]);
+  const purchases = purchasesQuery.data?.content ?? [];
+  const totalPages = purchasesQuery.data?.totalPages ?? 0;
+  const totalElements = purchasesQuery.data?.totalElements ?? 0;
+  const purchaseStats = statsQuery.data ?? null;
+  const suppliers = useMemo(() => suppliersQuery.data ?? [], [suppliersQuery.data]);
+  // Maydon bo'shatilganda ro'yxat DARHOL yopilishi kerak
+  const productResults = productSearch.trim() ? productQuery.data?.content ?? [] : [];
+  const productSearchLoading = productQuery.isFetching;
+  const loadError = purchasesQuery.isError ? getApiErrorMessage(purchasesQuery.error) : null;
+  const initialLoading = rangeReady && purchasesQuery.isPending;
+  const refreshing = purchasesQuery.isFetching && !purchasesQuery.isPending;
 
-  // Initial load
-  useEffect(() => {
-    loadPurchases(true);
-    void loadPurchaseStats();
-    void loadSuppliers();
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  /** Xarid zaxira, ta'minotchi balansi va omborga ta'sir qiladi. */
+  const invalidatePurchases = () => {
+    void queryClient.invalidateQueries({ queryKey: queryKeys.purchases.all });
+    void queryClient.invalidateQueries({ queryKey: queryKeys.suppliers.all });
+    void queryClient.invalidateQueries({ queryKey: queryKeys.warehouse.all });
+    void queryClient.invalidateQueries({ queryKey: queryKeys.products.all });
+  };
 
-  // Reload when filters change
-  useEffect(() => {
-    if (dateRangePreset !== 'custom' || (customRange.start && customRange.end)) {
-      void loadPurchases();
-    }
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [page, pageSize, selectedSupplierId, selectedStatus, dateRangePreset, customRange.start, customRange.end]);
-
-  // Real-time updates
-  useEffect(() => {
-    if (notifications.length > 0) {
-      void loadPurchases();
-      void loadPurchaseStats();
-    }
-  }, [notifications.length, loadPurchases, loadPurchaseStats]);
+  useInvalidateOnNotification([queryKeys.purchases.all]);
 
   const handlePageSizeChange = (newSize: number) => {
     setPageSize(newSize);
@@ -289,7 +248,6 @@ export function PurchasesPage() {
     setPaidAmount(0);
     setPurchaseNotes('');
     setProductSearch('');
-    setProductResults([]);
     setShowPurchaseModal(true);
   };
 
@@ -300,7 +258,6 @@ export function PurchasesPage() {
     setPaidAmount(0);
     setPurchaseNotes('');
     setProductSearch('');
-    setProductResults([]);
   };
 
   const handleAddToCart = (product: Product) => {
@@ -319,7 +276,6 @@ export function PurchasesPage() {
       }]);
     }
     setProductSearch('');
-    setProductResults([]);
   };
 
   const handleUpdateCartItem = (productId: number, field: 'quantity' | 'unitPrice', value: number) => {
@@ -355,8 +311,7 @@ export function PurchasesPage() {
 
       await purchasesApi.create(request);
       handleClosePurchaseModal();
-      void loadPurchases();
-      void loadPurchaseStats();
+      invalidatePurchases();
     } catch (error) {
       console.error('Failed to save purchase:', error);
       toast.error(getApiErrorMessage(error));
@@ -654,7 +609,7 @@ export function PurchasesPage() {
             <Button
               variant="ghost"
               size="sm"
-              onClick={() => loadPurchases()}
+              onClick={() => void purchasesQuery.refetch()}
             >
               <RefreshCw className="h-4 w-4" />
               {t('common.refresh')}
@@ -676,7 +631,7 @@ export function PurchasesPage() {
         <DataTable
           data={purchases}
           error={loadError}
-          onRetry={() => loadPurchases(true)}
+          onRetry={() => void purchasesQuery.refetch()}
           columns={columns}
           keyExtractor={(purchase) => purchase.id}
           loading={initialLoading && !refreshing}
