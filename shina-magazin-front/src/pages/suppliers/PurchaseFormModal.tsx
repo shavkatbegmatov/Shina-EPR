@@ -1,4 +1,5 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useMemo, useState } from 'react';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { Package, Trash2, X } from 'lucide-react';
 import clsx from 'clsx';
 import { useTranslation } from 'react-i18next';
@@ -8,6 +9,8 @@ import { purchasesApi } from '../../api/purchases.api';
 import { productsApi } from '../../api/products.api';
 import { getApiErrorMessage } from '../../utils/apiError';
 import { formatCurrency, getTashkentToday } from '../../config/constants';
+import { queryKeys } from '../../lib/queryKeys';
+import { useDebouncedValue } from '../../hooks/useDebouncedValue';
 import { ModalPortal } from '../../components/common/Modal';
 import { SearchInput } from '../../components/ui/SearchInput';
 import { Select } from '../../components/ui/Select';
@@ -27,7 +30,6 @@ interface Props {
   /** Tanlash uchun barcha faol ta'minotchilar (sahifalangan ro'yxat emas). */
   suppliers: Supplier[];
   onClose: () => void;
-  onSaved: () => void;
 }
 
 /**
@@ -38,91 +40,78 @@ interface Props {
  * o'z-o'zidan tozalanadi. Ilgari buni sahifa qo'lda qilardi — ochish va
  * yopish handler'larida bir xil 6 qator takrorlangan edi.
  */
-export function PurchaseFormModal({ isOpen, suppliers, onClose, onSaved }: Props) {
+export function PurchaseFormModal({ isOpen, suppliers, onClose }: Props) {
   return (
     <ModalPortal isOpen={isOpen} onClose={onClose}>
-      <PurchaseForm suppliers={suppliers} onClose={onClose} onSaved={onSaved} />
+      <PurchaseForm suppliers={suppliers} onClose={onClose} />
     </ModalPortal>
   );
 }
 
-function PurchaseForm({
-  suppliers,
-  onClose,
-  onSaved,
-}: Pick<Props, 'suppliers' | 'onClose' | 'onSaved'>) {
+function PurchaseForm({ suppliers, onClose }: Pick<Props, 'suppliers' | 'onClose'>) {
   const { t } = useTranslation();
+  const queryClient = useQueryClient();
 
   const [selectedSupplier, setSelectedSupplier] = useState<Supplier | null>(null);
   const [purchaseDate, setPurchaseDate] = useState(getTashkentToday());
   const [items, setItems] = useState<CartItem[]>([]);
   const [paidAmount, setPaidAmount] = useState(0);
   const [notes, setNotes] = useState('');
-  const [saving, setSaving] = useState(false);
 
   const [productSearch, setProductSearch] = useState('');
-  const [productResults, setProductResults] = useState<Product[]>([]);
-  const [productSearchLoading, setProductSearchLoading] = useState(false);
+  // Har bosilgan harfda so'rov yubormaslik uchun kechiktiriladi
+  const debouncedSearch = useDebouncedValue(productSearch.trim(), 300);
 
   const total = useMemo(() => cartTotal(items), [items]);
   const totalQuantity = useMemo(() => cartTotalQuantity(items), [items]);
   const debtAmount = total - paidAmount;
 
-  // Har bosilgan harfda so'rov yubormaslik uchun kechiktiriladi
-  useEffect(() => {
-    const query = productSearch.trim();
-    if (!query) {
-      setProductResults([]);
-      return;
-    }
+  const productQuery = useQuery({
+    queryKey: queryKeys.products.search(debouncedSearch),
+    queryFn: () => productsApi.getAll({ search: debouncedSearch, size: 10 }),
+    enabled: debouncedSearch.length > 0,
+  });
 
-    const timer = setTimeout(async () => {
-      setProductSearchLoading(true);
-      try {
-        const data = await productsApi.getAll({ search: query, size: 10 });
-        setProductResults(data.content);
-      } catch (error) {
-        console.error('Failed to search products:', error);
-      } finally {
-        setProductSearchLoading(false);
-      }
-    }, 300);
+  // Qidiruv maydoni bo'shatilganda ro'yxat DARHOL yopilishi kerak —
+  // kechiktirilgan qiymatni kutib turish dropdown'ni osilib qoldirardi.
+  const productResults = productSearch.trim() ? productQuery.data?.content ?? [] : [];
 
-    return () => clearTimeout(timer);
-  }, [productSearch]);
+  const save = useMutation({
+    mutationFn: (request: PurchaseRequest) => purchasesApi.create(request),
+    onSuccess: () => {
+      void queryClient.invalidateQueries({ queryKey: queryKeys.purchases.all });
+      // Xarid ta'minotchi balansini o'zgartiradi — qarz statistikasi ham
+      // eskiradi, shuning uchun ikkala tarmoq bekor qilinadi.
+      void queryClient.invalidateQueries({ queryKey: queryKeys.suppliers.all });
+      onClose();
+    },
+    onError: (error) => {
+      console.error('Failed to save purchase:', error);
+      toast.error(getApiErrorMessage(error));
+    },
+  });
+
+  const saving = save.isPending;
 
   const handleAdd = (product: Product) => {
     setItems((prev) => addToCart(prev, product));
     setProductSearch('');
-    setProductResults([]);
   };
 
-  const handleSave = async () => {
+  const handleSave = () => {
     if (!selectedSupplier || items.length === 0) return;
 
-    setSaving(true);
-    try {
-      const request: PurchaseRequest = {
-        supplierId: selectedSupplier.id,
-        orderDate: purchaseDate,
-        paidAmount,
-        notes: notes || undefined,
-        items: items.map<PurchaseItemRequest>((item) => ({
-          productId: item.product.id,
-          quantity: item.quantity,
-          unitPrice: item.unitPrice,
-        })),
-      };
-
-      await purchasesApi.create(request);
-      onClose();
-      onSaved();
-    } catch (error) {
-      console.error('Failed to save purchase:', error);
-      toast.error(getApiErrorMessage(error));
-    } finally {
-      setSaving(false);
-    }
+    save.mutate({
+      supplierId: selectedSupplier.id,
+      orderDate: purchaseDate,
+      paidAmount,
+      notes: notes || undefined,
+      items: items.map<PurchaseItemRequest>((item) => ({
+        productId: item.product.id,
+        quantity: item.quantity,
+        unitPrice: item.unitPrice,
+      })),
+    });
   };
 
   const labelClass =
@@ -180,10 +169,7 @@ function PurchaseForm({
                 onValueChange={setProductSearch}
                 label={t('erp.suppliers.productSearchLabel')}
                 placeholder={t('erp.suppliers.productSearchPlaceholder')}
-                onClear={() => {
-                  setProductSearch('');
-                  setProductResults([]);
-                }}
+                onClear={() => setProductSearch('')}
               />
               {productResults.length > 0 && (
                 <div className="absolute z-50 top-full left-0 right-0 mt-1 bg-base-100 border border-base-300 rounded-lg shadow-lg max-h-60 overflow-y-auto">
@@ -207,7 +193,7 @@ function PurchaseForm({
                   ))}
                 </div>
               )}
-              {productSearchLoading && (
+              {productQuery.isFetching && (
                 <div className="absolute z-50 top-full left-0 right-0 mt-1 bg-base-100 border border-base-300 rounded-lg p-4 text-center">
                   <span className="loading loading-spinner loading-sm" />
                 </div>

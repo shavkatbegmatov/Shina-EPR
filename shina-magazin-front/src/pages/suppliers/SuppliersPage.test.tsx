@@ -1,5 +1,6 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { MemoryRouter } from 'react-router-dom';
 import type { ReactNode } from 'react';
 import '../../i18n';
@@ -74,8 +75,12 @@ function pageOf<T>(content: T[]): PagedResponse<T> {
 }
 
 function renderPage() {
+  // `retry: false` — xato testida qayta urinishlarni kutib o'tirmaslik uchun
+  const qc = new QueryClient({ defaultOptions: { queries: { retry: false } } });
   const Wrapper = ({ children }: { children: ReactNode }) => (
-    <MemoryRouter>{children}</MemoryRouter>
+    <QueryClientProvider client={qc}>
+      <MemoryRouter>{children}</MemoryRouter>
+    </QueryClientProvider>
   );
   return render(<SuppliersPage />, { wrapper: Wrapper });
 }

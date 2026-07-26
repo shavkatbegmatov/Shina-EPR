@@ -1,54 +1,33 @@
 import { useCallback, useState } from 'react';
+import { keepPreviousData, useQuery } from '@tanstack/react-query';
 import { purchasesApi } from '../../api/purchases.api';
 import { getApiErrorMessage } from '../../utils/apiError';
-import type { PurchaseOrder, PurchaseStats } from '../../types';
+import { queryKeys } from '../../lib/queryKeys';
+import type { PurchaseOrder } from '../../types';
 
 /**
- * Xaridlar ro'yxati, sahifalash va statistika.
+ * Xaridlar ro'yxati va statistikasi.
  *
- * <p>Ta'minotchilar holatidan ALOHIDA: ikkalasi bir komponentda turganda
- * `page`/`purchasesPage`, `refreshing`/`purchasesRefreshing` kabi juftliklar
- * paydo bo'lib, noto'g'ri o'zgaruvchini ishlatish oson edi.
+ * <p>{@code enabled} — bo'lim ochilmaguncha so'rov YUBORILMAYDI. Ilgari buni
+ * `useEffect` ichidagi `if (activeTab === 'purchases')` sharti qilardi; endi
+ * shart so'rovning o'zida va uni chetlab o'tib bo'lmaydi.
  */
-export function usePurchasesData() {
-  const [purchases, setPurchases] = useState<PurchaseOrder[]>([]);
-  const [loadError, setLoadError] = useState<string | null>(null);
-  const [initialLoading, setInitialLoading] = useState(true);
-  const [refreshing, setRefreshing] = useState(false);
-
+export function usePurchasesData(enabled: boolean) {
   const [page, setPage] = useState(0);
   const [pageSize, setPageSize] = useState(20);
-  const [totalPages, setTotalPages] = useState(0);
-  const [totalElements, setTotalElements] = useState(0);
 
-  const [stats, setStats] = useState<PurchaseStats | null>(null);
+  const listQuery = useQuery({
+    queryKey: queryKeys.purchases.list({ page, size: pageSize }),
+    queryFn: () => purchasesApi.getAll({ page, size: pageSize }),
+    placeholderData: keepPreviousData,
+    enabled,
+  });
 
-  const load = useCallback(async (isInitial = false) => {
-    if (!isInitial) {
-      setRefreshing(true);
-    }
-    try {
-      const data = await purchasesApi.getAll({ page, size: pageSize });
-      setPurchases(data.content);
-      setTotalPages(data.totalPages);
-      setTotalElements(data.totalElements);
-      setLoadError(null);
-    } catch (error) {
-      console.error('Failed to load purchases:', error);
-      setLoadError(getApiErrorMessage(error));
-    } finally {
-      setInitialLoading(false);
-      setRefreshing(false);
-    }
-  }, [page, pageSize]);
-
-  const loadStats = useCallback(async () => {
-    try {
-      setStats(await purchasesApi.getStats());
-    } catch (error) {
-      console.error('Failed to load purchase stats:', error);
-    }
-  }, []);
+  const statsQuery = useQuery({
+    queryKey: queryKeys.purchases.stats(),
+    queryFn: () => purchasesApi.getStats(),
+    enabled,
+  });
 
   const changePageSize = useCallback((newSize: number) => {
     setPageSize(newSize);
@@ -56,18 +35,19 @@ export function usePurchasesData() {
   }, []);
 
   return {
-    purchases,
-    loadError,
-    initialLoading,
-    refreshing,
+    purchases: listQuery.data?.content ?? ([] as PurchaseOrder[]),
+    loadError: listQuery.isError ? getApiErrorMessage(listQuery.error) : null,
+    // Bo'lim ochilmagan bo'lsa so'rov `pending` holatida turadi — uni
+    // "yuklanmoqda" deb ko'rsatish jadvalni abadiy skeletonda qoldirardi.
+    initialLoading: enabled && listQuery.isPending,
+    refreshing: listQuery.isFetching && !listQuery.isPending,
     page,
     pageSize,
-    totalPages,
-    totalElements,
-    stats,
+    totalPages: listQuery.data?.totalPages ?? 0,
+    totalElements: listQuery.data?.totalElements ?? 0,
+    stats: statsQuery.data ?? null,
     setPage,
     changePageSize,
-    load,
-    loadStats,
+    refetch: listQuery.refetch,
   };
 }

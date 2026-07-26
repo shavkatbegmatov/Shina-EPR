@@ -1,77 +1,52 @@
 import { useCallback, useState } from 'react';
+import { keepPreviousData, useQuery } from '@tanstack/react-query';
 import { suppliersApi } from '../../api/suppliers.api';
 import { getApiErrorMessage } from '../../utils/apiError';
+import { queryKeys } from '../../lib/queryKeys';
 import type { Supplier } from '../../types';
 
 /**
  * Ta'minotchilar ro'yxati, sahifalash va statistika.
  *
- * <p>Ilgari bularning barchasi `SuppliersPage` ichida 12 ta alohida
- * `useState` bo'lib yotardi va xaridlar holati bilan aralashib ketgan edi —
- * qaysi o'zgaruvchi qaysi jadvalga tegishli ekanini ajratish qiyin edi.
+ * <p>Ilgari bu yerda uchta qo'lda yozilgan yuklovchi va ularni chaqiradigan
+ * `useEffect` lar bor edi. React Query bilan ular yo'qoldi: so'rov kaliti
+ * (sahifa, o'lcham, qidiruv) o'zgarishi bilan ma'lumot o'z-o'zidan qayta
+ * olinadi va sahifa yuklashni boshqarmaydi.
+ *
+ * <p>Qaytariladigan shakl ATAYLAB o'zgarmadi (`initialLoading`, `refreshing`,
+ * `loadError`) — bo'lim komponentlari va ularning testlari tegilmasdan
+ * qoldi, ya'ni ko'chirish xatti-harakatni saqlagani tekshirilishi mumkin.
  */
 export function useSuppliersData() {
-  const [suppliers, setSuppliers] = useState<Supplier[]>([]);
-  const [loadError, setLoadError] = useState<string | null>(null);
-  const [initialLoading, setInitialLoading] = useState(true);
-  const [refreshing, setRefreshing] = useState(false);
-
   const [search, setSearch] = useState('');
   const [page, setPage] = useState(0);
   const [pageSize, setPageSize] = useState(20);
-  const [totalPages, setTotalPages] = useState(0);
-  const [totalElements, setTotalElements] = useState(0);
 
-  // Dropdown uchun barcha faol ta'minotchilar — sahifalangan ro'yxatdan
-  // ALOHIDA: xarid oynasida 2-sahifadagi ta'minotchi ham tanlanishi kerak.
-  const [allSuppliers, setAllSuppliers] = useState<Supplier[]>([]);
+  const listQuery = useQuery({
+    queryKey: queryKeys.suppliers.list({ page, size: pageSize, search: search || undefined }),
+    queryFn: () => suppliersApi.getAll({ page, size: pageSize, search: search || undefined }),
+    // Sahifa almashganda eski ro'yxat ekranda qoladi va ustiga "yangilanmoqda"
+    // qatlami tushadi — jadval bo'sh holatga sakramaydi.
+    placeholderData: keepPreviousData,
+  });
 
-  const [totalDebt, setTotalDebt] = useState(0);
-  const [suppliersWithDebt, setSuppliersWithDebt] = useState<Supplier[]>([]);
+  // Dropdown uchun — sahifalangan ro'yxatdan ALOHIDA: xarid oynasida
+  // 2-sahifadagi ta'minotchi ham tanlanishi kerak.
+  const activeQuery = useQuery({
+    queryKey: queryKeys.suppliers.active(),
+    queryFn: () => suppliersApi.getActive(),
+  });
 
-  const load = useCallback(async (isInitial = false) => {
-    if (!isInitial) {
-      setRefreshing(true);
-    }
-    try {
-      const data = await suppliersApi.getAll({
-        page,
-        size: pageSize,
-        search: search || undefined,
-      });
-      setSuppliers(data.content);
-      setTotalPages(data.totalPages);
-      setTotalElements(data.totalElements);
-      setLoadError(null);
-    } catch (error) {
-      console.error('Failed to load suppliers:', error);
-      setLoadError(getApiErrorMessage(error));
-    } finally {
-      setInitialLoading(false);
-      setRefreshing(false);
-    }
-  }, [page, pageSize, search]);
-
-  const loadAll = useCallback(async () => {
-    try {
-      setAllSuppliers(await suppliersApi.getActive());
-    } catch (error) {
-      console.error('Failed to load all suppliers:', error);
-    }
-  }, []);
-
-  const loadStats = useCallback(async () => {
-    try {
-      const [debt, withDebt] = await Promise.all([
+  const statsQuery = useQuery({
+    queryKey: queryKeys.suppliers.stats(),
+    queryFn: async () => {
+      const [totalDebt, withDebt] = await Promise.all([
         suppliersApi.getTotalDebt(),
         suppliersApi.getWithDebt(),
       ]);
-      setTotalDebt(debt);
-      setSuppliersWithDebt(withDebt);
-    } catch (error) {
-      console.error('Failed to load stats:', error);
-    }
-  }, []);
+      return { totalDebt, withDebt };
+    },
+  });
 
   /** Filtr o'zgarganda birinchi sahifaga qaytariladi. */
   const changeSearch = useCallback((value: string) => {
@@ -85,23 +60,23 @@ export function useSuppliersData() {
   }, []);
 
   return {
-    suppliers,
-    allSuppliers,
-    loadError,
-    initialLoading,
-    refreshing,
+    suppliers: listQuery.data?.content ?? ([] as Supplier[]),
+    allSuppliers: activeQuery.data ?? ([] as Supplier[]),
+    loadError: listQuery.isError ? getApiErrorMessage(listQuery.error) : null,
+    initialLoading: listQuery.isPending,
+    // `isPending` birinchi yuklash, `isFetching` esa har qanday yuklash —
+    // ikkinchisidan birinchisini ayirsak "fonda yangilanmoqda" holati chiqadi.
+    refreshing: listQuery.isFetching && !listQuery.isPending,
     search,
     page,
     pageSize,
-    totalPages,
-    totalElements,
-    totalDebt,
-    suppliersWithDebt,
+    totalPages: listQuery.data?.totalPages ?? 0,
+    totalElements: listQuery.data?.totalElements ?? 0,
+    totalDebt: statsQuery.data?.totalDebt ?? 0,
+    suppliersWithDebt: statsQuery.data?.withDebt ?? ([] as Supplier[]),
     setPage,
     changeSearch,
     changePageSize,
-    load,
-    loadAll,
-    loadStats,
+    refetch: listQuery.refetch,
   };
 }

@@ -196,7 +196,7 @@ export function SuppliersTab({ data, highlightId, onHighlightComplete, onEdit }:
         <DataTable
           data={data.suppliers}
           error={data.loadError}
-          onRetry={() => data.load(true)}
+          onRetry={() => void data.refetch()}
           columns={columns}
           keyExtractor={(supplier) => supplier.id}
           loading={data.initialLoading && !data.refreshing}

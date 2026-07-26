@@ -146,7 +146,7 @@ export function PurchasesTab({ data }: Props) {
         <DataTable
           data={data.purchases}
           error={data.loadError}
-          onRetry={() => data.load(true)}
+          onRetry={() => void data.refetch()}
           columns={columns}
           keyExtractor={(purchase) => purchase.id}
           loading={data.initialLoading}

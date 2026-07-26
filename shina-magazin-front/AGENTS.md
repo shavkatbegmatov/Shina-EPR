@@ -25,9 +25,32 @@ Backend (run in `shina-magazin-api/`):
 - Java types use PascalCase with suffixes (`*Controller`, `*Service`, `*Repository`); DTOs in `dto/request` and `dto/response` use `*Request`/`*Response`.
 - Frontend linting is via ESLint; no formatter config is checked in.
 
+### Data fetching (React Query)
+Server data goes through TanStack Query — not `useState` + `useEffect` loaders.
+The manual pattern silently drifts: every page re-implements loading/error/refresh
+flags, and a "reload after save" chain has to name each loader by hand, so adding
+a new query means remembering to add it in three places.
+
+- Query keys live in `src/lib/queryKeys.ts`. Never inline a key string — a typo
+  (`'supplier'` vs `'suppliers'`) makes invalidation miss silently and the screen
+  keeps showing stale data with no error.
+- Invalidate by prefix (`queryKeys.suppliers.all`) so list + stats + detail refresh together.
+- Paginated lists: `placeholderData: keepPreviousData`, then map
+  `isPending` → initial skeleton and `isFetching && !isPending` → "refreshing" overlay.
+- Data that only a hidden tab needs: gate it with `enabled`, not an `if` inside an effect.
+- Mutations invalidate in `onSuccess`; the page should not pass `onSaved` reload callbacks.
+- WebSocket-driven refresh: `useInvalidateOnNotification([...keys])`, not a
+  `notifications.length` effect.
+
+`pages/suppliers/` is the reference implementation. Pages still on the manual
+pattern are being migrated incrementally — follow this section for new code.
+
 ## Testing Guidelines
 - Backend uses Spring Boot Starter Test (JUnit 5). Place tests in `shina-magazin-api/src/test/java/...` and name them `*Test.java`.
-- Frontend test tooling is not configured yet; add a runner and script before adding UI tests.
+- Frontend uses Vitest + Testing Library (`npm test -- --run`). Co-locate tests with the
+  code as `*.test.ts(x)`; jsdom and setup are wired in `vite.config.ts`.
+- Mock the API module (`vi.mock('../../api/x.api')`), not axios, and wrap page renders in
+  `QueryClientProvider` with `retry: false` so error-path tests don't wait on retries.
 
 ## Commit & Pull Request Guidelines
 - Git history currently shows a single `init` commit, so no convention is established. Use short, imperative summaries (optionally scoped), e.g. `api: add stock adjustment endpoint`.

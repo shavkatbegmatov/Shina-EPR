@@ -1,10 +1,12 @@
 import { useState } from 'react';
+import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { Building2, CreditCard, Mail, X } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import toast from 'react-hot-toast';
 import { Button } from '@/ui';
 import { suppliersApi } from '../../api/suppliers.api';
 import { getApiErrorMessage } from '../../utils/apiError';
+import { queryKeys } from '../../lib/queryKeys';
 import { ModalPortal } from '../../components/common/Modal';
 import { PhoneInput } from '../../components/ui/PhoneInput';
 import type { Supplier, SupplierRequest } from '../../types';
@@ -44,7 +46,6 @@ interface Props {
   /** null = yangi ta'minotchi. */
   supplier: Supplier | null;
   onClose: () => void;
-  onSaved: () => void;
 }
 
 /**
@@ -56,46 +57,45 @@ interface Props {
  * `setFormData(emptyFormData)`) va bir joyda unutilsa oldingi ta'minotchi
  * ma'lumoti yangi formada qolib ketardi.
  */
-export function SupplierFormModal({ isOpen, supplier, onClose, onSaved }: Props) {
+export function SupplierFormModal({ isOpen, supplier, onClose }: Props) {
   return (
     <ModalPortal isOpen={isOpen} onClose={onClose}>
-      <SupplierForm supplier={supplier} onClose={onClose} onSaved={onSaved} />
+      <SupplierForm supplier={supplier} onClose={onClose} />
     </ModalPortal>
   );
 }
 
-function SupplierForm({
-  supplier,
-  onClose,
-  onSaved,
-}: Pick<Props, 'supplier' | 'onClose' | 'onSaved'>) {
+function SupplierForm({ supplier, onClose }: Pick<Props, 'supplier' | 'onClose'>) {
   const { t } = useTranslation();
+  const queryClient = useQueryClient();
   const [formData, setFormData] = useState<SupplierRequest>(() => toFormData(supplier));
-  const [saving, setSaving] = useState(false);
 
   const change = (field: keyof SupplierRequest, value: string) =>
     setFormData((prev) => ({ ...prev, [field]: value }));
 
+  const save = useMutation({
+    mutationFn: (data: SupplierRequest) =>
+      supplier ? suppliersApi.update(supplier.id, data) : suppliersApi.create(data),
+    onSuccess: () => {
+      // Prefiks bo'yicha: ro'yxat, dropdown va qarz statistikasi birga
+      // yangilanadi. Ilgari sahifa uchta yuklovchini QO'LDA chaqirardi va
+      // birini unutish oson edi.
+      void queryClient.invalidateQueries({ queryKey: queryKeys.suppliers.all });
+      onClose();
+    },
+    onError: (error) => {
+      console.error('Failed to save supplier:', error);
+      toast.error(getApiErrorMessage(error));
+    },
+  });
+
+  const saving = save.isPending;
   const canSave =
     !saving && formData.name.trim().length > 0 && isValidPhoneOrEmpty(formData.phone || '');
 
-  const handleSave = async () => {
+  const handleSave = () => {
     if (!formData.name.trim()) return;
-    setSaving(true);
-    try {
-      if (supplier) {
-        await suppliersApi.update(supplier.id, formData);
-      } else {
-        await suppliersApi.create(formData);
-      }
-      onClose();
-      onSaved();
-    } catch (error) {
-      console.error('Failed to save supplier:', error);
-      toast.error(getApiErrorMessage(error));
-    } finally {
-      setSaving(false);
-    }
+    save.mutate(formData);
   };
 
   const labelClass =

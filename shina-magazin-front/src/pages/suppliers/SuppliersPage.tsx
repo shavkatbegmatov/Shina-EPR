@@ -1,12 +1,13 @@
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useState } from 'react';
 import { Plus, ShoppingCart, Truck } from 'lucide-react';
 import clsx from 'clsx';
 import { useTranslation } from 'react-i18next';
 import { Button } from '@/ui';
-import { useNotificationsStore } from '../../store/notificationsStore';
 import { PermissionCode } from '../../hooks/usePermission';
 import { PermissionGate } from '../../components/common/PermissionGate';
 import { useHighlight } from '../../hooks/useHighlight';
+import { useInvalidateOnNotification } from '../../hooks/useInvalidateOnNotification';
+import { queryKeys } from '../../lib/queryKeys';
 import { useSuppliersData } from './useSuppliersData';
 import { usePurchasesData } from './usePurchasesData';
 import { SuppliersTab } from './SuppliersTab';
@@ -20,77 +21,27 @@ type TabType = 'suppliers' | 'purchases';
 /**
  * Ta'minotchilar va xaridlar.
  *
- * <p>Bu sahifa ilgari 1300 qatordan oshgan va 36 ta `useState` saqlagan yagona
- * komponent edi: ikkita mustaqil ro'yxat, ikkita statistika to'plami va ikkita
- * forma bir joyda turardi. `page`/`purchasesPage`, `refreshing`/
- * `purchasesRefreshing` kabi juftliklarda noto'g'ri o'zgaruvchini ishlatish
- * oson edi, savat arifmetikasini esa butun sahifani render qilmasdan
- * sinab bo'lmasdi.
- *
- * <p>Endi sahifa faqat KOMPOZITSIYA bilan shug'ullanadi: qaysi bo'lim ochiq,
- * qaysi oyna ko'rinadi va ma'lumot qachon qayta yuklanadi.
+ * <p>Sahifa faqat KOMPOZITSIYA bilan shug'ullanadi: qaysi bo'lim ochiq va
+ * qaysi oyna ko'rinadi. Ma'lumot yuklashni React Query boshqaradi — ilgari
+ * bu yerda beshta `useEffect` bo'lib, ularning har biri qaysi yuklovchini
+ * qachon chaqirishni qo'lda hal qilardi.
  */
 export function SuppliersPage() {
   const { t } = useTranslation();
   const [activeTab, setActiveTab] = useState<TabType>('suppliers');
 
   const suppliersData = useSuppliersData();
-  const purchasesData = usePurchasesData();
+  const purchasesData = usePurchasesData(activeTab === 'purchases');
 
-  const { notifications } = useNotificationsStore();
   const { highlightId, clearHighlight } = useHighlight();
+
+  // WebSocket bildirishnomasi kelganda ikkala bo'lim ham yangilanadi.
+  // Prefiks bo'yicha bekor qilinadi, ya'ni ro'yxat va statistika birga.
+  useInvalidateOnNotification([queryKeys.suppliers.all, queryKeys.purchases.all]);
 
   const [editingSupplier, setEditingSupplier] = useState<Supplier | null>(null);
   const [showSupplierModal, setShowSupplierModal] = useState(false);
   const [showPurchaseModal, setShowPurchaseModal] = useState(false);
-
-  const { load: loadSuppliers, loadAll: loadAllSuppliers, loadStats } = suppliersData;
-  const { load: loadPurchases, loadStats: loadPurchaseStats } = purchasesData;
-
-  // Boshlang'ich yuklash
-  useEffect(() => {
-    void loadSuppliers(true);
-    void loadStats();
-    void loadAllSuppliers();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
-
-  // Ta'minotchi filtrlari o'zgarganda — `load` ning o'zi sahifa/qidiruvga
-  // bog'langan, shuning uchun uni kuzatish yetarli.
-  useEffect(() => {
-    void loadSuppliers();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [suppliersData.page, suppliersData.pageSize, suppliersData.search]);
-
-  // Xaridlar bo'limi FAQAT ochilganda yuklanadi: ko'pchilik foydalanuvchi
-  // ta'minotchilar bo'limida ishlaydi, ikkinchi so'rovni oldindan yuborish
-  // ortiqcha edi.
-  useEffect(() => {
-    if (activeTab === 'purchases') {
-      void loadPurchases(true);
-      void loadPurchaseStats();
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [activeTab]);
-
-  useEffect(() => {
-    if (activeTab === 'purchases') {
-      void loadPurchases();
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [purchasesData.page, purchasesData.pageSize]);
-
-  // Real-time yangilanish (WebSocket bildirishnomasi kelganda)
-  useEffect(() => {
-    if (notifications.length === 0) return;
-    void loadSuppliers();
-    void loadStats();
-    if (activeTab === 'purchases') {
-      void loadPurchases();
-      void loadPurchaseStats();
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [notifications.length, activeTab]);
 
   const openNewSupplier = () => {
     setEditingSupplier(null);
@@ -101,19 +52,6 @@ export function SuppliersPage() {
     setEditingSupplier(supplier);
     setShowSupplierModal(true);
   }, []);
-
-  const handleSupplierSaved = () => {
-    void loadSuppliers();
-    void loadStats();
-    void loadAllSuppliers();
-  };
-
-  const handlePurchaseSaved = () => {
-    void loadPurchases();
-    void loadPurchaseStats();
-    // Xarid ta'minotchi balansini o'zgartiradi — qarz statistikasi ham yangilanadi
-    void loadStats();
-  };
 
   return (
     <div className="space-y-6">
@@ -179,18 +117,18 @@ export function SuppliersPage() {
         <PurchasesTab data={purchasesData} />
       )}
 
+      {/* Saqlangandan keyin ro'yxat va statistika o'z-o'zidan yangilanadi:
+          oynalar mutatsiyada tegishli kalitlarni bekor qiladi. */}
       <SupplierFormModal
         isOpen={showSupplierModal}
         supplier={editingSupplier}
         onClose={() => setShowSupplierModal(false)}
-        onSaved={handleSupplierSaved}
       />
 
       <PurchaseFormModal
         isOpen={showPurchaseModal}
         suppliers={suppliersData.allSuppliers}
         onClose={() => setShowPurchaseModal(false)}
-        onSaved={handlePurchaseSaved}
       />
     </div>
   );
