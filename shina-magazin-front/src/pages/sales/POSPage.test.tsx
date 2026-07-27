@@ -123,6 +123,72 @@ describe('POSPage', () => {
     );
   });
 
+  // Kassa eng ko'p ishlatiladigan ekran: har bosilgan harf uchun so'rov
+  // yuborilsa, "michelin" yozish 8 ta ortiqcha so'rov demakdir. Zaxira
+  // so'rovlari keshlanmasligi sababli ularning hech biri arzon emas.
+  it('qidiruvda har harf uchun alohida so\'rov yubormaydi', async () => {
+    renderPage();
+    await waitFor(() => expect(productsApi.getAll).toHaveBeenCalledTimes(1));
+
+    const input = screen.getByPlaceholderText(/Mahsulot qidirish/i);
+    const term = 'michelin';
+    for (let i = 1; i <= term.length; i++) {
+      fireEvent.change(input, { target: { value: term.slice(0, i) } });
+    }
+
+    await waitFor(() =>
+      expect(productsApi.getAll).toHaveBeenCalledWith(
+        expect.objectContaining({ search: 'michelin' })
+      )
+    );
+
+    // 1 ta boshlang'ich + 1 ta tinchlangandan keyingi so'rov.
+    expect(vi.mocked(productsApi.getAll).mock.calls.length).toBeLessThanOrEqual(2);
+  });
+
+  // Kechiktirish ro'yxatni ORQADA qoldiradi: `keepPreviousData` tufayli eski
+  // natijalar ekranda turaveradi. Kassir buni sezmasa, hali yangilanmagan
+  // ro'yxatdan tanlab yuborishi mumkin — shuning uchun kutish ochiq aytiladi.
+  it('qidiruv tinchlanmaguncha kutish holatini ko\'rsatadi', async () => {
+    renderPage();
+    await waitFor(() => expect(screen.getByText(/mahsulot topildi/i)).toBeInTheDocument());
+
+    fireEvent.change(screen.getByPlaceholderText(/Mahsulot qidirish/i), {
+      target: { value: 'michelin' },
+    });
+
+    expect(screen.getByText(/Qidirilmoqda/i)).toBeInTheDocument();
+
+    await waitFor(() => expect(screen.getByText(/mahsulot topildi/i)).toBeInTheDocument());
+  });
+
+  // Oynadagi qidiruv ham xuddi shunday: har harf uchun sahifalangan
+  // so'rov yuborilardi.
+  it('oynadagi mijoz qidiruvi ham kechiktiriladi', async () => {
+    renderPage();
+    fireEvent.click(screen.getByRole('button', { name: /Ko'rish/i }));
+    await waitFor(() => expect(customersApi.getAll).toHaveBeenCalled());
+
+    const input = screen.getByPlaceholderText(/Ism, telefon yoki kompaniya/i);
+    const term = 'anvar';
+    for (let i = 1; i <= term.length; i++) {
+      fireEvent.change(input, { target: { value: term.slice(0, i) } });
+    }
+
+    await waitFor(() =>
+      expect(customersApi.getAll).toHaveBeenCalledWith(
+        expect.objectContaining({ search: 'anvar', page: 0 })
+      )
+    );
+
+    // Yonma-yon turgan kombobox ham shu matnni o'qiydi, lekin u sahifasiz
+    // so'rov yuboradi — bu yerda faqat OYNA so'rovlari sanaladi.
+    const modalCalls = vi
+      .mocked(customersApi.getAll)
+      .mock.calls.filter(([params]) => params && 'page' in params);
+    expect(modalCalls.length).toBeLessThanOrEqual(2);
+  });
+
   it('mahsulotni bosganda savatga qo\'shiladi', async () => {
     renderPage();
     await addTireToCart();

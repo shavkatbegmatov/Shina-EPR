@@ -8,6 +8,7 @@ import { productsApi } from '../../api/products.api';
 import { salesApi } from '../../api/sales.api';
 import { customersApi } from '../../api/customers.api';
 import { useCartStore } from '../../store/cartStore';
+import { useDebouncedValue } from '../../hooks/useDebouncedValue';
 import { useInvalidateOnNotification } from '../../hooks/useInvalidateOnNotification';
 import { queryKeys } from '../../lib/queryKeys';
 import { formatCurrency, PAYMENT_METHODS } from '../../config/constants';
@@ -45,16 +46,30 @@ export function POSPage() {
   const cart = useCartStore();
   const queryClient = useQueryClient();
 
+  // Har bosilgan harfda so'rov yubormaslik uchun kechiktiriladi: "michelin"
+  // yozish 8 ta so'rov qilardi. Zaxira so'rovlari ataylab keshlanmaydi,
+  // shuning uchun ularning hech biri arzon emas.
+  const debouncedSearch = useDebouncedValue(search.trim(), 300);
+
   const productsQuery = useQuery({
-    queryKey: queryKeys.products.search(search),
+    queryKey: queryKeys.products.search(debouncedSearch),
     // size: 100 — Faza 3'da paginatsiya/infinite-scroll bilan almashtiriladi
-    queryFn: () => productsApi.getAll({ search: search || undefined, size: 100 }),
+    queryFn: () => productsApi.getAll({ search: debouncedSearch || undefined, size: 100 }),
     // Kassir bir xil so'zni qayta terganda ro'yxat keshdan chiqadi va
     // ekran "sakramaydi" — kassada tezlik sezilarli.
     placeholderData: keepPreviousData,
   });
 
   const products = productsQuery.data?.content ?? [];
+
+  /**
+   * Ro'yxat terilgan matnga hali mos emas.
+   *
+   * <p>`keepPreviousData` bilan eski natijalar ekranda qoladi, ya'ni kassir
+   * yozayotgan so'zga javob kelmagan bo'lsa ham ro'yxat "tayyor" ko'rinardi.
+   * Shuning uchun kutish holati ochiq ko'rsatiladi.
+   */
+  const searchPending = search.trim() !== debouncedSearch || productsQuery.isFetching;
 
   /** Zaxira o'zgardi — mahsulot ro'yxatini yangilash kerak. */
   const invalidateProducts = () =>
@@ -72,18 +87,22 @@ export function POSPage() {
     cart.setCustomer(null);
   };
 
+  // Oynadagi qidiruv ham kechiktiriladi — u bilan yonma-yon turgan
+  // kombobox allaqachon shunday ishlaydi.
+  const debouncedCustomerSearch = useDebouncedValue(customerSearch.trim(), 300);
+
   // Mijozlar ro'yxati — oyna ochilmaguncha so'ralmaydi
   const modalCustomersQuery = useQuery({
     queryKey: queryKeys.customers.list({
       page: modalPage,
       size: modalPageSize,
-      search: customerSearch || undefined,
+      search: debouncedCustomerSearch || undefined,
     }),
     queryFn: () =>
       customersApi.getAll({
         page: modalPage,
         size: modalPageSize,
-        search: customerSearch || undefined,
+        search: debouncedCustomerSearch || undefined,
       }),
     enabled: showCustomerModal,
     placeholderData: keepPreviousData,
@@ -264,8 +283,15 @@ export function POSPage() {
           <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
             <div>
               <h2 className="text-lg font-semibold">{t('erp.pos.productsTitle')}</h2>
-              <p className="text-xs text-base-content/60">
-                {t('erp.pos.productsFound', { count: products.length })}
+              <p className="flex items-center gap-2 text-xs text-base-content/60">
+                {searchPending ? (
+                  <>
+                    <span className="loading loading-spinner loading-xs" />
+                    {t('common.searching')}
+                  </>
+                ) : (
+                  t('erp.pos.productsFound', { count: products.length })
+                )}
               </p>
             </div>
             <SearchInput
