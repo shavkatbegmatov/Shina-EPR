@@ -46,12 +46,16 @@ const TIRE: Product = {
   purchasePrice: 700_000,
   quantity: 8,
   minStockLevel: 2,
+  width: 205,
+  profile: 55,
+  diameter: 16,
   active: true,
 } as Product;
 
 const BRANDS: Brand[] = [{ id: 1, name: 'Michelin' } as Brand];
 const TREE: Category[] = [
   { id: 10, name: 'Shinalar', template: 'TIRE', children: [] } as unknown as Category,
+  { id: 20, name: 'Moylar', template: 'UNIVERSAL', children: [] } as unknown as Category,
 ];
 
 function pageOf(content: Product[]): PagedResponse<Product> {
@@ -184,6 +188,116 @@ describe('ProductsPage', () => {
 
     const skuInput = await screen.findByPlaceholderText('SH-001');
     expect(skuInput).toHaveValue('');
+  });
+
+  /**
+   * ENG MUHIM TEST: serverga ketadigan mahsulot tarkibi.
+   *
+   * <p>Bu yerda SOTISH NARXI bor — xato qiymat har savdoga ta'sir qiladi.
+   * Ayni paytda zaxira va tannarx formada TAHRIRLANMAYDI (ularni Ombor va
+   * Xaridlar boshqaradi), lekin tahrirda o'zgarishsiz QAYTARILISHI kerak:
+   * ular yuborilmasa server ularni bo'shatib yuborardi.
+   */
+  it('tahrirda so\'rov tarkibi to\'g\'ri, zaxira va tannarx saqlanadi', async () => {
+    renderPage();
+    await waitFor(() =>
+      expect(screen.getAllByText('Michelin Primacy 4').length).toBeGreaterThan(0)
+    );
+
+    fireEvent.click(screen.getAllByRole('button', { name: 'Tahrirlash' })[0]);
+    await screen.findByDisplayValue('MCH-205');
+    await waitFor(() => expect(categoriesApi.getAttributes).toHaveBeenCalledWith(10));
+
+    fireEvent.click(screen.getByRole('button', { name: 'Saqlash' }));
+
+    await waitFor(() => expect(productsApi.update).toHaveBeenCalled());
+    expect(productsApi.update).toHaveBeenCalledWith(
+      1,
+      expect.objectContaining({
+        sku: 'MCH-205',
+        name: 'Michelin Primacy 4',
+        sellingPrice: 1_000_000,
+        quantity: 8,
+        purchasePrice: 700_000,
+      })
+    );
+  });
+
+  // Yangi mahsulot 0 zaxira bilan boshlanadi: forma zaxira/tannarx
+  // YUBORMASLIGI kerak, aks holda ular Ombor tarixisiz paydo bo'lardi.
+  it('yangi mahsulotda zaxira va tannarx yuborilmaydi', async () => {
+    renderPage();
+    await waitFor(() => expect(productsApi.getAll).toHaveBeenCalled());
+
+    fireEvent.click(screen.getByRole('button', { name: /Yangi mahsulot/i }));
+    fireEvent.change(await screen.findByPlaceholderText('SH-001'), {
+      target: { value: 'NEW-1' },
+    });
+    fireEvent.change(screen.getByPlaceholderText('Michelin Pilot Sport 5'), {
+      target: { value: 'Yangi shina' },
+    });
+    fireEvent.change(screen.getByLabelText(/Sotish narxi/i), {
+      target: { value: '500000' },
+    });
+
+    fireEvent.click(screen.getByRole('button', { name: 'Saqlash' }));
+
+    await waitFor(() => expect(productsApi.create).toHaveBeenCalled());
+    const payload = vi.mocked(productsApi.create).mock.calls[0][0];
+    expect(payload.sku).toBe('NEW-1');
+    expect(payload.quantity).toBeUndefined();
+    expect(payload.purchasePrice).toBeUndefined();
+  });
+
+  /**
+   * Kategoriya SHINA bo'lmasa o'lcham maydonlari yuborilmaydi.
+   *
+   * <p>Universal magazin: shina bo'lmagan kategoriyaga o'tkazilgan
+   * mahsulotda eski o'lcham qiymatlari qolib ketsa, katalogda "205/55 R16
+   * Motor moyi" kabi ma'nosiz yozuv paydo bo'lardi.
+   */
+  it('shina bo\'lmagan kategoriyada o\'lcham maydonlari tozalanadi', async () => {
+    renderPage();
+    await waitFor(() =>
+      expect(screen.getAllByText('Michelin Primacy 4').length).toBeGreaterThan(0)
+    );
+
+    fireEvent.click(screen.getAllByRole('button', { name: 'Tahrirlash' })[0]);
+    await screen.findByDisplayValue('MCH-205');
+
+    // Kategoriyani "Moylar" (UNIVERSAL) ga almashtiramiz. Xuddi shu nomli
+    // filtr sahifada ham bor — oynadagisi oxirgi bo'lib render qilinadi.
+    const categoryBoxes = screen.getAllByRole('combobox', { name: 'Kategoriya' });
+    fireEvent.click(categoryBoxes[categoryBoxes.length - 1]);
+    fireEvent.click(await screen.findByRole('option', { name: /Moylar/i }));
+
+    fireEvent.click(screen.getByRole('button', { name: 'Saqlash' }));
+
+    await waitFor(() => expect(productsApi.update).toHaveBeenCalled());
+    const payload = vi.mocked(productsApi.update).mock.calls[0][1];
+    expect(payload.categoryId).toBe(20);
+    expect(payload.width).toBeUndefined();
+    expect(payload.profile).toBeUndefined();
+    expect(payload.diameter).toBeUndefined();
+    expect(payload.season).toBeUndefined();
+  });
+
+  // Tahrirlashdan keyin "yangi" oynasi TOZA ochilishi kerak — aks holda
+  // kassir oldingi mahsulot ma'lumoti ustiga yozib yuborardi.
+  it('tahrirdan keyin "yangi" oyna yana bo\'sh ochiladi', async () => {
+    renderPage();
+    await waitFor(() =>
+      expect(screen.getAllByText('Michelin Primacy 4').length).toBeGreaterThan(0)
+    );
+
+    fireEvent.click(screen.getAllByRole('button', { name: 'Tahrirlash' })[0]);
+    await screen.findByDisplayValue('MCH-205');
+    fireEvent.click(screen.getByRole('button', { name: 'Bekor qilish' }));
+
+    fireEvent.click(screen.getByRole('button', { name: /Yangi mahsulot/i }));
+
+    expect(await screen.findByPlaceholderText('SH-001')).toHaveValue('');
+    expect(screen.queryByDisplayValue('MCH-205')).not.toBeInTheDocument();
   });
 
   it('yuklash xatosi qayta urinish tugmasi bilan ko\'rsatiladi', async () => {
