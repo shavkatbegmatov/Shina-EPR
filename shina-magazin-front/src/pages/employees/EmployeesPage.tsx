@@ -37,6 +37,7 @@ import { PhoneInput } from '../../components/ui/PhoneInput';
 import { Select } from '../../components/ui/Select';
 import { SearchInput } from '../../components/ui/SearchInput';
 import { CredentialsModal } from './components/CredentialsModal';
+import { useDebouncedValue } from '../../hooks/useDebouncedValue';
 import { useHighlight } from '../../hooks/useHighlight';
 import { PermissionGate } from '../../components/common/PermissionGate';
 import { usePermission, PermissionCode } from '../../hooks/usePermission';
@@ -251,7 +252,10 @@ export function EmployeesPage() {
     },
   ], [t]);
 
-  const listParams = { page, size: pageSize, search: search || undefined };
+  // Har bosilgan harfda sahifalangan so'rov yubormaslik uchun kechiktiriladi
+  const debouncedSearch = useDebouncedValue(search.trim(), 300);
+
+  const listParams = { page, size: pageSize, search: debouncedSearch || undefined };
 
   const employeesQuery = useQuery({
     queryKey: queryKeys.employees.list(listParams),
@@ -294,7 +298,10 @@ export function EmployeesPage() {
   const totalElements = employeesQuery.data?.totalElements ?? 0;
   const loadError = employeesQuery.isError ? t('erp.employees.loadError') : null;
   const initialLoading = employeesQuery.isPending;
-  const refreshing = employeesQuery.isFetching && !employeesQuery.isPending;
+  // Kechiktirish davomida jadval hali ESKI matnga tegishli — bu holat
+  // ko'rsatilmasa ro'yxat "tayyor" ko'rinardi.
+  const refreshing =
+    search.trim() !== debouncedSearch || (employeesQuery.isFetching && !employeesQuery.isPending);
   const activeCount = statsQuery.data?.activeCount ?? 0;
   const onLeaveCount = statsQuery.data?.onLeaveCount ?? 0;
   const availableUsers = useMemo(() => availableUsersQuery.data ?? [], [availableUsersQuery.data]);

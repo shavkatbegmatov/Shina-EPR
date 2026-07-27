@@ -106,6 +106,24 @@ describe('CustomersPage', () => {
     );
   });
 
+  // Har bosilgan harf uchun sahifalangan so'rov yuborish serverni bekorga
+  // yuklaydi va oxirgi javob birinchi kelib qolsa ro'yxat ham "sakraydi".
+  it('qidiruvda har harf uchun alohida so\'rov yubormaydi', async () => {
+    renderPage();
+    await waitFor(() => expect(customersApi.getAll).toHaveBeenCalledTimes(1));
+
+    const input = screen.getByPlaceholderText(/qidirish|ism|telefon/i);
+    const term = 'anvar';
+    for (let i = 1; i <= term.length; i++) {
+      fireEvent.change(input, { target: { value: term.slice(0, i) } });
+    }
+
+    await waitFor(() =>
+      expect(customersApi.getAll).toHaveBeenCalledWith(expect.objectContaining({ search: 'anvar' }))
+    );
+    expect(vi.mocked(customersApi.getAll).mock.calls.length).toBeLessThanOrEqual(2);
+  });
+
   it('tahrirlashda forma mijoz ma\'lumoti bilan to\'ladi', async () => {
     renderPage();
     await waitFor(() => expect(screen.getAllByText('Anvar Qodirov').length).toBeGreaterThan(0));

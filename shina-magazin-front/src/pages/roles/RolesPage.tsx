@@ -17,6 +17,7 @@ import { useTranslation } from 'react-i18next';
 import { rolesApi, permissionsApi } from '../../api/roles.api';
 import { ModalPortal } from '../../components/common/Modal';
 import { ExportButtons } from '../../components/common/ExportButtons';
+import { useDebouncedValue } from '../../hooks/useDebouncedValue';
 import { usePermission, PermissionCode } from '../../hooks/usePermission';
 import { PermissionGate } from '../../components/common/PermissionGate';
 import { Button } from '@/ui';
@@ -44,10 +45,13 @@ export function RolesPage() {
 
   const queryClient = useQueryClient();
 
+  // Har bosilgan harfda so'rov yubormaslik uchun kechiktiriladi
+  const debouncedSearch = useDebouncedValue(search.trim(), 300);
+
   // Fetch roles
   const { data: roles, isLoading } = useQuery({
-    queryKey: ['roles', search],
-    queryFn: () => rolesApi.search({ search, size: 100 }),
+    queryKey: ['roles', debouncedSearch],
+    queryFn: () => rolesApi.search({ search: debouncedSearch, size: 100 }),
   });
 
   // Fetch all permissions grouped by module

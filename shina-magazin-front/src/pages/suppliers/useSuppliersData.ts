@@ -1,6 +1,7 @@
 import { useCallback, useState } from 'react';
 import { keepPreviousData, useQuery } from '@tanstack/react-query';
 import { suppliersApi } from '../../api/suppliers.api';
+import { useDebouncedValue } from '../../hooks/useDebouncedValue';
 import { getApiErrorMessage } from '../../utils/apiError';
 import { queryKeys } from '../../lib/queryKeys';
 import type { Supplier } from '../../types';
@@ -22,9 +23,13 @@ export function useSuppliersData() {
   const [page, setPage] = useState(0);
   const [pageSize, setPageSize] = useState(20);
 
+  // Har bosilgan harfda sahifalangan so'rov yubormaslik uchun kechiktiriladi
+  const debouncedSearch = useDebouncedValue(search.trim(), 300);
+
   const listQuery = useQuery({
-    queryKey: queryKeys.suppliers.list({ page, size: pageSize, search: search || undefined }),
-    queryFn: () => suppliersApi.getAll({ page, size: pageSize, search: search || undefined }),
+    queryKey: queryKeys.suppliers.list({ page, size: pageSize, search: debouncedSearch || undefined }),
+    queryFn: () =>
+      suppliersApi.getAll({ page, size: pageSize, search: debouncedSearch || undefined }),
     // Sahifa almashganda eski ro'yxat ekranda qoladi va ustiga "yangilanmoqda"
     // qatlami tushadi — jadval bo'sh holatga sakramaydi.
     placeholderData: keepPreviousData,
@@ -66,7 +71,10 @@ export function useSuppliersData() {
     initialLoading: listQuery.isPending,
     // `isPending` birinchi yuklash, `isFetching` esa har qanday yuklash —
     // ikkinchisidan birinchisini ayirsak "fonda yangilanmoqda" holati chiqadi.
-    refreshing: listQuery.isFetching && !listQuery.isPending,
+    // Kechiktirish davomida ham shu holat ko'rsatiladi: jadval hali ESKI
+    // matnga tegishli, aks holda ro'yxat "tayyor" ko'rinardi.
+    refreshing:
+      search.trim() !== debouncedSearch || (listQuery.isFetching && !listQuery.isPending),
     search,
     page,
     pageSize,

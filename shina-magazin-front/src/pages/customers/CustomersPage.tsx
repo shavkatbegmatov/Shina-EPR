@@ -13,6 +13,7 @@ import { SearchInput } from '../../components/ui/SearchInput';
 import { ModalPortal } from '../../components/common/Modal';
 import { PhoneInput } from '../../components/ui/PhoneInput';
 import { Select } from '../../components/ui/Select';
+import { useDebouncedValue } from '../../hooks/useDebouncedValue';
 import { useHighlight } from '../../hooks/useHighlight';
 import { useInvalidateOnNotification } from '../../hooks/useInvalidateOnNotification';
 import { queryKeys } from '../../lib/queryKeys';
@@ -179,7 +180,10 @@ export function CustomersPage() {
     },
   ], [t]);
 
-  const listParams = { page, size: pageSize, search: search || undefined };
+  // Har bosilgan harfda sahifalangan so'rov yubormaslik uchun kechiktiriladi
+  const debouncedSearch = useDebouncedValue(search.trim(), 300);
+
+  const listParams = { page, size: pageSize, search: debouncedSearch || undefined };
 
   const customersQuery = useQuery({
     queryKey: queryKeys.customers.list(listParams),
@@ -195,7 +199,11 @@ export function CustomersPage() {
   // mijozlar yo'q deb o'ylardi.
   const loadError = customersQuery.isError ? getApiErrorMessage(customersQuery.error) : null;
   const initialLoading = customersQuery.isPending;
-  const refreshing = customersQuery.isFetching && !customersQuery.isPending;
+  // Kechiktirish davomida jadval hali ESKI matnga tegishli. Bu holat
+  // ko'rsatilmasa ro'yxat "tayyor" ko'rinib, terilgan so'zga mos kelmagan
+  // natija to'g'ri deb qabul qilinardi.
+  const refreshing =
+    search.trim() !== debouncedSearch || (customersQuery.isFetching && !customersQuery.isPending);
 
   const invalidateCustomers = () =>
     queryClient.invalidateQueries({ queryKey: queryKeys.customers.all });

@@ -128,6 +128,26 @@ describe('ProductsPage', () => {
     );
   });
 
+  // Mahsulot so'rovlari ataylab keshlanmaydi (zaxira soni eskirmasligi
+  // kerak), shuning uchun har harf uchun so'rov yuborish qimmat tushadi.
+  it('qidiruvda har harf uchun alohida so\'rov yubormaydi', async () => {
+    renderPage();
+    await waitFor(() => expect(productsApi.getAll).toHaveBeenCalledTimes(1));
+
+    const input = screen.getByPlaceholderText(/qidirish|nomi|SKU/i);
+    const term = 'primacy';
+    for (let i = 1; i <= term.length; i++) {
+      fireEvent.change(input, { target: { value: term.slice(0, i) } });
+    }
+
+    await waitFor(() =>
+      expect(productsApi.getAll).toHaveBeenCalledWith(
+        expect.objectContaining({ search: 'primacy' })
+      )
+    );
+    expect(vi.mocked(productsApi.getAll).mock.calls.length).toBeLessThanOrEqual(2);
+  });
+
   it('tahrirlashda forma mahsulot ma\'lumoti bilan to\'ladi', async () => {
     renderPage();
     await waitFor(() =>

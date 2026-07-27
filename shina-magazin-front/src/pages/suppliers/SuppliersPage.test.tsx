@@ -130,6 +130,24 @@ describe('SuppliersPage', () => {
     expect(purchasesApi.getStats).toHaveBeenCalled();
   });
 
+  // Har bosilgan harf uchun sahifalangan so'rov yuborish serverni bekorga
+  // yuklaydi va javoblar tartibsiz kelsa ro'yxat "sakraydi".
+  it('qidiruvda har harf uchun alohida so\'rov yubormaydi', async () => {
+    renderPage();
+    await waitFor(() => expect(suppliersApi.getAll).toHaveBeenCalledTimes(1));
+
+    const input = screen.getByPlaceholderText(/qidirish/i);
+    const term = 'alfa';
+    for (let i = 1; i <= term.length; i++) {
+      fireEvent.change(input, { target: { value: term.slice(0, i) } });
+    }
+
+    await waitFor(() =>
+      expect(suppliersApi.getAll).toHaveBeenCalledWith(expect.objectContaining({ search: 'alfa' }))
+    );
+    expect(vi.mocked(suppliersApi.getAll).mock.calls.length).toBeLessThanOrEqual(2);
+  });
+
   it('yangi ta\'minotchi oynasi bo\'sh forma bilan ochiladi', async () => {
     renderPage();
     await waitFor(() => expect(suppliersApi.getAll).toHaveBeenCalled());

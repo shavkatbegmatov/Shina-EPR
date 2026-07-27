@@ -34,6 +34,7 @@ import { AttributeValueInputs, type AttributeValueMap } from '../../components/c
 import { flattenCategoryTree, getEffectiveTemplate, indentLabel } from '../../utils/categoryTree';
 import { PermissionCode } from '../../hooks/usePermission';
 import { PermissionGate } from '../../components/common/PermissionGate';
+import { useDebouncedValue } from '../../hooks/useDebouncedValue';
 import { useHighlight } from '../../hooks/useHighlight';
 import { useInvalidateOnNotification } from '../../hooks/useInvalidateOnNotification';
 import { queryKeys } from '../../lib/queryKeys';
@@ -264,10 +265,15 @@ export function ProductsPage() {
     [formAttributesQuery.data]
   );
 
+  // Har bosilgan harfda sahifalangan so'rov yubormaslik uchun kechiktiriladi.
+  // Mahsulot so'rovlari ataylab keshlanmaydi (zaxira eskirmasligi kerak),
+  // shuning uchun ularning hech biri arzon emas.
+  const debouncedSearch = useDebouncedValue(search.trim(), 300);
+
   const listParams = {
     page,
     size: pageSize,
-    search: search || undefined,
+    search: debouncedSearch || undefined,
     brandId: brandFilter || undefined,
     categoryId: categoryFilter || undefined,
     season: seasonFilter || undefined,
@@ -285,7 +291,10 @@ export function ProductsPage() {
   const totalElements = productsQuery.data?.totalElements ?? 0;
   const loadError = productsQuery.isError ? getApiErrorMessage(productsQuery.error) : null;
   const initialLoading = productsQuery.isPending;
-  const refreshing = productsQuery.isFetching && !productsQuery.isPending;
+  // Kechiktirish davomida jadval hali ESKI matnga tegishli — bu holat
+  // ko'rsatilmasa ro'yxat "tayyor" ko'rinardi.
+  const refreshing =
+    search.trim() !== debouncedSearch || (productsQuery.isFetching && !productsQuery.isPending);
 
   useInvalidateOnNotification([queryKeys.products.all]);
 
