@@ -35,19 +35,31 @@ a new query means remembering to add it in three places.
   (`'supplier'` vs `'suppliers'`) makes invalidation miss silently and the screen
   keeps showing stale data with no error.
 - Invalidate by prefix (`queryKeys.suppliers.all`) so list + stats + detail refresh together.
-- `staleTime` is **not** set per call site. `src/lib/queryConfig.ts` registers it once
-  per domain prefix via `setQueryDefaults`, so a new query inherits the right tier
-  automatically. Tiers: `reference` 10 min (brands, categories, attributes, roles,
-  settings), `reports` 1 min, `transactional` 30 s, `stock` **0** — anything reflecting
-  on-hand quantity must never be cached, or a cashier tries to sell what isn't there.
-  Adding a domain to `queryKeys` without a tier is a compile error, not a silent 0.
-  A page may still pass its own `staleTime` to override.
+- In the ERP, `staleTime` is **not** set per call site. `src/lib/queryConfig.ts`
+  registers it once per domain prefix via `setQueryDefaults`, so a new query inherits
+  the right tier automatically. Tiers: `reference` 10 min (brands, categories,
+  attributes, roles, permissions, settings), `reports` 1 min, `transactional` 30 s,
+  `stock` **0** — anything reflecting on-hand quantity must never be cached, or a
+  cashier tries to sell what isn't there. Adding a domain to `queryKeys` without a
+  tier is a compile error, not a silent 0. A page may still pass its own `staleTime`
+  to override.
+- `src/shop/` (the public storefront) is deliberately outside that registry and tunes
+  `staleTime` per call — it has its own keys, its own traffic profile, and no cashier.
+- Search inputs that feed a query are debounced with `useDebouncedValue(…, 300)`, and
+  the page's "refreshing" flag includes the debounce window
+  (`search.trim() !== debouncedSearch || (isFetching && !isPending)`). Without that
+  second half the table looks settled while it is still showing results for the
+  *previous* text. `AuditLogsPage` is exempt: it searches on an explicit button.
 - Because reference data now lives in the cache for minutes, **every mutation must
   invalidate**. Before this was optional (`staleTime: 0` masked a missing call);
   now a forgotten `invalidateQueries` shows the user their own edit not taking effect.
 - Paginated lists: `placeholderData: keepPreviousData`, then map
-  `isPending` → initial skeleton and `isFetching && !isPending` → "refreshing" overlay.
+  `isPending` → initial skeleton and `isFetching && !isPending` → "refreshing" overlay
+  (plus the debounce window above, when the list has a search box).
 - Data that only a hidden tab needs: gate it with `enabled`, not an `if` inside an effect.
+- Careful with `enabled: false` — the query stays `isPending` **forever**, so a detail
+  page that renders a skeleton on `isPending` spins with nothing loading. Guard the
+  disabled case explicitly (`const loading = !!id && query.isPending`).
 - Mutations invalidate in `onSuccess`; the page should not pass `onSaved` reload callbacks.
 - WebSocket-driven refresh: `useInvalidateOnNotification([...keys])`, not a
   `notifications.length` effect.
