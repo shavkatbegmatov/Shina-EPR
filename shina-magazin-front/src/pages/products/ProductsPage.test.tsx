@@ -300,6 +300,34 @@ describe('ProductsPage', () => {
     expect(screen.queryByDisplayValue('MCH-205')).not.toBeInTheDocument();
   });
 
+  /**
+   * Tafsilot oynasi TO'LIQ mahsulotni oladi.
+   *
+   * <p>Ro'yxat javobida atribut qiymatlari yo'q, ya'ni bu chaqiruv tushib
+   * qolsa oyna "Xususiyatlar" bo'limini umuman ko'rsatmasdi va operator
+   * mahsulotda xususiyat yo'q deb o'ylardi.
+   */
+  it('tafsilot oynasi to\'liq mahsulot va xususiyatlarni ko\'rsatadi', async () => {
+    vi.mocked(productsApi.getById).mockResolvedValue({
+      ...TIRE,
+      attributes: [{ attributeId: 5, name: 'Protektor', values: ['8 mm'], optionIds: [] }],
+    } as unknown as Product);
+
+    renderPage();
+    await waitFor(() =>
+      expect(screen.getAllByText('Michelin Primacy 4').length).toBeGreaterThan(0)
+    );
+
+    fireEvent.click(screen.getAllByRole('button', { name: 'Tafsilotlar' })[0]);
+
+    await waitFor(() => expect(productsApi.getById).toHaveBeenCalledWith(1));
+    // Faqat BIR marta: ilgari sahifa ham, oyna ham alohida so'rardi.
+    expect(vi.mocked(productsApi.getById).mock.calls).toHaveLength(1);
+    expect(await screen.findByText('Xususiyatlar')).toBeInTheDocument();
+    expect(screen.getByText('Protektor')).toBeInTheDocument();
+    expect(screen.getByText('8 mm')).toBeInTheDocument();
+  });
+
   it('yuklash xatosi qayta urinish tugmasi bilan ko\'rsatiladi', async () => {
     vi.mocked(productsApi.getAll).mockRejectedValue(new Error('tarmoq yo\'q'));
     renderPage();
