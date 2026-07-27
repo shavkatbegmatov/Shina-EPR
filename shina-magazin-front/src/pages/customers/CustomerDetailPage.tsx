@@ -1,4 +1,3 @@
-import { useCallback, useEffect, useState } from 'react';
 import { Link, useParams, useNavigate } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
@@ -19,7 +18,7 @@ import { Badge, Button } from '@/ui';
 import { customersApi } from '../../api/customers.api';
 import { shopOrdersApi, type ShopOrderStatus } from '../../api/shopOrders.api';
 import { formatCurrency } from '../../config/constants';
-import type { Customer } from '../../types';
+import { queryKeys } from '../../lib/queryKeys';
 import { usePermission } from '../../hooks/usePermission';
 
 const ORDER_TONE: Record<ShopOrderStatus, 'warning' | 'info' | 'success' | 'neutral'> = {
@@ -35,28 +34,21 @@ export function CustomerDetailPage() {
   const navigate = useNavigate();
   const { canViewSales } = usePermission();
 
-  const [customer, setCustomer] = useState<Customer | null>(null);
-  const [loading, setLoading] = useState(true);
+  const customerQuery = useQuery({
+    queryKey: queryKeys.customers.detail(Number(id)),
+    queryFn: () => customersApi.getById(Number(id)),
+    enabled: !!id,
+  });
 
-  const loadCustomer = useCallback(async () => {
-    if (!id) return;
-    try {
-      const data = await customersApi.getById(Number(id));
-      setCustomer(data);
-    } catch (error) {
-      console.error('Failed to load customer:', error);
-    } finally {
-      setLoading(false);
-    }
-  }, [id]);
-
-  useEffect(() => {
-    void loadCustomer();
-  }, [loadCustomer]);
+  const customer = customerQuery.data ?? null;
+  // `enabled` false bo'lganda `isPending` abadiy true qoladi, shuning uchun
+  // ID yo'q holat alohida hisobga olinadi — aks holda skelet aylanib qolib,
+  // foydalanuvchi sahifa osilgan deb o'ylardi.
+  const loading = !!id && customerQuery.isPending;
 
   const customerId = id ? Number(id) : undefined;
   const ordersQuery = useQuery({
-    queryKey: ['shop-orders', 'customer', customerId],
+    queryKey: queryKeys.shopOrders.byCustomer(customerId ?? 0),
     queryFn: () => shopOrdersApi.getAll({ customerId, page: 0, size: 5 }),
     enabled: canViewSales && customerId !== undefined && Number.isFinite(customerId),
   });

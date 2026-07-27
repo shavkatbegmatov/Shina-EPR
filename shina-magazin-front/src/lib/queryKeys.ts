@@ -181,6 +181,19 @@ export const queryKeys = {
     detail: (id: number) => ['debts', 'detail', id] as const,
   },
 
+  /** Vitrinadan kelgan buyurtmalar — ERP tomonidagi ko'rinishi. */
+  shopOrders: {
+    all: ['shop-orders'] as const,
+    list: (params: {
+      status?: string;
+      customerId?: number;
+      search?: string;
+      page: number;
+      size: number;
+    }) => ['shop-orders', 'list', params] as const,
+    byCustomer: (customerId: number) => ['shop-orders', 'customer', customerId] as const,
+  },
+
   sales: {
     all: ['sales'] as const,
     list: (params: { page: number; size: number; startDate?: string; endDate?: string }) =>

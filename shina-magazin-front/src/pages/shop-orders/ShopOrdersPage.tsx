@@ -9,6 +9,7 @@ import { DataTable, type Column } from '../../components/ui/DataTable';
 import { Select } from '../../components/ui/Select';
 import { formatCurrency } from '../../config/constants';
 import { shopOrdersApi, type ShopOrderDto, type ShopOrderStatus, type ShopPaymentStatus } from '../../api/shopOrders.api';
+import { queryKeys } from '../../lib/queryKeys';
 import { Modal } from '../../components/common/Modal';
 import { usePermission } from '../../hooks/usePermission';
 
@@ -51,7 +52,7 @@ export function ShopOrdersPage() {
   const [selectedOrder, setSelectedOrder] = useState<ShopOrderDto | null>(null);
 
   const { data, isLoading, isError, refetch, isFetching } = useQuery({
-    queryKey: ['shop-orders', status, customerId, deferredSearch, page, size],
+    queryKey: queryKeys.shopOrders.list({ status: status || undefined, customerId, search: deferredSearch || undefined, page, size }),
     queryFn: () => shopOrdersApi.getAll({
       status: status || undefined,
       customerId,
@@ -66,7 +67,7 @@ export function ShopOrdersPage() {
       shopOrdersApi.updateStatus(orderNo, next),
     onSuccess: (updated) => {
       toast.success(t('erp.shopOrders.statusUpdated'));
-      qc.invalidateQueries({ queryKey: ['shop-orders'] });
+      qc.invalidateQueries({ queryKey: queryKeys.shopOrders.all });
       setSelectedOrder((current) => current?.orderNo === updated.orderNo ? updated : current);
     },
     onError: (error: unknown) => {

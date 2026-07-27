@@ -75,10 +75,17 @@ describe('configureQueryDefaults', () => {
   it('do\'kon vitrinasi kalitlariga tegmaydi', () => {
     const qc = client();
 
-    // Vitrina o'z kalitlarida ishlaydi (`['catalog']`, `['shop-orders']`) —
-    // ERP muddatlari ularga tasodifan tushib qolmasligi kerak.
+    // Vitrina o'z kalitlarida ishlaydi — ERP muddatlari ularga tasodifan
+    // tushib qolmasligi kerak.
     expect(qc.getQueryDefaults(['catalog']).staleTime).toBeUndefined();
-    expect(qc.getQueryDefaults(['shop-orders']).staleTime).toBeUndefined();
     expect(qc.getQueryDefaults(['public-settings']).staleTime).toBeUndefined();
+    expect(qc.getQueryDefaults(['account-orders']).staleTime).toBeUndefined();
+
+    // `['shop-order-status', ...]` ERP'ning `['shop-orders']` domeniga
+    // O'XSHAYDI, lekin prefiks har bir bo'lakni to'liq solishtiradi —
+    // shuning uchun ular chalkashmaydi.
+    expect(qc.getQueryDefaults(['shop-order-status', 'ORD-1']).staleTime).toBeUndefined();
+    expect(qc.getQueryDefaults(queryKeys.shopOrders.all).staleTime)
+      .toBe(staleTime.transactional);
   });
 });

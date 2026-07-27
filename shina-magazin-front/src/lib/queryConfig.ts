@@ -93,6 +93,7 @@ const DOMAIN_STALE_TIME: Record<keyof typeof queryKeys, number> = {
   customers: staleTime.transactional,
   debts: staleTime.transactional,
   sales: staleTime.transactional,
+  shopOrders: staleTime.transactional,
 
   // Zaxira
   products: staleTime.stock,
