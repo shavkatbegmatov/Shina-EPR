@@ -312,6 +312,10 @@ export function SettingsPage() {
       });
       setDebtDueDays(data.debtDueDays);
       setImageFallback(data.imageFallback === 'PHOTO' ? 'PHOTO' : 'SVG');
+      // Sozlamalar ma'lumotnoma keshida uzoq turadi va ularni SMENALAR
+      // sahifasi ham o'qiydi. Invalidatsiyasiz saqlangan qiymat boshqa
+      // sahifada (va bu yerga qaytganda) eski holida ko'rinardi.
+      void queryClient.invalidateQueries({ queryKey: queryKeys.settings.all });
       toast.success(t('erp.settings.settingsSavedToast'));
     } catch (error) {
       console.error('Failed to save settings:', error);

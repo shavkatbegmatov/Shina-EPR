@@ -3,6 +3,7 @@ import { RouterProvider } from 'react-router-dom';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { Toaster } from 'react-hot-toast';
 import { router } from './router';
+import { configureQueryDefaults } from './lib/queryConfig';
 import { useThemeStore, applyTheme } from './shared/theme/themeStore';
 
 // Global tema hook — yuklanishda va tizim temasi o'zgarganda data-theme ni qo'llaydi.
@@ -33,6 +34,9 @@ const queryClient = new QueryClient({
     },
   },
 });
+
+// Domenga qarab `staleTime` — tafsilotlar `lib/queryConfig.ts` da.
+configureQueryDefaults(queryClient);
 
 function App() {
   // Apply theme globally

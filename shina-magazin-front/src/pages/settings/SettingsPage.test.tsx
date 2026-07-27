@@ -1,0 +1,83 @@
+import { describe, it, expect, beforeEach, vi } from 'vitest';
+import { render, screen, fireEvent, waitFor } from '@testing-library/react';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { MemoryRouter } from 'react-router-dom';
+import type { ReactNode } from 'react';
+import '../../i18n';
+import type { AppSettings } from '../../types';
+
+vi.mock('../../api/settings.api', () => ({
+  settingsApi: {
+    get: vi.fn(),
+    update: vi.fn(),
+    testTelegram: vi.fn(),
+    export: { excel: vi.fn(), pdf: vi.fn(), exportData: vi.fn() },
+  },
+}));
+
+vi.mock('../../api/products.api', () => ({
+  brandsApi: { getAll: vi.fn(), create: vi.fn(), update: vi.fn(), delete: vi.fn() },
+  categoriesApi: { getAll: vi.fn(), create: vi.fn(), update: vi.fn(), delete: vi.fn() },
+}));
+
+// Vitrinaning rasm komponenti o'z so'rovini yuboradi — bu testga aloqasi yo'q.
+vi.mock('../../shop/components/ProductImage', () => ({
+  ProductImage: () => null,
+}));
+
+import { settingsApi } from '../../api/settings.api';
+import { brandsApi, categoriesApi } from '../../api/products.api';
+import { SettingsPage } from './SettingsPage';
+import { configureQueryDefaults } from '../../lib/queryConfig';
+
+const SETTINGS: AppSettings = {
+  debtDueDays: 30,
+  imageFallback: 'SVG',
+  receiptShopName: 'Protektor',
+  receiptShopPhone: '',
+  receiptShopAddress: '',
+  receiptFooter: '',
+  telegramEnabled: false,
+  telegramChatId: '',
+  telegramConfigured: false,
+  telegramEvents: '',
+} as AppSettings;
+
+function renderPage() {
+  const qc = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+  // Ishlab chiqarishdagi muddatlar bilan bir xil — aynan shu narsa testni
+  // mazmunli qiladi (sozlamalar keshda uzoq turadi).
+  configureQueryDefaults(qc);
+
+  const Wrapper = ({ children }: { children: ReactNode }) => (
+    <QueryClientProvider client={qc}>
+      <MemoryRouter>{children}</MemoryRouter>
+    </QueryClientProvider>
+  );
+  return render(<SettingsPage />, { wrapper: Wrapper });
+}
+
+describe('SettingsPage', () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    vi.mocked(settingsApi.get).mockResolvedValue(SETTINGS);
+    vi.mocked(settingsApi.update).mockResolvedValue({ ...SETTINGS, debtDueDays: 45 });
+    vi.mocked(brandsApi.getAll).mockResolvedValue([]);
+    vi.mocked(categoriesApi.getAll).mockResolvedValue([]);
+  });
+
+  it('saqlagandan keyin sozlamalar so\'rovini bekor qiladi', async () => {
+    renderPage();
+
+    await waitFor(() => expect(settingsApi.get).toHaveBeenCalledTimes(1));
+
+    fireEvent.click(screen.getByRole('button', { name: /saqlash/i }));
+
+    await waitFor(() => expect(settingsApi.update).toHaveBeenCalledTimes(1));
+
+    // Sozlamalar "ma'lumotnoma" keshida 10 daqiqa yangi hisoblanadi va ularni
+    // SMENALAR sahifasi ham o'qiydi. Invalidatsiyasiz saqlangan qiymat boshqa
+    // sahifada eski holida ko'rinardi — shuning uchun qayta so'rov SHART.
+    await waitFor(() => expect(settingsApi.get).toHaveBeenCalledTimes(2));
+  });
+});
