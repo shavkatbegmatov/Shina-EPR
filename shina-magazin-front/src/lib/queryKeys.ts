@@ -70,6 +70,19 @@ export const queryKeys = {
   roles: {
     all: ['roles'] as const,
     list: () => ['roles', 'list'] as const,
+    search: (term: string) => ['roles', 'search', term] as const,
+    detail: (id: number) => ['roles', 'detail', id] as const,
+  },
+
+  /**
+   * Ruxsatlar katalogi.
+   *
+   * <p>Rollardan ALOHIDA domen: ruxsatlar kodda e'lon qilinadi va ishlash
+   * paytida umuman o'zgarmaydi, rollar esa tahrirlanadi.
+   */
+  permissions: {
+    all: ['permissions'] as const,
+    grouped: () => ['permissions', 'grouped'] as const,
   },
 
   auditLogs: {

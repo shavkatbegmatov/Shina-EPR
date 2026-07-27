@@ -15,6 +15,7 @@ import {
 import toast from 'react-hot-toast';
 import { useTranslation } from 'react-i18next';
 import { rolesApi, permissionsApi } from '../../api/roles.api';
+import { queryKeys } from '../../lib/queryKeys';
 import { ModalPortal } from '../../components/common/Modal';
 import { ExportButtons } from '../../components/common/ExportButtons';
 import { useDebouncedValue } from '../../hooks/useDebouncedValue';
@@ -50,13 +51,13 @@ export function RolesPage() {
 
   // Fetch roles
   const { data: roles, isLoading } = useQuery({
-    queryKey: ['roles', debouncedSearch],
+    queryKey: queryKeys.roles.search(debouncedSearch),
     queryFn: () => rolesApi.search({ search: debouncedSearch, size: 100 }),
   });
 
   // Fetch all permissions grouped by module
   const { data: permissionsGrouped } = useQuery({
-    queryKey: ['permissions-grouped'],
+    queryKey: queryKeys.permissions.grouped(),
     queryFn: () => permissionsApi.getAllGrouped(),
   });
 
@@ -64,7 +65,7 @@ export function RolesPage() {
   const createMutation = useMutation({
     mutationFn: rolesApi.create,
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['roles'] });
+      queryClient.invalidateQueries({ queryKey: queryKeys.roles.all });
       toast.success(t('erp.roles.createdToast'));
       closeModal();
     },
@@ -81,7 +82,7 @@ export function RolesPage() {
     mutationFn: ({ id, data }: { id: number; data: RoleRequest }) =>
       rolesApi.update(id, data),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['roles'] });
+      queryClient.invalidateQueries({ queryKey: queryKeys.roles.all });
       toast.success(t('erp.roles.updatedToast'));
       closeModal();
     },
@@ -97,7 +98,7 @@ export function RolesPage() {
   const deleteMutation = useMutation({
     mutationFn: rolesApi.delete,
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['roles'] });
+      queryClient.invalidateQueries({ queryKey: queryKeys.roles.all });
       toast.success(t('erp.roles.deletedToast'));
     },
     onError: (error: { response?: { status?: number; data?: { message?: string } } }) => {
@@ -140,7 +141,7 @@ export function RolesPage() {
 
   // Fetch full role details for view modal
   const { data: fullRoleDetails, isLoading: isLoadingRoleDetails } = useQuery({
-    queryKey: ['role', viewingRole?.id],
+    queryKey: queryKeys.roles.detail(viewingRole?.id ?? 0),
     queryFn: () => rolesApi.getById(viewingRole!.id),
     enabled: !!viewingRole && showViewModal,
   });

@@ -75,6 +75,8 @@ const DOMAIN_STALE_TIME: Record<keyof typeof queryKeys, number> = {
   attributes: staleTime.reference,
   roles: staleTime.reference,
   settings: staleTime.reference,
+  // Ruxsatlar katalogi kodda e'lon qilinadi — ishlash paytida o'zgarmaydi.
+  permissions: staleTime.reference,
 
   // Hisobotlar
   dashboard: staleTime.reports,
