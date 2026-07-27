@@ -181,12 +181,52 @@ describe('POSPage', () => {
       )
     );
 
-    // Yonma-yon turgan kombobox ham shu matnni o'qiydi, lekin u sahifasiz
-    // so'rov yuboradi — bu yerda faqat OYNA so'rovlari sanaladi.
-    const modalCalls = vi
+    // 1 ta boshlang'ich + 1 ta tinchlangandan keyingi so'rov.
+    expect(vi.mocked(customersApi.getAll).mock.calls.length).toBeLessThanOrEqual(2);
+  });
+
+  /**
+   * Oynadagi qidiruv YONIDAGI kombobozni qo'zg'atmasligi kerak.
+   *
+   * <p>Oyna `ModalPortal` da ochiladi, ya'ni orqadagi sahifa (va undagi
+   * kombobox) mount holicha qoladi. Ikkalasi bitta holatni o'qisa, oynada
+   * yozilgan har so'z IKKI marta serverga ketadi: biri sahifalangan
+   * (oyna), ikkinchisi sahifasiz (kombobox).
+   */
+  it('oynadagi qidiruv kombobozni qo\'zg\'atmaydi', async () => {
+    renderPage();
+    fireEvent.click(screen.getByRole('button', { name: /Ko'rish/i }));
+    await waitFor(() => expect(customersApi.getAll).toHaveBeenCalled());
+
+    fireEvent.change(screen.getByPlaceholderText(/Ism, telefon yoki kompaniya/i), {
+      target: { value: 'anvar' },
+    });
+
+    await waitFor(() =>
+      expect(customersApi.getAll).toHaveBeenCalledWith(
+        expect.objectContaining({ search: 'anvar', page: 0 })
+      )
+    );
+
+    // Kombobox so'rovlarida `page` yo'q — ular bo'lmasligi kerak.
+    const comboboxCalls = vi
       .mocked(customersApi.getAll)
-      .mock.calls.filter(([params]) => params && 'page' in params);
-    expect(modalCalls.length).toBeLessThanOrEqual(2);
+      .mock.calls.filter(([params]) => params && !('page' in params));
+    expect(comboboxCalls).toHaveLength(0);
+  });
+
+  // Kombobozda yozilgan matn "Hammasini ko'rish" bosilganda oynaga
+  // KO'CHISHI kerak — kassir qaytadan terib o'tirmasin.
+  it('kombobozdagi matn oynaga ko\'chadi', async () => {
+    renderPage();
+
+    fireEvent.change(screen.getByPlaceholderText(/Mijozni qidirish/i), {
+      target: { value: 'anvar' },
+    });
+    fireEvent.click(screen.getByRole('button', { name: /Ko'rish/i }));
+
+    const modalInput = await screen.findByPlaceholderText(/Ism, telefon yoki kompaniya/i);
+    expect(modalInput).toHaveValue('anvar');
   });
 
   it('mahsulotni bosganda savatga qo\'shiladi', async () => {

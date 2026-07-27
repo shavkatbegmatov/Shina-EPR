@@ -38,6 +38,15 @@ export function POSPage() {
   // Customer search state
   const [customerSearch, setCustomerSearch] = useState('');
 
+  /**
+   * Oynadagi qidiruv — kombobozdan ALOHIDA.
+   *
+   * <p>Oyna `ModalPortal` da ochilganda orqadagi sahifa mount holicha
+   * qoladi, ya'ni kombobox ham ishlab turaveradi. Bitta holatni bo'lishsa,
+   * oynada yozilgan har so'z ikki marta serverga ketardi.
+   */
+  const [modalSearch, setModalSearch] = useState('');
+
   // Modal state
   const [showCustomerModal, setShowCustomerModal] = useState(false);
   const [modalPage, setModalPage] = useState(0);
@@ -89,20 +98,20 @@ export function POSPage() {
 
   // Oynadagi qidiruv ham kechiktiriladi — u bilan yonma-yon turgan
   // kombobox allaqachon shunday ishlaydi.
-  const debouncedCustomerSearch = useDebouncedValue(customerSearch.trim(), 300);
+  const debouncedModalSearch = useDebouncedValue(modalSearch.trim(), 300);
 
   // Mijozlar ro'yxati — oyna ochilmaguncha so'ralmaydi
   const modalCustomersQuery = useQuery({
     queryKey: queryKeys.customers.list({
       page: modalPage,
       size: modalPageSize,
-      search: debouncedCustomerSearch || undefined,
+      search: debouncedModalSearch || undefined,
     }),
     queryFn: () =>
       customersApi.getAll({
         page: modalPage,
         size: modalPageSize,
-        search: debouncedCustomerSearch || undefined,
+        search: debouncedModalSearch || undefined,
       }),
     enabled: showCustomerModal,
     placeholderData: keepPreviousData,
@@ -122,12 +131,17 @@ export function POSPage() {
 
   const handleOpenModal = () => {
     setModalPage(0);
+    // Kombobozda terilgan matn oynaga KO'CHADI: kassir "anv" yozib
+    // topolmagach "Barchasini ko'rish" bosadi — qaytadan terib
+    // o'tirmasligi kerak.
+    setModalSearch(customerSearch);
     setShowCustomerModal(true);
   };
 
   const handleModalSelectCustomer = (customer: Customer) => {
     cart.setCustomer(customer);
     setCustomerSearch('');
+    setModalSearch('');
     setShowCustomerModal(false);
   };
 
@@ -703,9 +717,9 @@ export function POSPage() {
             {/* Search */}
             <div className="mt-4">
               <SearchInput
-                value={customerSearch}
+                value={modalSearch}
                 onValueChange={(value) => {
-                  setCustomerSearch(value);
+                  setModalSearch(value);
                   setModalPage(0);
                 }}
                 placeholder={t('erp.pos.customerModalSearchPlaceholder')}
