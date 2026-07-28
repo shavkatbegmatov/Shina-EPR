@@ -1,4 +1,4 @@
-import type { Product } from '../../types';
+import type { Product } from '../types';
 
 /**
  * Xarid savati — sof mantiq.
@@ -21,9 +21,15 @@ export interface CartItem {
  * <p>Mahsulotning xarid narxi bo'lsa — o'sha. Bo'lmasa (yoki nol bo'lsa)
  * sotuv narxining 70% i taxmin sifatida olinadi: kassir noldan boshlab
  * kiritgandan ko'ra, yaqin qiymatni tuzatgani qulay.
+ *
+ * <p>Natija BUTUN so'mga yaxlitlanadi. So'mning kasr qismi amalda
+ * ishlatilmaydi, lekin 70% hisobi uni osongina hosil qiladi
+ * (999 999 -> 699 999.2999999999). Bunday qiymat `DECIMAL(15,2)` ustunga
+ * yozilib, xarid summasiga va mahsulotning tannarxiga o'tardi — tannarx
+ * esa FOYDA hisobiga kiradi.
  */
 export function initialUnitPrice(product: Product): number {
-  return product.purchasePrice || product.sellingPrice * 0.7;
+  return product.purchasePrice || Math.round(product.sellingPrice * 0.7);
 }
 
 /** Mahsulot savatda bo'lsa miqdorini oshiradi, bo'lmasa yangi qator qo'shadi. */

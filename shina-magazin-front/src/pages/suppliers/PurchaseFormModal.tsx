@@ -22,7 +22,7 @@ import {
   removeFromCart,
   updateCartItem,
   type CartItem,
-} from './purchaseCart';
+} from '../../shared/purchaseCart';
 import type { Product, PurchaseItemRequest, PurchaseRequest, Supplier } from '../../types';
 
 interface Props {

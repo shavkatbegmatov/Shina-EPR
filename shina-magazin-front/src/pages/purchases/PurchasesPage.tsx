@@ -55,12 +55,14 @@ import type {
   PurchaseStatus,
   PaymentStatus,
 } from '../../types';
-
-interface CartItem {
-  product: Product;
-  quantity: number;
-  unitPrice: number;
-}
+import {
+  addToCart,
+  cartTotal as sumCart,
+  cartTotalQuantity as sumCartQuantity,
+  removeFromCart,
+  updateCartItem,
+  type CartItem,
+} from '../../shared/purchaseCart';
 
 export function PurchasesPage() {
   const { t } = useTranslation();
@@ -91,15 +93,11 @@ export function PurchasesPage() {
   // Product search
   const [productSearch, setProductSearch] = useState('');
 
-  // Calculate cart totals
-  const cartTotal = useMemo(() =>
-    cartItems.reduce((sum, item) => sum + (item.quantity * item.unitPrice), 0),
-    [cartItems]
-  );
-  const cartTotalQuantity = useMemo(() =>
-    cartItems.reduce((sum, item) => sum + item.quantity, 0),
-    [cartItems]
-  );
+  // Savat hisoblari — `shared/purchaseCart` da, ta'minotchilar sahifasidagi
+  // xarid oynasi bilan BIR XIL mantiq (ilgari ikki nusxa edi va ajralib
+  // ketgan edi: bu yerda yaxlitlash bor, u yerda yo'q).
+  const cartTotal = useMemo(() => sumCart(cartItems), [cartItems]);
+  const cartTotalQuantity = useMemo(() => sumCartQuantity(cartItems), [cartItems]);
   const debtAmount = useMemo(() => Math.max(0, cartTotal - paidAmount), [cartTotal, paidAmount]);
 
   const { highlightId, clearHighlight } = useHighlight();
@@ -261,33 +259,16 @@ export function PurchasesPage() {
   };
 
   const handleAddToCart = (product: Product) => {
-    const existing = cartItems.find(item => item.product.id === product.id);
-    if (existing) {
-      setCartItems(prev => prev.map(item =>
-        item.product.id === product.id
-          ? { ...item, quantity: item.quantity + 1 }
-          : item
-      ));
-    } else {
-      setCartItems(prev => [...prev, {
-        product,
-        quantity: 1,
-        unitPrice: product.purchasePrice || Math.round(product.sellingPrice * 0.7),
-      }]);
-    }
+    setCartItems((prev) => addToCart(prev, product));
     setProductSearch('');
   };
 
   const handleUpdateCartItem = (productId: number, field: 'quantity' | 'unitPrice', value: number) => {
-    setCartItems(prev => prev.map(item =>
-      item.product.id === productId
-        ? { ...item, [field]: value }
-        : item
-    ));
+    setCartItems((prev) => updateCartItem(prev, productId, field, value));
   };
 
   const handleRemoveFromCart = (productId: number) => {
-    setCartItems(prev => prev.filter(item => item.product.id !== productId));
+    setCartItems((prev) => removeFromCart(prev, productId));
   };
 
   const handleSavePurchase = async () => {

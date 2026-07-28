@@ -8,7 +8,7 @@ import {
   updateCartItem,
   type CartItem,
 } from './purchaseCart';
-import type { Product } from '../../types';
+import type { Product } from '../types';
 
 /**
  * Xarid savati.
@@ -87,6 +87,24 @@ describe('initialUnitPrice', () => {
   it('xarid narxi nol bo\'lsa ham 70% ga qaytadi', () => {
     expect(initialUnitPrice(product(1, { purchasePrice: 0, sellingPrice: 500_000 })))
       .toBe(350_000);
+  });
+
+  /**
+   * Taxmin BUTUN so'mga yaxlitlanadi.
+   *
+   * <p>So'mning kasr qismi amalda ishlatilmaydi, lekin 70% hisobi uni
+   * osongina hosil qiladi (999 999 -> 699 999.3). Bunday qiymat
+   * `DECIMAL(15,2)` ustunga yozilib, xarid summasi va mahsulotning
+   * tannarxiga o'tardi — tannarx esa FOYDA hisobiga kiradi.
+   *
+   * <p>Ilgari testlar faqat yumaloq sonlarda edi, shuning uchun farq
+   * ko'rinmasdi.
+   */
+  it('taxminni butun so\'mga yaxlitlaydi', () => {
+    expect(initialUnitPrice(product(1, { purchasePrice: 0, sellingPrice: 999_999 })))
+      .toBe(699_999);
+    expect(initialUnitPrice(product(1, { purchasePrice: 0, sellingPrice: 123_457 })))
+      .toBe(86_420);
   });
 });
 
