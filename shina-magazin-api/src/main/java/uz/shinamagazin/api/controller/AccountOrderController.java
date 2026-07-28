@@ -8,6 +8,7 @@ import org.springframework.data.web.PageableDefault;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 import uz.shinamagazin.api.dto.response.ApiResponse;
@@ -37,5 +38,15 @@ public class AccountOrderController {
             @PageableDefault(size = 20) Pageable pageable) {
         return ResponseEntity.ok(ApiResponse.success(PagedResponse.from(
                 shopOrderService.getCustomerOrders(customer.getId(), customer.getPhone(), pageable))));
+    }
+
+    @GetMapping("/{orderNo}")
+    @Operation(summary = "My shop order detail",
+            description = "Bitta storefront buyurtma tafsiloti — faqat mijozning o'ziniki")
+    public ResponseEntity<ApiResponse<ShopOrderResponse>> myOrder(
+            @AuthenticationPrincipal CustomerUserDetails customer,
+            @PathVariable String orderNo) {
+        return ResponseEntity.ok(ApiResponse.success(
+                shopOrderService.getCustomerOrder(customer.getId(), customer.getPhone(), orderNo)));
     }
 }

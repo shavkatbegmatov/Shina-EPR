@@ -7,21 +7,7 @@ import { formatCurrency } from '../../config/constants';
 import { useOrderStore } from '../store/orderStore';
 import { usePortalAuthStore } from '../../portal/store/portalAuthStore';
 import { accountApi, type AccountOrder } from '../data/accountApi';
-
-function formatDate(d: number | string, lang: string): string {
-  return new Date(d).toLocaleString(lang === 'ru' ? 'ru-RU' : 'uz-UZ', {
-    day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit',
-  });
-}
-
-type Tone = 'neutral' | 'primary' | 'success' | 'warning' | 'error' | 'info';
-const STATUS_TONE: Record<string, Tone> = {
-  NEW: 'info', CONFIRMED: 'success', COMPLETED: 'success', CANCELLED: 'error',
-};
-const PAY_TONE: Record<string, Tone> = {
-  PAID: 'success', PENDING: 'warning', PROCESSING: 'warning',
-  FAILED: 'error', CANCELLED: 'error', REFUNDED: 'neutral',
-};
+import { PAY_TONE, STATUS_TONE, formatOrderDate } from '../utils/orderView';
 
 /**
  * Buyurtmalarim. Login qilgan mijoz uchun backend'dan (`/v1/account/orders`);
@@ -84,7 +70,7 @@ export function OrdersPage() {
                       <p className="mt-1 truncate text-sm text-base-content/60">
                         {t('shop.orders.itemsCount', { count: itemCount })} · {firstNames}{o.items.length > 2 ? '…' : ''}
                       </p>
-                      <p className="mt-0.5 text-xs text-base-content/40">{formatDate(o.createdAt, i18n.language)}</p>
+                      <p className="mt-0.5 text-xs text-base-content/40">{formatOrderDate(o.createdAt, i18n.language)}</p>
                     </div>
                     <div className="hidden text-right sm:block">
                       <p className="font-bold text-primary">{formatCurrency(o.totalAmount)}</p>
@@ -140,7 +126,7 @@ export function OrdersPage() {
                         <p className="mt-1 truncate text-sm text-base-content/60">
                           {t('shop.orders.itemsCount', { count: itemCount })} · {firstNames}{o.items.length > 2 ? '…' : ''}
                         </p>
-                        <p className="mt-0.5 text-xs text-base-content/40">{formatDate(o.createdAt, i18n.language)}</p>
+                        <p className="mt-0.5 text-xs text-base-content/40">{formatOrderDate(o.createdAt, i18n.language)}</p>
                       </div>
                       <div className="hidden text-right sm:block">
                         <p className="font-bold text-primary">{formatCurrency(o.total)}</p>

@@ -5,23 +5,33 @@ import { CheckCircle2, Package, Phone, MapPin, CreditCard } from 'lucide-react';
 import { Card, Badge, EmptyState, buttonVariants } from '@/ui';
 import { formatCurrency } from '../../config/constants';
 import { useOrderStore } from '../store/orderStore';
+import { usePortalAuthStore } from '../../portal/store/portalAuthStore';
 import { ordersApi } from '../data/ordersApi';
+import { accountApi } from '../data/accountApi';
 import { ProductImage } from '../components/ProductImage';
+import {
+  PAY_TONE, STATUS_TONE, formatOrderDate, orderViewFromLocal, orderViewFromServer,
+} from '../utils/orderView';
 
-/** To'lov holati badge ranglari (ERP ShopOrdersPage bilan izchil). */
-const PAY_TONE: Record<string, 'warning' | 'info' | 'success' | 'error' | 'neutral'> = {
-  PENDING: 'warning',
-  PROCESSING: 'info',
-  PAID: 'success',
-  FAILED: 'error',
-  CANCELLED: 'neutral',
-  REFUNDED: 'neutral',
-};
-
+/**
+ * Buyurtma tafsiloti. Ikki yo'l bilan ochiladi:
+ * checkout'dan keyin (lokal buyurtma hali localStorage'da) va "Buyurtmalarim"dan
+ * (login qilgan mijoz — tafsilot backend'dan `GET /v1/account/orders/{orderNo}`).
+ */
 export function OrderConfirmationPage() {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const { orderNo } = useParams();
-  const order = useOrderStore((s) => s.orders.find((o) => o.orderNo === orderNo));
+  const isAuthenticated = usePortalAuthStore((s) => s.isAuthenticated);
+  const localOrder = useOrderStore((s) => s.orders.find((o) => o.orderNo === orderNo));
+
+  // Login qilgan mijoz uchun manba — backend (lokal nusxa yo'q eski buyurtmalar ham ochiladi).
+  // Begona buyurtmada backend 404 beradi; guest'da so'rov umuman yuborilmaydi.
+  const { data: serverOrder, isLoading: isOrderLoading } = useQuery({
+    queryKey: ['account-order', orderNo],
+    queryFn: () => accountApi.orderByNo(orderNo as string),
+    enabled: isAuthenticated && !!orderNo,
+    retry: false,
+  });
 
   // To'lovdan qaytgach real to'lov holatini ommaviy status endpoint'dan olamiz.
   // PENDING/PROCESSING bo'lsa qisqa interval bilan yangilab turamiz — provayder
@@ -37,7 +47,24 @@ export function OrderConfirmationPage() {
     },
   });
 
+  const order = serverOrder
+    ? orderViewFromServer(serverOrder)
+    : localOrder
+      ? orderViewFromLocal(localOrder)
+      : null;
+
+  // Holatlar: jonli (polling) status ustun, backend tafsiloti zaxira.
+  const status = serverStatus?.status ?? serverOrder?.status;
+  const paymentStatus = serverStatus?.paymentStatus ?? serverOrder?.paymentStatus;
+
   if (!order) {
+    if (isAuthenticated && isOrderLoading) {
+      return (
+        <div className="mx-auto max-w-3xl px-4 py-16 sm:px-6">
+          <p className="text-center text-sm text-base-content/60">{t('shop.order.loading')}</p>
+        </div>
+      );
+    }
     return (
       <div className="mx-auto max-w-3xl px-4 py-16 sm:px-6">
         <EmptyState
@@ -50,23 +77,50 @@ export function OrderConfirmationPage() {
     );
   }
 
+  // Endigina berilgan buyurtma (yoki holati hali NEW) — tabrik sarlavhasi;
+  // tarixdan ochilgan eski buyurtma — oddiy tafsilot sarlavhasi.
+  const isFresh = !status || status === 'NEW';
+
   return (
     <div className="mx-auto max-w-3xl px-4 py-12 sm:px-6">
-      {/* Success header */}
+      {/* Header */}
       <div className="mb-8 text-center">
-        <span className="mx-auto mb-4 grid h-16 w-16 place-items-center rounded-full bg-success/10 text-success">
-          <CheckCircle2 size={36} />
-        </span>
-        <h1 className="text-2xl font-bold">{t('shop.order.success')}</h1>
-        <p className="mt-2 text-base-content/60">{t('shop.order.thanks')}</p>
+        {isFresh ? (
+          <>
+            <span className="mx-auto mb-4 grid h-16 w-16 place-items-center rounded-full bg-success/10 text-success">
+              <CheckCircle2 size={36} />
+            </span>
+            <h1 className="text-2xl font-bold">{t('shop.order.success')}</h1>
+            <p className="mt-2 text-base-content/60">{t('shop.order.thanks')}</p>
+          </>
+        ) : (
+          <>
+            <span className="mx-auto mb-4 grid h-16 w-16 place-items-center rounded-full bg-primary/10 text-primary">
+              <Package size={32} />
+            </span>
+            <h1 className="text-2xl font-bold">{t('shop.order.detailTitle')}</h1>
+            {order.createdAt && (
+              <p className="mt-2 text-sm text-base-content/60">
+                {formatOrderDate(order.createdAt, i18n.language)}
+              </p>
+            )}
+          </>
+        )}
         <p className="mt-3 inline-flex items-center gap-2 rounded-full bg-base-200 px-4 py-1.5 text-sm font-semibold">
           {t('shop.order.orderNo')}: <span className="font-mono text-primary">{order.orderNo}</span>
         </p>
-        {serverStatus?.paymentStatus && (
-          <p className="mt-3">
-            <Badge tone={PAY_TONE[serverStatus.paymentStatus] ?? 'neutral'}>
-              {t('shop.order.paymentLabel')}: {t(`shop.order.payStatus.${serverStatus.paymentStatus}`)}
-            </Badge>
+        {(status || paymentStatus) && (
+          <p className="mt-3 flex flex-wrap justify-center gap-2">
+            {status && (
+              <Badge tone={STATUS_TONE[status] ?? 'neutral'}>
+                {t('shop.orders.status.' + status, { defaultValue: status })}
+              </Badge>
+            )}
+            {paymentStatus && (
+              <Badge tone={PAY_TONE[paymentStatus] ?? 'neutral'}>
+                {t('shop.order.paymentLabel')}: {t('shop.order.payStatus.' + paymentStatus, { defaultValue: paymentStatus })}
+              </Badge>
+            )}
           </p>
         )}
       </div>
@@ -75,16 +129,18 @@ export function OrderConfirmationPage() {
       <Card className="mb-4 p-5">
         <h2 className="mb-4 font-semibold">{t('shop.order.items')}</h2>
         <ul className="space-y-3">
-          {order.items.map(({ product, qty }) => (
-            <li key={product.id} className="flex items-center gap-3">
+          {order.items.map((item) => (
+            <li key={item.key} className="flex items-center gap-3">
               <div className="h-14 w-14 shrink-0 overflow-hidden rounded-lg border border-base-200">
-                <ProductImage src={product.imageUrl} alt={product.name} />
+                <ProductImage src={item.imageUrl} alt={item.name} />
               </div>
               <div className="min-w-0 flex-1">
-                <p className="truncate text-sm font-medium">{product.name}</p>
-                <p className="text-xs text-base-content/50">{product.sizeString} · {qty} × {formatCurrency(product.sellingPrice)}</p>
+                <p className="truncate text-sm font-medium">{item.name}</p>
+                <p className="text-xs text-base-content/50">
+                  {item.sizeString ? `${item.sizeString} · ` : ''}{item.qty} × {formatCurrency(item.unitPrice)}
+                </p>
               </div>
-              <span className="text-sm font-semibold">{formatCurrency(product.sellingPrice * qty)}</span>
+              <span className="text-sm font-semibold">{formatCurrency(item.lineTotal)}</span>
             </li>
           ))}
         </ul>
@@ -119,9 +175,11 @@ export function OrderConfirmationPage() {
         </div>
       </Card>
 
-      <div className="surface-soft mb-6 rounded-xl p-4 text-center text-sm text-base-content/70">
-        {t('shop.order.contactSoon')}
-      </div>
+      {isFresh && (
+        <div className="surface-soft mb-6 rounded-xl p-4 text-center text-sm text-base-content/70">
+          {t('shop.order.contactSoon')}
+        </div>
+      )}
 
       <div className="flex flex-wrap justify-center gap-3">
         <Link to="/buyurtmalarim" className={buttonVariants({ variant: 'outline' })}>{t('shop.nav.orders')}</Link>

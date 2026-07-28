@@ -179,6 +179,27 @@ public class ShopOrderService {
                 .map(ShopOrderResponse::from);
     }
 
+    /** Mijoz akkaunti: bitta buyurtma tafsiloti — FAQAT o'ziniki. Begona buyurtma
+     * uchun 404 (403 emas) — buyurtma raqamining mavjudligi oshkor bo'lmaydi. */
+    @Transactional(readOnly = true)
+    public ShopOrderResponse getCustomerOrder(Long customerId, String phone, String orderNo) {
+        String normalizedPhone = PhoneNumberUtils.normalize(phone);
+        ShopOrder order = orderRepository.findByOrderNo(orderNo)
+                .filter(o -> isOwnedBy(o, customerId, normalizedPhone))
+                .orElseThrow(() -> new ResourceNotFoundException("Buyurtma", "orderNo", orderNo));
+        return ShopOrderResponse.from(order);
+    }
+
+    /** Egalik: buyurtma mijoz akkauntiga bog'langan YOKI telefoni mos —
+     * {@link #getCustomerOrders} ro'yxati bilan bir xil qamrov (login'gacha guest buyurtmalar). */
+    private boolean isOwnedBy(ShopOrder order, Long customerId, String normalizedPhone) {
+        if (customerId != null && order.getCustomer() != null
+                && customerId.equals(order.getCustomer().getId())) {
+            return true;
+        }
+        return normalizedPhone != null && normalizedPhone.equals(order.getCustomerPhone());
+    }
+
     /** Xodim uchun: buyurtma holatini yangilash (tasdiqlash/bekor qilish/yakunlash). */
     @Transactional
     public ShopOrderResponse updateStatus(String orderNo, ShopOrderStatus status) {

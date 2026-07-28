@@ -2212,6 +2212,8 @@
       "contactSoon": "Operatorimiz buyurtmani tasdiqlash uchun ko'rsatilgan raqamga qo'ng'iroq qiladi.",
       "backHome": "Bosh sahifa",
       "continueShopping": "Xaridni davom ettirish",
+      "detailTitle": "Buyurtma tafsilotlari",
+      "loading": "Buyurtma yuklanmoqda…",
       "notFound": "Buyurtma topilmadi",
       "notFoundHint": "Bunday buyurtma mavjud emas yoki muddati o'tgan.",
       "paymentLabel": "To'lov holati",
