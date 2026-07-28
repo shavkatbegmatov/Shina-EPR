@@ -121,7 +121,13 @@ describe('ReportsPage', () => {
     vi.mocked(reportsApi.getProfitLossReport).mockResolvedValue(PROFIT_LOSS);
   });
 
-  it('hisobotlarni sana oralig\'i bilan yuklaydi', async () => {
+  /**
+   * FAQAT ochiq tabning hisoboti so'raladi.
+   *
+   * <p>Bular serverdagi eng og'ir so'rovlar. Ilgari to'rttasi ham
+   * mount'da barobar ketardi va uchtasining javobi tashlab yuborilardi.
+   */
+  it('faqat ochiq tabning hisobotini so\'raydi', async () => {
     renderPage(FULL_ACCESS);
 
     await waitFor(() => expect(reportsApi.getSalesReport).toHaveBeenCalled());
@@ -129,8 +135,27 @@ describe('ReportsPage', () => {
     const [start, end] = vi.mocked(reportsApi.getSalesReport).mock.calls[0];
     expect(start).toMatch(/^\d{4}-\d{2}-\d{2}$/);
     expect(end).toMatch(/^\d{4}-\d{2}-\d{2}$/);
-    expect(reportsApi.getWarehouseReport).toHaveBeenCalledWith(start, end);
-    expect(reportsApi.getDebtsReport).toHaveBeenCalledWith(start, end);
+
+    expect(reportsApi.getWarehouseReport).not.toHaveBeenCalled();
+    expect(reportsApi.getDebtsReport).not.toHaveBeenCalled();
+    expect(reportsApi.getProfitLossReport).not.toHaveBeenCalled();
+  });
+
+  it('tab ochilganda o\'sha hisobot bir xil oraliq bilan so\'raladi', async () => {
+    renderPage(FULL_ACCESS);
+    await waitFor(() => expect(reportsApi.getSalesReport).toHaveBeenCalled());
+    const [start, end] = vi.mocked(reportsApi.getSalesReport).mock.calls[0];
+
+    fireEvent.click(await screen.findByRole('button', { name: /Ombor/i }));
+
+    // Yuklanayotganda ham tablar joyida qoladi: skelet KONTENT ichida
+    // ko'rsatiladi, butun sahifa o'rniga — aks holda har almashishda
+    // sarlavha va tablar yo'qolib, ekran "sakrardi".
+    expect(screen.getByRole('button', { name: /Sotuvlar/i })).toBeInTheDocument();
+
+    await waitFor(() =>
+      expect(reportsApi.getWarehouseReport).toHaveBeenCalledWith(start, end)
+    );
   });
 
   /**
@@ -150,13 +175,17 @@ describe('ReportsPage', () => {
   it('P&L xatosi qolgan hisobotlarni to\'smaydi', async () => {
     vi.mocked(reportsApi.getProfitLossReport).mockRejectedValue(new Error('403'));
     renderPage(FULL_ACCESS);
-
     await waitFor(() => expect(reportsApi.getSalesReport).toHaveBeenCalled());
-    // Umumiy xato xabari CHIQMASLIGI kerak
+
+    // P&L tabida xato ko'rinadi...
+    fireEvent.click(await screen.findByRole('button', { name: /Foyda va zarar/i }));
+    expect(await screen.findByText(/Hisobotlarni yuklashda xatolik/i)).toBeInTheDocument();
+
+    // ...lekin Sotuvlar tabiga qaytilganda hisobot joyida bo'ladi.
+    fireEvent.click(screen.getByRole('button', { name: /Sotuvlar/i }));
     await waitFor(() =>
       expect(screen.queryByText(/Hisobotlarni yuklashda xatolik/i)).not.toBeInTheDocument()
     );
-    expect(await screen.findByRole('button', { name: /Sotuvlar/i })).toBeInTheDocument();
   });
 
   /**
@@ -167,9 +196,8 @@ describe('ReportsPage', () => {
    */
   it('zarar manfiy summa bilan ko\'rsatiladi', async () => {
     renderPage(FULL_ACCESS);
-    await waitFor(() => expect(reportsApi.getProfitLossReport).toHaveBeenCalled());
-
     fireEvent.click(await screen.findByRole('button', { name: /Foyda va zarar/i }));
+    await waitFor(() => expect(reportsApi.getProfitLossReport).toHaveBeenCalled());
 
     // Sof foyda -2 100 000: manfiy holida ko'rinishi kerak...
     expect((await screen.findAllByText(/-\s?2[\s ]?100[\s ]?000/)).length).toBeGreaterThan(0);
@@ -188,14 +216,20 @@ describe('ReportsPage', () => {
    */
   it('tannarxi noma\'lum qatorlar haqida ogohlantiradi', async () => {
     renderPage(FULL_ACCESS);
-    await waitFor(() => expect(reportsApi.getProfitLossReport).toHaveBeenCalled());
-
     fireEvent.click(await screen.findByRole('button', { name: /Foyda va zarar/i }));
+    await waitFor(() => expect(reportsApi.getProfitLossReport).toHaveBeenCalled());
 
     expect(await screen.findByText(/tannarxi noma.lum/i)).toBeInTheDocument();
   });
 
-  it('yangilash barcha hisobotlarni qayta so\'raydi', async () => {
+  /**
+   * "Yangilash" hamma hisobotni ESKI deb belgilaydi.
+   *
+   * <p>Ochiq tab darhol qayta so'raladi, yopiq tablar esa ochilganda —
+   * ya'ni "yangilash" bosilgach hech qayerda eski raqam qolmaydi, lekin
+   * ko'rinmayotgan hisobotlar bekorga hisoblanmaydi.
+   */
+  it('yangilash ochiq tabni darhol, qolganini ochilganda yangilaydi', async () => {
     renderPage(FULL_ACCESS);
     await waitFor(() => expect(reportsApi.getSalesReport).toHaveBeenCalledTimes(1));
 
@@ -204,6 +238,10 @@ describe('ReportsPage', () => {
     await waitFor(() =>
       expect(vi.mocked(reportsApi.getSalesReport).mock.calls.length).toBeGreaterThan(1)
     );
-    expect(vi.mocked(reportsApi.getDebtsReport).mock.calls.length).toBeGreaterThan(1);
+    // Qarzlar tabi ochilmagan — u bekorga hisoblanmaydi
+    expect(reportsApi.getDebtsReport).not.toHaveBeenCalled();
+
+    fireEvent.click(screen.getByRole('button', { name: /Qarzlar/i }));
+    await waitFor(() => expect(reportsApi.getDebtsReport).toHaveBeenCalled());
   });
 });

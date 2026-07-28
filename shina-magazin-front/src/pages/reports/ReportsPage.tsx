@@ -95,38 +95,50 @@ export function ReportsPage() {
   /** Maxsus oraliq to'liq tanlanmaguncha so'rov yubormaymiz. */
   const rangeReady = Boolean(range.start && range.end);
 
+  /**
+   * Har bir hisobot FAQAT o'z tabi ochiq bo'lganda so'raladi.
+   *
+   * <p>Bular serverdagi eng og'ir so'rovlar — ular savdolar, xaridlar va
+   * qarzlarni butun davr bo'yicha agregatlaydi. Ilgari to'rttasi ham
+   * mount'da barobar ketardi va uchtasining javobi tashlab yuborilardi:
+   * bir vaqtda faqat bitta tab ko'rinadi. Sana oralig'i o'zgarganda esa
+   * bu yana takrorlanardi.
+   *
+   * <p>Tab qaytarib ochilganda so'rov keshdan keladi (`reports` turkumi —
+   * 1 daqiqa), ya'ni oldinga-orqaga yurish bepul.
+   */
   const salesQuery = useQuery({
     queryKey: queryKeys.reports.sales(range),
     queryFn: () => reportsApi.getSalesReport(range.start, range.end),
-    enabled: rangeReady,
+    enabled: rangeReady && activeTab === 'sales',
     placeholderData: keepPreviousData,
   });
 
   const warehouseQuery = useQuery({
     queryKey: queryKeys.reports.warehouse(range),
     queryFn: () => reportsApi.getWarehouseReport(range.start, range.end),
-    enabled: rangeReady,
+    enabled: rangeReady && activeTab === 'warehouse',
     placeholderData: keepPreviousData,
   });
 
   const debtsQuery = useQuery({
     queryKey: queryKeys.reports.debts(range),
     queryFn: () => reportsApi.getDebtsReport(range.start, range.end),
-    enabled: rangeReady,
+    enabled: rangeReady && activeTab === 'debts',
     placeholderData: keepPreviousData,
   });
 
   /**
-   * P&L ATAYLAB alohida so'rov.
+   * P&L qo'shimcha ravishda `EXPENSES_VIEW` talab qiladi.
    *
-   * <p>U `EXPENSES_VIEW` talab qiladi. Boshqa hisobotlar bilan bitta
-   * `Promise.all` ichida bo'lsa, ruxsati yo'q kassirga kelgan 403 QOLGAN
-   * hisobotlarni ham ochilmay qoldirardi.
+   * <p>Ilgari barcha hisobotlar bitta `Promise.all` da edi va ruxsati
+   * yo'q kassirga kelgan 403 QOLGAN hisobotlarni ham ochilmay qoldirardi.
+   * Endi har tab o'z so'roviga ega, ya'ni bu tuzilishi bilan mumkin emas.
    */
   const profitLossQuery = useQuery({
     queryKey: queryKeys.reports.profitLoss(range),
     queryFn: () => reportsApi.getProfitLossReport(range.start, range.end),
-    enabled: rangeReady && canViewProfitLoss,
+    enabled: rangeReady && activeTab === 'profitLoss' && canViewProfitLoss,
     placeholderData: keepPreviousData,
   });
 
@@ -135,17 +147,28 @@ export function ReportsPage() {
   const debtsReport = debtsQuery.data ?? null;
   const profitLoss = profitLossQuery.data ?? null;
 
-  const initialLoading =
-    rangeReady && (salesQuery.isPending || warehouseQuery.isPending || debtsQuery.isPending);
-  const refreshing =
-    (salesQuery.isFetching || warehouseQuery.isFetching || debtsQuery.isFetching) &&
-    !initialLoading;
+  /**
+   * Holat ochiq tabdan olinadi.
+   *
+   * <p>Ilgari uchta so'rovning holati birlashtirilardi — ya'ni bittasining
+   * xatosi qolgan tablarni ham xato holatiga tushirardi. Endi har tab
+   * faqat o'zi uchun javob beradi.
+   */
+  const activeQuery =
+    activeTab === 'sales'
+      ? salesQuery
+      : activeTab === 'warehouse'
+        ? warehouseQuery
+        : activeTab === 'debts'
+          ? debtsQuery
+          : profitLossQuery;
 
-  // P&L xatosi umumiy xatoga QO'SHILMAYDI — u ruxsatga bog'liq va qolgan
-  // hisobotlarni to'smasligi kerak.
+  const contentLoading = rangeReady && activeQuery.isPending;
+  const refreshing = activeQuery.isFetching && !activeQuery.isPending;
+
   const error = !rangeReady
     ? t('erp.reports.selectDateRange')
-    : salesQuery.isError || warehouseQuery.isError || debtsQuery.isError
+    : activeQuery.isError
       ? t('erp.reports.loadError')
       : null;
 
@@ -184,27 +207,6 @@ export function ReportsPage() {
     }
   };
 
-  if (initialLoading) {
-    return (
-      <div className="space-y-6">
-        <div className="flex items-center justify-between">
-          <div>
-            <div className="skeleton h-6 w-40" />
-            <div className="skeleton mt-2 h-4 w-52" />
-          </div>
-        </div>
-        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
-          {Array.from({ length: 4 }).map((_, i) => (
-            <div key={i} className="surface-card p-4">
-              <div className="skeleton h-4 w-24" />
-              <div className="skeleton mt-3 h-8 w-32" />
-            </div>
-          ))}
-        </div>
-      </div>
-    );
-  }
-
   return (
     <div className="space-y-6">
       {/* Header */}
@@ -229,7 +231,7 @@ export function ReportsPage() {
             size="sm"
             className="gap-2 transition-all"
             onClick={refreshAll}
-            disabled={initialLoading || refreshing}
+            disabled={contentLoading || refreshing}
           >
             <RefreshCw className={clsx('h-4 w-4', refreshing && 'animate-spin')} />
             {refreshing ? t('erp.reports.refreshing') : t('common.refresh')}
@@ -305,19 +307,34 @@ export function ReportsPage() {
           </div>
         )}
 
-        {/* Sales Report Tab */}
-        {activeTab === 'sales' && salesReport && <SalesReportView report={salesReport} />}
+        {/* Skelet KONTENT ichida: sarlavha va tablar joyida qoladi, aks
+            holda har tab almashishda ular yo'qolib, ekran "sakrardi". */}
+        {contentLoading ? (
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
+            {Array.from({ length: 4 }).map((_, i) => (
+              <div key={i} className="surface-card p-4">
+                <div className="skeleton h-4 w-24" />
+                <div className="skeleton mt-3 h-8 w-32" />
+              </div>
+            ))}
+          </div>
+        ) : (
+          <>
+            {/* Sales Report Tab */}
+            {activeTab === 'sales' && salesReport && <SalesReportView report={salesReport} />}
 
-        {/* Warehouse Report Tab */}
-        {activeTab === 'warehouse' && warehouseReport && (
-          <WarehouseReportView report={warehouseReport} />
+            {/* Warehouse Report Tab */}
+            {activeTab === 'warehouse' && warehouseReport && (
+              <WarehouseReportView report={warehouseReport} />
+            )}
+
+            {/* Debts Report Tab */}
+            {activeTab === 'debts' && debtsReport && <DebtsReportView report={debtsReport} />}
+
+            {/* Profit & Loss Tab */}
+            {activeTab === 'profitLoss' && profitLoss && <ProfitLossView report={profitLoss} />}
+          </>
         )}
-
-        {/* Debts Report Tab */}
-        {activeTab === 'debts' && debtsReport && <DebtsReportView report={debtsReport} />}
-
-        {/* Profit & Loss Tab */}
-        {activeTab === 'profitLoss' && profitLoss && <ProfitLossView report={profitLoss} />}
       </div>
     </div>
   );
