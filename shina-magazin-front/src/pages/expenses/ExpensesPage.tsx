@@ -97,10 +97,17 @@ export function ExpensesPage() {
   /**
    * Xarajat P&L ga bevosita kiradi — saqlangach hisobot ham eskiradi.
    * Naqd xarajat esa smena Z-hisobotidagi kutilgan kassani o'zgartiradi.
+   *
+   * <p>Hisobot kaliti ilgari BEKOR QILINMASDI. Hisobotlar muddati 0
+   * bo'lganda bu ko'rinmasdi (har mount qayta so'rardi), lekin ular
+   * 1 daqiqalik keshga o'tgach egasi xarajat qo'shib Hisobotlarga
+   * o'tganda ESKI sof foydani ko'radigan bo'ldi — aynan o'zi hozir
+   * o'zgartirgan raqamni.
    */
   const invalidateExpenses = () => {
     void queryClient.invalidateQueries({ queryKey: queryKeys.expenses.all });
     void queryClient.invalidateQueries({ queryKey: queryKeys.shifts.all });
+    void queryClient.invalidateQueries({ queryKey: queryKeys.reports.all });
   };
 
   // Filtr o'zgarganda birinchi sahifaga qaytamiz: aks holda 5-sahifada
