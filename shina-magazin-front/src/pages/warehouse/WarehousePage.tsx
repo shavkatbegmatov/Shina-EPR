@@ -17,6 +17,7 @@ import { useTranslation } from 'react-i18next';
 import toast from 'react-hot-toast';
 import { getApiErrorMessage } from '../../utils/apiError';
 import { queryKeys } from '../../lib/queryKeys';
+import { useDebouncedValue } from '../../hooks/useDebouncedValue';
 import { useInvalidateOnNotification } from '../../hooks/useInvalidateOnNotification';
 import { Button } from '@/ui';
 import { warehouseApi } from '../../api/warehouse.api';
@@ -67,8 +68,6 @@ export function WarehousePage() {
 
   // Product search for adjustment
   const [productSearch, setProductSearch] = useState('');
-  const [searchResults, setSearchResults] = useState<Product[]>([]);
-  const [searchLoading, setSearchLoading] = useState(false);
 
   const getMovementIcon = (type: MovementType) => {
     switch (type) {
@@ -205,28 +204,31 @@ export function WarehousePage() {
 
   useInvalidateOnNotification([queryKeys.warehouse.all]);
 
-  const handleSearchProducts = async (query: string) => {
-    setProductSearch(query);
-    if (query.length < 2) {
-      setSearchResults([]);
-      return;
-    }
+  /**
+   * Tuzatish oynasidagi mahsulot qidiruvi.
+   *
+   * <p>Ilgari bu qo'lda `useState` + `async` bilan yozilgan va
+   * kechiktirilmagan edi: "michelin" yozish 7 ta so'rov qilardi. Mahsulot
+   * so'rovlari ataylab keshlanmaydi (zaxira eskirmasligi kerak), ya'ni
+   * ularning har biri bazagacha boradi.
+   */
+  const debouncedProductSearch = useDebouncedValue(productSearch.trim(), 300);
 
-    setSearchLoading(true);
-    try {
-      const data = await productsApi.getAll({ search: query, size: 10 });
-      setSearchResults(data.content);
-    } catch (error) {
-      console.error('Failed to search products:', error);
-    } finally {
-      setSearchLoading(false);
-    }
-  };
+  const productSearchQuery = useQuery({
+    queryKey: queryKeys.products.search(debouncedProductSearch),
+    queryFn: () => productsApi.getAll({ search: debouncedProductSearch, size: 10 }),
+    enabled: showAdjustmentModal && debouncedProductSearch.length >= 2,
+  });
+
+  // Maydon bo'shatilganda ro'yxat DARHOL yopiladi — kechiktirilgan
+  // qiymatni kutib turish uni osilib qoldirardi.
+  const searchResults =
+    productSearch.trim().length >= 2 ? productSearchQuery.data?.content ?? [] : [];
+  const searchLoading = productSearchQuery.isFetching;
 
   const handleSelectProduct = (product: Product) => {
     setSelectedProduct(product);
     setProductSearch('');
-    setSearchResults([]);
   };
 
   // Faqat OUT va ADJUSTMENT uchun
@@ -236,7 +238,6 @@ export function WarehousePage() {
     setAdjustmentQuantity('');
     setAdjustmentNotes('');
     setProductSearch('');
-    setSearchResults([]);
     setShowAdjustmentModal(true);
   };
 
@@ -606,10 +607,10 @@ export function WarehousePage() {
                 <div className="relative">
                   <SearchInput
                     value={productSearch}
-                    onValueChange={handleSearchProducts}
+                    onValueChange={setProductSearch}
                     label={t('erp.warehouse.productLabel')}
                     placeholder={t('erp.warehouse.productSearchPlaceholder')}
-                    onClear={() => handleSearchProducts('')}
+                    onClear={() => setProductSearch('')}
                   />
                   {searchResults.length > 0 && (
                     <div className="absolute z-10 w-full mt-1 bg-base-100 border border-base-300 rounded-lg shadow-lg max-h-48 overflow-y-auto">
