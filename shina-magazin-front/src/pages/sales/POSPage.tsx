@@ -11,6 +11,7 @@ import { useCartStore } from '../../store/cartStore';
 import { useDebouncedValue } from '../../hooks/useDebouncedValue';
 import { useInvalidateOnNotification } from '../../hooks/useInvalidateOnNotification';
 import { queryKeys } from '../../lib/queryKeys';
+import { invalidateAfter } from '../../lib/invalidation';
 import { formatCurrency, PAYMENT_METHODS } from '../../config/constants';
 import { enumLabel } from '@/shared/enumLabel';
 import { CurrencyInput } from '../../components/ui/CurrencyInput';
@@ -79,10 +80,6 @@ export function POSPage() {
    * Shuning uchun kutish holati ochiq ko'rsatiladi.
    */
   const searchPending = search.trim() !== debouncedSearch || productsQuery.isFetching;
-
-  /** Zaxira o'zgardi — mahsulot ro'yxatini yangilash kerak. */
-  const invalidateProducts = () =>
-    queryClient.invalidateQueries({ queryKey: queryKeys.products.all });
 
   // WebSocket bildirishnomasi kelganda zaxira o'zgargan bo'lishi mumkin
   useInvalidateOnNotification([queryKeys.products.all]);
@@ -254,12 +251,9 @@ export function POSPage() {
       setCompletedSale(sale);
       cart.clear();
       setPaidAmount(0);
-      // Zaxira kamaydi — ro'yxat yangilanmasa kassir sotilgan tovarni yana
-      // sotishga urinardi.
-      void invalidateProducts();
-      // Savdo qarz va mijoz balansiga ham ta'sir qiladi
-      void queryClient.invalidateQueries({ queryKey: queryKeys.sales.all });
-      void queryClient.invalidateQueries({ queryKey: queryKeys.debts.all });
+      // Zaxira kamaydi, qarzga sotilgan bo'lsa qarz va mijoz balansi ham
+      // o'zgaradi — to'liq ro'yxat `lib/invalidation.ts` da.
+      invalidateAfter.sale(queryClient);
     } catch (error: unknown) {
       const err = error as { response?: { data?: { message?: string } } };
       toast.error(err.response?.data?.message || t('common.error'));

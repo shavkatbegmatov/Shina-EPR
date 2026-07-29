@@ -5,6 +5,7 @@ import { Receipt, Pencil, Trash2, Plus, Wallet } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { expensesApi } from '../../api/expenses.api';
 import { queryKeys } from '../../lib/queryKeys';
+import { invalidateAfter } from '../../lib/invalidation';
 import { getApiErrorMessage } from '../../utils/apiError';
 import { formatCurrency, formatDate, formatDateForApi } from '../../config/constants';
 import { CurrencyInput } from '../../components/ui/CurrencyInput';
@@ -105,9 +106,7 @@ export function ExpensesPage() {
    * o'zgartirgan raqamni.
    */
   const invalidateExpenses = () => {
-    void queryClient.invalidateQueries({ queryKey: queryKeys.expenses.all });
-    void queryClient.invalidateQueries({ queryKey: queryKeys.shifts.all });
-    void queryClient.invalidateQueries({ queryKey: queryKeys.reports.all });
+    invalidateAfter.expense(queryClient);
   };
 
   // Filtr o'zgarganda birinchi sahifaga qaytamiz: aks holda 5-sahifada

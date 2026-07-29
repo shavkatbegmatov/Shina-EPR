@@ -27,6 +27,7 @@ import { ExportButtons } from '../../components/common/ExportButtons';
 import { useHighlight } from '../../hooks/useHighlight';
 import { useInvalidateOnNotification } from '../../hooks/useInvalidateOnNotification';
 import { queryKeys } from '../../lib/queryKeys';
+import { invalidateAfter } from '../../lib/invalidation';
 import { PermissionGate } from '../../components/common/PermissionGate';
 import { usePermission, PermissionCode } from '../../hooks/usePermission';
 import type { Sale, PaymentStatus, SaleStatus, PaymentMethod } from '../../types';
@@ -308,7 +309,9 @@ export function SalesPage() {
       toast.success(t('erp.sales.cancelSuccess'));
       setShowCancelModal(false);
       setSelectedSale(null);
-      void queryClient.invalidateQueries({ queryKey: queryKeys.sales.all });
+      // Bekor qilish tovarni zaxiraga QAYTARADI, qarzni bekor qiladi va
+      // mijoz balansini tuzatadi — savdo bilan bir xil tarmoq eskiradi.
+      invalidateAfter.sale(queryClient);
     } catch (error: unknown) {
       const err = error as { response?: { status?: number; data?: { message?: string } } };
       // Skip toast for 403 errors (axios interceptor handles them)

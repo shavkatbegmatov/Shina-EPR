@@ -10,6 +10,7 @@ import { productsApi } from '../../api/products.api';
 import { getApiErrorMessage } from '../../utils/apiError';
 import { formatCurrency, getTashkentToday } from '../../config/constants';
 import { queryKeys } from '../../lib/queryKeys';
+import { invalidateAfter } from '../../lib/invalidation';
 import { useDebouncedValue } from '../../hooks/useDebouncedValue';
 import { ModalPortal } from '../../components/common/Modal';
 import { SearchInput } from '../../components/ui/SearchInput';
@@ -79,10 +80,10 @@ function PurchaseForm({ suppliers, onClose }: Pick<Props, 'suppliers' | 'onClose
   const save = useMutation({
     mutationFn: (request: PurchaseRequest) => purchasesApi.create(request),
     onSuccess: () => {
-      void queryClient.invalidateQueries({ queryKey: queryKeys.purchases.all });
-      // Xarid ta'minotchi balansini o'zgartiradi — qarz statistikasi ham
-      // eskiradi, shuning uchun ikkala tarmoq bekor qilinadi.
-      void queryClient.invalidateQueries({ queryKey: queryKeys.suppliers.all });
+      // Ilgari bu yerda faqat xaridlar va ta'minotchilar bekor qilinardi —
+      // xuddi shu amal Xaridlar sahifasidan qilinsa ombor va mahsulotlar
+      // ham yangilanardi. Endi ro'yxat bitta joyda.
+      invalidateAfter.purchase(queryClient);
       onClose();
     },
     onError: (error) => {

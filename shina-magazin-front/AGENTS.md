@@ -61,6 +61,11 @@ a new query means remembering to add it in three places.
   page that renders a skeleton on `isPending` spins with nothing loading. Guard the
   disabled case explicitly (`const loading = !!id && query.isPending`).
 - Mutations invalidate in `onSuccess`; the page should not pass `onSaved` reload callbacks.
+- For domain events that touch stock or money (sale, return, purchase, stock movement,
+  expense), call `invalidateAfter.<event>` from `src/lib/invalidation.ts` instead of
+  listing keys inline. Written per page, those lists drift: a purchase made from the
+  Suppliers modal used to leave stock stale while the same purchase from the Purchases
+  page refreshed it. Extend the event's list there and every call site gets it.
 - WebSocket-driven refresh: `useInvalidateOnNotification([...keys])`, not a
   `notifications.length` effect.
 

@@ -5,6 +5,7 @@ import { useTranslation } from 'react-i18next';
 import toast from 'react-hot-toast';
 import { getApiErrorMessage } from '../../utils/apiError';
 import { queryKeys } from '../../lib/queryKeys';
+import { invalidateAfter } from '../../lib/invalidation';
 import { useInvalidateOnNotification } from '../../hooks/useInvalidateOnNotification';
 import { useDebouncedValue } from '../../hooks/useDebouncedValue';
 import {
@@ -189,10 +190,7 @@ export function PurchasesPage() {
 
   /** Xarid zaxira, ta'minotchi balansi va omborga ta'sir qiladi. */
   const invalidatePurchases = () => {
-    void queryClient.invalidateQueries({ queryKey: queryKeys.purchases.all });
-    void queryClient.invalidateQueries({ queryKey: queryKeys.suppliers.all });
-    void queryClient.invalidateQueries({ queryKey: queryKeys.warehouse.all });
-    void queryClient.invalidateQueries({ queryKey: queryKeys.products.all });
+    invalidateAfter.purchase(queryClient);
   };
 
   useInvalidateOnNotification([queryKeys.purchases.all]);

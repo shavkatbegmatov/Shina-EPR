@@ -17,6 +17,7 @@ import { useTranslation } from 'react-i18next';
 import toast from 'react-hot-toast';
 import { getApiErrorMessage } from '../../utils/apiError';
 import { queryKeys } from '../../lib/queryKeys';
+import { invalidateAfter } from '../../lib/invalidation';
 import { useDebouncedValue } from '../../hooks/useDebouncedValue';
 import { useInvalidateOnNotification } from '../../hooks/useInvalidateOnNotification';
 import { Button } from '@/ui';
@@ -198,8 +199,7 @@ export function WarehousePage() {
    * ostida. Mahsulot ro'yxati ham eskiradi — u zaxira sonini ko'rsatadi.
    */
   const invalidateWarehouse = () => {
-    void queryClient.invalidateQueries({ queryKey: queryKeys.warehouse.all });
-    void queryClient.invalidateQueries({ queryKey: queryKeys.products.all });
+    invalidateAfter.stockMovement(queryClient);
   };
 
   useInvalidateOnNotification([queryKeys.warehouse.all]);

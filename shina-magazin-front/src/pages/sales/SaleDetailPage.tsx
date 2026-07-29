@@ -28,6 +28,7 @@ import { salesApi } from '../../api/sales.api';
 import { formatCurrency, formatDate } from '../../config/constants';
 import { useSaleReceipt } from '../../components/receipt/useSaleReceipt';
 import { queryKeys } from '../../lib/queryKeys';
+import { invalidateAfter } from '../../lib/invalidation';
 
 export function SaleDetailPage() {
   const { t } = useTranslation();
@@ -113,7 +114,7 @@ export function SaleDetailPage() {
       // Savdo va qaytarishlar tarixi bitta prefiks ostida — ikkalasi birga
       // yangilanadi. Ilgari faqat `loadSale()` chaqirilardi va u ikkalasini
       // birga olardi; endi bu bog'liqlik kalitlar ierarxiyasida ifodalangan.
-      void queryClient.invalidateQueries({ queryKey: queryKeys.sales.all });
+      invalidateAfter.saleReturn(queryClient);
     } catch (error) {
       toast.error(getApiErrorMessage(error));
     } finally {
