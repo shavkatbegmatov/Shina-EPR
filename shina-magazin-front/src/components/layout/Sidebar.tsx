@@ -191,7 +191,7 @@ export function Sidebar() {
           className="fixed inset-0 z-40 bg-black/50 md:hidden"
           onClick={() => setSidebarOpen(false)}
           role="button"
-          aria-label="Menyuni yopish"
+          aria-label={t('erp.nav.closeMenu')}
         />
       )}
 
@@ -227,13 +227,13 @@ export function Sidebar() {
             size="sm"
             className="relative md:hidden"
             onClick={() => setSidebarOpen(false)}
-            aria-label="Yopish"
+            aria-label={t('common.close')}
           >
             <X className="h-5 w-5" />
           </Button>
         </div>
 
-        <nav className="flex-1 overflow-y-auto p-4 md:p-2 lg:p-4 scrollbar-thin" aria-label="Asosiy navigatsiya">
+        <nav className="flex-1 overflow-y-auto p-4 md:p-2 lg:p-4 scrollbar-thin" aria-label={t('erp.nav.mainNav')}>
           {/* Dashboard — guruhdan tashqari, doim tepada */}
           {showDashboard && (
             <ul className="stagger-children flex flex-col gap-1 pb-2">

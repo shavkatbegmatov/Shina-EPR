@@ -380,7 +380,7 @@ export function AttributesPage() {
                 className="input input-bordered w-full"
                 value={form.unit}
                 onChange={(e) => setForm((prev) => ({ ...prev, unit: e.target.value }))}
-                placeholder="mm, %, oy..."
+                placeholder={t('erp.attributes.unitPlaceholder')}
               />
             </label>
             <label className="form-control justify-end">

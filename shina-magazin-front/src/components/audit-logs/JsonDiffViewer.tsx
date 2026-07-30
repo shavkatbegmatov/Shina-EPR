@@ -2,6 +2,7 @@ import { useState, useEffect, useMemo } from 'react';
 import { Copy, Check, Maximize2, Minimize2, Download } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { Button } from '@/ui';
+import { useTranslation } from 'react-i18next';
 
 interface JsonDiffViewerProps {
   oldValue: Record<string, unknown> | null;
@@ -157,6 +158,7 @@ function CopyButton({ text }: { text: string }) {
 
 // Download button component
 function DownloadButton({ json, filename }: { json: string; filename: string }) {
+  const { t } = useTranslation();
   const handleDownload = () => {
     try {
       const blob = new Blob([json], { type: 'application/json' });
@@ -180,7 +182,7 @@ function DownloadButton({ json, filename }: { json: string; filename: string }) 
       size="xs"
       onClick={handleDownload}
       className="opacity-70 hover:opacity-100"
-      title="Yuklab olish"
+      title={t('common.download')}
     >
       <Download className="h-3 w-3" />
     </Button>
@@ -271,6 +273,7 @@ function JsonPanel({
 }
 
 export function JsonDiffViewer({ oldValue, newValue, action }: JsonDiffViewerProps) {
+  const { t } = useTranslation();
   const [isMobile, setIsMobile] = useState(false);
   const [expandedPanel, setExpandedPanel] = useState<ExpandedPanel>('none');
 
@@ -330,7 +333,7 @@ export function JsonDiffViewer({ oldValue, newValue, action }: JsonDiffViewerPro
     return (
       <div className="h-full">
         <JsonPanel
-          title="Yaratilgan qiymat"
+          title={t('erp.auditLogs.diff.created')}
           json={newJson}
           highlighted={newHighlighted}
           variant="new"
@@ -350,7 +353,7 @@ export function JsonDiffViewer({ oldValue, newValue, action }: JsonDiffViewerPro
     return (
       <div className="h-full">
         <JsonPanel
-          title="Eski qiymat"
+          title={t('erp.auditLogs.diff.oldValue')}
           json={oldJson}
           highlighted={oldHighlighted}
           variant="old"
@@ -368,7 +371,7 @@ export function JsonDiffViewer({ oldValue, newValue, action }: JsonDiffViewerPro
     return (
       <div className="h-full">
         <JsonPanel
-          title="Yangi qiymat"
+          title={t('erp.auditLogs.diff.newValue')}
           json={newJson}
           highlighted={newHighlighted}
           variant="new"
@@ -386,7 +389,7 @@ export function JsonDiffViewer({ oldValue, newValue, action }: JsonDiffViewerPro
   return (
     <div className={`h-full ${isMobile ? 'space-y-3' : 'grid grid-cols-2 gap-3'}`}>
       <JsonPanel
-        title="Eski qiymat"
+        title={t('erp.auditLogs.diff.oldValue')}
         json={oldJson}
         highlighted={oldHighlighted}
         variant="old"
@@ -397,7 +400,7 @@ export function JsonDiffViewer({ oldValue, newValue, action }: JsonDiffViewerPro
         filename="old-value.json"
       />
       <JsonPanel
-        title="Yangi qiymat"
+        title={t('erp.auditLogs.diff.newValue')}
         json={newJson}
         highlighted={newHighlighted}
         variant="new"

@@ -39,7 +39,14 @@
     "amount": "Сумма",
     "success": "Успешно",
     "noResults": "Ничего не найдено",
-    "searching": "Поиск..."
+    "searching": "Поиск...",
+    "download": "Скачать",
+    "pagination": {
+      "first": "Первая страница",
+      "prev": "Предыдущая страница",
+      "next": "Следующая страница",
+      "last": "Последняя страница"
+    }
   },
   "auth": {
     "login": "Вход",
@@ -199,7 +206,9 @@
         "management": "Управление"
       },
       "shifts": "Смены",
-      "expenses": "Расходы"
+      "expenses": "Расходы",
+      "closeMenu": "Закрыть меню",
+      "mainNav": "Основная навигация"
     },
     "header": {
       "home": "Главная",
@@ -1036,7 +1045,12 @@
       "prevPage": "Предыдущая",
       "nextPage": "Следующая",
       "groupCountSummary": "Всего {{total}} групп, на странице {{count}}",
-      "logCountSummary": "Всего {{total}} журналов, на странице {{count}}"
+      "logCountSummary": "Всего {{total}} журналов, на странице {{count}}",
+      "diff": {
+        "created": "Созданное значение",
+        "oldValue": "Старое значение",
+        "newValue": "Новое значение"
+      }
     },
     "productDetail": {
       "seasonSummer": "Летние",
@@ -1907,7 +1921,8 @@
         "SELECT": "Выбор",
         "MULTI_SELECT": "Множ. выбор",
         "BOOLEAN": "Да/Нет"
-      }
+      },
+      "unitPlaceholder": "мм, %, мес..."
     },
     "brands": {
       "title": "Бренды",

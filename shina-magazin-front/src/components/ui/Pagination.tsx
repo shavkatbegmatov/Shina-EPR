@@ -2,6 +2,7 @@ import { ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight } from 'lucide-r
 import clsx from 'clsx';
 import { Button } from '@/ui';
 import { Select } from './Select';
+import { useTranslation } from 'react-i18next';
 
 interface PaginationProps {
   currentPage: number;
@@ -28,6 +29,7 @@ export function Pagination({
   showInfo = true,
   className,
 }: PaginationProps) {
+  const { t } = useTranslation();
   // Calculate visible page numbers
   const getVisiblePages = () => {
     const delta = 1; // Pages to show on each side of current
@@ -118,7 +120,7 @@ export function Pagination({
             )}
             onClick={() => onPageChange(0)}
             disabled={currentPage === 0}
-            title="Birinchi sahifa"
+            title={t('common.pagination.first')}
           >
             <ChevronsLeft className="h-4 w-4" />
           </Button>
@@ -134,7 +136,7 @@ export function Pagination({
             )}
             onClick={() => onPageChange(currentPage - 1)}
             disabled={currentPage === 0}
-            title="Oldingi sahifa"
+            title={t('common.pagination.prev')}
           >
             <ChevronLeft className="h-4 w-4" />
           </Button>
@@ -177,7 +179,7 @@ export function Pagination({
             )}
             onClick={() => onPageChange(currentPage + 1)}
             disabled={currentPage >= totalPages - 1}
-            title="Keyingi sahifa"
+            title={t('common.pagination.next')}
           >
             <ChevronRight className="h-4 w-4" />
           </Button>
@@ -193,7 +195,7 @@ export function Pagination({
             )}
             onClick={() => onPageChange(totalPages - 1)}
             disabled={currentPage >= totalPages - 1}
-            title="Oxirgi sahifa"
+            title={t('common.pagination.last')}
           >
             <ChevronsRight className="h-4 w-4" />
           </Button>

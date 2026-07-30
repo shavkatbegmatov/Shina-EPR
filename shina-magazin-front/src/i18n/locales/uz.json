@@ -39,7 +39,14 @@
     "amount": "Summa",
     "success": "Muvaffaqiyatli",
     "noResults": "Natija topilmadi",
-    "searching": "Qidirilmoqda..."
+    "searching": "Qidirilmoqda...",
+    "download": "Yuklab olish",
+    "pagination": {
+      "first": "Birinchi sahifa",
+      "prev": "Oldingi sahifa",
+      "next": "Keyingi sahifa",
+      "last": "Oxirgi sahifa"
+    }
   },
   "auth": {
     "login": "Kirish",
@@ -199,7 +206,9 @@
         "management": "Boshqaruv"
       },
       "shifts": "Smenalar",
-      "expenses": "Xarajatlar"
+      "expenses": "Xarajatlar",
+      "closeMenu": "Menyuni yopish",
+      "mainNav": "Asosiy navigatsiya"
     },
     "header": {
       "home": "Bosh sahifa",
@@ -1036,7 +1045,12 @@
       "prevPage": "Oldingi",
       "nextPage": "Keyingi",
       "groupCountSummary": "Jami {{total}} ta guruh, sahifada {{count}} ta",
-      "logCountSummary": "Jami {{total}} ta log, sahifada {{count}} ta"
+      "logCountSummary": "Jami {{total}} ta log, sahifada {{count}} ta",
+      "diff": {
+        "created": "Yaratilgan qiymat",
+        "oldValue": "Eski qiymat",
+        "newValue": "Yangi qiymat"
+      }
     },
     "productDetail": {
       "seasonSummer": "Yozgi",
@@ -1907,7 +1921,8 @@
         "SELECT": "Tanlov",
         "MULTI_SELECT": "Ko'p tanlov",
         "BOOLEAN": "Ha/Yo'q"
-      }
+      },
+      "unitPlaceholder": "mm, %, oy..."
     },
     "brands": {
       "title": "Brendlar",
