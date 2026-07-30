@@ -1,5 +1,6 @@
 import { useState, type CSSProperties } from 'react';
 import { keepPreviousData, useQuery } from '@tanstack/react-query';
+import { useTranslation } from 'react-i18next';
 import {
   ShoppingCart,
   Package,
@@ -113,6 +114,7 @@ const CustomTooltip = ({ active, payload, label }: CustomTooltipProps) => {
 };
 
 export function DashboardPage() {
+  const { t } = useTranslation();
   const colors = useChartColors();
   const barCursor = { fill: colors.cursor };
   const [period, setPeriod] = useState<7 | 30>(30);
@@ -174,7 +176,7 @@ export function DashboardPage() {
         <div className="absolute inset-0 z-10 flex items-center justify-center rounded-xl bg-base-100/60 backdrop-blur-sm">
           <div className="flex flex-col items-center gap-3">
             <span className="loading loading-spinner loading-lg text-primary"></span>
-            <span className="text-sm font-medium text-base-content/70">Yangilanmoqda...</span>
+            <span className="text-sm font-medium text-base-content/70">{t('erp.dashboard.refreshing')}</span>
           </div>
         </div>
       )}
@@ -182,9 +184,9 @@ export function DashboardPage() {
       {/* Header */}
       <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
         <div>
-          <h1 className="text-2xl font-bold lg:text-3xl">Dashboard</h1>
+          <h1 className="text-2xl font-bold lg:text-3xl">{t('erp.dashboard.title')}</h1>
           <p className="mt-1 text-base-content/60">
-            Biznesingiz haqida real vaqtda ma'lumotlar
+            {t('erp.dashboard.subtitle')}
           </p>
         </div>
         <div className="flex flex-wrap items-center gap-3">
@@ -196,7 +198,7 @@ export function DashboardPage() {
               className="join-item"
               onClick={() => setPeriod(7)}
             >
-              7 kun
+              {t('erp.dashboard.days', { count: 7 })}
             </Button>
             <Button
               size="sm"
@@ -204,12 +206,12 @@ export function DashboardPage() {
               className="join-item"
               onClick={() => setPeriod(30)}
             >
-              30 kun
+              {t('erp.dashboard.days', { count: 30 })}
             </Button>
           </div>
           <Link to="/admin/pos" className={buttonVariants({ variant: 'primary' })}>
             <ShoppingCart className="h-4 w-4" />
-            Yangi sotuv
+            {t('erp.dashboard.newSale')}
           </Link>
         </div>
       </div>
@@ -217,32 +219,32 @@ export function DashboardPage() {
       {/* KPI Cards */}
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
         <StatCard
-          title="Bugungi sotuvlar"
+          title={t('erp.dashboard.todaySales')}
           value={stats?.todaySalesCount || 0}
           icon={ShoppingCart}
           tone="primary"
           trend={chartData?.salesGrowthPercent}
-          trendLabel="o'tgan haftaga nisbatan"
+          trendLabel={t('erp.dashboard.vsLastWeek')}
           style={{ '--i': 0 } as CSSProperties}
         />
         <StatCard
-          title="Bugungi daromad"
+          title={t('erp.dashboard.todayRevenue')}
           value={formatCurrency(stats?.todayRevenue || 0)}
           icon={DollarSign}
           tone="success"
           trend={chartData?.revenueGrowthPercent}
-          trendLabel="o'tgan haftaga nisbatan"
+          trendLabel={t('erp.dashboard.vsLastWeek')}
           style={{ '--i': 1 } as CSSProperties}
         />
         <StatCard
-          title="Jami mahsulotlar"
+          title={t('erp.dashboard.totalProducts')}
           value={formatNumber(stats?.totalProducts || 0)}
           icon={Package}
           tone="info"
           style={{ '--i': 2 } as CSSProperties}
         />
         <StatCard
-          title="Mijozlar soni"
+          title={t('erp.dashboard.totalCustomers')}
           value={formatNumber(stats?.totalCustomers || 0)}
           icon={Users}
           tone="secondary"
@@ -258,7 +260,7 @@ export function DashboardPage() {
               <TrendingUp className="h-5 w-5 text-success" />
             </div>
             <div>
-              <p className="text-xs text-base-content/60">Bu hafta</p>
+              <p className="text-xs text-base-content/60">{t('erp.dashboard.thisWeek')}</p>
               <p className="font-bold">{formatCompactCurrency(chartData?.thisWeekRevenue || 0)}</p>
             </div>
           </div>
@@ -269,7 +271,7 @@ export function DashboardPage() {
               <Calendar className="h-5 w-5 text-info" />
             </div>
             <div>
-              <p className="text-xs text-base-content/60">Bu oy</p>
+              <p className="text-xs text-base-content/60">{t('erp.dashboard.thisMonth')}</p>
               <p className="font-bold">{formatCompactCurrency(chartData?.thisMonthRevenue || 0)}</p>
             </div>
           </div>
@@ -280,7 +282,7 @@ export function DashboardPage() {
               <Package className="h-5 w-5 text-warning" />
             </div>
             <div>
-              <p className="text-xs text-base-content/60">Omborda</p>
+              <p className="text-xs text-base-content/60">{t('erp.dashboard.inStock')}</p>
               <p className="font-bold">{formatNumber(stats?.totalStock || 0)} dona</p>
             </div>
           </div>
@@ -291,7 +293,7 @@ export function DashboardPage() {
               <Wallet className="h-5 w-5 text-error" />
             </div>
             <div>
-              <p className="text-xs text-base-content/60">Jami qarz</p>
+              <p className="text-xs text-base-content/60">{t('erp.dashboard.totalDebt')}</p>
               <p className="font-bold text-error">{formatCompactCurrency(stats?.totalDebt || 0)}</p>
             </div>
           </div>
@@ -302,12 +304,12 @@ export function DashboardPage() {
       <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
         {/* Sales Trend - Takes 2 columns */}
         <ChartCard
-          title="Sotuvlar dinamikasi"
+          title={t('erp.dashboard.salesTrend')}
           icon={TrendingUp}
           className="lg:col-span-2"
           action={
             <span className="text-xs text-base-content/50">
-              Oxirgi {period} kun
+              {t('erp.dashboard.lastDays', { count: period })}
             </span>
           }
         >
@@ -337,7 +339,7 @@ export function DashboardPage() {
                 <Area
                   type="monotone"
                   dataKey="revenue"
-                  name="Daromad"
+                  name={t('erp.dashboard.revenue')}
                   stroke={colors.primary}
                   strokeWidth={2}
                   fillOpacity={1}
@@ -349,7 +351,7 @@ export function DashboardPage() {
         </ChartCard>
 
         {/* Payment Methods - Donut Chart */}
-        <ChartCard title="To'lov usullari" icon={CreditCard}>
+        <ChartCard title={t('erp.dashboard.paymentMethods')} icon={CreditCard}>
           <div className="h-72">
             <ResponsiveContainer width="100%" height="100%">
               <RechartsPie>
@@ -386,7 +388,7 @@ export function DashboardPage() {
       {/* Second Charts Row */}
       <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
         {/* Top Products */}
-        <ChartCard title="Top mahsulotlar" icon={BarChart3}>
+        <ChartCard title={t('erp.dashboard.topProducts')} icon={BarChart3}>
           <div className="h-72">
             <ResponsiveContainer width="100%" height="100%">
               <BarChart
@@ -414,7 +416,7 @@ export function DashboardPage() {
                   formatter={(value: number) => formatCurrency(value)}
                   labelFormatter={(label) => `Mahsulot: ${label}`}
                 />
-                <Bar dataKey="revenue" name="Daromad" fill={colors.success} radius={[0, 4, 4, 0]} />
+                <Bar dataKey="revenue" name={t('erp.dashboard.revenue')} fill={colors.success} radius={[0, 4, 4, 0]} />
               </BarChart>
             </ResponsiveContainer>
           </div>
@@ -422,7 +424,7 @@ export function DashboardPage() {
 
         {/* Hourly Sales */}
         <ChartCard
-          title="Bugungi sotuvlar (soatlik)"
+          title={t('erp.dashboard.hourlySales')}
           icon={Clock}
           action={
             <span className="text-xs text-base-content/50">
@@ -444,7 +446,7 @@ export function DashboardPage() {
                 />
                 <Bar
                   dataKey="salesCount"
-                  name="Sotuvlar"
+                  name={t('erp.dashboard.sales')}
                   fill={colors.info}
                   radius={[4, 4, 0, 0]}
                 />
@@ -457,7 +459,7 @@ export function DashboardPage() {
       {/* Third Row - Weekday and Category */}
       <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
         {/* Weekday Sales */}
-        <ChartCard title="Hafta kunlari bo'yicha" icon={Calendar}>
+        <ChartCard title={t('erp.dashboard.byWeekday')} icon={Calendar}>
           <div className="h-64">
             <ResponsiveContainer width="100%" height="100%">
               <BarChart data={chartData?.weekdaySales || []}>
@@ -470,7 +472,7 @@ export function DashboardPage() {
                     name === 'Daromad' ? formatCurrency(value) : value
                   }
                 />
-                <Bar dataKey="revenue" name="Daromad" radius={[4, 4, 0, 0]}>
+                <Bar dataKey="revenue" name={t('erp.dashboard.revenue')} radius={[4, 4, 0, 0]}>
                   {(chartData?.weekdaySales || []).map((entry, index) => (
                     <Cell
                       key={`cell-${index}`}
@@ -484,7 +486,7 @@ export function DashboardPage() {
         </ChartCard>
 
         {/* Category Sales */}
-        <ChartCard title="Kategoriyalar bo'yicha" icon={PieChart}>
+        <ChartCard title={t('erp.dashboard.byCategory')} icon={PieChart}>
           <div className="h-64">
             {chartData?.categorySales && chartData.categorySales.length > 0 ? (
               <ResponsiveContainer width="100%" height="100%">

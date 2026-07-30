@@ -145,6 +145,31 @@
     "unpaid": "To'lanmagan"
   },
   "erp": {
+    "dashboard": {
+      "title": "Boshqaruv paneli",
+      "subtitle": "Biznesingiz haqida real vaqtda ma'lumotlar",
+      "refreshing": "Yangilanmoqda...",
+      "days": "{{count}} kun",
+      "lastDays": "Oxirgi {{count}} kun",
+      "newSale": "Yangi sotuv",
+      "todaySales": "Bugungi sotuvlar",
+      "todayRevenue": "Bugungi daromad",
+      "totalProducts": "Jami mahsulotlar",
+      "totalCustomers": "Mijozlar soni",
+      "vsLastWeek": "o'tgan haftaga nisbatan",
+      "thisWeek": "Bu hafta",
+      "thisMonth": "Bu oy",
+      "totalDebt": "Jami qarz",
+      "inStock": "Omborda",
+      "salesTrend": "Sotuvlar dinamikasi",
+      "paymentMethods": "To'lov usullari",
+      "topProducts": "Top mahsulotlar",
+      "hourlySales": "Bugungi sotuvlar (soatlik)",
+      "byWeekday": "Hafta kunlari bo'yicha",
+      "byCategory": "Kategoriyalar bo'yicha",
+      "revenue": "Daromad",
+      "sales": "Sotuvlar"
+    },
     "nav": {
       "dashboard": "Dashboard",
       "products": "Mahsulotlar",

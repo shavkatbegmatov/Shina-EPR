@@ -145,6 +145,31 @@
     "unpaid": "Не оплачен"
   },
   "erp": {
+    "dashboard": {
+      "title": "Панель управления",
+      "subtitle": "Данные о вашем бизнесе в реальном времени",
+      "refreshing": "Обновление...",
+      "days": "{{count}} дн.",
+      "lastDays": "Последние {{count}} дн.",
+      "newSale": "Новая продажа",
+      "todaySales": "Продажи за сегодня",
+      "todayRevenue": "Выручка за сегодня",
+      "totalProducts": "Всего товаров",
+      "totalCustomers": "Количество клиентов",
+      "vsLastWeek": "по сравнению с прошлой неделей",
+      "thisWeek": "Эта неделя",
+      "thisMonth": "Этот месяц",
+      "totalDebt": "Общий долг",
+      "inStock": "На складе",
+      "salesTrend": "Динамика продаж",
+      "paymentMethods": "Способы оплаты",
+      "topProducts": "Топ товаров",
+      "hourlySales": "Продажи за сегодня (по часам)",
+      "byWeekday": "По дням недели",
+      "byCategory": "По категориям",
+      "revenue": "Выручка",
+      "sales": "Продажи"
+    },
     "nav": {
       "dashboard": "Панель",
       "products": "Товары",
