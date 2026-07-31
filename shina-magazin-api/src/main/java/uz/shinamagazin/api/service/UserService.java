@@ -13,6 +13,7 @@ import uz.shinamagazin.api.entity.User;
 import uz.shinamagazin.api.enums.Role;
 import uz.shinamagazin.api.exception.ResourceNotFoundException;
 import uz.shinamagazin.api.repository.RoleRepository;
+import uz.shinamagazin.api.repository.SessionRepository;
 import uz.shinamagazin.api.repository.UserRepository;
 
 import java.security.SecureRandom;
@@ -36,6 +37,16 @@ public class UserService {
     private final RoleRepository roleRepository;
     private final PasswordEncoder passwordEncoder;
     private final AuditLogService auditLogService;
+    /**
+     * ATAYLAB repozitoriy, {@code SessionService} emas.
+     *
+     * <p>{@code SessionService} → {@code NotificationDispatcher} →
+     * {@code UserService} bog'lanishi bor, ya'ni servisni bu yerga ulash
+     * aylanma bog'liqlik hosil qilardi. Bekor qilish ayni tranzaksiyada
+     * bajarilishi ham kerak: parol saqlanib, sessiyalar qolib ketishi
+     * mumkin bo'lmasin.
+     */
+    private final SessionRepository sessionRepository;
 
     private static final String PASSWORD_CHARS_UPPER = "ABCDEFGHJKLMNPQRSTUVWXYZ";
     private static final String PASSWORD_CHARS_LOWER = "abcdefghjkmnpqrstuvwxyz";
@@ -242,6 +253,11 @@ public class UserService {
         user.setPasswordChangedAt(LocalDateTime.now());
         userRepository.save(user);
 
+        // Eski parol bilan ochilgan sessiyalar kuchini yo'qotadi. Busiz
+        // parolni almashtirish o'g'irlangan tokenni to'xtatmasdi: u hali
+        // ham amal qilardi va filtr uni o'tkazib yuborardi.
+        revokeSessions(userId, "Parol o'zgartirildi");
+
         auditLogService.log(
                 "User",
                 userId,
@@ -270,6 +286,10 @@ public class UserService {
         user.setPassword(passwordEncoder.encode(temporaryPassword));
         user.setMustChangePassword(true);
         userRepository.save(user);
+
+        // Tiklash aynan "hisob buzilgan" holatda ishlatiladi — sessiya
+        // qolsa, tiklashning ma'nosi yo'qoladi.
+        revokeSessions(userId, "Admin parolni tikladi");
 
         User currentUser = getCurrentUser();
         auditLogService.log(
@@ -401,6 +421,21 @@ public class UserService {
 
         if (!hasUpper || !hasLower || !hasDigit) {
             throw new IllegalArgumentException("Parol katta harf, kichik harf va raqam o'z ichiga olishi kerak");
+        }
+    }
+
+    /**
+     * Foydalanuvchining barcha sessiyalarini bekor qiladi.
+     *
+     * <p>Bekor qiluvchi sifatida foydalanuvchining O'ZI yoziladi: parolni
+     * u almashtirgan (yoki admin uning nomidan tiklagan), ya'ni yozuv
+     * kimning hisobiga tegishli ekanini ko'rsatadi.
+     */
+    private void revokeSessions(Long userId, String reason) {
+        int revoked = sessionRepository.revokeAllSessions(
+                userId, LocalDateTime.now(), userId, reason);
+        if (revoked > 0) {
+            log.info("Revoked {} session(s) for user {} — {}", revoked, userId, reason);
         }
     }
 }
