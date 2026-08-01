@@ -61,7 +61,10 @@ export function SaleDetailPage() {
 
   const sale = saleQuery.data ?? null;
   const returns = useMemo(() => returnsQuery.data ?? [], [returnsQuery.data]);
-  const loading = saleQuery.isPending;
+  // `enabled: !!id` bo'lganda so'rov ishga tushmaydi va `isPending`
+  // ABADIY true qoladi — skeletni faqat shunga bog'lash sahifani
+  // cheksiz yuklanayotgan holatda qoldirardi.
+  const loading = !!id && saleQuery.isPending;
 
   useEffect(() => {
     if (saleQuery.isError) {

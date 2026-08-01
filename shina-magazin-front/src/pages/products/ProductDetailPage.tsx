@@ -33,7 +33,10 @@ export function ProductDetailPage() {
   });
 
   const product = productQuery.data ?? null;
-  const loading = productQuery.isPending;
+  // `enabled: !!id` bo'lganda so'rov ishga tushmaydi va `isPending`
+  // ABADIY true qoladi. Skeletni faqat shunga bog'lash sahifani
+  // cheksiz yuklanayotgan holatda qoldirardi.
+  const loading = !!id && productQuery.isPending;
 
   // Season label helper
   const getSeasonLabel = (season?: string) => {

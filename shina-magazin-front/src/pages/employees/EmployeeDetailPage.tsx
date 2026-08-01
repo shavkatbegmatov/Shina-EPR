@@ -35,7 +35,10 @@ export function EmployeeDetailPage() {
   });
 
   const employee = employeeQuery.data ?? null;
-  const loading = employeeQuery.isPending;
+  // `enabled: !!id` bo'lganda so'rov ishga tushmaydi va `isPending`
+  // ABADIY true qoladi. Skeletni faqat shunga bog'lash sahifani
+  // cheksiz yuklanayotgan holatda qoldirardi.
+  const loading = !!id && employeeQuery.isPending;
 
   // Status label helper
   const getStatusLabel = (status?: string) => {

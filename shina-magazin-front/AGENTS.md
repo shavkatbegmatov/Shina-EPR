@@ -59,7 +59,9 @@ a new query means remembering to add it in three places.
 - Data that only a hidden tab needs: gate it with `enabled`, not an `if` inside an effect.
 - Careful with `enabled: false` — the query stays `isPending` **forever**, so a detail
   page that renders a skeleton on `isPending` spins with nothing loading. Guard the
-  disabled case explicitly (`const loading = !!id && query.isPending`).
+  disabled case explicitly (`const loading = !!id && query.isPending`). All six detail
+  pages had this; each now has a test that renders the route *without* an id and expects
+  the not-found state. Copy that test when adding a detail page.
 - Mutations invalidate in `onSuccess`; the page should not pass `onSaved` reload callbacks.
 - For domain events that touch stock or money (sale, return, purchase, stock movement,
   expense), call `invalidateAfter.<event>` from `src/lib/invalidation.ts` instead of

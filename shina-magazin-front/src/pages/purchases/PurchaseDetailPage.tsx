@@ -97,7 +97,10 @@ export function PurchaseDetailPage() {
   const purchase = purchaseQuery.data ?? null;
   const payments = useMemo(() => paymentsQuery.data ?? [], [paymentsQuery.data]);
   const returns = useMemo(() => returnsQuery.data ?? [], [returnsQuery.data]);
-  const initialLoading = purchaseQuery.isPending;
+  // `enabled: !!id` bo'lganda so'rov ishga tushmaydi va `isPending`
+  // ABADIY true qoladi — skeletni faqat shunga bog'lash sahifani
+  // cheksiz yuklanayotgan holatda qoldirardi.
+  const initialLoading = !!id && purchaseQuery.isPending;
   const refreshing = purchaseQuery.isFetching && !purchaseQuery.isPending;
 
   /**

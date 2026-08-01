@@ -50,13 +50,14 @@ const PURCHASE: PurchaseOrder = {
   items: [],
 } as unknown as PurchaseOrder;
 
-function renderPage() {
+function renderPage(path = '/admin/purchases/1') {
   const qc = new QueryClient({ defaultOptions: { queries: { retry: false } } });
   const Wrapper = ({ children }: { children: ReactNode }) => (
     <QueryClientProvider client={qc}>
-      <MemoryRouter initialEntries={['/admin/purchases/1']}>
+      <MemoryRouter initialEntries={[path]}>
         <Routes>
           <Route path="/admin/purchases/:id" element={children} />
+          <Route path="/admin/purchases" element={children} />
         </Routes>
       </MemoryRouter>
     </QueryClientProvider>
@@ -113,5 +114,20 @@ describe('PurchaseDetailPage', () => {
     await waitFor(() =>
       expect(vi.mocked(purchasesApi.getById).mock.calls.length).toBeGreaterThan(before)
     );
+  });
+
+  /**
+   * ID bo'lmasa skelet aylanib QOLMAYDI.
+   *
+   * <p>So'rovlar `enabled: !!id` bilan to'silgan, ya'ni ID yo'q bo'lsa
+   * ular ishga tushmaydi va `isPending` abadiy `true` qoladi. Skeletni
+   * faqat shu bayroqqa bog'lash sahifani cheksiz yuklanayotgan holatda
+   * qoldirardi.
+   */
+  it('ID bo\'lmasa skelet aylanib qolmaydi', async () => {
+    renderPage('/admin/purchases');
+
+    expect(await screen.findByText(/Xarid topilmadi/i)).toBeInTheDocument();
+    expect(purchasesApi.getById).not.toHaveBeenCalled();
   });
 });

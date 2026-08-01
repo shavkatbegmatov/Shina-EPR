@@ -57,13 +57,14 @@ const SALE: Sale = {
   ],
 } as unknown as Sale;
 
-function renderPage() {
+function renderPage(path = '/admin/sales/1') {
   const qc = new QueryClient({ defaultOptions: { queries: { retry: false } } });
   const Wrapper = ({ children }: { children: ReactNode }) => (
     <QueryClientProvider client={qc}>
-      <MemoryRouter initialEntries={['/admin/sales/1']}>
+      <MemoryRouter initialEntries={[path]}>
         <Routes>
           <Route path="/admin/sales/:id" element={children} />
+          <Route path="/admin/sales" element={children} />
         </Routes>
       </MemoryRouter>
     </QueryClientProvider>
@@ -131,5 +132,20 @@ describe('SaleDetailPage', () => {
     await waitFor(() =>
       expect(vi.mocked(salesApi.getById).mock.calls.length).toBeGreaterThan(before)
     );
+  });
+
+  /**
+   * ID bo'lmasa skelet aylanib QOLMAYDI.
+   *
+   * <p>So'rovlar `enabled: !!id` bilan to'silgan, ya'ni ID yo'q bo'lsa
+   * ular ishga tushmaydi va `isPending` abadiy `true` qoladi. Skeletni
+   * faqat shu bayroqqa bog'lash sahifani cheksiz yuklanayotgan holatda
+   * qoldirardi.
+   */
+  it('ID bo\'lmasa skelet aylanib qolmaydi', async () => {
+    renderPage('/admin/sales');
+
+    expect(await screen.findByText(/Sotuv topilmadi/i)).toBeInTheDocument();
+    expect(salesApi.getById).not.toHaveBeenCalled();
   });
 });
