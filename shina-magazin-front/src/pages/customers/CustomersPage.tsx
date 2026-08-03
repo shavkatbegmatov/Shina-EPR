@@ -123,8 +123,9 @@ export function CustomersPage() {
     {
       key: 'customerType',
       header: t('erp.customers.colType'),
+      className: 'whitespace-nowrap',
       render: (customer) => (
-        <span className="badge badge-outline badge-sm">
+        <span className="badge badge-outline badge-sm h-6 whitespace-nowrap px-2.5 text-xs font-medium leading-none">
           {enumLabel('customerType', customer.customerType)}
         </span>
       ),
@@ -132,11 +133,12 @@ export function CustomersPage() {
     {
       key: 'portalEnabled',
       header: t('erp.customers.colPortal'),
+      className: 'whitespace-nowrap',
       render: (customer) => {
         const portalReady = customer.portalEnabled && customer.pinConfigured;
         return (
-          <span className={clsx('badge badge-sm gap-1', portalReady ? 'badge-success' : 'badge-ghost')}>
-            {portalReady ? <ShieldCheck className="h-3.5 w-3.5" /> : <ShieldOff className="h-3.5 w-3.5" />}
+          <span className={clsx('badge badge-sm h-6 gap-1.5 whitespace-nowrap px-2.5 text-xs font-medium leading-none', portalReady ? 'badge-success' : 'badge-ghost')}>
+            {portalReady ? <ShieldCheck className="h-3.5 w-3.5 shrink-0" /> : <ShieldOff className="h-3.5 w-3.5 shrink-0" />}
             {portalReady ? t('erp.customers.portalActive') : t('erp.customers.portalInactive')}
           </span>
         );
@@ -151,12 +153,13 @@ export function CustomersPage() {
     {
       key: 'balance',
       header: t('erp.customers.colBalance'),
+      className: 'whitespace-nowrap',
       render: (customer) => (
-        <div>
+        <div className="flex min-w-max flex-col items-start gap-1">
           <span className={clsx('font-medium', customer.balance < 0 && 'text-error', customer.balance > 0 && 'text-success')}>
             {formatCurrency(customer.balance)}
           </span>
-          {customer.hasDebt && <span className="badge badge-error badge-sm ml-2">{t('erp.customers.debtBadge')}</span>}
+          {customer.hasDebt && <span className="badge badge-error badge-sm h-5 whitespace-nowrap px-2 text-xs leading-none">{t('erp.customers.debtBadge')}</span>}
         </div>
       ),
     },
@@ -164,6 +167,7 @@ export function CustomersPage() {
       key: 'actions',
       header: '',
       sortable: false,
+      className: 'whitespace-nowrap',
       render: (customer) => (
         <PermissionGate permission={PermissionCode.CUSTOMERS_UPDATE}>
           <div className="flex items-center justify-end gap-1">
@@ -375,6 +379,7 @@ export function CustomersPage() {
         <DataTable
           data={customers}
           columns={columns}
+          className="overflow-x-auto"
           keyExtractor={(customer) => customer.id}
           loading={initialLoading && !refreshing}
           error={loadError}
@@ -399,10 +404,10 @@ export function CustomersPage() {
                 <p className="text-xs text-base-content/60">{customer.companyName || t('erp.customers.individual')}</p>
               </div>
               <div className="flex flex-col items-end gap-1">
-                <span className={clsx('badge badge-sm', customer.hasDebt ? 'badge-error' : 'badge-success')}>
+                <span className={clsx('badge badge-sm h-6 whitespace-nowrap px-2.5 text-xs font-medium leading-none', customer.hasDebt ? 'badge-error' : 'badge-success')}>
                   {customer.hasDebt ? t('erp.customers.debtBadge') : t('erp.customers.cleanBadge')}
                 </span>
-                <span className={clsx('badge badge-sm', customer.portalEnabled && customer.pinConfigured ? 'badge-success' : 'badge-ghost')}>
+                <span className={clsx('badge badge-sm h-6 whitespace-nowrap px-2.5 text-xs font-medium leading-none', customer.portalEnabled && customer.pinConfigured ? 'badge-success' : 'badge-ghost')}>
                   {customer.portalEnabled && customer.pinConfigured ? t('erp.customers.portalActive') : t('erp.customers.portalInactive')}
                 </span>
               </div>

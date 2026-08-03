@@ -82,6 +82,16 @@ describe('CustomersPage', () => {
     await waitFor(() => expect(screen.getAllByText('Anvar Qodirov').length).toBeGreaterThan(0));
   });
 
+  it('jadval badge matnlarini bir qatorda saqlaydi', async () => {
+    const { container } = renderPage();
+
+    await waitFor(() => expect(screen.getAllByText('Anvar Qodirov').length).toBeGreaterThan(0));
+
+    const badges = [...container.querySelectorAll('table .badge')];
+    expect(badges.length).toBeGreaterThan(0);
+    expect(badges.every((badge) => badge.classList.contains('whitespace-nowrap'))).toBe(true);
+  });
+
   // Ilgari ikkita `useEffect` ham mount'da ishlab, so'rov IKKI marta ketardi.
   // React Query bilan bitta kalit = bitta so'rov.
   it('boshlanishda so\'rov faqat BIR marta yuboriladi', async () => {
