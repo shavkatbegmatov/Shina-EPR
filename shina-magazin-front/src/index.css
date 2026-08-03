@@ -514,6 +514,11 @@ body:has(.modal-open) {
   @apply bg-base-100 border-b border-base-200;
 }
 
+/* Column labels stay visually distinct without turning data rows into a grid. */
+.table thead > tr > th + th {
+  @apply border-l border-base-content/10;
+}
+
 /* ==========================================================================
    Kassa cheki (80mm termal printer)
    --------------------------------------------------------------------------
