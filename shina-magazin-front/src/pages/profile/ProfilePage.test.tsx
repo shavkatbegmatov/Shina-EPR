@@ -104,8 +104,8 @@ describe('ProfilePage', () => {
   /**
    * Kuchsiz parol bilan tugma BOSILMAYDI.
    *
-   * <p>Talab: uzunlik, katta harf, kichik harf va raqamdan kamida
-   * uchtasi. Faqat kichik harflardan iborat parol o'tmasligi kerak.
+   * <p>Talab: uzunlik, katta harf, kichik harf, raqam va maxsus belgi.
+   * Faqat kichik harflardan iborat parol o'tmasligi kerak.
    */
   it('kuchsiz parol bilan yuborish tugmasi o\'chirilgan', async () => {
     renderPage();
@@ -116,7 +116,7 @@ describe('ProfilePage', () => {
 
   it('kuchli parol bilan tugma faollashadi', async () => {
     renderPage();
-    await fillPasswordForm('YangiParol1');
+    await fillPasswordForm('YangiParol1!');
 
     expect(submitButton()).toBeEnabled();
   });
@@ -135,7 +135,7 @@ describe('ProfilePage', () => {
    */
   it('tasdiqlash mos kelmasa parol yuborilmaydi', async () => {
     renderPage();
-    await fillPasswordForm('YangiParol1', 'BoshqaParol1');
+    await fillPasswordForm('YangiParol1!', 'BoshqaParol1!');
 
     fireEvent.click(submitButton());
 
@@ -147,15 +147,15 @@ describe('ProfilePage', () => {
 
   it('so\'rov to\'g\'ri tarkib bilan yuboriladi', async () => {
     renderPage();
-    await fillPasswordForm('YangiParol1');
+    await fillPasswordForm('YangiParol1!');
 
     fireEvent.click(submitButton());
 
     await waitFor(() => expect(authApi.changePassword).toHaveBeenCalled());
     expect(authApi.changePassword).toHaveBeenCalledWith({
       currentPassword: 'EskiParol1',
-      newPassword: 'YangiParol1',
-      confirmPassword: 'YangiParol1',
+      newPassword: 'YangiParol1!',
+      confirmPassword: 'YangiParol1!',
     });
   });
 
@@ -172,7 +172,7 @@ describe('ProfilePage', () => {
     localStorage.setItem('accessToken', 'eski-token');
 
     renderPage();
-    await fillPasswordForm('YangiParol1');
+    await fillPasswordForm('YangiParol1!');
 
     fireEvent.click(submitButton());
     await waitFor(() => expect(authApi.changePassword).toHaveBeenCalled());

@@ -4,8 +4,6 @@ import { useForm } from 'react-hook-form';
 import { useTranslation } from 'react-i18next';
 import {
   LogIn,
-  Eye,
-  EyeOff,
   ShieldCheck,
   Gauge,
   Sparkles,
@@ -16,10 +14,10 @@ import { Button } from '@/ui';
 import { authApi } from '../../api/auth.api';
 import { useAuthStore } from '../../store/authStore';
 import type { LoginRequest } from '../../types';
+import { PasswordInput } from '../../components/common/PasswordInput';
 
 export function LoginPage() {
   const { t } = useTranslation();
-  const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
   const location = useLocation();
@@ -141,38 +139,17 @@ export function LoginPage() {
                 )}
               </label>
 
-              <label className="form-control">
-                <span className="label-text text-sm">{t('erp.login.passwordLabel')}</span>
-                <div className="relative">
-                  <input
-                    type={showPassword ? 'text' : 'password'}
-                    placeholder="••••••••"
-                    autoComplete="current-password"
-                    className={`input input-bordered w-full pr-10 ${errors.password ? 'input-error' : ''}`}
-                    {...register('password', {
-                      required: t('erp.login.passwordRequired'),
-                    })}
-                  />
-                  <button
-                    type="button"
-                    aria-label={showPassword ? t('erp.login.hidePassword') : t('erp.login.showPassword')}
-                    aria-pressed={showPassword}
-                    className="absolute right-3 top-1/2 -translate-y-1/2 text-base-content/50"
-                    onClick={() => setShowPassword(!showPassword)}
-                  >
-                    {showPassword ? (
-                      <EyeOff className="h-5 w-5" />
-                    ) : (
-                      <Eye className="h-5 w-5" />
-                    )}
-                  </button>
-                </div>
-                {errors.password && (
-                  <span className="mt-1 text-xs text-error">
-                    {errors.password.message}
-                  </span>
-                )}
-              </label>
+              <PasswordInput
+                label={t('erp.login.passwordLabel')}
+                labelClassName="text-sm normal-case tracking-normal"
+                placeholder="********"
+                autoComplete="current-password"
+                disabled={loading}
+                error={errors.password?.message}
+                {...register('password', {
+                  required: t('erp.login.passwordRequired'),
+                })}
+              />
 
               <div className="flex items-center justify-between text-xs text-base-content/60">
                 <label className="flex items-center gap-2 py-2">
@@ -209,19 +186,21 @@ export function LoginPage() {
               </Button>
             </form>
 
-            <div className="mt-6 surface-soft rounded-xl p-4 text-sm text-base-content/70">
-              <p className="font-medium text-base-content">{t('erp.login.demoTitle')}</p>
-              <p className="mt-2">
-                {t('erp.login.demoAdmin')}:{' '}
-                <code className="rounded bg-base-200 px-2 py-1">admin</code> /{' '}
-                <code className="rounded bg-base-200 px-2 py-1">admin123</code>
-              </p>
-              <p className="mt-2">
-                {t('erp.login.demoSeller')}:{' '}
-                <code className="rounded bg-base-200 px-2 py-1">seller</code> /{' '}
-                <code className="rounded bg-base-200 px-2 py-1">seller123</code>
-              </p>
-            </div>
+            {import.meta.env.DEV && (
+              <div className="mt-6 surface-soft rounded-xl p-4 text-sm text-base-content/70">
+                <p className="font-medium text-base-content">{t('erp.login.demoTitle')}</p>
+                <p className="mt-2">
+                  {t('erp.login.demoAdmin')}:{' '}
+                  <code className="rounded bg-base-200 px-2 py-1">admin</code> /{' '}
+                  <code className="rounded bg-base-200 px-2 py-1">admin123</code>
+                </p>
+                <p className="mt-2">
+                  {t('erp.login.demoSeller')}:{' '}
+                  <code className="rounded bg-base-200 px-2 py-1">seller</code> /{' '}
+                  <code className="rounded bg-base-200 px-2 py-1">seller123</code>
+                </p>
+              </div>
+            )}
 
             <div className="mt-4 text-center text-xs text-base-content/60">
               {t('erp.login.noAccount')}{' '}

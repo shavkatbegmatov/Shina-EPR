@@ -9,8 +9,6 @@ import {
   Phone,
   Shield,
   Key,
-  Eye,
-  EyeOff,
   Check,
   X,
   Loader2,
@@ -29,6 +27,10 @@ import { useAuthStore } from '../../store/authStore';
 import { ROLES } from '../../config/constants';
 import type { ChangePasswordRequest } from '../../types';
 import { Button } from '@/ui';
+import { evaluatePassword } from '@/security/passwordPolicy';
+import { GeneratePasswordButton } from '../../components/common/GeneratePasswordButton';
+import { PasswordInput } from '../../components/common/PasswordInput';
+import { PasswordStrengthMeter } from '../../components/common/PasswordStrengthMeter';
 import { SessionsTab } from './SessionsTab';
 import { LoginActivityTab } from './LoginActivityTab';
 import { ActivityHistoryTab } from './ActivityHistoryTab';
@@ -44,9 +46,6 @@ interface PasswordFormData {
 export function ProfilePage() {
   const { t } = useTranslation();
   const [activeTab, setActiveTab] = useState<Tab>('profile');
-  const [showCurrentPassword, setShowCurrentPassword] = useState(false);
-  const [showNewPassword, setShowNewPassword] = useState(false);
-  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [changingPassword, setChangingPassword] = useState(false);
   const navigate = useNavigate();
   const { logout } = useAuthStore();
@@ -56,31 +55,19 @@ export function ProfilePage() {
     handleSubmit,
     watch,
     reset,
+    setValue,
     formState: { errors },
   } = useForm<PasswordFormData>();
 
   const newPassword = watch('newPassword', '');
+  const passwordIsValid = evaluatePassword(newPassword).isValid;
 
-  // Password strength indicators
-  const hasMinLength = newPassword.length >= 6;
-  const hasUppercase = /[A-Z]/.test(newPassword);
-  const hasLowercase = /[a-z]/.test(newPassword);
-  const hasNumber = /[0-9]/.test(newPassword);
+  const passwordValidationRule = (value: string) =>
+    evaluatePassword(value).isValid || t('erp.passwordPolicy.requiredPolicy');
 
-  const passwordStrength = [hasMinLength, hasUppercase, hasLowercase, hasNumber].filter(Boolean).length;
-
-  const getStrengthColor = () => {
-    if (passwordStrength <= 1) return 'bg-error';
-    if (passwordStrength === 2) return 'bg-warning';
-    if (passwordStrength === 3) return 'bg-info';
-    return 'bg-success';
-  };
-
-  const getStrengthLabel = () => {
-    if (passwordStrength <= 1) return t('erp.profile.strengthVeryWeak');
-    if (passwordStrength === 2) return t('erp.profile.strengthWeak');
-    if (passwordStrength === 3) return t('erp.profile.strengthGood');
-    return t('erp.profile.strengthStrong');
+  const applyGeneratedPassword = (password: string) => {
+    setValue('newPassword', password, { shouldDirty: true, shouldTouch: true, shouldValidate: true });
+    setValue('confirmPassword', password, { shouldDirty: true, shouldTouch: true, shouldValidate: true });
   };
 
   const userQuery = useQuery({
@@ -145,13 +132,6 @@ export function ProfilePage() {
       setChangingPassword(false);
     }
   };
-
-  const PasswordRequirement = ({ met, text }: { met: boolean; text: string }) => (
-    <div className={`flex items-center gap-2 text-sm ${met ? 'text-success' : 'text-base-content/50'}`}>
-      {met ? <Check className="h-4 w-4" /> : <X className="h-4 w-4" />}
-      <span>{text}</span>
-    </div>
-  );
 
   const getRoleBadgeColor = (role?: string) => {
     switch (role) {
@@ -352,130 +332,50 @@ export function ProfilePage() {
             </div>
 
             <form onSubmit={handleSubmit(onSubmitPassword)} className="w-full max-w-md space-y-3 sm:space-y-4">
-              {/* Current Password */}
-              <div className="form-control">
-                <span className="label-text mb-1 text-xs font-semibold uppercase tracking-[0.18em] text-base-content/50">
-                  {t('erp.profile.currentPasswordLabel')}
-                </span>
-                <div className="relative">
-                  <input
-                    type={showCurrentPassword ? 'text' : 'password'}
-                    placeholder={t('erp.profile.currentPasswordPlaceholder')}
-                    autoComplete="current-password"
-                    className={clsx(
-                      'input input-bordered w-full pr-10',
-                      errors.currentPassword && 'input-error'
-                    )}
-                    {...register('currentPassword', {
-                      required: t('erp.profile.currentPasswordRequired'),
-                    })}
-                  />
-                  <button
-                    type="button"
-                    className="absolute right-3 top-1/2 -translate-y-1/2 text-base-content/50 hover:text-base-content"
-                    onClick={() => setShowCurrentPassword(!showCurrentPassword)}
-                  >
-                    {showCurrentPassword ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
-                  </button>
-                </div>
-                {errors.currentPassword && (
-                  <span className="mt-1 text-xs text-error">{errors.currentPassword.message}</span>
-                )}
-              </div>
+              <PasswordInput
+                label={t('erp.profile.currentPasswordLabel')}
+                placeholder={t('erp.profile.currentPasswordPlaceholder')}
+                autoComplete="current-password"
+                disabled={changingPassword}
+                error={errors.currentPassword?.message}
+                {...register('currentPassword', {
+                  required: t('erp.profile.currentPasswordRequired'),
+                })}
+              />
 
-              {/* New Password */}
-              <div className="form-control">
-                <span className="label-text mb-1 text-xs font-semibold uppercase tracking-[0.18em] text-base-content/50">
-                  {t('erp.profile.newPasswordLabel')}
-                </span>
-                <div className="relative">
-                  <input
-                    type={showNewPassword ? 'text' : 'password'}
-                    placeholder={t('erp.profile.newPasswordPlaceholder')}
-                    autoComplete="new-password"
-                    className={clsx(
-                      'input input-bordered w-full pr-10',
-                      errors.newPassword && 'input-error'
-                    )}
-                    {...register('newPassword', {
-                      required: t('erp.profile.newPasswordRequired'),
-                      minLength: { value: 6, message: t('erp.profile.passwordMinLength') },
-                    })}
-                  />
-                  <button
-                    type="button"
-                    className="absolute right-3 top-1/2 -translate-y-1/2 text-base-content/50 hover:text-base-content"
-                    onClick={() => setShowNewPassword(!showNewPassword)}
-                  >
-                    {showNewPassword ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
-                  </button>
-                </div>
-                {errors.newPassword && (
-                  <span className="mt-1 text-xs text-error">{errors.newPassword.message}</span>
-                )}
-              </div>
+              <PasswordInput
+                label={t('erp.profile.newPasswordLabel')}
+                placeholder={t('erp.profile.newPasswordPlaceholder')}
+                autoComplete="new-password"
+                disabled={changingPassword}
+                error={errors.newPassword?.message}
+                actions={<GeneratePasswordButton onGenerate={applyGeneratedPassword} disabled={changingPassword} />}
+                {...register('newPassword', {
+                  required: t('erp.profile.newPasswordRequired'),
+                  validate: passwordValidationRule,
+                })}
+              />
 
-              {/* Password Strength Indicator */}
-              {newPassword && (
-                <div className="space-y-2 sm:space-y-3 p-3 sm:p-4 rounded-xl bg-base-200/50">
-                  <div className="flex items-center gap-2">
-                    <div className="flex-1 h-2 bg-base-300 rounded-full overflow-hidden">
-                      <div
-                        className={`h-full transition-all duration-300 ${getStrengthColor()}`}
-                        style={{ width: `${(passwordStrength / 4) * 100}%` }}
-                      />
-                    </div>
-                    <span className={`text-xs font-medium ${getStrengthColor().replace('bg-', 'text-')}`}>
-                      {getStrengthLabel()}
-                    </span>
-                  </div>
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                    <PasswordRequirement met={hasMinLength} text={t('erp.profile.reqMinLength')} />
-                    <PasswordRequirement met={hasUppercase} text={t('erp.profile.reqUppercase')} />
-                    <PasswordRequirement met={hasLowercase} text={t('erp.profile.reqLowercase')} />
-                    <PasswordRequirement met={hasNumber} text={t('erp.profile.reqNumber')} />
-                  </div>
-                </div>
-              )}
+              <PasswordStrengthMeter password={newPassword} className="p-3 sm:p-4" />
 
-              {/* Confirm Password */}
-              <div className="form-control">
-                <span className="label-text mb-1 text-xs font-semibold uppercase tracking-[0.18em] text-base-content/50">
-                  {t('erp.profile.confirmPasswordLabel')}
-                </span>
-                <div className="relative">
-                  <input
-                    type={showConfirmPassword ? 'text' : 'password'}
-                    placeholder={t('erp.profile.confirmPasswordPlaceholder')}
-                    autoComplete="new-password"
-                    className={clsx(
-                      'input input-bordered w-full pr-10',
-                      errors.confirmPassword && 'input-error'
-                    )}
-                    {...register('confirmPassword', {
-                      required: t('erp.profile.confirmPasswordRequired'),
-                      validate: (value) => value === newPassword || t('erp.profile.passwordsDoNotMatch'),
-                    })}
-                  />
-                  <button
-                    type="button"
-                    className="absolute right-3 top-1/2 -translate-y-1/2 text-base-content/50 hover:text-base-content"
-                    onClick={() => setShowConfirmPassword(!showConfirmPassword)}
-                  >
-                    {showConfirmPassword ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
-                  </button>
-                </div>
-                {errors.confirmPassword && (
-                  <span className="mt-1 text-xs text-error">{errors.confirmPassword.message}</span>
-                )}
-              </div>
+              <PasswordInput
+                label={t('erp.profile.confirmPasswordLabel')}
+                placeholder={t('erp.profile.confirmPasswordPlaceholder')}
+                autoComplete="new-password"
+                disabled={changingPassword}
+                error={errors.confirmPassword?.message}
+                {...register('confirmPassword', {
+                  required: t('erp.profile.confirmPasswordRequired'),
+                  validate: (value) => value === newPassword || t('erp.profile.passwordsDoNotMatch'),
+                })}
+              />
 
               <div className="pt-2 sm:pt-3">
                 <Button
                   type="submit"
                   variant="primary"
                   className="w-full sm:w-auto"
-                  disabled={changingPassword || passwordStrength < 3}
+                  disabled={changingPassword || !passwordIsValid}
                 >
                   {changingPassword ? (
                     <>

@@ -51,7 +51,9 @@ public class UserService {
     private static final String PASSWORD_CHARS_UPPER = "ABCDEFGHJKLMNPQRSTUVWXYZ";
     private static final String PASSWORD_CHARS_LOWER = "abcdefghjkmnpqrstuvwxyz";
     private static final String PASSWORD_CHARS_DIGITS = "23456789";
-    private static final String PASSWORD_CHARS_SPECIAL = "@#$%&*!";
+    private static final String PASSWORD_CHARS_SPECIAL = "@#$%&*!?";
+    private static final int PASSWORD_MIN_LENGTH = 12;
+    private static final int TEMPORARY_PASSWORD_LENGTH = 16;
     private static final SecureRandom RANDOM = new SecureRandom();
 
     /**
@@ -195,12 +197,12 @@ public class UserService {
 
     /**
      * Generates a strong temporary password.
-     * Format: 8 characters with uppercase, lowercase, digits, and special char.
+     * Format: 16 characters with uppercase, lowercase, digits, and special char.
      *
      * @return Generated password
      */
     public String generateTemporaryPassword() {
-        StringBuilder password = new StringBuilder(8);
+        StringBuilder password = new StringBuilder(TEMPORARY_PASSWORD_LENGTH);
 
         // Ensure at least one of each type
         password.append(PASSWORD_CHARS_UPPER.charAt(RANDOM.nextInt(PASSWORD_CHARS_UPPER.length())));
@@ -209,8 +211,8 @@ public class UserService {
         password.append(PASSWORD_CHARS_SPECIAL.charAt(RANDOM.nextInt(PASSWORD_CHARS_SPECIAL.length())));
 
         // Fill remaining with mix
-        String allChars = PASSWORD_CHARS_UPPER + PASSWORD_CHARS_LOWER + PASSWORD_CHARS_DIGITS;
-        for (int i = 4; i < 8; i++) {
+        String allChars = PASSWORD_CHARS_UPPER + PASSWORD_CHARS_LOWER + PASSWORD_CHARS_DIGITS + PASSWORD_CHARS_SPECIAL;
+        for (int i = 4; i < TEMPORARY_PASSWORD_LENGTH; i++) {
             password.append(allChars.charAt(RANDOM.nextInt(allChars.length())));
         }
 
@@ -409,18 +411,25 @@ public class UserService {
             return null;
         }
     }
-
     private void validatePassword(String password) {
-        if (password == null || password.length() < 6) {
-            throw new IllegalArgumentException("Parol kamida 6 belgidan iborat bo'lishi kerak");
+        if (password == null || password.length() < PASSWORD_MIN_LENGTH) {
+            throw new IllegalArgumentException("Parol kamida 12 belgidan iborat bo'lishi kerak");
         }
 
         boolean hasUpper = password.chars().anyMatch(Character::isUpperCase);
         boolean hasLower = password.chars().anyMatch(Character::isLowerCase);
         boolean hasDigit = password.chars().anyMatch(Character::isDigit);
+        boolean hasSpecial = password.chars()
+                .anyMatch(ch -> !Character.isLetterOrDigit(ch) && !Character.isWhitespace(ch));
+        boolean hasWhitespace = password.chars().anyMatch(Character::isWhitespace);
 
-        if (!hasUpper || !hasLower || !hasDigit) {
-            throw new IllegalArgumentException("Parol katta harf, kichik harf va raqam o'z ichiga olishi kerak");
+        if (hasWhitespace) {
+            throw new IllegalArgumentException("Parolda bo'sh joy bo'lmasligi kerak");
+        }
+
+        if (!hasUpper || !hasLower || !hasDigit || !hasSpecial) {
+            throw new IllegalArgumentException(
+                    "Parol katta harf, kichik harf, raqam va maxsus belgi o'z ichiga olishi kerak");
         }
     }
 

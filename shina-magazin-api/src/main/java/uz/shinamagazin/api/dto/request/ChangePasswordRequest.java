@@ -21,7 +21,7 @@ public class ChangePasswordRequest {
     private String currentPassword;
 
     @NotBlank(message = "Yangi parol kiritilishi shart")
-    @Size(min = 6, max = 100, message = "Parol 6-100 belgi oralig'ida bo'lishi kerak")
+    @Size(min = 12, max = 100, message = "Parol 12-100 belgi oralig'ida bo'lishi kerak")
     private String newPassword;
 
     @NotBlank(message = "Parolni tasdiqlash kiritilishi shart")
