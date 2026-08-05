@@ -15,6 +15,13 @@ import {
   Clock,
   Printer,
   Send,
+  Database,
+  Sparkles,
+  RefreshCw,
+  Package,
+  UsersRound,
+  ShoppingCart,
+  Truck,
 } from 'lucide-react';
 import clsx from 'clsx';
 import toast from 'react-hot-toast';
@@ -35,7 +42,7 @@ import { ProductImage } from '../../shop/components/ProductImage';
 import { TELEGRAM_EVENT_TYPES } from '../../types';
 import type { Brand, Category, ReceiptSettings, TelegramEventType } from '../../types';
 
-type Tab = 'appearance' | 'brands' | 'categories' | 'debts' | 'receipt' | 'telegram';
+type Tab = 'appearance' | 'brands' | 'categories' | 'debts' | 'receipt' | 'telegram' | 'demo';
 
 interface BrandFormData {
   name: string;
@@ -53,7 +60,7 @@ const emptyCategoryForm: CategoryFormData = { name: '', description: '', parentI
 const DEFAULT_DEBT_DUE_DAYS = 30;
 
 export function SettingsPage() {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const queryClient = useQueryClient();
   const [activeTab, setActiveTab] = useState<Tab>('appearance');
   const { mode: themeMode, setMode: setThemeMode } = useThemeStore();
@@ -92,6 +99,11 @@ export function SettingsPage() {
   const [telegramConfigured, setTelegramConfigured] = useState(false);
   const [telegramTesting, setTelegramTesting] = useState(false);
 
+  // Demo dataset boshqaruvi alohida holat: seed/cleanup uzoqroq davom etishi
+  // mumkin va foydalanuvchi shu paytda ikkinchi amalni bosmasligi kerak.
+  const [demoAction, setDemoAction] = useState<'generate' | 'remove' | null>(null);
+  const [showDemoDeleteConfirm, setShowDemoDeleteConfirm] = useState(false);
+
   const toggleTelegramEvent = (type: TelegramEventType) =>
     setTelegramEvents((prev) => {
       const next = new Set(prev);
@@ -116,11 +128,19 @@ export function SettingsPage() {
     queryFn: () => settingsApi.get(),
   });
 
+  const demoStatusQuery = useQuery({
+    queryKey: queryKeys.settings.demo(),
+    queryFn: () => settingsApi.getDemoStatus(),
+    enabled: activeTab === 'demo',
+  });
+
   const brands = brandsQuery.data ?? [];
   const categories = categoriesQuery.data ?? [];
   const brandsLoading = brandsQuery.isPending;
   const categoriesLoading = categoriesQuery.isPending;
   const settingsLoading = settingsQuery.isPending;
+  const demoStatus = demoStatusQuery.data;
+  const demoBusy = demoAction !== null;
 
   /**
    * Server sozlamalarini FORMA holatiga ko'chiradi.
@@ -358,6 +378,56 @@ export function SettingsPage() {
     setDebtDueDays(value);
   };
 
+  const refreshBusinessData = (status: NonNullable<typeof demoStatusQuery.data>) => {
+    queryClient.setQueryData(queryKeys.settings.demo(), status);
+    void queryClient.invalidateQueries({
+      predicate: (query) => query.queryKey[0] !== 'settings',
+    });
+  };
+
+  const handleGenerateDemo = async () => {
+    setDemoAction('generate');
+    try {
+      const status = await settingsApi.generateDemoData();
+      refreshBusinessData(status);
+      toast.success(t('erp.settings.demo.generatedToast'));
+    } catch (error) {
+      console.error('Failed to generate demo data:', error);
+      toast.error(getApiErrorMessage(error));
+    } finally {
+      setDemoAction(null);
+    }
+  };
+
+  const handleRemoveDemo = async () => {
+    setDemoAction('remove');
+    try {
+      const status = await settingsApi.removeDemoData();
+      refreshBusinessData(status);
+      setShowDemoDeleteConfirm(false);
+      toast.success(t('erp.settings.demo.removedToast'));
+    } catch (error) {
+      console.error('Failed to remove demo data:', error);
+      toast.error(getApiErrorMessage(error));
+    } finally {
+      setDemoAction(null);
+    }
+  };
+
+  const demoGeneratedAt = demoStatus?.generatedAt
+    ? new Intl.DateTimeFormat(i18n.language, {
+        dateStyle: 'medium',
+        timeStyle: 'short',
+      }).format(new Date(demoStatus.generatedAt))
+    : null;
+
+  const demoStats = [
+    { key: 'products', label: t('erp.settings.demo.products'), icon: Package },
+    { key: 'customers', label: t('erp.settings.demo.customers'), icon: UsersRound },
+    { key: 'sales', label: t('erp.settings.demo.sales'), icon: ShoppingCart },
+    { key: 'purchases', label: t('erp.settings.demo.purchases'), icon: Truck },
+  ];
+
   return (
     <div className="space-y-6">
       {/* Header */}
@@ -410,7 +480,152 @@ export function SettingsPage() {
           <Send className="h-4 w-4" />
           Telegram
         </button>
+        <button
+          className={clsx('tab gap-2', activeTab === 'demo' && 'tab-active')}
+          onClick={() => setActiveTab('demo')}
+        >
+          <Database className="h-4 w-4" />
+          {t('erp.settings.demo.tab')}
+        </button>
       </div>
+
+      {/* Demo dataset */}
+      {activeTab === 'demo' && (
+        <div className="space-y-4">
+          <section className="surface-card relative overflow-hidden border border-primary/15 bg-gradient-to-br from-primary/10 via-base-100 to-secondary/10">
+            <div className="relative z-10 p-6 sm:p-8 lg:max-w-[68%]">
+              <div className="flex flex-wrap items-center gap-2">
+                <span className="badge badge-primary badge-outline gap-1.5">
+                  <Sparkles className="h-3.5 w-3.5" />
+                  {t('erp.settings.demo.curated')}
+                </span>
+                {demoStatus && (
+                  <span className={clsx('badge', demoStatus.active ? 'badge-success' : 'badge-ghost')}>
+                    {demoStatus.active
+                      ? t('erp.settings.demo.active')
+                      : t('erp.settings.demo.inactive')}
+                  </span>
+                )}
+              </div>
+
+              <h2 className="mt-4 text-2xl font-semibold sm:text-3xl">
+                {t('erp.settings.demo.title')}
+              </h2>
+              <p className="mt-2 max-w-2xl text-sm leading-6 text-base-content/70 sm:text-base">
+                {t('erp.settings.demo.subtitle')}
+              </p>
+
+              <PermissionGate permission={PermissionCode.SETTINGS_UPDATE}>
+                <div className="mt-6 flex flex-wrap gap-3">
+                  <Button
+                    variant="primary"
+                    onClick={handleGenerateDemo}
+                    disabled={demoBusy || demoStatusQuery.isPending}
+                  >
+                    {demoAction === 'generate' ? (
+                      <span className="loading loading-spinner loading-sm" />
+                    ) : demoStatus?.active ? (
+                      <RefreshCw className="h-4 w-4" />
+                    ) : (
+                      <Sparkles className="h-4 w-4" />
+                    )}
+                    {demoStatus?.active
+                      ? t('erp.settings.demo.regenerate')
+                      : t('erp.settings.demo.generate')}
+                  </Button>
+                  {demoStatus?.active && (
+                    <Button
+                      variant="danger"
+                      onClick={() => setShowDemoDeleteConfirm(true)}
+                      disabled={demoBusy}
+                    >
+                      <Trash2 className="h-4 w-4" />
+                      {t('erp.settings.demo.remove')}
+                    </Button>
+                  )}
+                </div>
+              </PermissionGate>
+            </div>
+
+            <div className="absolute inset-y-0 right-0 hidden w-[34%] overflow-hidden lg:block">
+              <div className="absolute inset-0 z-10 bg-gradient-to-r from-base-100 via-base-100/25 to-transparent" />
+              <img
+                src="/products/demo/sport-uhp.webp"
+                alt=""
+                className="h-full w-full object-cover object-center"
+              />
+            </div>
+          </section>
+
+          {demoStatusQuery.isPending ? (
+            <div className="surface-card flex min-h-48 items-center justify-center">
+              <span className="loading loading-spinner loading-lg text-primary" />
+            </div>
+          ) : demoStatusQuery.isError ? (
+            <div className="alert alert-error">
+              <AlertTriangle className="h-5 w-5" />
+              <span>{getApiErrorMessage(demoStatusQuery.error)}</span>
+              <Button variant="ghost" size="sm" onClick={() => void demoStatusQuery.refetch()}>
+                {t('common.retry')}
+              </Button>
+            </div>
+          ) : demoStatus?.active ? (
+            <>
+              <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+                {demoStats.map(({ key, label, icon: Icon }) => (
+                  <div key={key} className="surface-card flex items-center gap-4 p-4">
+                    <div className="flex h-11 w-11 items-center justify-center rounded-card bg-primary/10 text-primary">
+                      <Icon className="h-5 w-5" />
+                    </div>
+                    <div>
+                      <div className="text-2xl font-semibold tabular-nums">
+                        {demoStatus.counts[key] ?? 0}
+                      </div>
+                      <div className="text-xs font-medium text-base-content/55">{label}</div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+
+              <div className="surface-card grid gap-5 p-5 md:grid-cols-[1fr_auto] md:items-center">
+                <div>
+                  <h3 className="font-semibold">{t('erp.settings.demo.readyTitle')}</h3>
+                  <p className="mt-1 text-sm text-base-content/60">
+                    {t('erp.settings.demo.readyHint')}
+                  </p>
+                </div>
+                <div className="flex flex-wrap gap-x-6 gap-y-2 text-sm text-base-content/65">
+                  <span>
+                    {t('erp.settings.demo.version')}: <strong>{demoStatus.datasetVersion}</strong>
+                  </span>
+                  {demoGeneratedAt && (
+                    <span>
+                      {t('erp.settings.demo.generatedAt')}: <strong>{demoGeneratedAt}</strong>
+                    </span>
+                  )}
+                </div>
+              </div>
+            </>
+          ) : (
+            <div className="surface-card grid gap-5 p-6 md:grid-cols-[auto_1fr] md:items-center">
+              <div className="flex h-14 w-14 items-center justify-center rounded-card bg-base-200 text-base-content/45">
+                <Database className="h-7 w-7" />
+              </div>
+              <div>
+                <h3 className="font-semibold">{t('erp.settings.demo.emptyTitle')}</h3>
+                <p className="mt-1 text-sm text-base-content/60">
+                  {t('erp.settings.demo.emptyHint')}
+                </p>
+              </div>
+            </div>
+          )}
+
+          <div className="alert border border-info/20 bg-info/10 text-base-content">
+            <Database className="h-5 w-5 text-info" />
+            <span className="text-sm">{t('erp.settings.demo.safetyHint')}</span>
+          </div>
+        </div>
+      )}
 
       {/* Chek sozlamalari */}
       {activeTab === 'receipt' && (
@@ -1256,6 +1471,51 @@ export function SettingsPage() {
               >
                 {categoryDeleting && <span className="loading loading-spinner loading-sm" />}
                 {t('common.delete')}
+              </Button>
+            </div>
+          </div>
+        </div>
+      </ModalPortal>
+
+      {/* Demo cleanup confirmation */}
+      <ModalPortal
+        isOpen={showDemoDeleteConfirm}
+        onClose={() => !demoBusy && setShowDemoDeleteConfirm(false)}
+      >
+        <div className="relative w-full max-w-md rounded-sheet bg-base-100 shadow-strong">
+          <div className="p-5 sm:p-6">
+            <Button
+              variant="ghost"
+              size="sm"
+              className="btn-circle absolute right-3 top-3"
+              onClick={() => setShowDemoDeleteConfirm(false)}
+              disabled={demoBusy}
+            >
+              <X className="h-5 w-5" />
+            </Button>
+            <div className="flex h-12 w-12 items-center justify-center rounded-full bg-error/10 text-error">
+              <Trash2 className="h-6 w-6" />
+            </div>
+            <h3 className="mt-4 text-xl font-semibold">
+              {t('erp.settings.demo.removeTitle')}
+            </h3>
+            <p className="mt-2 text-sm leading-6 text-base-content/65">
+              {t('erp.settings.demo.removeHint')}
+            </p>
+            <div className="mt-4 rounded-card border border-success/20 bg-success/10 p-3 text-sm">
+              {t('erp.settings.demo.realDataSafe')}
+            </div>
+            <div className="mt-6 flex justify-end gap-2">
+              <Button
+                variant="ghost"
+                onClick={() => setShowDemoDeleteConfirm(false)}
+                disabled={demoBusy}
+              >
+                {t('common.cancel')}
+              </Button>
+              <Button variant="danger" onClick={handleRemoveDemo} disabled={demoBusy}>
+                {demoAction === 'remove' && <span className="loading loading-spinner loading-sm" />}
+                {t('erp.settings.demo.removeConfirm')}
               </Button>
             </div>
           </div>

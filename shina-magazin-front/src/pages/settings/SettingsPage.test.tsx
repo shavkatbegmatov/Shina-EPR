@@ -10,6 +10,9 @@ vi.mock('../../api/settings.api', () => ({
   settingsApi: {
     get: vi.fn(),
     update: vi.fn(),
+    getDemoStatus: vi.fn(),
+    generateDemoData: vi.fn(),
+    removeDemoData: vi.fn(),
     testTelegram: vi.fn(),
     export: { excel: vi.fn(), pdf: vi.fn(), exportData: vi.fn() },
   },
@@ -29,6 +32,7 @@ import { settingsApi } from '../../api/settings.api';
 import { brandsApi, categoriesApi } from '../../api/products.api';
 import { SettingsPage } from './SettingsPage';
 import { configureQueryDefaults } from '../../lib/queryConfig';
+import { useAuthStore } from '../../store/authStore';
 
 const SETTINGS: AppSettings = {
   debtDueDays: 30,
@@ -62,6 +66,20 @@ describe('SettingsPage', () => {
     vi.clearAllMocks();
     vi.mocked(settingsApi.get).mockResolvedValue(SETTINGS);
     vi.mocked(settingsApi.update).mockResolvedValue({ ...SETTINGS, debtDueDays: 45 });
+    vi.mocked(settingsApi.getDemoStatus).mockResolvedValue({
+      active: false,
+      datasetVersion: '2.0',
+      totalRecords: 0,
+      counts: {},
+    });
+    vi.mocked(settingsApi.generateDemoData).mockResolvedValue({
+      active: true,
+      datasetVersion: '2.0',
+      generatedAt: '2026-08-05T12:00:00',
+      totalRecords: 42,
+      counts: { products: 12, customers: 8, sales: 12, purchases: 4 },
+    });
+    useAuthStore.setState({ permissions: new Set(['SETTINGS_UPDATE']) });
     vi.mocked(brandsApi.getAll).mockResolvedValue([]);
     vi.mocked(categoriesApi.getAll).mockResolvedValue([]);
   });
@@ -79,5 +97,42 @@ describe('SettingsPage', () => {
     // SMENALAR sahifasi ham o'qiydi. Invalidatsiyasiz saqlangan qiymat boshqa
     // sahifada eski holida ko'rinardi — shuning uchun qayta so'rov SHART.
     await waitFor(() => expect(settingsApi.get).toHaveBeenCalledTimes(2));
+  });
+
+  it('demo ma\'lumotlarni bir tugma bilan yaratadi va holatni yangilaydi', async () => {
+    renderPage();
+
+    fireEvent.click(screen.getByRole('button', { name: 'Demo' }));
+
+    await screen.findByText("Demo ma'lumotlar hali yaratilmagan");
+    fireEvent.click(screen.getByRole('button', { name: /demoni yaratish/i }));
+
+    await waitFor(() => expect(settingsApi.generateDemoData).toHaveBeenCalledTimes(1));
+    expect(await screen.findByText('Demo foydalanishga tayyor')).toBeInTheDocument();
+    expect(screen.getAllByText('12')).toHaveLength(2);
+  });
+
+  it('demo o\'chirishni tasdiqlaydi va cleanup endpointini chaqiradi', async () => {
+    vi.mocked(settingsApi.getDemoStatus).mockResolvedValue({
+      active: true,
+      datasetVersion: '2.0',
+      generatedAt: '2026-08-05T12:00:00',
+      totalRecords: 54,
+      counts: { products: 12, customers: 8, sales: 12, purchases: 4 },
+    });
+    vi.mocked(settingsApi.removeDemoData).mockResolvedValue({
+      active: false,
+      datasetVersion: '2.0',
+      totalRecords: 0,
+      counts: {},
+    });
+    renderPage();
+
+    fireEvent.click(screen.getByRole('button', { name: 'Demo' }));
+    fireEvent.click(await screen.findByRole('button', { name: /demoni o'chirish/i }));
+    fireEvent.click(screen.getByRole('button', { name: /ha, demoni o'chirish/i }));
+
+    await waitFor(() => expect(settingsApi.removeDemoData).toHaveBeenCalledTimes(1));
+    expect(await screen.findByText("Demo ma'lumotlar hali yaratilmagan")).toBeInTheDocument();
   });
 });

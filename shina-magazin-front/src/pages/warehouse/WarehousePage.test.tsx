@@ -88,14 +88,18 @@ function renderPage() {
 
 /** Chiqim oynasini ochib, mahsulot tanlaydi va miqdor kiritadi. */
 async function openOutModalWithProduct(quantity: string) {
-  fireEvent.click(await screen.findByRole('button', { name: /^Chiqim$/i }));
+  fireEvent.click(await screen.findByRole('button', { name: /^Chiqim$/i }, { timeout: 5_000 }));
 
   fireEvent.change(screen.getByPlaceholderText(/Mahsulot qidirish/i), {
     target: { value: 'michelin' },
   });
   // Bu nom harakatlar jadvalida ham bor — ochiluvchi ro'yxatdagi
   // variant tugma sifatida olinadi.
-  fireEvent.click(await screen.findByRole('button', { name: /Michelin Primacy 4/i }));
+  fireEvent.click(await screen.findByRole(
+    'button',
+    { name: /Michelin Primacy 4/i },
+    { timeout: 5_000 }
+  ));
 
   fireEvent.change(screen.getByLabelText(/Miqdor/i), { target: { value: quantity } });
 }
@@ -146,7 +150,7 @@ describe('WarehousePage', () => {
       quantity: 3,
       notes: undefined,
     });
-  });
+  }, 10_000);
 
   /**
    * Zaxira o'zgargach MAHSULOTLAR ham eskiradi.

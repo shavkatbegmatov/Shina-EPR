@@ -271,6 +271,14 @@ export interface SettingsUpdateRequest extends ReceiptSettings, TelegramSettings
   imageFallback?: string; // 'SVG' | 'PHOTO'
 }
 
+export interface DemoDataStatus {
+  active: boolean;
+  datasetVersion: string;
+  generatedAt?: string;
+  totalRecords: number;
+  counts: Record<string, number>;
+}
+
 // Permission Types
 export interface Permission {
   id: number;

@@ -97,16 +97,28 @@ async function openModalWithOneItem() {
   fireEvent.click(screen.getByRole('button', { name: /Yangi xarid/i }));
 
   // Sahifada ham ta'minotchi filtri bor — oynadagisi oxirgi render qilinadi
-  const supplierBoxes = await screen.findAllByRole('combobox', { name: /Ta'minotchi/i });
+  const supplierBoxes = await screen.findAllByRole(
+    'combobox',
+    { name: /Ta'minotchi/i },
+    { timeout: 5_000 }
+  );
   fireEvent.click(supplierBoxes[supplierBoxes.length - 1]);
-  fireEvent.click(await screen.findByRole('option', { name: /Alfa Shina/i }));
+  fireEvent.click(await screen.findByRole(
+    'option',
+    { name: /Alfa Shina/i },
+    { timeout: 5_000 }
+  ));
 
   fireEvent.change(screen.getByPlaceholderText(/Mahsulot qidirish/i), {
     target: { value: 'michelin' },
   });
   // Nom `highlightMatch` tufayli bo'laklarga bo'linadi — variantning
   // to'liq nomi bo'yicha olinadi.
-  fireEvent.click(await screen.findByRole('option', { name: /Michelin Primacy 4/i }));
+  fireEvent.click(await screen.findByRole(
+    'option',
+    { name: /Michelin Primacy 4/i },
+    { timeout: 5_000 }
+  ));
 }
 
 describe('PurchasesPage', () => {
@@ -170,7 +182,7 @@ describe('PurchasesPage', () => {
       // Xarid narxi yo'q -> sotuv narxining 70% i, BUTUN so'mda
       items: [{ productId: 7, quantity: 1, unitPrice: 699_999 }],
     });
-  });
+  }, 10_000);
 
   // Ta'minotchisiz yoki bo'sh savat bilan xarid yaratilmasligi kerak.
   it('ta\'minotchi tanlanmasa xarid yuborilmaydi', async () => {

@@ -11,12 +11,8 @@ spring:
     hibernate:
       ddl-auto: validate
 
-  # Demo/namuna ma'lumotlar faqat DEV profilida yuklanadi.
-  # `classpath:db/demo` (repeatable R__demo_data.sql) shu yerda qo'shiladi —
-  # prod (application-prod.yml + Dockerfile -Dspring.profiles.active=prod) uni
-  # KO'RMAYDI, ya'ni demo ma'lumot hech qachon productionga tushmaydi.
-  flyway:
-    locations: classpath:db/migration,classpath:db/demo
+  # Demo ma'lumotlar Flyway orqali avtomatik yuklanmaydi. Ular Sozlamalar
+  # sahifasidagi boshqariladigan seed/cleanup endpointlari orqali yaratiladi.
 
   # Vault va Cloud tekshiruvlarini dev muhitda o'chirish
   cloud:

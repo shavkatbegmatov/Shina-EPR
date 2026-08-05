@@ -153,6 +153,7 @@ export const queryKeys = {
   settings: {
     all: ['settings'] as const,
     detail: () => ['settings', 'detail'] as const,
+    demo: () => ['settings', 'demo-data'] as const,
   },
 
   profile: {

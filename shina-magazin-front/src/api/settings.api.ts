@@ -1,5 +1,5 @@
 import api from './axios';
-import type { ApiResponse, AppSettings, SettingsUpdateRequest } from '../types';
+import type { ApiResponse, AppSettings, DemoDataStatus, SettingsUpdateRequest } from '../types';
 import { createExportApi } from './export.utils';
 
 export const settingsApi = {
@@ -16,6 +16,21 @@ export const settingsApi = {
 
   update: async (data: SettingsUpdateRequest): Promise<AppSettings> => {
     const response = await api.put<ApiResponse<AppSettings>>('/v1/settings', data);
+    return response.data.data;
+  },
+
+  getDemoStatus: async (): Promise<DemoDataStatus> => {
+    const response = await api.get<ApiResponse<DemoDataStatus>>('/v1/settings/demo-data');
+    return response.data.data;
+  },
+
+  generateDemoData: async (): Promise<DemoDataStatus> => {
+    const response = await api.post<ApiResponse<DemoDataStatus>>('/v1/settings/demo-data');
+    return response.data.data;
+  },
+
+  removeDemoData: async (): Promise<DemoDataStatus> => {
+    const response = await api.delete<ApiResponse<DemoDataStatus>>('/v1/settings/demo-data');
     return response.data.data;
   },
 

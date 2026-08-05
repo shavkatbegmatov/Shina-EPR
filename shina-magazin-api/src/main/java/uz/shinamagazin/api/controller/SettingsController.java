@@ -8,6 +8,8 @@ import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.core.Authentication;
+import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
@@ -19,8 +21,10 @@ import org.springframework.core.io.ByteArrayResource;
 import org.springframework.core.io.Resource;
 import uz.shinamagazin.api.dto.request.SettingsUpdateRequest;
 import uz.shinamagazin.api.dto.response.ApiResponse;
+import uz.shinamagazin.api.dto.response.DemoDataStatusResponse;
 import uz.shinamagazin.api.dto.response.PublicSettingsResponse;
 import uz.shinamagazin.api.dto.response.SettingsResponse;
+import uz.shinamagazin.api.service.DemoDataService;
 import uz.shinamagazin.api.service.SettingsService;
 import uz.shinamagazin.api.service.TelegramNotifier;
 import uz.shinamagazin.api.service.export.GenericExportService;
@@ -36,6 +40,7 @@ import java.util.Collections;
 public class SettingsController {
 
     private final SettingsService settingsService;
+    private final DemoDataService demoDataService;
     private final GenericExportService genericExportService;
     private final TelegramNotifier telegramNotifier;
 
@@ -51,6 +56,29 @@ public class SettingsController {
             description = "Storefront uchun ommaviy sozlamalar (auth talab qilmaydi)")
     public ResponseEntity<ApiResponse<PublicSettingsResponse>> getPublicSettings() {
         return ResponseEntity.ok(ApiResponse.success(settingsService.getPublicSettings()));
+    }
+
+    @GetMapping("/demo-data")
+    @PreAuthorize("hasAuthority('PERM_SETTINGS_VIEW')")
+    @Operation(summary = "Get demo data status", description = "Demo ma'lumotlar holati va sonlarini olish")
+    public ResponseEntity<ApiResponse<DemoDataStatusResponse>> getDemoDataStatus() {
+        return ResponseEntity.ok(ApiResponse.success(demoDataService.getStatus()));
+    }
+
+    @PostMapping("/demo-data")
+    @PreAuthorize("hasAuthority('PERM_SETTINGS_UPDATE')")
+    @Operation(summary = "Generate demo data", description = "Izolyatsiyalangan demo ma'lumotlarni yaratish yoki yangilash")
+    public ResponseEntity<ApiResponse<DemoDataStatusResponse>> generateDemoData(Authentication authentication) {
+        DemoDataStatusResponse status = demoDataService.generate(authentication.getName());
+        return ResponseEntity.ok(ApiResponse.success("Demo ma'lumotlar tayyorlandi", status));
+    }
+
+    @DeleteMapping("/demo-data")
+    @PreAuthorize("hasAuthority('PERM_SETTINGS_UPDATE')")
+    @Operation(summary = "Remove demo data", description = "Faqat demo markerli ma'lumotlarni o'chirish")
+    public ResponseEntity<ApiResponse<DemoDataStatusResponse>> removeDemoData() {
+        DemoDataStatusResponse status = demoDataService.remove();
+        return ResponseEntity.ok(ApiResponse.success("Demo ma'lumotlar o'chirildi", status));
     }
 
     @GetMapping("/export")
