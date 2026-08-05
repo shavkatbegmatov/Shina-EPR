@@ -3,11 +3,13 @@ package uz.shinamagazin.api.service;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.ArgumentCaptor;
 import org.mockito.InOrder;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.core.RowMapper;
+import org.springframework.web.server.ResponseStatusException;
 import uz.shinamagazin.api.dto.response.DemoDataStatusResponse;
 import uz.shinamagazin.api.entity.User;
 import uz.shinamagazin.api.repository.UserRepository;
@@ -17,6 +19,7 @@ import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.contains;
@@ -94,8 +97,14 @@ class DemoDataServiceTest {
                 contains("COUNT(DISTINCT sale.id)"),
                 eq(Integer.class))).thenReturn(2);
 
-        assertThrows(org.springframework.web.server.ResponseStatusException.class, service::remove);
+        ResponseStatusException exception = assertThrows(ResponseStatusException.class, service::remove);
+        assertTrue(exception.getReason().contains("2 ta oddiy hujjat"));
 
+        ArgumentCaptor<String> sql = ArgumentCaptor.forClass(String.class);
+        verify(jdbcTemplate).queryForObject(sql.capture(), eq(Integer.class));
+        assertTrue(sql.getValue().contains("HNK-VP3-2155516"));
+        assertTrue(sql.getValue().contains("movement.product_id IN (SELECT id FROM demo_products)"));
+        assertTrue(sql.getValue().contains("movement.reference_type IS DISTINCT FROM 'DEMO_SEED'"));
         verifyNoInteractions(scriptRunner);
     }
 }

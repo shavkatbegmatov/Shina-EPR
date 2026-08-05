@@ -1,6 +1,6 @@
 -- Protektor curated demo dataset v2.0.
 -- The service sets protektor.demo_user_id for the authenticated operator.
--- Statements use @@ because PostgreSQL blocks may contain regular semicolons.
+-- Statements use a custom delimiter because PostgreSQL blocks may contain regular semicolons.
 
 INSERT INTO categories (name, description, active)
 SELECT v.name, v.description, true

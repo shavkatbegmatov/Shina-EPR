@@ -29,6 +29,18 @@ class DemoDataScriptSafetyTest {
         assertTrue(seed.contains("WHERE product.sku LIKE 'DEMO-%'"));
     }
 
+    @Test
+    void customDelimiterAppearsOnlyOnDedicatedLines() throws IOException {
+        assertDelimiterPlacement(read("/db/demo/demo-cleanup.sql"));
+        assertDelimiterPlacement(read("/db/demo/demo-seed.sql"));
+    }
+
+    private void assertDelimiterPlacement(String script) {
+        assertTrue(script.lines()
+                .filter(line -> line.contains("@@"))
+                .allMatch(line -> line.trim().equals("@@")));
+    }
+
     private String read(String path) throws IOException {
         try (var stream = getClass().getResourceAsStream(path)) {
             if (stream == null) {

@@ -1,6 +1,6 @@
 -- Protektor demo dataset cleanup.
 -- Every destructive predicate is restricted to an explicit demo marker or reserved ID.
--- Statements use @@ because PostgreSQL blocks may contain regular semicolons.
+-- Statements use a custom delimiter because PostgreSQL blocks may contain regular semicolons.
 
 CREATE TEMP TABLE IF NOT EXISTS protektor_demo_affected_customers (
     id BIGINT PRIMARY KEY
