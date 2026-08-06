@@ -43,6 +43,12 @@ public class SettingsService {
     /** Sukut: harakat talab qiladigan voqealar. To'lov/yangi mijoz — shovqin. */
     public static final String DEFAULT_TELEGRAM_EVENTS = "ORDER,WARNING";
 
+    // Telegram orqali mijozning o'zi ro'yxatdan o'tishi. Bot USERNAME'i maxfiy
+    // emas (uni har bir foydalanuvchi baribir ko'radi), shuning uchun tokendan
+    // farqli o'laroq sozlamalarda saqlanadi va storefront'ga ochiq beriladi.
+    public static final String TELEGRAM_REGISTRATION_ENABLED_KEY = "TELEGRAM_REGISTRATION_ENABLED";
+    public static final String TELEGRAM_BOT_USERNAME_KEY = "TELEGRAM_BOT_USERNAME";
+
     private final AppSettingRepository appSettingRepository;
 
     /**
@@ -69,13 +75,26 @@ public class SettingsService {
                         ? DEFAULT_TELEGRAM_EVENTS
                         : getText(TELEGRAM_EVENTS_KEY))
                 .telegramConfigured(telegramBotToken != null && !telegramBotToken.isBlank())
+                .telegramRegistrationEnabled(isTelegramRegistrationEnabled())
+                .telegramBotUsername(getTelegramBotUsername())
                 .build();
     }
 
-    /** Storefront (guest) uchun ommaviy sozlamalar — auth talab qilmaydi. */
+    /**
+     * Storefront (guest) uchun ommaviy sozlamalar — auth talab qilmaydi.
+     *
+     * <p>Telegram ro'yxatdan o'tish shu yerda: "ro'yxatdan o'tish" tugmasini
+     * hali kirmagan mehmon ko'rishi kerak. Bot username maxfiy emas, token esa
+     * bu javobga HECH QACHON tushmaydi.
+     */
     public PublicSettingsResponse getPublicSettings() {
+        String botUsername = getTelegramBotUsername();
         return PublicSettingsResponse.builder()
                 .imageFallback(getImageFallback())
+                // Bot nomi bo'lmasa havola yasab bo'lmaydi — tugmani
+                // ko'rsatishning ma'nosi yo'q, u faqat 404'ga olib borardi.
+                .telegramRegistrationEnabled(isTelegramRegistrationEnabled() && !botUsername.isBlank())
+                .telegramBotUsername(botUsername)
                 .build();
     }
 
@@ -129,6 +148,16 @@ public class SettingsService {
             saveText(TELEGRAM_EVENTS_KEY, normalizeEventTypes(request.getTelegramEvents()),
                     "Telegramga uzatiladigan bildirishnoma turlari");
         }
+        if (request.getTelegramRegistrationEnabled() != null) {
+            saveText(TELEGRAM_REGISTRATION_ENABLED_KEY,
+                    String.valueOf(request.getTelegramRegistrationEnabled()),
+                    "Mijozlar Telegram bot orqali o'zi ro'yxatdan o'ta oladimi");
+        }
+        if (request.getTelegramBotUsername() != null) {
+            saveText(TELEGRAM_BOT_USERNAME_KEY,
+                    normalizeBotUsername(request.getTelegramBotUsername()),
+                    "Bot username (@ belgisisiz) — t.me havolasi uchun");
+        }
 
         return getSettings();
     }
@@ -166,6 +195,39 @@ public class SettingsService {
     @Transactional(readOnly = true)
     public String getTelegramChatId() {
         return getText(TELEGRAM_CHAT_ID_KEY).trim();
+    }
+
+    /** Mijozlar bot orqali o'zi ro'yxatdan o'ta oladimi (sukut: yo'q). */
+    @Transactional(readOnly = true)
+    public boolean isTelegramRegistrationEnabled() {
+        return "true".equalsIgnoreCase(getText(TELEGRAM_REGISTRATION_ENABLED_KEY));
+    }
+
+    /** Bot username, {@code @} belgisisiz. Yo'q bo'lsa bo'sh satr. */
+    @Transactional(readOnly = true)
+    public String getTelegramBotUsername() {
+        return normalizeBotUsername(getText(TELEGRAM_BOT_USERNAME_KEY));
+    }
+
+    /**
+     * Foydalanuvchi {@code @shina_bot}, {@code https://t.me/shina_bot} yoki
+     * shunchaki {@code shina_bot} deb yozishi mumkin — hammasidan bir xil
+     * natija chiqadi. Aks holda havola {@code t.me/@shina_bot} bo'lib,
+     * ishlamasdi.
+     */
+    private String normalizeBotUsername(String raw) {
+        if (raw == null) {
+            return "";
+        }
+        String value = raw.trim();
+        int slash = value.lastIndexOf('/');
+        if (slash >= 0) {
+            value = value.substring(slash + 1);
+        }
+        if (value.startsWith("@")) {
+            value = value.substring(1);
+        }
+        return value.trim();
     }
 
     /**

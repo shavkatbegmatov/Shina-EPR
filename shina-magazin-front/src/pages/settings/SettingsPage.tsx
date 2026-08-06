@@ -98,6 +98,10 @@ export function SettingsPage() {
   const [telegramEvents, setTelegramEvents] = useState<Set<TelegramEventType>>(new Set());
   const [telegramConfigured, setTelegramConfigured] = useState(false);
   const [telegramTesting, setTelegramTesting] = useState(false);
+  // Mijozlarning bot orqali o'zi ro'yxatdan o'tishi — yuqoridagi chiquvchi
+  // xabarnomalardan MUSTAQIL sozlama (bir xil bot, boshqa yo'nalish).
+  const [telegramRegistrationEnabled, setTelegramRegistrationEnabled] = useState(false);
+  const [telegramBotUsername, setTelegramBotUsername] = useState('');
 
   // Demo dataset boshqaruvi alohida holat: seed/cleanup uzoqroq davom etishi
   // mumkin va foydalanuvchi shu paytda ikkinchi amalni bosmasligi kerak.
@@ -164,6 +168,8 @@ export function SettingsPage() {
     setTelegramEnabled(data.telegramEnabled ?? false);
     setTelegramChatId(data.telegramChatId ?? '');
     setTelegramConfigured(data.telegramConfigured ?? false);
+    setTelegramRegistrationEnabled(data.telegramRegistrationEnabled ?? false);
+    setTelegramBotUsername(data.telegramBotUsername ?? '');
     setTelegramEvents(new Set(
       (data.telegramEvents ?? '')
         .split(',')
@@ -329,9 +335,15 @@ export function SettingsPage() {
         telegramEnabled,
         telegramChatId: telegramChatId.trim(),
         telegramEvents: [...telegramEvents].join(','),
+        telegramRegistrationEnabled,
+        telegramBotUsername: telegramBotUsername.trim(),
       });
       setDebtDueDays(data.debtDueDays);
       setImageFallback(data.imageFallback === 'PHOTO' ? 'PHOTO' : 'SVG');
+      // Server username'ni tozalaydi (@ va t.me/ olib tashlanadi) — maydonda
+      // aynan SAQLANGAN qiymat ko'rinsin, aks holda foydalanuvchi yozgani
+      // qolib, havola boshqacha yasalayotgandek tuyulardi.
+      setTelegramBotUsername(data.telegramBotUsername ?? '');
       // Sozlamalar ma'lumotnoma keshida uzoq turadi va ularni SMENALAR
       // sahifasi ham o'qiydi. Invalidatsiyasiz saqlangan qiymat boshqa
       // sahifada (va bu yerga qaytganda) eski holida ko'rinardi.
@@ -782,6 +794,56 @@ export function SettingsPage() {
               {/* Qarz ogohlantirishlari ATAYLAB birma-bir yuborilmaydi */}
               <p className="mt-2 text-xs text-base-content/60">
                 {t('erp.settings.telegram.debtDigestHint')}
+              </p>
+            </div>
+
+            {/* ─── Mijozlarning bot orqali ro'yxatdan o'tishi ───
+                Yuqoridagi sozlamalar CHIQUVCHI xabarnomalar uchun (do'kon
+                egasiga). Bu esa KIRUVCHI yo'nalish: mijoz botga yozadi va
+                o'ziga kabinet ochadi. Bir xil bot, lekin mustaqil yoqiladi. */}
+            <div className="border-t border-base-200 pt-6">
+              <h3 className="font-semibold">{t('erp.settings.telegram.registrationTitle')}</h3>
+              <p className="mt-1 text-sm text-base-content/60">
+                {t('erp.settings.telegram.registrationHint')}
+              </p>
+
+              <label className="mt-4 flex cursor-pointer items-center gap-3">
+                <input
+                  type="checkbox"
+                  className="toggle toggle-primary"
+                  checked={telegramRegistrationEnabled}
+                  onChange={(e) => setTelegramRegistrationEnabled(e.target.checked)}
+                />
+                <span>{t('erp.settings.telegram.registrationEnabled')}</span>
+              </label>
+
+              {/* Yoqilganda bot ochiq eshikka aylanadi — buni bilib turib
+                  yoqish kerak, shuning uchun ogohlantirish faqat shu holatda. */}
+              {telegramRegistrationEnabled && (
+                <div className="alert alert-warning mt-3">
+                  <AlertTriangle className="h-5 w-5" />
+                  <span className="text-sm">
+                    {t('erp.settings.telegram.registrationWarning')}
+                  </span>
+                </div>
+              )}
+
+              <label className="form-control mt-4">
+                <span className="label-text mb-1">{t('erp.settings.telegram.botUsername')}</span>
+                <input
+                  className="input input-bordered"
+                  maxLength={64}
+                  placeholder="protektor_bot"
+                  value={telegramBotUsername}
+                  onChange={(e) => setTelegramBotUsername(e.target.value)}
+                />
+                <span className="mt-1 text-xs text-base-content/60">
+                  {t('erp.settings.telegram.botUsernameHint')}
+                </span>
+              </label>
+
+              <p className="mt-3 text-xs text-base-content/60">
+                {t('erp.settings.telegram.modeHint')}
               </p>
             </div>
           </div>

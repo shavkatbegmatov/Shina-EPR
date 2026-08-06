@@ -82,6 +82,23 @@ public class Customer extends BaseEntity implements Auditable {
     @Column(name = "last_login_at")
     private LocalDateTime lastLoginAt;
 
+    // ─── Telegram bog'lanishi (bot orqali ro'yxatdan o'tish) ───
+
+    /**
+     * Telegram chat ID. Bot mijozga aynan shu chatga yozadi.
+     *
+     * <p>Bitta Telegram akkaunti = bitta mijoz (bazada unique partial index).
+     */
+    @Column(name = "telegram_chat_id")
+    private Long telegramChatId;
+
+    /** Telegram @username — xodimga mijozni tanish uchun. Ko'p foydalanuvchida yo'q. */
+    @Column(name = "telegram_username", length = 64)
+    private String telegramUsername;
+
+    @Column(name = "telegram_linked_at")
+    private LocalDateTime telegramLinkedAt;
+
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "created_by")
     private User createdBy;
@@ -116,6 +133,9 @@ public class Customer extends BaseEntity implements Auditable {
         map.put("preferredLanguage", this.preferredLanguage);
         map.put("portalEnabled", this.portalEnabled);
         map.put("lastLoginAt", this.lastLoginAt);
+        map.put("telegramChatId", this.telegramChatId);
+        map.put("telegramUsername", this.telegramUsername);
+        map.put("telegramLinkedAt", this.telegramLinkedAt);
 
         // Avoid lazy loading
         if (this.createdBy != null) {

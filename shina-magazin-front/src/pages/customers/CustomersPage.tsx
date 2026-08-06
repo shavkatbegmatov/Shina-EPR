@@ -534,7 +534,23 @@ export function CustomersPage() {
                     <p className="text-xs text-base-content/60">{t('erp.customers.portalStatusHint')}</p>
                   </div>
                 </div>
+                {/* Telegram bog'lanishi — qo'llab-quvvatlash uchun muhim:
+                    "raqamim boshqa akkauntga bog'langan" shikoyati kelganda
+                    xodim buni ko'rib, portalni o'chirish orqali uzadi. */}
+                {portalCustomer.telegramLinked && (
+                  <span className="badge badge-info badge-sm h-6 whitespace-nowrap px-2.5 text-xs font-medium leading-none">
+                    {portalCustomer.telegramUsername
+                      ? `Telegram · @${portalCustomer.telegramUsername}`
+                      : 'Telegram'}
+                  </span>
+                )}
               </div>
+
+              {portalCustomer.telegramLinked && (
+                <p className="mt-2 text-xs text-base-content/60">
+                  {t('erp.customers.telegramLinkedHint')}
+                </p>
+              )}
 
               <p className="mt-5 text-sm text-base-content/70">{t('erp.customers.setPinDescription')}</p>
 

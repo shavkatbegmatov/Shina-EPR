@@ -329,6 +329,7 @@
       "portalInactive": "Kirish o'chirilgan",
       "portalTitle": "Mijoz kabinetiga kirish",
       "portalStatusHint": "Telefon raqami va PIN orqali kiradi",
+      "telegramLinkedHint": "Mijoz Telegram bot orqali o‘zi ro‘yxatdan o‘tgan. Telegram akkaunti almashgan bo‘lsa, «Portalni o‘chirish» bog‘lanishni uzadi — shundan keyin u qaytadan ro‘yxatdan o‘ta oladi.",
       "setPinDescription": "Mijoz uchun yangi 4–6 xonali PIN belgilang. PIN o'rnatilganda portal avtomatik yoqiladi va bloklangan urinishlar tozalanadi.",
       "pinLabel": "Yangi PIN",
       "confirmPinLabel": "PINni tasdiqlang",
@@ -885,7 +886,14 @@
           "CUSTOMER": "Yangi mijozlar",
           "INFO": "Ma’lumot",
           "SUCCESS": "Muvaffaqiyat"
-        }
+        },
+        "registrationTitle": "Mijozlar ro‘yxatdan o‘tishi",
+        "registrationHint": "Mijoz bot orqali o‘zi ro‘yxatdan o‘tadi: telefon raqamini Telegram tasdiqlaydi va unga kabinet uchun PIN kod beriladi.",
+        "registrationEnabled": "Telegram orqali ro‘yxatdan o‘tishga ruxsat berish",
+        "registrationWarning": "Yoqilgach, Telegramdagi istalgan odam o‘z raqamini tasdiqlab mijozlar ro‘yxatiga qo‘shila oladi.",
+        "botUsername": "Bot username",
+        "botUsernameHint": "@ belgisiz yozing (masalan protektor_bot). Do‘kon sahifasidagi «Telegram orqali ro‘yxatdan o‘tish» tugmasi shu nomdan havola yasaydi.",
+        "modeHint": "Bot javob berishi uchun serverda TELEGRAM_MODE=polling (dev) yoki webhook (prod) bo‘lishi kerak."
       }
     },
     "employees": {
@@ -2110,7 +2118,17 @@
       "myOrders": "Buyurtmalarim",
       "greeting": "Salom, {{name}}",
       "loginPrompt": "Buyurtmalaringizni ko'rish uchun akkauntga kiring",
-      "loginCta": "Kirish"
+      "loginCta": "Kirish",
+      "telegram": {
+        "noAccount": "Hisobingiz yo'qmi?",
+        "title": "Telegram orqali ro'yxatdan o'ting",
+        "subtitle": "Bir daqiqada tayyor — telefon raqamingizni Telegramning o'zi tasdiqlaydi, SMS kodi kerak emas.",
+        "step1": "Botni oching va «Boshlash» tugmasini bosing",
+        "step2": "«📱 Telefon raqamni yuborish» tugmasini bosing",
+        "step3": "Bot bergan PIN kod bilan shu yerdan kiring",
+        "cta": "Telegramda ochish",
+        "forgotPin": "PIN kodni unutdingizmi? Botga kontaktingizni qayta yuboring — yangi PIN beriladi."
+      }
     },
     "nav": {
       "home": "Bosh sahifa",

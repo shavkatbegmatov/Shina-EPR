@@ -3,7 +3,10 @@
 # build YO'Q (minimal yuklama). Private image'lar uchun serverda bir marta:
 #   docker login ghcr.io -u shavkatbegmatov -p <PAT read:packages>
 # ENV'lar Coolify UI'da beriladi: DB_PASSWORD, JWT_SECRET (majburiy);
-# PAYME_*/CLICK_*/SHOP_* — jonli to'lov/xabarnoma yoqilganda.
+# PAYME_*/CLICK_*/SHOP_* — jonli to'lov/xabarnoma yoqilganda;
+# TELEGRAM_* — bot va mijoz ro'yxatdan o'tishi yoqilganda (qarang: DEPLOY.md).
+# Telegram webhook'i frontend domeni orqali keladi (nginx /api → backend),
+# ya'ni backend'ni tashqariga ochish SHART EMAS.
 # Domen Coolify UI'da faqat frontend'ga biriktiriladi (port 80, TLS avtomatik,
 # Traefik) — backend tashqariga ochilmaydi, nginx /api ni ichki tarmoqda proxy qiladi.
 
@@ -53,6 +56,16 @@ services:
       # Telegram bot tokeni — MAXFIY, shuning uchun faqat env'da.
       # Chat ID va yoqish/o'chirish ERP sozlamalar sahifasidan boshqariladi.
       TELEGRAM_BOT_TOKEN: ${TELEGRAM_BOT_TOKEN:-}
+      # Mijozlarning bot orqali ro'yxatdan o'tishi (kiruvchi xabarlar).
+      # `off` (default) — bot javob bermaydi; prod uchun `webhook`.
+      # Webhook siri MAXFIY: usiz hujumchi soxta "kontakt" yuborib, istalgan
+      # raqamni o'z Telegramiga bog'lab olardi — shuning uchun sirsiz rejim
+      # umuman ishga tushmaydi.
+      TELEGRAM_MODE: ${TELEGRAM_MODE:-off}
+      TELEGRAM_WEBHOOK_URL: ${TELEGRAM_WEBHOOK_URL:-}
+      TELEGRAM_WEBHOOK_SECRET: ${TELEGRAM_WEBHOOK_SECRET:-}
+      # Bot xabaridagi "kabinetga kirish" havolasi shu manzildan yasaladi
+      SHOP_PUBLIC_BASE_URL: ${SHOP_PUBLIC_BASE_URL:-https://protektor.uz}
     volumes:
       - uploads_data:/data/uploads
     depends_on:

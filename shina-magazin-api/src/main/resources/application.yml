@@ -95,6 +95,10 @@ logging:
 #   Payme:  https://<domain>/api/v1/payments/payme
 #   Click:  https://<domain>/api/v1/payments/click/prepare  va  .../complete
 shop:
+  # Storefront'ning ommaviy manzili. Telegram boti mijozga "kabinetga kirish"
+  # havolasini shundan yasaydi — noto'g'ri qolsa mijoz PIN'ini oladi-yu,
+  # qayerga kiritishni bilmaydi. Prod: https://protektor.uz
+  public-base-url: ${SHOP_PUBLIC_BASE_URL:http://localhost:5183}
   # Mijozga buyurtma xabarnomalari (SMS asosiy, email ixtiyoriy). DEFAULT: O'CHIQ.
   # Jonli: SMS uchun provider impl + kreditsial; email uchun spring.mail.* (env) + email.enabled (A-guruhi).
   notify:
@@ -132,3 +136,27 @@ shop:
 # Bo'sh bo'lsa xabar yuborilmaydi — funksiya jimgina o'chiq turadi.
 telegram:
   bot-token: ${TELEGRAM_BOT_TOKEN:}
+
+  # Mijozlar bot orqali ro'yxatdan o'tishi uchun bot KIRISH xabarlarini ham
+  # eshitishi kerak. Buning ikki yo'li bor va tanlov deployment'ga bog'liq:
+  #
+  #   off      — bot javob bermaydi (default). Chiquvchi xabarnomalar ishlayveradi.
+  #   polling  — `getUpdates` bilan so'rab turadi. Ommaviy manzil KERAK EMAS,
+  #              shuning uchun localhost/dev uchun yagona ishlaydigan variant.
+  #   webhook  — Telegram o'zi POST qiladi. Prod uchun to'g'ri: doimiy so'rov yo'q.
+  #              Ommaviy HTTPS + `webhook-url` + `webhook-secret` majburiy.
+  mode: ${TELEGRAM_MODE:off}
+
+  # Faqat webhook rejimi uchun. URL context-path (/api) bilan birga:
+  #   https://protektor.uz/api/v1/telegram/webhook
+  webhook-url: ${TELEGRAM_WEBHOOK_URL:}
+  # Telegram uni har bir so'rovda `X-Telegram-Bot-Api-Secret-Token` sarlavhasida
+  # qaytaradi. BUSIZ webhook manzilini topgan istalgan odam soxta "kontakt"
+  # yuborib, begona raqamni o'z Telegramiga bog'lab olardi — shuning uchun
+  # sirsiz webhook rejimi umuman ishga tushmaydi.
+  # Generatsiya: openssl rand -hex 32
+  webhook-secret: ${TELEGRAM_WEBHOOK_SECRET:}
+
+  # getUpdates long-polling kutish vaqti (sekund). HTTP read timeout bundan
+  # katta qilib olinadi (TelegramApiClient).
+  poll-timeout-seconds: ${TELEGRAM_POLL_TIMEOUT:25}

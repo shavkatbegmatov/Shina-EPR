@@ -239,6 +239,15 @@ export interface TelegramSettings {
   telegramChatId?: string;
   /** Uzatiladigan voqea turlari, vergul bilan (StaffNotificationType nomlari). */
   telegramEvents?: string;
+  /**
+   * Mijozlar bot orqali O'ZI ro'yxatdan o'ta oladimi.
+   *
+   * <p>Yoqilganda bot ochiq eshikka aylanadi — Telegramdagi istalgan odam
+   * (raqamini tasdiqlab) mijozlar bazasiga yozuv qo'sha oladi.
+   */
+  telegramRegistrationEnabled?: boolean;
+  /** Bot username (`@` belgisisiz) — `t.me/<username>` havolasi uchun. */
+  telegramBotUsername?: string;
 }
 
 export type TelegramEventType =
@@ -269,6 +278,17 @@ export interface AppSettings extends ReceiptSettings, TelegramSettings {
 export interface SettingsUpdateRequest extends ReceiptSettings, TelegramSettings {
   debtDueDays: number;
   imageFallback?: string; // 'SVG' | 'PHOTO'
+}
+
+/**
+ * Storefront (guest) uchun ommaviy sozlamalar — auth talab qilmaydi.
+ * Bu yerda faqat ommaviy ko'rinishga ta'sir qiluvchi qiymatlar bo'ladi.
+ */
+export interface PublicSettings {
+  imageFallback?: string; // 'SVG' | 'PHOTO'
+  /** Sozlama yoqilgan VA bot username kiritilgan bo'lsagina true. */
+  telegramRegistrationEnabled?: boolean;
+  telegramBotUsername?: string;
 }
 
 export interface DemoDataStatus {
@@ -603,6 +623,14 @@ export interface Customer {
   portalEnabled: boolean;
   pinConfigured: boolean;
   pinSetAt?: string;
+  /**
+   * Mijoz Telegram bot orqali bog'langanmi (o'zi ro'yxatdan o'tgan).
+   *
+   * <p>Portal kirishini o'chirish bog'lanishni ham uzadi — mijoz Telegramini
+   * almashtirgan bo'lsa, xodim uni shu yo'l bilan "ozod qiladi".
+   */
+  telegramLinked?: boolean;
+  telegramUsername?: string;
 }
 
 export interface CustomerRequest {

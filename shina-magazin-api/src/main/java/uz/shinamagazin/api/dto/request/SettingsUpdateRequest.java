@@ -48,4 +48,18 @@ public class SettingsUpdateRequest {
 
     @Size(max = 255, message = "Voqealar ro'yxati 255 belgidan oshmasligi kerak")
     private String telegramEvents;
+
+    // ─── Telegram orqali mijoz ro'yxatdan o'tishi ───
+
+    /** Yoqilganda bot ISTALGAN odamga mijoz yozuvi ochish imkonini beradi. */
+    private Boolean telegramRegistrationEnabled;
+
+    /**
+     * Bot username. {@code @}, bo'sh joy yoki to'liq {@code t.me/…} havolasi
+     * ham qabul qilinadi — xizmat uni tozalaydi.
+     */
+    @Size(max = 64, message = "Bot username 64 belgidan oshmasligi kerak")
+    @Pattern(regexp = "^$|^@?[A-Za-z0-9_]{4,32}$|^(https?://)?t\\.me/@?[A-Za-z0-9_]{4,32}$",
+            message = "Bot username formati: shina_bot yoki @shina_bot")
+    private String telegramBotUsername;
 }

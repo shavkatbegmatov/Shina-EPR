@@ -48,6 +48,11 @@ class ControllerAuthorizationCoverageTest {
             // Provayder imzosi bilan himoyalangan webhook'lar
             "ClickWebhookController",
             "PaymeWebhookController",
+            // Telegram bot webhook. Telegram bizning JWT'imizni bilmaydi, shuning
+            // uchun himoya `X-Telegram-Bot-Api-Secret-Token` sarlavhasida:
+            // sir bo'lmasa yoki mos kelmasa hamma so'rov rad etiladi
+            // (qarang: TelegramWebhookControllerTest).
+            "TelegramWebhookController",
             // ID so'rovdan emas, @AuthenticationPrincipal'dan olinadi
             "CustomerPortalController",
             "AccountOrderController",

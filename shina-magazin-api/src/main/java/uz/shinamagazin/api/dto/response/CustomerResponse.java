@@ -61,6 +61,19 @@ public class CustomerResponse {
 
     private LocalDateTime pinSetAt;
 
+    /**
+     * Mijoz Telegram bot orqali bog'langanmi.
+     *
+     * <p>Xodimga kerak: qo'llab-quvvatlashda "bu raqam boshqa Telegram
+     * akkauntga bog'langan" degan shikoyat kelganda, uni portal kirishini
+     * o'chirish orqali uzish mumkin. Chat ID'ning O'ZI qaytarilmaydi — u
+     * xodimga kerak emas.
+     */
+    private boolean telegramLinked;
+
+    /** Telegram @username — mijozni tanish uchun. Ko'p foydalanuvchida yo'q. */
+    private String telegramUsername;
+
     public static CustomerResponse from(Customer customer) {
         return CustomerResponse.builder()
                 .id(customer.getId())
@@ -77,6 +90,8 @@ public class CustomerResponse {
                 .portalEnabled(Boolean.TRUE.equals(customer.getPortalEnabled()))
                 .pinConfigured(customer.getPinHash() != null && !customer.getPinHash().isBlank())
                 .pinSetAt(customer.getPinSetAt())
+                .telegramLinked(customer.getTelegramChatId() != null)
+                .telegramUsername(customer.getTelegramUsername())
                 .build();
     }
 }

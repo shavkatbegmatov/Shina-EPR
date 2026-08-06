@@ -12,4 +12,15 @@ import lombok.Data;
 public class PublicSettingsResponse {
     /** Rasmsiz mahsulot ko'rinishi: "SVG" yoki "PHOTO". */
     private String imageFallback;
+
+    /**
+     * Telegram orqali ro'yxatdan o'tish tugmasi ko'rsatilsinmi.
+     *
+     * <p>Sozlama yoqilgan VA bot username kiritilgan bo'lsagina true —
+     * aks holda tugma ishlamaydigan havolaga olib borardi.
+     */
+    private Boolean telegramRegistrationEnabled;
+
+    /** Bot username ({@code @} belgisisiz) — {@code t.me/<username>} havolasi uchun. */
+    private String telegramBotUsername;
 }

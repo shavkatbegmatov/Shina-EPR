@@ -20,6 +20,9 @@ public interface CustomerRepository extends JpaRepository<Customer, Long> {
 
     boolean existsByPhone(String phone);
 
+    /** Telegram botdagi qayta murojaat: chat allaqachon mijozga bog'langanmi. */
+    Optional<Customer> findByTelegramChatId(Long telegramChatId);
+
     Page<Customer> findByActiveTrue(Pageable pageable);
 
     @Query("SELECT c FROM Customer c WHERE c.active = true AND " +

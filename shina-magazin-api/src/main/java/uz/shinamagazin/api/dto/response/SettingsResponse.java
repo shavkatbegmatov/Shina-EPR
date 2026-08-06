@@ -55,4 +55,13 @@ public class SettingsResponse {
      */
     @ExportColumn(header = "Telegram: bot sozlangan", order = 10)
     private Boolean telegramConfigured;
+
+    // ─── Telegram orqali mijoz ro'yxatdan o'tishi ───
+
+    @ExportColumn(header = "Telegram: ro'yxatdan o'tish", order = 11)
+    private Boolean telegramRegistrationEnabled;
+
+    /** Bot username, {@code @} belgisisiz. Maxfiy emas — tokendan farqli. */
+    @ExportColumn(header = "Telegram: bot username", order = 12)
+    private String telegramBotUsername;
 }

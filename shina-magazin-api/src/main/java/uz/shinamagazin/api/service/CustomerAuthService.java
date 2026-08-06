@@ -215,6 +215,18 @@ public class CustomerAuthService {
             customer.setPinSetAt(null);
             customer.setPinAttempts(0);
             customer.setPinLockedUntil(null);
+
+            // Telegram bog'lanishi ham uziladi.
+            //
+            // Bot raqami BOSHQA Telegram akkauntga bog'langan odamga "buni
+            // faqat do'kon xodimi ko'chira oladi" deydi — xodimning shu ishni
+            // qiladigan yagona vositasi aynan shu amal. Bog'lanish qolib
+            // ketsa, mijoz Telegramini almashtirganda (yoki eski akkauntini
+            // yo'qotganda) qayta ro'yxatdan o'ta olmay, boshi berk ko'chaga
+            // kirib qolardi.
+            customer.setTelegramChatId(null);
+            customer.setTelegramUsername(null);
+            customer.setTelegramLinkedAt(null);
         }
         customerRepository.save(customer);
 

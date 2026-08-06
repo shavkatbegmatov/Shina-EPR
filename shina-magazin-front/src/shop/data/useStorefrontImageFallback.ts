@@ -1,5 +1,4 @@
-import { useQuery } from '@tanstack/react-query';
-import { settingsApi } from '../../api/settings.api';
+import { usePublicSettings } from './usePublicSettings';
 import type { ImageFallbackMode } from '../components/ProductImage';
 
 /**
@@ -10,11 +9,6 @@ import type { ImageFallbackMode } from '../components/ProductImage';
  * tufayli sahifadagi barcha ProductImage'lar uchun bitta so'rov yuboriladi.
  */
 export function useStorefrontImageFallback(): ImageFallbackMode {
-  const { data } = useQuery({
-    queryKey: ['public-settings'],
-    queryFn: () => settingsApi.getPublic(),
-    staleTime: 10 * 60 * 1000,
-    retry: false,
-  });
-  return data?.imageFallback === 'PHOTO' ? 'photo' : 'svg';
+  const settings = usePublicSettings();
+  return settings?.imageFallback === 'PHOTO' ? 'photo' : 'svg';
 }

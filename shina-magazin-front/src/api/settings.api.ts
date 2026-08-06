@@ -1,5 +1,11 @@
 import api from './axios';
-import type { ApiResponse, AppSettings, DemoDataStatus, SettingsUpdateRequest } from '../types';
+import type {
+  ApiResponse,
+  AppSettings,
+  DemoDataStatus,
+  PublicSettings,
+  SettingsUpdateRequest,
+} from '../types';
 import { createExportApi } from './export.utils';
 
 export const settingsApi = {
@@ -9,8 +15,8 @@ export const settingsApi = {
   },
 
   /** Storefront (guest) uchun ommaviy sozlamalar — auth talab qilmaydi. */
-  getPublic: async (): Promise<{ imageFallback: string }> => {
-    const response = await api.get<ApiResponse<{ imageFallback: string }>>('/v1/settings/public');
+  getPublic: async (): Promise<PublicSettings> => {
+    const response = await api.get<ApiResponse<PublicSettings>>('/v1/settings/public');
     return response.data.data;
   },
 

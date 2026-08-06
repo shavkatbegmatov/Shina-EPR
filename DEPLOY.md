@@ -60,6 +60,10 @@ PAT olish: GitHub → Settings → Developer settings → Personal access tokens
 | `PAYME_*`, `CLICK_*`, `SHOP_RETURN_URL` | — | jonli to'lov yoqilganda |
 | `SHOP_NOTIFY_SMS/EMAIL`, `SPRING_MAIL_*` | — | jonli xabarnoma yoqilganda |
 | `TELEGRAM_BOT_TOKEN` | (@BotFather tokeni) | Telegram xabarnomalari uchun — pastdagi izohga qarang |
+| `TELEGRAM_MODE` | `webhook` | mijozlar bot orqali ro'yxatdan o'tishi uchun — pastdagi izohga qarang |
+| `TELEGRAM_WEBHOOK_URL` | `https://<domen>/api/v1/telegram/webhook` | `TELEGRAM_MODE=webhook` bo'lsa **majburiy** |
+| `TELEGRAM_WEBHOOK_SECRET` | `openssl rand -hex 32` | `TELEGRAM_MODE=webhook` bo'lsa **majburiy** |
+| `SHOP_PUBLIC_BASE_URL` | `https://<domen>` | bot xabaridagi "kabinetga kirish" havolasi |
 
 4. **Domen** (Coolify UI'da): `frontend` servisiga `https://<domen>` (port 80) — SSL avtomatik
    (Traefik + Let's Encrypt). Backend'ga domen ULANMAYDI.
@@ -86,6 +90,22 @@ PAT olish: GitHub → Settings → Developer settings → Personal access tokens
 > Chat ID, yoqish/o'chirish va voqea turlari ERP → Sozlamalar → Telegram sahifasidan boshqariladi;
 > o'sha yerda "Sinov" tugmasi sozlashni tekshiradi. **Muhim:** bot sizga xabar yubora olishi uchun
 > avval siz botga `/start` yozishingiz kerak (guruhga qo'shsangiz — botni guruhga a'zo qiling).
+>
+> **`TELEGRAM_MODE`** — bot mijozlarning xabarini ham ESHITISHI kerakmi. Yuqoridagi
+> xabarnomalar (chiquvchi) bundan mustaqil va `off` da ham ishlayveradi.
+> - `off` (default) — mijozlar bot orqali ro'yxatdan o'ta olmaydi.
+> - `webhook` — **prod uchun to'g'ri variant**: Telegram o'zi POST qiladi, doimiy so'rov yo'q.
+>   `TELEGRAM_WEBHOOK_URL` va `TELEGRAM_WEBHOOK_SECRET` ikkalasi ham majburiy — sirsiz rejim
+>   ishga TUSHMAYDI. Sabab: endpoint `permitAll` (Telegram bizning JWT'imizni bilmaydi), ya'ni sir
+>   yagona to'siq. Usiz manzilni topgan hujumchi soxta "kontakt" yuborib, istalgan raqamni
+>   o'zining Telegramiga bog'lab, mijoz akkauntini bosib olardi.
+> - `polling` — ommaviy HTTPS manzil kerak emas, shuning uchun **lokal dev** uchun yagona
+>   ishlaydigan variant (ngrok shart emas).
+>
+> Yoqilgandan keyin ERP → Sozlamalar → Telegram → **"Mijozlar ro'yxatdan o'tishi"** ni yoqing va
+> **bot username**ini kiriting — do'kon `/kirish` sahifasida "Telegram orqali ro'yxatdan o'tish"
+> tugmasi shundan keyin paydo bo'ladi. Sozlama va username ikkalasi ham bo'lmasa tugma
+> ko'rsatilmaydi (ishlamaydigan havola bermaslik uchun).
 
 > Volume'lar compose'da: `postgres_data` (DB) va `uploads_data` (`/data/uploads` — mahsulot
 > rasmlari). Coolify UI'da `postgres_data` uchun scheduled backup yoqish tavsiya etiladi.

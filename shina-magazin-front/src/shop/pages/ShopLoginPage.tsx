@@ -2,11 +2,12 @@ import { useState } from 'react';
 import { useForm, Controller } from 'react-hook-form';
 import { useTranslation } from 'react-i18next';
 import { useNavigate, useSearchParams, Navigate } from 'react-router-dom';
-import { LogIn, Lock, AlertCircle, UserRound } from 'lucide-react';
+import { LogIn, Lock, AlertCircle, UserRound, Send } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { PhoneInput } from '../../components/ui/PhoneInput';
 import { portalAuthApi } from '../../portal/api/portalAuth.api';
 import { usePortalAuthStore } from '../../portal/store/portalAuthStore';
+import { useTelegramRegisterUrl } from '../data/usePublicSettings';
 import { Button } from '@/ui';
 import type { CustomerLoginRequest } from '../../portal/types/portal.types';
 
@@ -23,6 +24,9 @@ export function ShopLoginPage() {
   const { isAuthenticated, setAuth } = usePortalAuthStore();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  // Sozlama o'chiq yoki bot nomi kiritilmagan bo'lsa null — bunda butun
+  // ro'yxatdan o'tish bloki ko'rsatilmaydi.
+  const telegramRegisterUrl = useTelegramRegisterUrl();
 
   const {
     register,
@@ -117,6 +121,60 @@ export function ShopLoginPage() {
             )}
           </Button>
         </form>
+
+        {/* Telegram orqali ro'yxatdan o'tish.
+            Ilgari mijoz akkaunti FAQAT xodim qo'lda yaratganda paydo bo'lardi;
+            bu blok mijozga o'zi ro'yxatdan o'tish yo'lini beradi. Telefon
+            raqamni Telegramning o'zi tasdiqlagani uchun SMS provayderi
+            kerak emas. */}
+        {telegramRegisterUrl && (
+          <div className="mt-8 border-t border-base-200 pt-6">
+            <p className="text-center text-sm font-medium text-base-content/70">
+              {t('shop.account.telegram.noAccount')}
+            </p>
+
+            <div className="mt-4 rounded-2xl bg-base-200/60 p-5">
+              <div className="flex items-start gap-3">
+                <div className="grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-primary/10 text-primary">
+                  <Send className="h-5 w-5" />
+                </div>
+                <div>
+                  <h2 className="text-base font-semibold">{t('shop.account.telegram.title')}</h2>
+                  <p className="mt-1 text-sm text-base-content/60">
+                    {t('shop.account.telegram.subtitle')}
+                  </p>
+                </div>
+              </div>
+
+              <ol className="mt-4 space-y-2">
+                {['step1', 'step2', 'step3'].map((step, index) => (
+                  <li key={step} className="flex items-start gap-3 text-sm">
+                    <span className="grid h-5 w-5 shrink-0 place-items-center rounded-full bg-primary/10 text-xs font-semibold text-primary">
+                      {index + 1}
+                    </span>
+                    <span className="text-base-content/80">
+                      {t(`shop.account.telegram.${step}`)}
+                    </span>
+                  </li>
+                ))}
+              </ol>
+
+              <a
+                href={telegramRegisterUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="btn btn-primary mt-5 w-full"
+              >
+                <Send className="h-4 w-4" />
+                {t('shop.account.telegram.cta')}
+              </a>
+
+              <p className="mt-3 text-center text-xs text-base-content/50">
+                {t('shop.account.telegram.forgotPin')}
+              </p>
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );

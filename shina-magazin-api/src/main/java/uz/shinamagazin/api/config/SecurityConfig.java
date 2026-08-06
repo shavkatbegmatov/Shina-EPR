@@ -63,6 +63,11 @@ public class SecurityConfig {
                         // To'lovni boshlash (guest) + provayder webhook'lari (Payme/Click)
                         .requestMatchers(HttpMethod.POST, "/v1/orders/*/pay").permitAll()
                         .requestMatchers("/v1/payments/**").permitAll()
+                        // Telegram bot webhook. Telegram bizning JWT'imizni bilmaydi,
+                        // shuning uchun himoya BUTUNLAY `X-Telegram-Bot-Api-Secret-Token`
+                        // sarlavhasiga tayanadi (qarang: TelegramWebhookController —
+                        // sir bo'lmasa hamma so'rov rad etiladi).
+                        .requestMatchers(HttpMethod.POST, "/v1/telegram/webhook").permitAll()
                         .requestMatchers("/swagger-ui/**", "/api-docs/**", "/swagger-ui.html").permitAll()
                         .requestMatchers("/actuator/**").permitAll()
                         // WebSocket endpoint (JWT token interceptor'da tekshiriladi)
