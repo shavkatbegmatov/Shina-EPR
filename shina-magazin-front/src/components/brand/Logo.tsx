@@ -4,13 +4,13 @@ import clsx from 'clsx';
  * Protektor brend belgisi — yagona manba.
  * Eski placeholderlar o'rnini bosadi: Sidebar "S", Footer "SM", portal login 🚗, /vite.svg.
  *
- * - `mark`     — faqat logotip (P monogramma + protektor + kontakt-patch)
+ * - `mark`     — faqat logotip (ikki track ribbon + kontakt wedge)
  * - `lockup`   — logotip + "Protektor" so'z belgisi (default)
  * - `wordmark` — faqat matn
  *
- * Monogramma va protektor `currentColor`'ni meros qiladi (text-primary), shuning
- * uchun temaga mos qayta bo'yaladi. Pastki "patch" `tone`'ga qarab: do'konda
- * orange (energiya), ERP'da xotirjam primary tint.
+ * Birinchi ribbon `currentColor`'ni meros qiladi (text-primary), ikkinchisi
+ * accent, kontakt wedge esa secondary token bilan bo'yaladi. Shu sababli belgi
+ * shina / shina-dark temalariga avtomatik moslashadi.
  */
 
 type LogoVariant = 'mark' | 'lockup' | 'wordmark';
@@ -29,31 +29,27 @@ interface LogoProps {
 }
 
 function LogoMark({ tone = 'erp', className }: { tone?: LogoTone; className?: string }) {
-  const patchClass = tone === 'shop' ? 'fill-secondary' : 'fill-primary/30';
-
   return (
     <svg
       viewBox="0 0 48 48"
       fill="none"
       role="img"
       aria-hidden="true"
+      data-tone={tone}
       className={clsx('h-full w-full', className)}
     >
-      {/* Compact tire arc: it also reads as a sturdy P at favicon size. */}
+      {/* Primary track: tire contact path and forward business flow. */}
       <path
         fill="currentColor"
-        fillRule="evenodd"
-        d="M14 4.5h10.5C35 4.5 42.5 12 42.5 22S35 39.5 24.5 39.5H18v-9h6.5c5.7 0 9.5-3.3 9.5-8.5s-3.8-8.5-9.5-8.5H22V44h-8V4.5Z"
-        clipRule="evenodd"
+        d="M17 4h27l-4 12H24l-5 13H3L10 9c1.2-3.1 3.6-5 7-5Z"
       />
-
-      {/* Three tread blocks make the automotive cue specific without drawing a wheel. */}
-      <path fill="currentColor" d="M5.5 10.5 13 6.2v6.5l-8.2 4.7.7-6.9Z" />
-      <path fill="currentColor" d="m4.4 20 8.6-5v6.5l-9.2 5.3.6-6.8Z" />
-      <path fill="currentColor" d="m3.6 29.6 9.4-5.4v6.5l-9.9 5.7.5-6.8Z" />
-
-      {/* Contact patch: signal-orange in the shop, restrained in ERP. */}
-      <path d="M14 38.5h8V44h-8z" className={patchClass} />
+      {/* Secondary track: synced inventory / sales lane. */}
+      <path
+        className="fill-accent"
+        d="M31 18h14l-7 21c-1.1 3.2-3.5 5-7 5H4l4-12h15l5-14h3Z"
+      />
+      {/* Signal point where rubber, road and transaction meet. */}
+      <path className="fill-secondary" d="m4 44 4-12 4 5-3 7H4Z" />
     </svg>
   );
 }
