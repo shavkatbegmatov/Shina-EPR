@@ -22,6 +22,41 @@ export default defineConfig({
     // test fayllarning bir qismi ishga tushmaydi. 'threads' (worker_threads)
     // jarayon yaratmaydi, yengilroq va ishonchliroq; Linux CI'da ham ishlaydi.
     pool: 'threads',
+
+    /**
+     * Parallel oqimlar soni — YADRO SONIDAN KAM.
+     *
+     * <p>Vitest sukut bo'yicha har bir yadroga bitta worker ochadi. Har bir
+     * worker esa alohida jsdom muhitini ko'taradi, ya'ni 32 yadroli mashinada
+     * 32 ta to'liq DOM implementatsiyasi bir vaqtda xotirada bo'ladi. Bu
+     * o'ta ko'p obuna (oversubscription): oqimlar CPU va GC uchun kurashadi
+     * va ayrim testlar tasodifan yuz millisekundlarga to'xtab qoladi.
+     *
+     * <p>Aynan shu narsa `DebtsPage` ning "yuklash xatosi" testini beqaror
+     * qilgan edi. O'lchov: xato holati to'liq render bo'lishi bo'sh mashinada
+     * ~180 ms oladi (sahifa katta — avval skelet, keyin xato paneli qayta
+     * render bo'ladi), testing-library ning `waitFor` byudjeti esa 1000 ms.
+     * Ya'ni zaxira atigi ~5 barobar — bo'g'ilib qolgan worker uni yeb qo'yardi
+     * va test faqat TO'LIQ to'plam ishlaganda, tasodifan yiqilardi.
+     *
+     * <p>Foizli qiymat ataylab: CI konteynerlarida 2 yadro bo'lishi mumkin,
+     * qat'iy son u yerda teskari ta'sir qilardi.
+     */
+    maxWorkers: '50%',
+
+    /**
+     * Test timeout'i `asyncUtilTimeout` (5000 ms, `src/test/setup.ts`) dan
+     * KATTA bo'lishi SHART.
+     *
+     * <p>Ikkalasi teng bo'lsa poyga chiqadi: haqiqatan osilib qolgan kutish
+     * uchun vitest testni "Test timed out in 5000ms" deb o'ldiradi va
+     * testing-library o'zining foydali xabarini ("Unable to find element…"
+     * + DOM dump) chiqarishga ulgurmaydi — ya'ni yiqilish sababi ko'rinmay
+     * qoladi. Zaxira bo'lgani uchun avval testing-library gapiradi.
+     *
+     * <p>Bu qiymat sog'lom testni sekinlashtirmaydi — u faqat YUQORI chegara.
+     */
+    testTimeout: 15_000,
   },
   define: {
     global: 'globalThis',
