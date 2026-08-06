@@ -1,0 +1,10 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48" fill="none" role="img" aria-labelledby="title desc">
+  <title id="title">Protektor belgisi</title>
+  <desc id="desc">P monogrammasi, shina protektori va yo'l bilan kontakt aksenti</desc>
+
+  <g fill="#0f766e">
+    <path fill-rule="evenodd" clip-rule="evenodd" d="M14 4.5h10.5C35 4.5 42.5 12 42.5 22S35 39.5 24.5 39.5H18v-9h6.5c5.7 0 9.5-3.3 9.5-8.5s-3.8-8.5-9.5-8.5H22V44h-8V4.5Z"/>
+    <path d="M5.5 10.5 13 6.2v6.5l-8.2 4.7.7-6.9ZM4.4 20l8.6-5v6.5l-9.2 5.3.6-6.8ZM3.6 29.6l9.4-5.4v6.5l-9.9 5.7.5-6.8Z"/>
+  </g>
+  <path fill="#ea580c" d="M14 38.5h8V44h-8z"/>
+</svg>
