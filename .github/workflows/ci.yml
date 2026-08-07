@@ -103,6 +103,13 @@ jobs:
   # webhook butun stack'ni qayta deploy qiladi (yangi GHCR image'lar tortiladi).
   # Webhook image'lar push bo'lgandan KEYIN chaqiriladi — eski image tortilib
   # qolish poygasi yo'q (Coolify'ning push-ga bog'langan Auto Deploy'idan farqli).
+  #
+  # Ilgari bu qadam webhook'ni chaqirib, javobni KUTMASDAN yashil bo'lardi.
+  # Coolify esa deploy'da repozitoriyni klon qiladi va serverning GitHub bilan
+  # aloqasi vaqti-vaqti bilan uziladi — natijada deploy yiqilib, konteynerlar
+  # Exited holatda qolar, PROD TUSHIB QOLARDI, CI esa yashil ko'rinardi.
+  # Endi skript holatni kuzatadi va yiqilsa qayta uradi (qarang:
+  # .github/scripts/coolify-deploy.sh).
   deploy:
     name: Deploy to Coolify
     runs-on: ubuntu-latest
@@ -110,9 +117,18 @@ jobs:
     # COOLIFY_* secretlar + DEPLOY_ENABLED=true repo Variable qo'yilgach ishlaydi.
     # Aks holda SKIP bo'ladi (CI yashil qoladi, deploy job qizil bermaydi).
     if: github.event_name == 'push' && github.ref == 'refs/heads/master' && vars.DEPLOY_ENABLED == 'true'
+    # Qayta urinishlar tufayli eng yomon holatda uzoq davom etishi mumkin —
+    # nazoratdan chiqqan job daqiqalarni yeb qo'ymasin.
+    timeout-minutes: 45
     steps:
-      - name: Deploy stack (compose resource webhook)
+      - uses: actions/checkout@v4
+      - name: Deploy stack (trigger + kuzatish + qayta urinish)
+        env:
+          COOLIFY_WEBHOOK_URL: ${{ secrets.COOLIFY_WEBHOOK_URL }}
+          COOLIFY_API_TOKEN: ${{ secrets.COOLIFY_API_TOKEN }}
+          # Coolify "finished" desa-yu konteyner ko'tarilmasa, buni faqat
+          # mustaqil sog'liq tekshiruvi ushlaydi.
+          HEALTH_URL: ${{ vars.VITE_SITE_URL || 'https://protektor.uz' }}/api/v1/settings/public
         run: |
-          curl -f -X GET "${{ secrets.COOLIFY_WEBHOOK_URL }}" \
-            -H "Authorization: Bearer ${{ secrets.COOLIFY_API_TOKEN }}" \
-            --max-time 30
+          chmod +x .github/scripts/coolify-deploy.sh
+          .github/scripts/coolify-deploy.sh
