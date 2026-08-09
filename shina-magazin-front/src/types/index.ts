@@ -1210,5 +1210,41 @@ export interface EmployeeRequest {
   roleCode?: string;
 }
 
+// ─── Xodimlikka ro'yxatdan o'tish so'rovlari ───
+
+export type StaffRegistrationStatus = 'PENDING' | 'APPROVED' | 'REJECTED';
+
+/** `/admin/register` formasi — ommaviy, autentifikatsiyasiz yuboriladi. */
+export interface StaffRegistrationSubmitRequest {
+  fullName: string;
+  phone: string;
+  companyName?: string;
+  /** Taklif qilinayotgan rol — yakuniy qaror tasdiqlovchi xodimniki. */
+  requestedRole: 'SELLER' | 'MANAGER' | 'ADMIN';
+  note?: string;
+}
+
+export interface StaffRegistration {
+  id: number;
+  fullName: string;
+  phone: string;
+  companyName?: string;
+  requestedRole: string;
+  note?: string;
+  status: StaffRegistrationStatus;
+  createdAt: string;
+  reviewedByName?: string;
+  reviewedAt?: string;
+  rejectReason?: string;
+  /** Tasdiqlangach yaratilgan xodim. */
+  employeeId?: number;
+}
+
+/** Tasdiqlashda rol va lavozimni qayta belgilash (ixtiyoriy). */
+export interface StaffRegistrationApproveRequest {
+  roleCode?: string;
+  position?: string;
+}
+
 // Audit Log Detail Types
 export * from './audit-log.types';

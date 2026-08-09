@@ -14,6 +14,7 @@ import {
   Settings,
   X,
   UserCog,
+  UserPlus,
   Shield,
   FileText,
   ClipboardList,
@@ -95,6 +96,7 @@ const NAV_GROUPS: NavGroup[] = [
     labelKey: 'erp.nav.groups.management',
     items: [
       { path: '/admin/employees', icon: UserCog, labelKey: 'erp.nav.employees', permission: PermissionCode.EMPLOYEES_VIEW },
+      { path: '/admin/staff-requests', icon: UserPlus, labelKey: 'erp.nav.staffRequests', permission: PermissionCode.EMPLOYEES_VIEW },
       { path: '/admin/roles', icon: Shield, labelKey: 'erp.nav.roles', permission: PermissionCode.ROLES_VIEW },
       { path: '/admin/audit-logs', icon: FileText, labelKey: 'erp.nav.auditLogs', permission: PermissionCode.SETTINGS_VIEW },
       { path: '/admin/settings', icon: Settings, labelKey: 'erp.nav.settings', permission: PermissionCode.SETTINGS_VIEW },

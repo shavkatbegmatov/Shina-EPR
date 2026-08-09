@@ -37,6 +37,7 @@ const NotificationsPage = lazyWithRetry(() => import('../pages/notifications/Not
 const ReportsPage = lazyWithRetry(() => import('../pages/reports/ReportsPage').then(m => ({ default: m.ReportsPage })));
 const EmployeesPage = lazyWithRetry(() => import('../pages/employees/EmployeesPage').then(m => ({ default: m.EmployeesPage })));
 const EmployeeDetailPage = lazyWithRetry(() => import('../pages/employees/EmployeeDetailPage').then(m => ({ default: m.EmployeeDetailPage })));
+const StaffRequestsPage = lazyWithRetry(() => import('../pages/employees/StaffRequestsPage').then(m => ({ default: m.StaffRequestsPage })));
 const RolesPage = lazyWithRetry(() => import('../pages/roles/RolesPage').then(m => ({ default: m.RolesPage })));
 const ProfilePage = lazyWithRetry(() => import('../pages/profile/ProfilePage').then(m => ({ default: m.ProfilePage })));
 const AuditLogsPage = lazyWithRetry(() => import('../pages/audit-logs/AuditLogsPage').then(m => ({ default: m.AuditLogsPage })));
@@ -368,6 +369,17 @@ export const router = createBrowserRouter([
           </ProtectedRoute>
         ),
         handle: { title: 'Xodim tafsiloti' },
+      },
+      {
+        path: 'staff-requests',
+        element: (
+          <ProtectedRoute permission={PermissionCode.EMPLOYEES_VIEW}>
+            <LazyRoute>
+              <StaffRequestsPage />
+            </LazyRoute>
+          </ProtectedRoute>
+        ),
+        handle: { title: 'Xodimlik arizalari' },
       },
       {
         path: 'roles',

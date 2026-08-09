@@ -68,7 +68,11 @@ class ControllerAuthorizationCoverageTest {
             "ShopOrderController#createOrder",       // vitrinadan mehmon buyurtmasi
             "ShopOrderController#getOrderStatus",    // buyurtma holati (ommaviy poll)
             "SettingsController#getPublicSettings",  // vitrina uchun ommaviy sozlamalar
-            "LoginActivityController#getMyLoginHistory" // o'z tarixini ko'rish
+            "LoginActivityController#getMyLoginHistory", // o'z tarixini ko'rish
+            // Xodimlikka ariza: ommaviy yuboriladi, lekin hech qanday huquq
+            // bermaydi — akkaunt faqat EMPLOYEES_CREATE bilan tasdiqlangach
+            // yaratiladi. Shu kontrollerning qolgan metodlari himoyalangan.
+            "StaffRegistrationController#submit"
     );
 
     @Test

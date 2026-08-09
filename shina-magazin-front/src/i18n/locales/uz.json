@@ -208,7 +208,8 @@
       "shifts": "Smenalar",
       "expenses": "Xarajatlar",
       "closeMenu": "Menyuni yopish",
-      "mainNav": "Asosiy navigatsiya"
+      "mainNav": "Asosiy navigatsiya",
+      "staffRequests": "Xodimlik arizalari"
     },
     "header": {
       "home": "Bosh sahifa",
@@ -1480,7 +1481,8 @@
       "notePlaceholder": "Qisqacha izoh",
       "submit": "So'rov yuborish",
       "haveAccount": "Hisobingiz bormi?",
-      "login": "Kirish"
+      "login": "Kirish",
+      "pendingHint": "So‘rovingiz saqlandi. Administrator ko‘rib chiqqach, login va parolingiz siz ko‘rsatgan telefon raqam orqali yetkaziladi."
     },
     "changePassword": {
       "strengthVeryWeak": "Juda zaif",
@@ -2106,6 +2108,27 @@
         "MAINTENANCE": "Ta’mirlash",
         "BANK_FEE": "Bank komissiyasi",
         "OTHER": "Boshqa"
+      }
+    },
+    "staffRequests": {
+      "title": "Xodimlik arizalari",
+      "subtitle": "Ro‘yxatdan o‘tish so‘rovlarini ko‘rib chiqish va tasdiqlash",
+      "empty": "Bu bo‘limda ariza yo‘q",
+      "approve": "Tasdiqlash",
+      "reject": "Rad etish",
+      "approved": "Ariza tasdiqlandi",
+      "rejected": "Ariza rad etildi",
+      "rejectTitle": "Arizani rad etish",
+      "rejectReasonPlaceholder": "Sabab (ixtiyoriy) — keyin nega rad etilganini eslash uchun",
+      "credentialsTitle": "Akkaunt yaratildi",
+      "credentialsWarning": "Bu ma’lumotlar FAQAT SHU YERDA ko‘rsatiladi. Yopilgach parolni qayta olib bo‘lmaydi — hoziroq xodimga yetkazing.",
+      "username": "Login",
+      "tempPassword": "Vaqtinchalik parol",
+      "reviewedBy": "Ko‘rib chiqdi: {{name}}",
+      "status": {
+        "PENDING": "Kutilmoqda",
+        "APPROVED": "Tasdiqlangan",
+        "REJECTED": "Rad etilgan"
       }
     }
   },

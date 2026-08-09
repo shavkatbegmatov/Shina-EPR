@@ -6,38 +6,46 @@ import { UserPlus } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { PhoneInput } from '../../components/ui/PhoneInput';
 import { Select } from '../../components/ui/Select';
+import { staffRegistrationApi } from '../../api/staffRegistration.api';
+import { getApiErrorMessage } from '../../utils/apiError';
 import { Button } from '@/ui';
-
-type RegisterRequest = {
-  fullName: string;
-  phone: string;
-  companyName?: string;
-  role: 'SELLER' | 'MANAGER' | 'ADMIN';
-  note?: string;
-};
+import type { StaffRegistrationSubmitRequest } from '../../types';
 
 export function RegisterPage() {
   const { t } = useTranslation();
   const [loading, setLoading] = useState(false);
+  const [submitted, setSubmitted] = useState(false);
   const {
     register,
     handleSubmit,
     control,
     formState: { errors },
     reset,
-  } = useForm<RegisterRequest>({
+  } = useForm<StaffRegistrationSubmitRequest>({
     defaultValues: {
-      role: 'SELLER',
+      requestedRole: 'SELLER',
     },
   });
 
-  const onSubmit = async () => {
+  /**
+   * Ilgari bu yerda `setTimeout` turardi: forma hech qayerga yuborilmasdi,
+   * lekin "so'rov qabul qilindi" deb yozardi. Ya'ni ariza bergan odam hech
+   * qachon kelmaydigan javobni kutardi.
+   */
+  const onSubmit = async (data: StaffRegistrationSubmitRequest) => {
     setLoading(true);
-    setTimeout(() => {
+    try {
+      await staffRegistrationApi.submit(data);
+      setSubmitted(true);
+      reset({ requestedRole: 'SELLER' });
       toast.success(t('erp.register.requestAccepted'));
-      reset();
+    } catch (error) {
+      // Takroriy so'rov, band raqam, chegaradan oshish — backend aniq
+      // sabab qaytaradi, uni yashirib umumiy xabar berish foydasiz.
+      toast.error(getApiErrorMessage(error));
+    } finally {
       setLoading(false);
-    }, 600);
+    }
   };
 
   return (
@@ -51,6 +59,14 @@ export function RegisterPage() {
               {t('erp.register.subtitle')}
             </p>
           </div>
+
+          {/* So'rov haqiqatan saqlangach, keyingi qadam nima ekanini aytamiz —
+              odam javobni qanchagacha kutishini bilsin. */}
+          {submitted && (
+            <div className="alert alert-success mb-4">
+              <span className="text-sm">{t('erp.register.pendingHint')}</span>
+            </div>
+          )}
 
           <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
             <label className="form-control">
@@ -96,7 +112,7 @@ export function RegisterPage() {
             </label>
 
             <Controller
-              name="role"
+              name="requestedRole"
               control={control}
               render={({ field }) => (
                 <Select

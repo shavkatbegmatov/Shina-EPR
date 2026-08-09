@@ -68,6 +68,11 @@ public class SecurityConfig {
                         // sarlavhasiga tayanadi (qarang: TelegramWebhookController —
                         // sir bo'lmasa hamma so'rov rad etiladi).
                         .requestMatchers(HttpMethod.POST, "/v1/telegram/webhook").permitAll()
+                        // Xodimlikka ariza (`/admin/register`) — autentifikatsiyasiz
+                        // yuboriladi. So'rovning O'ZI hech qanday huquq bermaydi:
+                        // akkaunt faqat xodim tasdiqlagach yaratiladi. Qolgan
+                        // /v1/staff-registration/** metodlari ruxsat talab qiladi.
+                        .requestMatchers(HttpMethod.POST, "/v1/staff-registration").permitAll()
                         .requestMatchers("/swagger-ui/**", "/api-docs/**", "/swagger-ui.html").permitAll()
                         .requestMatchers("/actuator/**").permitAll()
                         // WebSocket endpoint (JWT token interceptor'da tekshiriladi)
