@@ -5,6 +5,7 @@ import { CheckCircle2, Clock, KeyRound, UserPlus, XCircle } from 'lucide-react';
 import toast from 'react-hot-toast';
 import clsx from 'clsx';
 import { staffRegistrationApi } from '../../api/staffRegistration.api';
+import { Select } from '../../components/ui/Select';
 import { PermissionGate } from '../../components/common/PermissionGate';
 import { PermissionCode } from '../../hooks/usePermission';
 import { getApiErrorMessage } from '../../utils/apiError';
@@ -12,6 +13,20 @@ import { Button, Modal } from '@/ui';
 import type { CredentialsInfo, StaffRegistration, StaffRegistrationStatus } from '../../types';
 
 const TABS: StaffRegistrationStatus[] = ['PENDING', 'APPROVED', 'REJECTED'];
+
+/**
+ * Tanlash mumkin bo'lgan rollar.
+ *
+ * <p>ATAYLAB qat'iy ro'yxat, `/v1/roles` dan olinmaydi: u endpoint
+ * `ROLES_VIEW` talab qiladi, ya'ni arizani tasdiqlay oladigan
+ * (`EMPLOYEES_CREATE`) lekin rollarni ko'ra olmaydigan xodimda sahifa
+ * ishlamay qolardi. Bular V11 seed'idagi tizim rollari.
+ */
+const ROLE_OPTIONS = [
+  { value: 'SELLER', labelKey: 'erp.register.roleSeller' },
+  { value: 'MANAGER', labelKey: 'erp.register.roleManager' },
+  { value: 'ADMIN', labelKey: 'erp.register.roleAdmin' },
+] as const;
 
 /**
  * Xodimlikka kelgan arizalar — ko'rib chiqish sahifasi.
@@ -27,6 +42,20 @@ export function StaffRequestsPage() {
   const [rejecting, setRejecting] = useState<StaffRegistration | null>(null);
   const [rejectReason, setRejectReason] = useState('');
   const [credentials, setCredentials] = useState<CredentialsInfo | null>(null);
+  // Tasdiqlash darhol emas, oyna orqali: rolni ARIZACHI emas, xodim tanlaydi.
+  const [approving, setApproving] = useState<StaffRegistration | null>(null);
+  const [approveRole, setApproveRole] = useState('SELLER');
+  const [approvePosition, setApprovePosition] = useState('');
+
+  const openApprove = (request: StaffRegistration) => {
+    setApproving(request);
+    // Arizadagi rol boshlang'ich qiymat sifatida qulay, lekin u faqat taklif —
+    // xodim uni o'zgartira oladi.
+    setApproveRole(
+      ROLE_OPTIONS.some((r) => r.value === request.requestedRole) ? request.requestedRole : 'SELLER'
+    );
+    setApprovePosition('');
+  };
 
   const requestsQuery = useQuery({
     queryKey: ['staff-registration', tab],
@@ -39,9 +68,11 @@ export function StaffRequestsPage() {
   };
 
   const approveMutation = useMutation({
-    mutationFn: (request: StaffRegistration) => staffRegistrationApi.approve(request.id),
+    mutationFn: ({ id, roleCode, position }: { id: number; roleCode: string; position?: string }) =>
+      staffRegistrationApi.approve(id, { roleCode, position: position || undefined }),
     onSuccess: (employee) => {
       refresh();
+      setApproving(null);
       // Kredensiallar BIR MARTA ko'rsatiladi — serverda ochiq saqlanmaydi,
       // shuning uchun modal yopilgach ularni qayta olib bo'lmaydi.
       if (employee.newCredentials) {
@@ -158,7 +189,7 @@ export function StaffRequestsPage() {
                       size="sm"
                       variant="primary"
                       disabled={busy}
-                      onClick={() => approveMutation.mutate(request)}
+                      onClick={() => openApprove(request)}
                     >
                       <CheckCircle2 className="h-4 w-4" />
                       {t('erp.staffRequests.approve')}
@@ -179,6 +210,71 @@ export function StaffRequestsPage() {
           </div>
         ))}
       </div>
+
+      {/* Tasdiqlash — rolni SHU YERDA xodim tanlaydi.
+          Forma ommaviy, ya'ni istalgan odam o'ziga ADMIN so'rab yuborishi
+          mumkin; arizadagi qiymat faqat boshlang'ich taklif sifatida keladi. */}
+      <Modal
+        open={approving !== null}
+        onClose={() => setApproving(null)}
+        title={t('erp.staffRequests.approveTitle')}
+        footer={
+          <>
+            <Button variant="ghost" onClick={() => setApproving(null)}>
+              {t('common.cancel')}
+            </Button>
+            <Button
+              variant="primary"
+              disabled={approveMutation.isPending}
+              onClick={() =>
+                approving &&
+                approveMutation.mutate({
+                  id: approving.id,
+                  roleCode: approveRole,
+                  position: approvePosition,
+                })
+              }
+            >
+              {t('erp.staffRequests.approve')}
+            </Button>
+          </>
+        }
+      >
+        <p className="text-sm text-base-content/70">
+          {approving?.fullName} · {approving?.phone}
+        </p>
+        <p className="mt-1 text-xs text-base-content/50">
+          {t('erp.staffRequests.requestedRole', { role: approving?.requestedRole ?? '' })}
+        </p>
+
+        <div className="mt-4 space-y-4">
+          <Select
+            label={t('erp.staffRequests.roleLabel')}
+            value={approveRole}
+            onChange={(value) => setApproveRole(String(value))}
+            options={ROLE_OPTIONS.map((role) => ({ value: role.value, label: t(role.labelKey) }))}
+          />
+
+          {/* ADMIN — butun tizimga to'liq kirish. Ommaviy formadan kelgan
+              arizani e'tiborsiz tasdiqlash bilan berib yubormaslik uchun. */}
+          {approveRole === 'ADMIN' && (
+            <div className="alert alert-warning">
+              <span className="text-sm">{t('erp.staffRequests.adminWarning')}</span>
+            </div>
+          )}
+
+          <label className="form-control">
+            <span className="label-text mb-1 text-sm">{t('erp.staffRequests.positionLabel')}</span>
+            <input
+              className="input input-bordered w-full"
+              maxLength={100}
+              placeholder={t('erp.staffRequests.positionPlaceholder')}
+              value={approvePosition}
+              onChange={(e) => setApprovePosition(e.target.value)}
+            />
+          </label>
+        </div>
+      </Modal>
 
       {/* Rad etish sababi ixtiyoriy, lekin uni yozib qo'yish keyin
           "nega rad etilgan edi?" degan savolga javob beradi. */}

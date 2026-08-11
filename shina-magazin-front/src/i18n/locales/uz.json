@@ -2129,7 +2129,13 @@
         "PENDING": "Kutilmoqda",
         "APPROVED": "Tasdiqlangan",
         "REJECTED": "Rad etilgan"
-      }
+      },
+      "approveTitle": "Arizani tasdiqlash",
+      "requestedRole": "So‘ralgan rol: {{role}}",
+      "roleLabel": "Beriladigan rol",
+      "adminWarning": "Administrator roli tizimga TO‘LIQ kirish beradi — barcha modullar, sozlamalar va moliyaviy ma’lumotlar. Ishonchingiz komil bo‘lsagina tanlang.",
+      "positionLabel": "Lavozim (ixtiyoriy)",
+      "positionPlaceholder": "Bo‘sh qoldirilsa rol nomidan olinadi"
     }
   },
   "shop": {

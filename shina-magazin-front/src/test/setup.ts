@@ -41,6 +41,20 @@ if (!('ResizeObserver' in globalThis)) {
   } as unknown as typeof ResizeObserver;
 }
 
+/**
+ * `scrollIntoView` — jsdom da yo'q (ResizeObserver bilan bir xil sabab).
+ *
+ * <p>`Select` ochilganda tanlangan variantni ko'rinishga suradi, `DataTable`
+ * esa belgilangan qatorga. jsdom da bu metod umuman mavjud emas, ya'ni
+ * komponent `TypeError` bilan yiqiladi — mahsulotda esa muammo yo'q.
+ *
+ * <p>Ayrim test fayllari buni `beforeEach` da o'zi stub qiladi; bu yerda
+ * global qo'yilgani yangi testlar o'sha tuzoqqa tushmasligi uchun.
+ */
+if (!Element.prototype.scrollIntoView) {
+  Element.prototype.scrollIntoView = () => {};
+}
+
 // Har testdan keyin DOM ni tozalaymiz
 afterEach(() => {
   cleanup();
