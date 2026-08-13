@@ -22,6 +22,7 @@ import uz.shinamagazin.api.repository.EmployeeRepository;
 import uz.shinamagazin.api.repository.StaffRegistrationRequestRepository;
 import uz.shinamagazin.api.repository.UserRepository;
 
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
 
@@ -327,6 +328,32 @@ class StaffRegistrationServiceTest {
         service.reject(1L, "sabab");
 
         verify(telegramApiClient, never()).sendMessage(anyLong(), anyString(), any());
+    }
+
+    // ─── Tozalash ───
+
+    /**
+     * Faqat RAD ETILGANLAR tozalanadi. Tasdiqlanganlar xodim yozuviga
+     * bog'langan, kutilayotganlar esa orqasida javob kutayotgan haqiqiy
+     * odam — ikkalasini ham o'chirib bo'lmaydi.
+     */
+    @Test
+    @DisplayName("Tozalash faqat rad etilganlarga va 90 kundan eskisiga tegadi")
+    void cleanupOnlyTouchesOldRejected() {
+        when(requestRepository.deleteByStatusAndReviewedAtBefore(any(), any())).thenReturn(4);
+
+        assertThat(service.cleanupRejected()).isEqualTo(4);
+
+        ArgumentCaptor<StaffRegistrationStatus> status =
+                ArgumentCaptor.forClass(StaffRegistrationStatus.class);
+        ArgumentCaptor<LocalDateTime> cutoff = ArgumentCaptor.forClass(LocalDateTime.class);
+        verify(requestRepository).deleteByStatusAndReviewedAtBefore(status.capture(), cutoff.capture());
+
+        assertThat(status.getValue()).isEqualTo(StaffRegistrationStatus.REJECTED);
+        // Chegara ~90 kun oldin (test bajarilish vaqtiga bir oz yo'l qo'yamiz)
+        assertThat(cutoff.getValue()).isBetween(
+                LocalDateTime.now().minusDays(90).minusMinutes(1),
+                LocalDateTime.now().minusDays(90).plusMinutes(1));
     }
 
     // ─── Yordamchilar ───

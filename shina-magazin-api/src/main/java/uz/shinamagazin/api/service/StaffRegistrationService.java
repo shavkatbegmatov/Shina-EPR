@@ -56,6 +56,15 @@ public class StaffRegistrationService {
     /** Lavozim ko'rsatilmasa rol nomidan olinadi. */
     private static final String DEFAULT_ROLE_CODE = "SELLER";
 
+    /**
+     * Rad etilgan ariza qancha saqlanadi (kun).
+     *
+     * <p>Darhol o'chirmaymiz: "bu odamni allaqachon rad etganmizmi?" degan
+     * savol amalda tug'iladi. Abadiy ham saqlamaymiz — bu shaxsiy ma'lumot
+     * (ism, telefon, IP) va endi hech qanday maqsadga xizmat qilmaydi.
+     */
+    private static final int REJECTED_RETENTION_DAYS = 90;
+
     /** `t.me/<bot>?start=staff_<token>` — ariza va chatni bog'lash uchun. */
     private static final String TELEGRAM_START_PREFIX = "staff_";
     private static final SecureRandom RANDOM = new SecureRandom();
@@ -273,6 +282,34 @@ public class StaffRegistrationService {
                 .formatted(reasonLine));
 
         return StaffRegistrationResponse.from(request);
+    }
+
+    // ─── Tozalash ───
+
+    /**
+     * Eski RAD ETILGAN arizalarni o'chiradi.
+     *
+     * <p>Faqat rad etilganlar tozalanadi, va bu ataylab:
+     * <ul>
+     *   <li><b>APPROVED</b> qoladi — u xodim yozuviga bog'langan va "bu odam
+     *       qayerdan paydo bo'ldi" degan savolga javob beradi;</li>
+     *   <li><b>PENDING</b> qoladi — orqasida javob kutayotgan HAQIQIY odam
+     *       bor. Uni jimgina o'chirish arizani yo'qotish bo'lardi; ko'rilmagan
+     *       ariza menyudagi hisoblagichda turaveradi.</li>
+     * </ul>
+     *
+     * @return o'chirilgan arizalar soni
+     */
+    @Transactional
+    public int cleanupRejected() {
+        LocalDateTime cutoff = LocalDateTime.now().minusDays(REJECTED_RETENTION_DAYS);
+        int deleted = requestRepository.deleteByStatusAndReviewedAtBefore(
+                StaffRegistrationStatus.REJECTED, cutoff);
+        if (deleted > 0) {
+            log.info("{} ta eski rad etilgan ariza tozalandi ({} kundan eski)",
+                    deleted, REJECTED_RETENTION_DAYS);
+        }
+        return deleted;
     }
 
     // ─── Yordamchilar ───
