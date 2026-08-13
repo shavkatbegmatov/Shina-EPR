@@ -42,7 +42,7 @@
 
 ## 2. Ishdan bo'shatilgan xodim 24 soatgacha to'liq ERP kirishini saqlab qoladi
 
-- [ ] Tuzatildi
+- [x] Tuzatildi — `deactivateUser` endi `revokeSessions` chaqiradi (kirish darhol to'xtaydi); `JwtAuthenticationFilter` har so'rovda `userDetails.isEnabled()` ni tekshiradi (xodim: `user.active`, mijoz: `customer.active && portalEnabled` — tekshirilmagan №4-topilmani ham yopadi); `refreshToken` deaktiv hisobga token bermaydi; `JwtChannelInterceptor` xodim tokenlari uchun WebSocket'da ham sessiya tekshiradi (sessiyasiz refresh tokenlar ham ulana olmaydi). Testlar: `UserDeactivationSessionTest`, `AuthServiceRefreshTest`, `JwtAuthenticationFilterTest`, `JwtChannelInterceptorTest` (10 yangi).
 
 **Fayllar:**
 - `shina-magazin-api/src/main/java/uz/shinamagazin/api/service/UserService.java:322-341` (`deactivateUser`)

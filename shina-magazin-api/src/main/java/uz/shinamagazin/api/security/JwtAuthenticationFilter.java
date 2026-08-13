@@ -64,6 +64,18 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
                     userDetails = staffUserDetailsService.loadUserByUsername(username);
                 }
 
+                // Token va sessiya tirik bo'lsa ham hisob o'chirilgan bo'lishi
+                // mumkin (deaktivatsiyadan oldin olingan token). isEnabled:
+                // xodimda user.active, mijozda customer.active && portalEnabled.
+                // DaoAuthenticationProvider buni faqat login'da tekshiradi —
+                // shu yerda tekshirilmasa, deaktivatsiya token muddati
+                // tugagunga qadar kuchga kirmasdi.
+                if (!userDetails.isEnabled()) {
+                    log.warn("JWT is valid but account is disabled: {}", username);
+                    filterChain.doFilter(request, response);
+                    return;
+                }
+
                 UsernamePasswordAuthenticationToken authentication =
                         new UsernamePasswordAuthenticationToken(
                                 userDetails,

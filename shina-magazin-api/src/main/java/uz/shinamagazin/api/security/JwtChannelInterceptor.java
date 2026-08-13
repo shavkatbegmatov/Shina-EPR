@@ -12,6 +12,7 @@ import org.springframework.security.authentication.UsernamePasswordAuthenticatio
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.stereotype.Component;
 import org.springframework.util.StringUtils;
+import uz.shinamagazin.api.service.SessionService;
 
 import java.security.Principal;
 import java.util.List;
@@ -22,6 +23,7 @@ import java.util.List;
 public class JwtChannelInterceptor implements ChannelInterceptor {
 
     private final JwtTokenProvider jwtTokenProvider;
+    private final SessionService sessionService;
 
     @Override
     public Message<?> preSend(Message<?> message, MessageChannel channel) {
@@ -38,6 +40,16 @@ public class JwtChannelInterceptor implements ChannelInterceptor {
                     String tokenType = jwtTokenProvider.getTokenType(token);
                     Long userId = jwtTokenProvider.getUserIdFromToken(token);
                     boolean isCustomer = "CUSTOMER".equals(tokenType);
+
+                    // REST filtri bilan bir xil qoida: xodim tokeni faqat TIRIK
+                    // sessiya bilan ulanadi. Busiz sessiyasi bekor qilingan xodim
+                    // (parol almashdi, deaktivatsiya) token muddati tugagunga
+                    // qadar WebSocket orqali bildirishnoma olishda davom etardi,
+                    // sessiya yozuvi bo'lmagan refresh tokenlar ham ulana olardi.
+                    if (!isCustomer && !sessionService.isSessionValid(token)) {
+                        log.warn("WebSocket CONNECT rejected: session revoked or missing for {}", username);
+                        return message;
+                    }
 
                     // Principal yaratish - userId ishlatiladi (convertAndSendToUser uchun)
                     String principalName;

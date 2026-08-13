@@ -327,6 +327,11 @@ public class UserService {
         user.setActive(false);
         userRepository.save(user);
 
+        // Deaktivatsiya DARHOL kuchga kirishi kerak. Filtr sessiya yozuviga
+        // tayanadi — sessiyalar bekor qilinmasa, bo'shatilgan xodim ertalab
+        // olgan tokeni bilan yana 24 soatgacha ishlashda davom etardi.
+        revokeSessions(userId, "Hisob deaktivatsiya qilindi");
+
         User currentUser = getCurrentUser();
         auditLogService.log(
                 "User",
