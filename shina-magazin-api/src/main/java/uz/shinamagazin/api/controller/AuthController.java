@@ -86,8 +86,15 @@ public class AuthController {
 
     @PostMapping("/refresh-token")
     @Operation(summary = "Refresh Token", description = "Token yangilash")
-    public ResponseEntity<ApiResponse<JwtResponse>> refreshToken(@RequestParam String refreshToken) {
-        JwtResponse response = authService.refreshToken(refreshToken);
+    public ResponseEntity<ApiResponse<JwtResponse>> refreshToken(
+            @RequestParam String refreshToken,
+            HttpServletRequest httpRequest) {
+        // IP/User-Agent yangi sessiya yozuvi uchun — refresh endi login kabi
+        // sessiya ochadi, aks holda filtr yangi tokenni rad etardi.
+        JwtResponse response = authService.refreshToken(
+                refreshToken,
+                getClientIpAddress(httpRequest),
+                httpRequest.getHeader("User-Agent"));
         return ResponseEntity.ok(ApiResponse.success(response));
     }
 

@@ -22,7 +22,7 @@
 
 ## 1. Refresh-token mexanizmi butunlay ishlamaydi — xodimlar har 24 soatda tizimdan "qulflanadi"
 
-- [ ] Tuzatildi
+- [x] Tuzatildi — `refreshToken` endi yangi access token uchun `sessionService.createSession` chaqiradi (controller IP/User-Agent uzatadi), yaroqsiz token 500 emas 401 qaytaradi. Bonus: refresh tokenlarga `refresh: true` claim qo'shildi — refresh endpoint endi faqat haqiqiy STAFF refresh tokenini qabul qiladi (access/mijoz tokenlari rad), filtr esa refresh tokenni access sifatida o'tkazmaydi (mijoz refresh tokenining 7 kunlik access bo'lib yurishi yopildi). Eski (claim'siz) refresh tokenlar rad etiladi — refresh baribir ishlamagan, regressiya yo'q. Testlar: `AuthServiceRefreshTest` (sessiya invarianti real `SessionService` bilan), `JwtRefreshTokenClaimTest`, filter testi +1.
 
 **Fayllar:**
 - `shina-magazin-api/src/main/java/uz/shinamagazin/api/service/AuthService.java:139-164` (`refreshToken`)

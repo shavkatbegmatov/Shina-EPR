@@ -2,6 +2,7 @@ package uz.shinamagazin.api.service;
 
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.http.HttpStatus;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.authentication.DisabledException;
@@ -9,6 +10,7 @@ import org.springframework.security.authentication.UsernamePasswordAuthenticatio
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
+import org.springframework.web.server.ResponseStatusException;
 import uz.shinamagazin.api.dto.request.LoginRequest;
 import uz.shinamagazin.api.dto.response.JwtResponse;
 import uz.shinamagazin.api.dto.response.UserResponse;
@@ -136,39 +138,55 @@ public class AuthService {
         }
     }
 
-    public JwtResponse refreshToken(String refreshToken) {
-        if (tokenProvider.validateToken(refreshToken)) {
-            String username = tokenProvider.getUsernameFromToken(refreshToken);
-            User user = userRepository.findByUsernameWithRolesAndPermissions(username)
-                    .orElseThrow(() -> new ResourceNotFoundException("Foydalanuvchi", "username", username));
-
-            // Deaktivatsiya qilingan hisob yangi token (va u bilan birga
-            // to'liq user/permission ma'lumotini) ololmasligi kerak — aks
-            // holda bo'shatilgan xodim refresh orqali kirishni refresh-token
-            // muddati davomida uzaytirib yura olardi.
-            if (!Boolean.TRUE.equals(user.getActive())) {
-                throw new AccountDisabledException("Akkaunt faol emas");
-            }
-
-            CustomUserDetails userDetails = new CustomUserDetails(user);
-
-            String newAccessToken = tokenProvider.generateStaffTokenWithPermissions(
-                    username,
-                    user.getId(),
-                    userDetails.getRoleCodes(),
-                    userDetails.getPermissions()
-            );
-            String newRefreshToken = tokenProvider.generateStaffRefreshToken(username, user.getId());
-
-            return JwtResponse.builder()
-                    .accessToken(newAccessToken)
-                    .refreshToken(newRefreshToken)
-                    .user(UserResponse.from(user))
-                    .permissions(userDetails.getPermissions())
-                    .roles(userDetails.getRoleCodes())
-                    .build();
+    public JwtResponse refreshToken(String refreshToken, String ipAddress, String userAgent) {
+        if (!tokenProvider.validateToken(refreshToken)) {
+            throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Refresh token yaroqsiz");
         }
-        throw new RuntimeException("Refresh token yaroqsiz");
+
+        // Endpoint faqat HAQIQIY staff refresh tokenini qabul qiladi. Ilgari
+        // istalgan imzolangan JWT (access token, mijoz tokeni, sessiyasi bekor
+        // qilingan token) o'tar edi — bu sessiya bekor qilishni chetlab o'tish
+        // yo'li edi.
+        if (tokenProvider.isCustomerToken(refreshToken) || !tokenProvider.isRefreshToken(refreshToken)) {
+            throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Refresh token yaroqsiz");
+        }
+
+        String username = tokenProvider.getUsernameFromToken(refreshToken);
+        User user = userRepository.findByUsernameWithRolesAndPermissions(username)
+                .orElseThrow(() -> new ResourceNotFoundException("Foydalanuvchi", "username", username));
+
+        // Deaktivatsiya qilingan hisob yangi token (va u bilan birga
+        // to'liq user/permission ma'lumotini) ololmasligi kerak — aks
+        // holda bo'shatilgan xodim refresh orqali kirishni refresh-token
+        // muddati davomida uzaytirib yura olardi.
+        if (!Boolean.TRUE.equals(user.getActive())) {
+            throw new AccountDisabledException("Akkaunt faol emas");
+        }
+
+        CustomUserDetails userDetails = new CustomUserDetails(user);
+
+        String newAccessToken = tokenProvider.generateStaffTokenWithPermissions(
+                username,
+                user.getId(),
+                userDetails.getRoleCodes(),
+                userDetails.getPermissions()
+        );
+        String newRefreshToken = tokenProvider.generateStaffRefreshToken(username, user.getId());
+
+        // Yangi access token uchun sessiya OCHILADI. Busiz refresh mexanizmi
+        // umuman ishlamasdi: filtr sessiya yozuvi bo'lmagan har qanday staff
+        // tokenni rad etadi, ya'ni refresh 200 qaytarsa ham berilgan token
+        // o'lik edi va har bir xodim 24 soatda bir qulflanib qolardi.
+        LocalDateTime expiresAt = LocalDateTime.now().plusSeconds(jwtExpiration / 1000);
+        sessionService.createSession(user, newAccessToken, ipAddress, userAgent, expiresAt);
+
+        return JwtResponse.builder()
+                .accessToken(newAccessToken)
+                .refreshToken(newRefreshToken)
+                .user(UserResponse.from(user))
+                .permissions(userDetails.getPermissions())
+                .roles(userDetails.getRoleCodes())
+                .build();
     }
 
     public UserResponse getCurrentUser() {

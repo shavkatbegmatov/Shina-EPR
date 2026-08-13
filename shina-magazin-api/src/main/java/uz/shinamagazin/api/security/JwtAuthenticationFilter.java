@@ -45,6 +45,16 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
             String jwt = getJwtFromRequest(request);
 
             if (StringUtils.hasText(jwt) && tokenProvider.validateToken(jwt)) {
+                // Refresh token faqat /refresh-token uchun — API kirishga
+                // yaramaydi. Ayniqsa mijoz refresh tokenlari muhim: ular
+                // sessiya tekshiruvidan o'tmaydi va busiz 7 kunlik access
+                // token vazifasini bajarib yurardi.
+                if (tokenProvider.isRefreshToken(jwt)) {
+                    log.warn("Refresh token API so'roviga access token sifatida yuborildi — rad etildi");
+                    filterChain.doFilter(request, response);
+                    return;
+                }
+
                 // Check if session is still active in database (only for staff tokens)
                 boolean isCustomerToken = tokenProvider.isCustomerToken(jwt);
                 if (!isCustomerToken && !sessionService.isSessionValid(jwt)) {

@@ -143,6 +143,11 @@ public class JwtTokenProvider {
         var builder = Jwts.builder()
                 .subject(username)
                 .claim("type", tokenType)
+                // Refresh va access tokenlar ilgari strukturaviy BIR XIL edi —
+                // refresh endpoint istalgan imzolangan JWT'ni (access token,
+                // mijoz tokeni) qabul qilar, filtr esa refresh tokenni access
+                // sifatida ajrata olmasdi. Bu claim ularni farqlaydi.
+                .claim("refresh", true)
                 .issuedAt(now)
                 .expiration(expiryDate);
 
@@ -151,6 +156,19 @@ public class JwtTokenProvider {
         }
 
         return builder.signWith(key).compact();
+    }
+
+    /**
+     * Haqiqiy refresh tokenmi ({@code refresh: true} claim bilan chiqarilgan).
+     *
+     * <p>Eski (claim'siz) tokenlar uchun {@code false} — bu ataylab qilingan:
+     * staff refresh oqimi bu o'zgarishgacha umuman ishlamagan (sessiyasiz
+     * token har doim rad etilardi), ya'ni eski refresh tokenlarni rad etish
+     * hech kimning ishlayotgan oqimini buzmaydi.
+     */
+    public boolean isRefreshToken(String token) {
+        Claims claims = getClaims(token);
+        return Boolean.TRUE.equals(claims.get("refresh", Boolean.class));
     }
 
     // Customer portal uchun token generatsiya

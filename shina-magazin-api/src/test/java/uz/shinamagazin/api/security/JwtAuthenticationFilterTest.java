@@ -92,4 +92,16 @@ class JwtAuthenticationFilterTest {
 
         assertThat(SecurityContextHolder.getContext().getAuthentication()).isNotNull();
     }
+
+    @Test
+    @DisplayName("Refresh token API so'roviga access token sifatida o'tmaydi")
+    void refreshTokenIsRejectedAsAccessCredential() throws Exception {
+        when(tokenProvider.isRefreshToken(anyString())).thenReturn(true);
+
+        runFilter();
+
+        assertThat(SecurityContextHolder.getContext().getAuthentication())
+                .as("refresh token faqat /refresh-token uchun — API kirishga yaramaydi")
+                .isNull();
+    }
 }
