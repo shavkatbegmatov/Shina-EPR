@@ -7,6 +7,7 @@ import org.springframework.transaction.annotation.Transactional;
 import uz.shinamagazin.api.dto.request.CreateSaleReturnRequest;
 import uz.shinamagazin.api.dto.response.SaleReturnResponse;
 import uz.shinamagazin.api.entity.*;
+import uz.shinamagazin.api.enums.DebtStatus;
 import uz.shinamagazin.api.enums.MovementType;
 import uz.shinamagazin.api.enums.SaleStatus;
 import uz.shinamagazin.api.exception.BadRequestException;
@@ -45,6 +46,7 @@ public class SaleReturnService {
     private final UserRepository userRepository;
     private final DocumentNumberService documentNumberService;
     private final CashShiftService cashShiftService;
+    private final DebtRepository debtRepository;
 
     @Transactional(readOnly = true)
     public List<SaleReturnResponse> getBySale(Long saleId) {
@@ -144,6 +146,7 @@ public class SaleReturnService {
                 customer.setBalance(customer.getBalance().add(debtReduced));
                 customerRepository.save(customer);
             }
+            reduceDebtRecords(sale, debtReduced, saleReturn.getReturnNumber());
         }
         if (cashRefunded.signum() > 0) {
             sale.setPaidAmount(sale.getPaidAmount().subtract(cashRefunded));
@@ -200,6 +203,43 @@ public class SaleReturnService {
         }
         return lineTotal.multiply(total)
                 .divide(subtotal, 2, java.math.RoundingMode.HALF_UP);
+    }
+
+    /**
+     * `debts` jadvalini `sale.debtAmount` bilan sinxron kamaytiradi.
+     *
+     * <p>Busiz qaytarishda faqat `sale.debtAmount` kamayib, `debts` qatori
+     * to'liq summa bilan ACTIVE qolaverardi: dashboard va eslatmalar mavjud
+     * bo'lmagan qarzni ko'rsatar, kassir esa uni "undirib" mijozdan
+     * qaytarilgan tovar uchun ikkinchi marta pul olishi mumkin edi.
+     */
+    private void reduceDebtRecords(Sale sale, BigDecimal amount, String returnNumber) {
+        BigDecimal left = amount;
+        for (Debt debt : debtRepository.findBySaleIdAndRemainingAmountGreaterThanOrderByIdAsc(
+                sale.getId(), BigDecimal.ZERO)) {
+            if (left.signum() <= 0) {
+                break;
+            }
+            BigDecimal cut = left.min(debt.getRemainingAmount());
+            debt.setRemainingAmount(debt.getRemainingAmount().subtract(cut));
+            if (debt.getRemainingAmount().signum() == 0) {
+                debt.setStatus(DebtStatus.CANCELLED);
+            }
+            appendDebtNote(debt, "Qaytarish " + returnNumber + ": -" + cut);
+            debtRepository.save(debt);
+            left = left.subtract(cut);
+        }
+        if (left.signum() > 0) {
+            log.warn("Qaytarish {}: savdo {} uchun qarz yozuvlari yetmadi, {} sinxronlanmadi",
+                    returnNumber, sale.getInvoiceNumber(), left);
+        }
+    }
+
+    /** notes VARCHAR(500) — uzun tarixda oshib ketmasligi uchun kesiladi. */
+    private void appendDebtNote(Debt debt, String note) {
+        String combined = (debt.getNotes() == null || debt.getNotes().isBlank())
+                ? note : debt.getNotes() + "; " + note;
+        debt.setNotes(combined.length() > 500 ? combined.substring(0, 500) : combined);
     }
 
     private void restoreStock(Product product, int quantity, Sale sale, User user) {

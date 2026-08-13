@@ -1739,7 +1739,8 @@
       "debtStatus": {
         "ACTIVE": "Активный",
         "PAID": "Оплачен",
-        "OVERDUE": "Просрочен"
+        "OVERDUE": "Просрочен",
+        "CANCELLED": "Отменён"
       },
       "movement": {
         "IN": "Приход",

@@ -129,6 +129,7 @@ export function DebtsPage() {
           className={clsx(
             'badge badge-sm',
             debt.status === 'PAID' && 'badge-success',
+            debt.status === 'CANCELLED' && 'badge-ghost',
             debt.status === 'ACTIVE' && !debt.overdue && 'badge-warning',
             (debt.status === 'OVERDUE' || debt.overdue) && 'badge-error'
           )}
@@ -207,7 +208,8 @@ export function DebtsPage() {
     const customerMap = new Map<number, CustomerDebtSummary>();
 
     allDebts.forEach(debt => {
-      if (debt.status === 'PAID') return; // Skip paid debts
+      // To'langan va bekor qilingan (qaytarish/bekor qilish) qarzlar undirilmaydi
+      if (debt.status === 'PAID' || debt.status === 'CANCELLED') return;
 
       const existing = customerMap.get(debt.customerId);
       if (existing) {
@@ -254,7 +256,7 @@ export function DebtsPage() {
 
   // Statistics calculations
   const stats = useMemo(() => {
-    const activeDebts = allDebts.filter(d => d.status !== 'PAID');
+    const activeDebts = allDebts.filter(d => d.status !== 'PAID' && d.status !== 'CANCELLED');
     const paidDebts = allDebts.filter(d => d.status === 'PAID');
 
     const today = new Date();
@@ -644,6 +646,7 @@ export function DebtsPage() {
                             className={clsx(
                               'badge badge-sm',
                               debt.status === 'PAID' && 'badge-success',
+                              debt.status === 'CANCELLED' && 'badge-ghost',
                               debt.status === 'ACTIVE' && !debt.overdue && 'badge-warning',
                               (debt.status === 'OVERDUE' || debt.overdue) && 'badge-error'
                             )}

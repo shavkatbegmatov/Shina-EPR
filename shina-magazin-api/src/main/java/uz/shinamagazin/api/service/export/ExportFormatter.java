@@ -114,6 +114,7 @@ public class ExportFormatter {
                 case ACTIVE -> "Faol";
                 case PAID -> "To'langan";
                 case OVERDUE -> "Muddati o'tgan";
+                case CANCELLED -> "Bekor qilingan";
             };
         }
         if (value instanceof MovementType type) {

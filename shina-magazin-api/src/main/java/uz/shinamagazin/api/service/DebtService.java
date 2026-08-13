@@ -13,9 +13,11 @@ import uz.shinamagazin.api.dto.response.PaymentResponse;
 import uz.shinamagazin.api.entity.Customer;
 import uz.shinamagazin.api.entity.Debt;
 import uz.shinamagazin.api.entity.Payment;
+import uz.shinamagazin.api.entity.Sale;
 import uz.shinamagazin.api.entity.User;
 import uz.shinamagazin.api.enums.DebtStatus;
 import uz.shinamagazin.api.enums.PaymentType;
+import uz.shinamagazin.api.enums.SaleStatus;
 import uz.shinamagazin.api.exception.BadRequestException;
 import uz.shinamagazin.api.exception.ResourceNotFoundException;
 import uz.shinamagazin.api.repository.CustomerRepository;
@@ -97,6 +99,21 @@ public class DebtService {
 
         if (debt.getStatus() == DebtStatus.PAID) {
             throw new BadRequestException("Bu qarz allaqachon to'langan");
+        }
+
+        if (debt.getStatus() == DebtStatus.CANCELLED) {
+            throw new BadRequestException("Bu qarz bekor qilingan — sotuv qaytarilgan yoki bekor qilingan");
+        }
+
+        // Fix'dan OLDIN yaratilgan "fantom" qarzlar uchun himoya: qaytarilgan
+        // yoki bekor qilingan sotuvning qarzi ACTIVE qolib ketgan bo'lsa ham,
+        // uni undirib bo'lmaydi — aks holda do'kon qaytarib olingan tovar
+        // uchun pul olib, mijoz balansini ikkinchi marta kreditlaydi.
+        Sale linkedSale = debt.getSale();
+        if (linkedSale != null && (linkedSale.getStatus() == SaleStatus.REFUNDED
+                || linkedSale.getStatus() == SaleStatus.CANCELLED)) {
+            throw new BadRequestException(
+                    "Bu qarzning sotuvi qaytarilgan yoki bekor qilingan — to'lov qabul qilinmaydi");
         }
 
         BigDecimal paymentAmount = request.getAmount();

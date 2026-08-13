@@ -1739,7 +1739,8 @@
       "debtStatus": {
         "ACTIVE": "Faol",
         "PAID": "Toʻlangan",
-        "OVERDUE": "Muddati oʻtgan"
+        "OVERDUE": "Muddati oʻtgan",
+        "CANCELLED": "Bekor qilingan"
       },
       "movement": {
         "IN": "Kirim",

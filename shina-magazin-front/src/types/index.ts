@@ -699,7 +699,7 @@ export interface SaleRequest {
 }
 
 // Debt Types
-export type DebtStatus = 'ACTIVE' | 'PAID' | 'OVERDUE';
+export type DebtStatus = 'ACTIVE' | 'PAID' | 'OVERDUE' | 'CANCELLED';
 export type PaymentType = 'SALE_PAYMENT' | 'DEBT_PAYMENT';
 
 export interface Debt {

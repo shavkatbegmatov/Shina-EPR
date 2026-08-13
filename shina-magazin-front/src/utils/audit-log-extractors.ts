@@ -41,6 +41,8 @@ function translateDebtStatus(status: string): string {
       return "To'langan";
     case 'OVERDUE':
       return "Muddati o'tgan";
+    case 'CANCELLED':
+      return 'Bekor qilingan';
     default:
       return status;
   }

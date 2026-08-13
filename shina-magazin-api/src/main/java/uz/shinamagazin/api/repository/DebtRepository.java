@@ -23,6 +23,12 @@ public interface DebtRepository extends JpaRepository<Debt, Long> {
     @EntityGraph(attributePaths = {"customer", "sale"})
     List<Debt> findByCustomerId(Long customerId);
 
+    /**
+     * Sotuvning hali yopilmagan qarz yozuvlari — qaytarish/bekor qilishda
+     * `sale.debtAmount` bilan birga `debts` jadvalini ham sinxron kamaytirish uchun.
+     */
+    List<Debt> findBySaleIdAndRemainingAmountGreaterThanOrderByIdAsc(Long saleId, BigDecimal amount);
+
     @Override
     @EntityGraph(attributePaths = {"customer", "sale"})
     Page<Debt> findAll(Pageable pageable);

@@ -51,6 +51,7 @@ class SaleReturnServiceTest {
     @Autowired private CustomerRepository customerRepository;
     @Autowired private UserRepository userRepository;
     @Autowired private CashShiftRepository shiftRepository;
+    @Autowired private DebtRepository debtRepository;
     @Autowired private uz.shinamagazin.api.repository.ExpenseRepository expenseRepository;
     @Autowired private jakarta.persistence.EntityManager entityManager;
 
@@ -67,6 +68,7 @@ class SaleReturnServiceTest {
 
     @BeforeEach
     void setUp() {
+        debtRepository.deleteAll();
         saleReturnRepository.deleteAll();
         saleRepository.deleteAll();
         productRepository.deleteAll();
@@ -82,7 +84,7 @@ class SaleReturnServiceTest {
                 new CashShiftService(shiftRepository, userRepository, saleReturnRepository, expenseRepository);
         service = new SaleReturnService(saleReturnRepository, saleRepository, saleItemRepository,
                 productRepository, stockMovementRepository, customerRepository, userRepository,
-                new SequentialNumbers(), shiftService);
+                new SequentialNumbers(), shiftService, debtRepository);
     }
 
     @Test
@@ -269,6 +271,40 @@ class SaleReturnServiceTest {
                 .isGreaterThanOrEqualTo(BigDecimal.ZERO);
     }
 
+    // ─── Qarz yozuvi sinxronligi ───
+    // Ilgari qaytarish faqat `sale.debtAmount` ni kamaytirardi, `debts`
+    // jadvalidagi qator esa to'liq summa bilan ACTIVE qolaverardi: eslatmalar
+    // mijozni qaytarilgan tovar uchun ta'qib qilar, kassir bu "qarz"ni
+    // undirib, do'kon ikkinchi marta pul olishi mumkin edi.
+
+    @Test
+    @DisplayName("To'liq qaytarishda qarz yozuvi ham yopiladi — fantom qarz qolmaydi")
+    void fullReturnClosesDebtRecord() {
+        Customer buyer = customerRepository.saveAndFlush(customer());
+        Sale sale = saleFor(buyer, 1, "1000000", "1000000", "0", "1000000");
+        Debt debt = debtFor(sale, "1000000");
+
+        service.createReturn(sale.getId(), cashier.getId(), request(sale, 1));
+
+        Debt after = reloadDebt(debt);
+        assertThat(after.getRemainingAmount()).isEqualByComparingTo("0");
+        assertThat(after.getStatus()).isEqualTo(DebtStatus.CANCELLED);
+    }
+
+    @Test
+    @DisplayName("Qisman qaytarishda qarz yozuvi mos summaga kamayadi, ACTIVE qoladi")
+    void partialReturnReducesDebtRecord() {
+        Customer buyer = customerRepository.saveAndFlush(customer());
+        Sale sale = saleFor(buyer, 2, "1000000", "2000000", "0", "2000000");
+        Debt debt = debtFor(sale, "2000000");
+
+        service.createReturn(sale.getId(), cashier.getId(), request(sale, 1));
+
+        Debt after = reloadDebt(debt);
+        assertThat(after.getRemainingAmount()).isEqualByComparingTo("1000000");
+        assertThat(after.getStatus()).isEqualTo(DebtStatus.ACTIVE);
+    }
+
     // --- helpers ---
 
     /** Savdo darajasida chegirma berilgan savdo: {@code subtotal} > {@code totalAmount}. */
@@ -310,8 +346,14 @@ class SaleReturnServiceTest {
     }
 
     private Sale saleWithItem(int quantity, String unitPrice, String total, String paid, String debt) {
+        return saleFor(null, quantity, unitPrice, total, paid, debt);
+    }
+
+    private Sale saleFor(Customer customer, int quantity, String unitPrice, String total,
+                         String paid, String debt) {
         Sale sale = Sale.builder()
                 .invoiceNumber("INV-" + (++seq))
+                .customer(customer)
                 .saleDate(LocalDateTime.now())
                 .subtotal(new BigDecimal(total))
                 .totalAmount(new BigDecimal(total))
@@ -331,6 +373,30 @@ class SaleReturnServiceTest {
                 .totalPrice(new BigDecimal(total))
                 .build());
         return saleRepository.saveAndFlush(sale);
+    }
+
+    private Debt debtFor(Sale sale, String amount) {
+        return debtRepository.saveAndFlush(Debt.builder()
+                .customer(sale.getCustomer())
+                .sale(sale)
+                .originalAmount(new BigDecimal(amount))
+                .remainingAmount(new BigDecimal(amount))
+                .dueDate(java.time.LocalDate.now().plusDays(30))
+                .status(DebtStatus.ACTIVE)
+                .build());
+    }
+
+    private Debt reloadDebt(Debt debt) {
+        entityManager.flush();
+        entityManager.clear();
+        return debtRepository.findById(debt.getId()).orElseThrow();
+    }
+
+    private static Customer customer() {
+        return Customer.builder()
+                .fullName("Test Mijoz")
+                .phone("+998901112233")
+                .build();
     }
 
     private <T> T reload(T entity) {

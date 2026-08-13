@@ -84,6 +84,7 @@ export const DEBT_STATUSES = {
   ACTIVE: { label: 'Faol', value: 'ACTIVE' },
   PAID: { label: "To'langan", value: 'PAID' },
   OVERDUE: { label: "Muddati o'tgan", value: 'OVERDUE' },
+  CANCELLED: { label: 'Bekor qilingan', value: 'CANCELLED' },
 } as const;
 
 export const MOVEMENT_TYPES = {

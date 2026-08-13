@@ -286,9 +286,31 @@ public class SaleService {
             customer.setBalance(customer.getBalance().add(sale.getDebtAmount()));
             customerRepository.save(customer);
         }
+        cancelOpenDebtRecords(sale);
 
         sale.setStatus(SaleStatus.CANCELLED);
         return SaleResponse.from(saleRepository.save(sale));
+    }
+
+    /**
+     * Bekor qilingan sotuvning ochiq qarz yozuvlarini yopadi.
+     *
+     * <p>Busiz `debts` qatori ACTIVE bo'lib qolaverar edi: dashboard va
+     * eslatmalar mavjud bo'lmagan qarzni ko'rsatar, bekor qilingan sotuvning
+     * "qarzi"ni undirish esa mijoz balansini ikkinchi marta kreditlab,
+     * do'konga asossiz pul kirim qilardi.
+     */
+    private void cancelOpenDebtRecords(Sale sale) {
+        for (Debt debt : debtRepository.findBySaleIdAndRemainingAmountGreaterThanOrderByIdAsc(
+                sale.getId(), BigDecimal.ZERO)) {
+            debt.setRemainingAmount(BigDecimal.ZERO);
+            debt.setStatus(DebtStatus.CANCELLED);
+            String note = "Sotuv bekor qilindi: " + sale.getInvoiceNumber();
+            String combined = (debt.getNotes() == null || debt.getNotes().isBlank())
+                    ? note : debt.getNotes() + "; " + note;
+            debt.setNotes(combined.length() > 500 ? combined.substring(0, 500) : combined);
+            debtRepository.save(debt);
+        }
     }
 
     /**

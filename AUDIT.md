@@ -61,7 +61,7 @@
 
 ## 3. Qaytarish/bekor qilishda Debt yozuvi yangilanmaydi — fantom qarz va ikki marta pul undirish
 
-- [ ] Tuzatildi
+- [x] Tuzatildi — `DebtStatus.CANCELLED` qo'shildi; qaytarishda qarz yozuvi mos summaga kamayadi (`SaleReturnService.reduceDebtRecords`), bekor qilishda yopiladi (`SaleService.cancelOpenDebtRecords`); `DebtService.makePayment` CANCELLED qarzni va REFUNDED/CANCELLED sotuvning eski fantom qarzini rad etadi. Testlar: `SaleReturnServiceTest` (+2), `SaleCancelServiceTest` (yangi), `DebtServiceTest` (yangi).
 
 **Fayllar:**
 - `shina-magazin-api/src/main/java/uz/shinamagazin/api/service/SaleReturnService.java:132-150` (`createReturn`)

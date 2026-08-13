@@ -82,7 +82,7 @@ export interface PortalDebt {
   remainingAmount: number;
   paidAmount: number;
   dueDate?: string;
-  status: 'ACTIVE' | 'PAID' | 'OVERDUE';
+  status: 'ACTIVE' | 'PAID' | 'OVERDUE' | 'CANCELLED';
   overdue: boolean;
   notes?: string;
   createdAt: string;
