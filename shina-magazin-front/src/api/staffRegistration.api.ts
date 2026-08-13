@@ -7,6 +7,7 @@ import type {
   StaffRegistrationApproveRequest,
   StaffRegistrationStatus,
   StaffRegistrationSubmitRequest,
+  StaffRegistrationSubmitResponse,
 } from '../types';
 
 /**
@@ -16,8 +17,14 @@ import type {
  * (backendda permitAll). Qolganlari xodim huquqini talab qiladi.
  */
 export const staffRegistrationApi = {
-  submit: async (data: StaffRegistrationSubmitRequest): Promise<void> => {
-    await api.post('/v1/staff-registration', data);
+  submit: async (
+    data: StaffRegistrationSubmitRequest
+  ): Promise<StaffRegistrationSubmitResponse> => {
+    const res = await api.post<ApiResponse<StaffRegistrationSubmitResponse>>(
+      '/v1/staff-registration',
+      data
+    );
+    return res.data.data;
   },
 
   getAll: async (

@@ -17,6 +17,7 @@ import uz.shinamagazin.api.dto.response.ApiResponse;
 import uz.shinamagazin.api.dto.response.EmployeeResponse;
 import uz.shinamagazin.api.dto.response.PagedResponse;
 import uz.shinamagazin.api.dto.response.StaffRegistrationResponse;
+import uz.shinamagazin.api.dto.response.StaffRegistrationSubmitResponse;
 import uz.shinamagazin.api.enums.PermissionCode;
 import uz.shinamagazin.api.enums.StaffRegistrationStatus;
 import uz.shinamagazin.api.security.ClientIp;
@@ -56,7 +57,7 @@ public class StaffRegistrationController {
 
     @PostMapping
     @Operation(summary = "So'rov yuborish", description = "Ommaviy — xodimlikka ariza")
-    public ResponseEntity<ApiResponse<Void>> submit(
+    public ResponseEntity<ApiResponse<StaffRegistrationSubmitResponse>> submit(
             @Valid @RequestBody StaffRegistrationSubmitRequest request,
             HttpServletRequest httpRequest) {
 
@@ -66,9 +67,9 @@ public class StaffRegistrationController {
                     "Juda ko'p so'rov yuborildi. Bir soatdan keyin qayta urinib ko'ring.");
         }
 
-        service.submit(request, clientIp);
         return ResponseEntity.ok(ApiResponse.success(
-                "So'rovingiz qabul qilindi. Administrator ko'rib chiqqach, siz bilan bog'lanamiz.", null));
+                "So'rovingiz qabul qilindi. Administrator ko'rib chiqqach, siz bilan bog'lanamiz.",
+                service.submit(request, clientIp)));
     }
 
     @GetMapping

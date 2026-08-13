@@ -13,6 +13,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatCode;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyLong;
+import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.ArgumentMatchers.isNull;
 import static org.mockito.Mockito.mock;
@@ -33,14 +34,16 @@ class TelegramUpdateHandlerTest {
     private static final ObjectMapper MAPPER = new ObjectMapper();
 
     private TelegramRegistrationService registrationService;
+    private StaffRegistrationService staffRegistrationService;
     private TelegramApiClient client;
     private TelegramUpdateHandler handler;
 
     @BeforeEach
     void setUp() {
         registrationService = mock(TelegramRegistrationService.class);
+        staffRegistrationService = mock(StaffRegistrationService.class);
         client = mock(TelegramApiClient.class);
-        handler = new TelegramUpdateHandler(registrationService, client);
+        handler = new TelegramUpdateHandler(registrationService, staffRegistrationService, client);
 
         when(registrationService.onStart(anyLong())).thenReturn(BotReply.of("salom"));
         when(registrationService.onUnknown(anyLong())).thenReturn(BotReply.of("yordam"));
@@ -86,6 +89,46 @@ class TelegramUpdateHandlerTest {
                             "contact":{"phone_number":"998901112233"}}}"""));
 
         verify(registrationService).onContact(eq(42L), any(), isNull(), eq("998901112233"));
+    }
+
+    /**
+     * Xodimlik arizasi havolasi (`t.me/<bot>?start=staff_<token>`) — mijoz
+     * ro'yxatidan BUTUNLAY boshqa oqim, u mijoz registratsiyasi o'chirilgan
+     * bo'lsa ham ishlashi kerak.
+     */
+    @Test
+    @DisplayName("/start staff_<token> xodimlik arizasiga yo'naltiriladi")
+    void routesStaffLink() {
+        when(staffRegistrationService.linkTelegram(42L, "abc123")).thenReturn("bog'landi");
+
+        handler.handle(update("""
+                {"message":{"chat":{"id":42},"from":{"id":7,"first_name":"Ali"},"text":"/start staff_abc123"}}"""));
+
+        verify(staffRegistrationService).linkTelegram(42L, "abc123");
+        verify(client).sendMessage(eq(42L), eq("bog'landi"), any());
+        // Mijoz oqimi ishga tushmasligi kerak
+        verify(registrationService, never()).onStart(anyLong());
+    }
+
+    @Test
+    @DisplayName("Notanish token oddiy salomlashishga tushadi")
+    void unknownStaffTokenFallsBackToStart() {
+        when(staffRegistrationService.linkTelegram(anyLong(), anyString())).thenReturn(null);
+
+        handler.handle(update("""
+                {"message":{"chat":{"id":42},"from":{"id":7,"first_name":"Ali"},"text":"/start staff_eski"}}"""));
+
+        verify(registrationService).onStart(42L);
+    }
+
+    @Test
+    @DisplayName("Oddiy /start mijoz oqimida qoladi")
+    void plainStartIsNotStaffFlow() {
+        handler.handle(update("""
+                {"message":{"chat":{"id":42},"from":{"id":7,"first_name":"Ali"},"text":"/start"}}"""));
+
+        verify(staffRegistrationService, never()).linkTelegram(anyLong(), anyString());
+        verify(registrationService).onStart(42L);
     }
 
     @Test

@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { useForm, Controller } from 'react-hook-form';
 import { useTranslation } from 'react-i18next';
 import { Link } from 'react-router-dom';
-import { UserPlus } from 'lucide-react';
+import { Send, UserPlus } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { PhoneInput } from '../../components/ui/PhoneInput';
 import { Select } from '../../components/ui/Select';
@@ -15,6 +15,7 @@ export function RegisterPage() {
   const { t } = useTranslation();
   const [loading, setLoading] = useState(false);
   const [submitted, setSubmitted] = useState(false);
+  const [telegramLink, setTelegramLink] = useState<string | null>(null);
   const {
     register,
     handleSubmit,
@@ -35,8 +36,10 @@ export function RegisterPage() {
   const onSubmit = async (data: StaffRegistrationSubmitRequest) => {
     setLoading(true);
     try {
-      await staffRegistrationApi.submit(data);
+      const result = await staffRegistrationApi.submit(data);
       setSubmitted(true);
+      // Bot sozlanmagan bo'lsa null keladi — u holda havola ko'rsatilmaydi.
+      setTelegramLink(result.telegramLinkUrl ?? null);
       reset({ requestedRole: 'SELLER' });
       toast.success(t('erp.register.requestAccepted'));
     } catch (error) {
@@ -63,8 +66,31 @@ export function RegisterPage() {
           {/* So'rov haqiqatan saqlangach, keyingi qadam nima ekanini aytamiz —
               odam javobni qanchagacha kutishini bilsin. */}
           {submitted && (
-            <div className="alert alert-success mb-4">
-              <span className="text-sm">{t('erp.register.pendingHint')}</span>
+            <div className="mb-4 space-y-3">
+              <div className="alert alert-success">
+                <span className="text-sm">{t('erp.register.pendingHint')}</span>
+              </div>
+
+              {/* Telegram botlari foydalanuvchiga BIRINCHI bo'lib yozolmaydi —
+                  arizachi shu havolani ochib START bosmasa, unga qaror haqida
+                  xabar yuborishning imkoni yo'q. */}
+              {telegramLink && (
+                <div className="rounded-2xl border border-base-200 bg-base-200/50 p-4">
+                  <p className="text-sm font-medium">{t('erp.register.telegramTitle')}</p>
+                  <p className="mt-1 text-xs text-base-content/60">
+                    {t('erp.register.telegramHint')}
+                  </p>
+                  <a
+                    href={telegramLink}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="btn btn-primary btn-sm mt-3 w-full"
+                  >
+                    <Send className="h-4 w-4" />
+                    {t('erp.register.telegramCta')}
+                  </a>
+                </div>
+              )}
             </div>
           )}
 

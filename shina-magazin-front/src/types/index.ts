@@ -1224,6 +1224,17 @@ export interface StaffRegistrationSubmitRequest {
   note?: string;
 }
 
+/**
+ * Ariza yuborilgandan keyingi javob.
+ *
+ * <p>`telegramLinkUrl` — arizachi qarorni Telegramda olishi uchun ochishi
+ * kerak bo'lgan havola. Telegram botlari birinchi bo'lib yozolmaydi, ya'ni
+ * bu qadamsiz unga xabar yuborib bo'lmaydi. Bot sozlanmagan bo'lsa `null`.
+ */
+export interface StaffRegistrationSubmitResponse {
+  telegramLinkUrl?: string | null;
+}
+
 export interface StaffRegistration {
   id: number;
   fullName: string;

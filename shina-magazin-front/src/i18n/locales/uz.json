@@ -1482,7 +1482,10 @@
       "submit": "So'rov yuborish",
       "haveAccount": "Hisobingiz bormi?",
       "login": "Kirish",
-      "pendingHint": "So‘rovingiz saqlandi. Administrator ko‘rib chiqqach, login va parolingiz siz ko‘rsatgan telefon raqam orqali yetkaziladi."
+      "pendingHint": "So‘rovingiz saqlandi. Administrator ko‘rib chiqqach, login va parolingiz siz ko‘rsatgan telefon raqam orqali yetkaziladi.",
+      "telegramTitle": "Javobni Telegramda oling",
+      "telegramHint": "Bot sizga o‘zi yozolmaydi — avval quyidagi havolani ochib «START» bosing. Qaror chiqishi bilan xabar o‘sha yerga keladi.",
+      "telegramCta": "Telegramda ochish"
     },
     "changePassword": {
       "strengthVeryWeak": "Juda zaif",

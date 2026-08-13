@@ -68,4 +68,25 @@ public class StaffRegistrationRequest extends BaseEntity {
     /** Ommaviy endpoint — suiiste'mol tekshiruvi uchun. */
     @Column(name = "client_ip", length = 45)
     private String clientIp;
+
+    // ─── Telegram orqali javob berish ───
+
+    /**
+     * Arizachining chati. Bot unga qaror haqida shu yerga yozadi.
+     *
+     * <p>Null bo'lishi normal: arizachi havolani ochmagan bo'lishi mumkin,
+     * u holda xabar yuborilmaydi va xodim qo'lda bog'lanadi.
+     */
+    @Column(name = "telegram_chat_id")
+    private Long telegramChatId;
+
+    /**
+     * Bir martalik token — `t.me/<bot>?start=staff_<token>` havolasi uchun.
+     *
+     * <p>Ariza ID'si emas, ataylab tasodifiy: ketma-ket ID bo'lganda
+     * istalgan odam raqamlarni sinab, begona arizaga o'z chatini bog'lab,
+     * boshqa odamning qarori va login'ini o'qib olardi.
+     */
+    @Column(name = "telegram_link_token", length = 40)
+    private String telegramLinkToken;
 }

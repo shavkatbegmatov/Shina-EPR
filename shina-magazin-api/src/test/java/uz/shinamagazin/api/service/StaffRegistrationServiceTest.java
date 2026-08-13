@@ -7,6 +7,7 @@ import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.test.util.ReflectionTestUtils;
 import uz.shinamagazin.api.entity.User;
 import uz.shinamagazin.api.security.CustomUserDetails;
 import uz.shinamagazin.api.dto.request.EmployeeRequest;
@@ -51,6 +52,8 @@ class StaffRegistrationServiceTest {
     private EmployeeRepository employeeRepository;
     private EmployeeService employeeService;
     private StaffNotificationService staffNotificationService;
+    private SettingsService settingsService;
+    private TelegramApiClient telegramApiClient;
     private StaffRegistrationService service;
 
     @BeforeEach
@@ -61,9 +64,14 @@ class StaffRegistrationServiceTest {
         staffNotificationService = mock(StaffNotificationService.class);
         UserRepository userRepository = mock(UserRepository.class);
 
+        settingsService = mock(SettingsService.class);
+        telegramApiClient = mock(TelegramApiClient.class);
+        when(settingsService.getTelegramBotUsername()).thenReturn("protektor_uz_bot");
+
         service = new StaffRegistrationService(
                 requestRepository, employeeRepository, userRepository,
-                employeeService, staffNotificationService);
+                employeeService, staffNotificationService, settingsService, telegramApiClient);
+        ReflectionTestUtils.setField(service, "publicBaseUrl", "https://protektor.uz");
 
         when(requestRepository.existsByPhoneAndStatus(anyString(), any())).thenReturn(false);
         when(employeeRepository.existsByPhone(anyString())).thenReturn(false);
@@ -208,6 +216,117 @@ class StaffRegistrationServiceTest {
         verify(employeeService, never()).createEmployee(any());
     }
 
+    // ─── Telegram orqali xabar berish ───
+
+    /**
+     * Telegram botlari foydalanuvchiga birinchi bo'lib yozolmaydi, ya'ni
+     * havolasiz arizachiga xabar yuborishning imkoni yo'q.
+     */
+    @Test
+    @DisplayName("Ariza javobida Telegram havolasi qaytariladi")
+    void submitReturnsTelegramLink() {
+        var response = service.submit(submitRequest("SELLER"), null);
+
+        StaffRegistrationRequest saved = captureSaved();
+        assertThat(saved.getTelegramLinkToken()).isNotBlank();
+        assertThat(response.getTelegramLinkUrl())
+                .isEqualTo("https://t.me/protektor_uz_bot?start=staff_" + saved.getTelegramLinkToken());
+    }
+
+    @Test
+    @DisplayName("Bot sozlanmagan bo'lsa havola bo'lmaydi, ariza baribir qabul qilinadi")
+    void submitWithoutBotStillWorks() {
+        when(settingsService.getTelegramBotUsername()).thenReturn("");
+
+        var response = service.submit(submitRequest("SELLER"), null);
+
+        assertThat(response.getTelegramLinkUrl()).isNull();
+        verify(requestRepository).save(any());
+    }
+
+    @Test
+    @DisplayName("/start staff_<token> arizani chatga bog'laydi")
+    void linkTelegramBindsChat() {
+        StaffRegistrationRequest pending = pending("SELLER");
+        when(requestRepository.findByTelegramLinkToken("tok")).thenReturn(Optional.of(pending));
+
+        String reply = service.linkTelegram(555L, "tok");
+
+        assertThat(pending.getTelegramChatId()).isEqualTo(555L);
+        assertThat(reply).contains("kuzatuvda");
+    }
+
+    /**
+     * Notanish token — eski yoki qo'lda o'zgartirilgan havola. Xato o'rniga
+     * null qaytariladi va chaqiruvchi odatdagi salomlashishga tushadi.
+     */
+    @Test
+    @DisplayName("Notanish token null qaytaradi")
+    void linkTelegramUnknownTokenReturnsNull() {
+        when(requestRepository.findByTelegramLinkToken("yoq")).thenReturn(Optional.empty());
+
+        assertThat(service.linkTelegram(555L, "yoq")).isNull();
+    }
+
+    @Test
+    @DisplayName("Ko'rib chiqilgan arizaga bog'lanmaydi")
+    void linkTelegramSkipsReviewed() {
+        StaffRegistrationRequest done = pending("SELLER");
+        done.setStatus(StaffRegistrationStatus.APPROVED);
+        when(requestRepository.findByTelegramLinkToken("tok")).thenReturn(Optional.of(done));
+
+        String reply = service.linkTelegram(555L, "tok");
+
+        assertThat(done.getTelegramChatId()).isNull();
+        assertThat(reply).contains("allaqachon ko'rib chiqilgan");
+    }
+
+    /**
+     * Vaqtinchalik parol Telegramga YOZILMAYDI: u chat tarixida abadiy
+     * qolardi va bot tokeni bor har kim o'qiy olardi.
+     */
+    @Test
+    @DisplayName("Tasdiqlash xabarida login bor, PAROL yo'q")
+    void approveNotifiesWithoutPassword() {
+        StaffRegistrationRequest pending = pending("SELLER");
+        pending.setTelegramChatId(555L);
+        when(requestRepository.findById(1L)).thenReturn(Optional.of(pending));
+        when(employeeService.createEmployee(any())).thenReturn(employeeWithCredentials());
+
+        service.approve(1L, null);
+
+        ArgumentCaptor<String> text = ArgumentCaptor.forClass(String.class);
+        verify(telegramApiClient).sendMessage(eq(555L), text.capture(), any());
+        assertThat(text.getValue()).contains("a.karimov");
+        assertThat(text.getValue()).doesNotContain("SirliParol123");
+    }
+
+    @Test
+    @DisplayName("Rad etish xabarida sabab bo'ladi")
+    void rejectNotifiesWithReason() {
+        StaffRegistrationRequest pending = pending("SELLER");
+        pending.setTelegramChatId(555L);
+        when(requestRepository.findById(1L)).thenReturn(Optional.of(pending));
+
+        service.reject(1L, "Bo'sh ish o'rni yo'q");
+
+        ArgumentCaptor<String> text = ArgumentCaptor.forClass(String.class);
+        verify(telegramApiClient).sendMessage(eq(555L), text.capture(), any());
+        assertThat(text.getValue()).contains("rad etildi");
+        assertThat(text.getValue()).contains("Bo'sh ish o'rni yo'q");
+    }
+
+    @Test
+    @DisplayName("Chat bog'lanmagan bo'lsa xabar yuborilmaydi")
+    void noChatMeansNoMessage() {
+        StaffRegistrationRequest pending = pending("SELLER");
+        when(requestRepository.findById(1L)).thenReturn(Optional.of(pending));
+
+        service.reject(1L, "sabab");
+
+        verify(telegramApiClient, never()).sendMessage(anyLong(), anyString(), any());
+    }
+
     // ─── Yordamchilar ───
 
     private static StaffRegistrationSubmitRequest submitRequest(String role) {
@@ -230,6 +349,16 @@ class StaffRegistrationServiceTest {
     private static EmployeeResponse employeeResponse() {
         EmployeeResponse response = new EmployeeResponse();
         response.setId(7L);
+        return response;
+    }
+
+    private static EmployeeResponse employeeWithCredentials() {
+        EmployeeResponse response = employeeResponse();
+        response.setNewCredentials(uz.shinamagazin.api.dto.response.CredentialsInfo.builder()
+                .username("a.karimov")
+                .temporaryPassword("SirliParol123")
+                .mustChangePassword(true)
+                .build());
         return response;
     }
 

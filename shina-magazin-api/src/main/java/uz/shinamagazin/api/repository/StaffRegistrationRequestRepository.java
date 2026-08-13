@@ -7,6 +7,8 @@ import org.springframework.stereotype.Repository;
 import uz.shinamagazin.api.entity.StaffRegistrationRequest;
 import uz.shinamagazin.api.enums.StaffRegistrationStatus;
 
+import java.util.Optional;
+
 @Repository
 public interface StaffRegistrationRequestRepository
         extends JpaRepository<StaffRegistrationRequest, Long> {
@@ -20,4 +22,7 @@ public interface StaffRegistrationRequestRepository
     boolean existsByPhoneAndStatus(String phone, StaffRegistrationStatus status);
 
     long countByStatus(StaffRegistrationStatus status);
+
+    /** Botdagi `/start staff_<token>` uchun. */
+    Optional<StaffRegistrationRequest> findByTelegramLinkToken(String telegramLinkToken);
 }

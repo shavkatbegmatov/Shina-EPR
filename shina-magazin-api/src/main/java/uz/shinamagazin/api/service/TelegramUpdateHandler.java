@@ -22,7 +22,11 @@ import uz.shinamagazin.api.dto.telegram.TelegramSender;
 @Slf4j
 public class TelegramUpdateHandler {
 
+    /** Xodimlik arizasi havolasidagi payload prefiksi. */
+    private static final String STAFF_LINK_PREFIX = "staff_";
+
     private final TelegramRegistrationService registrationService;
+    private final StaffRegistrationService staffRegistrationService;
     private final TelegramApiClient telegramApiClient;
 
     /**
@@ -69,10 +73,33 @@ public class TelegramUpdateHandler {
 
         String messageText = text(message, "text");
         if (messageText != null && messageText.startsWith("/start")) {
+            // `/start staff_<token>` — xodimlikka ariza bergan odam o'z
+            // arizasini shu chatga bog'lamoqda. Bu mijoz ro'yxatidan
+            // BUTUNLAY boshqa oqim va u mijoz registratsiyasi o'chirilgan
+            // bo'lsa ham ishlashi kerak.
+            String token = startPayload(messageText, STAFF_LINK_PREFIX);
+            if (token != null) {
+                String reply = staffRegistrationService.linkTelegram(chatId, token);
+                // Token notanish bo'lsa (eski yoki noto'g'ri havola) —
+                // odatdagi salomlashishga tushamiz, "xato" demaymiz.
+                if (reply != null) {
+                    return BotReply.of(reply, TelegramApiClient.removeKeyboard());
+                }
+            }
             return registrationService.onStart(chatId);
         }
 
         return registrationService.onUnknown(chatId);
+    }
+
+    /** `/start staff_ABC` → `ABC`; prefiks mos kelmasa null. */
+    private static String startPayload(String messageText, String prefix) {
+        String[] parts = messageText.trim().split("\\s+", 2);
+        if (parts.length < 2) {
+            return null;
+        }
+        String payload = parts[1].trim();
+        return payload.startsWith(prefix) ? payload.substring(prefix.length()) : null;
     }
 
     private static String text(JsonNode node, String field) {

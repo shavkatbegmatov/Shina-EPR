@@ -2,6 +2,7 @@ package uz.shinamagazin.api.service;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -26,8 +27,14 @@ import uz.shinamagazin.api.repository.UserRepository;
 import uz.shinamagazin.api.security.CustomUserDetails;
 import uz.shinamagazin.api.util.PhoneNumberUtils;
 
+import uz.shinamagazin.api.dto.response.StaffRegistrationSubmitResponse;
+
+import java.security.SecureRandom;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.util.Base64;
+
+import static uz.shinamagazin.api.service.TelegramApiClient.escapeHtml;
 
 /**
  * Xodimlikka ro'yxatdan o'tish so'rovlari.
@@ -49,11 +56,21 @@ public class StaffRegistrationService {
     /** Lavozim ko'rsatilmasa rol nomidan olinadi. */
     private static final String DEFAULT_ROLE_CODE = "SELLER";
 
+    /** `t.me/<bot>?start=staff_<token>` — ariza va chatni bog'lash uchun. */
+    private static final String TELEGRAM_START_PREFIX = "staff_";
+    private static final SecureRandom RANDOM = new SecureRandom();
+
     private final StaffRegistrationRequestRepository requestRepository;
     private final EmployeeRepository employeeRepository;
     private final UserRepository userRepository;
     private final EmployeeService employeeService;
     private final StaffNotificationService staffNotificationService;
+    private final SettingsService settingsService;
+    private final TelegramApiClient telegramApiClient;
+
+    /** ERP manzili — arizachiga yuboriladigan "kirish" havolasi uchun. */
+    @Value("${shop.public-base-url:http://localhost:5183}")
+    private String publicBaseUrl;
 
     // ─── Ommaviy: so'rov yuborish ───
 
@@ -63,7 +80,7 @@ public class StaffRegistrationService {
      * @param clientIp suiiste'mol tekshiruvi uchun saqlanadi (javobda qaytmaydi)
      */
     @Transactional
-    public void submit(StaffRegistrationSubmitRequest request, String clientIp) {
+    public StaffRegistrationSubmitResponse submit(StaffRegistrationSubmitRequest request, String clientIp) {
         String phone = PhoneNumberUtils.normalize(request.getPhone());
 
         // Bir raqamdan bir vaqtda bitta kutilayotgan so'rov. Bazada ham unique
@@ -90,6 +107,7 @@ public class StaffRegistrationService {
                 .note(trimToNull(request.getNote()))
                 .status(StaffRegistrationStatus.PENDING)
                 .clientIp(clientIp)
+                .telegramLinkToken(generateLinkToken())
                 .build());
 
         log.info("Xodimlikka so'rov: {} ({}), rol: {}", saved.getFullName(), phone, saved.getRequestedRole());
@@ -105,6 +123,44 @@ public class StaffRegistrationService {
                 StaffNotificationType.WARNING,
                 "STAFF_REGISTRATION",
                 saved.getId());
+
+        return StaffRegistrationSubmitResponse.builder()
+                .telegramLinkUrl(telegramLinkUrl(saved.getTelegramLinkToken()))
+                .build();
+    }
+
+    /**
+     * Botdagi `/start staff_<token>` — arizani shu chatga bog'laydi.
+     *
+     * <p>Telegram botlari foydalanuvchiga birinchi bo'lib yozolmaydi, ya'ni
+     * qaror haqida xabar berishning YAGONA yo'li — arizachining o'zi shu
+     * havolani ochishi.
+     *
+     * @return arizachiga ko'rsatiladigan javob, yoki token notanish bo'lsa {@code null}
+     */
+    @Transactional
+    public String linkTelegram(long chatId, String token) {
+        StaffRegistrationRequest request = requestRepository.findByTelegramLinkToken(token).orElse(null);
+        if (request == null) {
+            return null;
+        }
+
+        // Ko'rib chiqilgan arizaga bog'lanishning ma'nosi yo'q — qaror
+        // allaqachon chiqqan va xabar yuborilmaydi.
+        if (request.getStatus() != StaffRegistrationStatus.PENDING) {
+            return "Bu ariza allaqachon ko'rib chiqilgan. Savollar bo'lsa do'kon bilan bog'laning.";
+        }
+
+        request.setTelegramChatId(chatId);
+        requestRepository.save(request);
+        log.info("Xodimlik arizasi Telegramga bog'landi: {} (chat={})", request.getPhone(), chatId);
+
+        return """
+                ✅ Arizangiz kuzatuvda.
+
+                <b>%s</b>, arizangiz ko'rib chiqilmoqda. Qaror chiqishi bilan \
+                shu yerda xabar beramiz."""
+                .formatted(escapeHtml(request.getFullName()));
     }
 
     // ─── Xodim uchun: ko'rish va qaror ───
@@ -165,6 +221,29 @@ public class StaffRegistrationService {
         log.info("Xodimlikka so'rov tasdiqlandi: {} ({}), rol: {}",
                 request.getFullName(), request.getPhone(), roleCode);
 
+        // Login yuboriladi, PAROL esa ATAYLAB yuborilmaydi.
+        //
+        // Vaqtinchalik parol xodimga bir marta ko'rsatiladi va serverda ochiq
+        // saqlanmaydi. Uni Telegramga yozish chat tarixida abadiy qoldirardi
+        // (arizachining qurilmasida ham, Telegram serverida ham) va bot
+        // tokeni bor har kim uni o'qiy olardi. Xodim parolni og'zaki
+        // yetkazgani xavfsizroq.
+        String username = employee.getNewCredentials() != null
+                ? employee.getNewCredentials().getUsername() : null;
+        notifyApplicant(request, """
+                ✅ Arizangiz tasdiqlandi!
+
+                Lavozim: <b>%s</b>
+                Login: <b><code>%s</code></b>
+
+                Parolni do'kon administratoridan oling — u xavfsizlik uchun \
+                bu yerga yuborilmaydi. Birinchi kirishda parolni o'zgartirasiz.
+
+                Kirish: %s/admin/login"""
+                .formatted(escapeHtml(employeeRequest.getPosition()),
+                        escapeHtml(username == null ? "—" : username),
+                        publicBaseUrl()));
+
         return employee;
     }
 
@@ -180,6 +259,15 @@ public class StaffRegistrationService {
         requestRepository.save(request);
 
         log.info("Xodimlikka so'rov rad etildi: {} ({})", request.getFullName(), request.getPhone());
+
+        String reasonLine = request.getRejectReason() == null ? ""
+                : "\n\nSabab: " + escapeHtml(request.getRejectReason());
+        notifyApplicant(request, """
+                Arizangiz rad etildi.%s
+
+                Savollaringiz bo'lsa do'kon bilan bog'laning."""
+                .formatted(reasonLine));
+
         return StaffRegistrationResponse.from(request);
     }
 
@@ -199,6 +287,53 @@ public class StaffRegistrationService {
             throw new BadRequestException("Bu so'rov allaqachon ko'rib chiqilgan.");
         }
         return request;
+    }
+
+    /**
+     * Arizachiga qaror haqida xabar beradi.
+     *
+     * <p>Hech qachon yiqilmaydi: Telegram ishlamasligi tasdiqlashni bekor
+     * qilmasligi kerak — xodim allaqachon qaror qabul qilgan va akkaunt
+     * yaratilgan. Xabar bormasa, u qo'lda bog'lanadi.
+     */
+    private void notifyApplicant(StaffRegistrationRequest request, String text) {
+        Long chatId = request.getTelegramChatId();
+        if (chatId == null) {
+            return;
+        }
+        try {
+            telegramApiClient.sendMessage(chatId, text, TelegramApiClient.removeKeyboard());
+        } catch (Exception e) {
+            log.warn("Arizachiga xabar yuborilmadi ({}): {}", request.getPhone(), e.getMessage());
+        }
+    }
+
+    /** ERP manzili — botdagi "kirish" havolasi uchun. */
+    private String publicBaseUrl() {
+        String base = publicBaseUrl == null ? "" : publicBaseUrl.trim();
+        return base.endsWith("/") ? base.substring(0, base.length() - 1) : base;
+    }
+
+    /** Havola: `https://t.me/<bot>?start=staff_<token>`. Bot sozlanmagan bo'lsa null. */
+    private String telegramLinkUrl(String token) {
+        String botUsername = settingsService.getTelegramBotUsername();
+        if (botUsername.isBlank() || token == null) {
+            return null;
+        }
+        return "https://t.me/" + botUsername + "?start=" + TELEGRAM_START_PREFIX + token;
+    }
+
+    /**
+     * Tasodifiy token.
+     *
+     * <p>Ariza ID'si ishlatilmaydi: ketma-ket raqamlarni sinab chiqqan odam
+     * begona arizaga o'z chatini bog'lab, boshqa odamning qarori va
+     * login'ini o'qib olardi.
+     */
+    private static String generateLinkToken() {
+        byte[] bytes = new byte[18];
+        RANDOM.nextBytes(bytes);
+        return Base64.getUrlEncoder().withoutPadding().encodeToString(bytes);
     }
 
     private static String positionForRole(String roleCode) {
