@@ -29,6 +29,8 @@ import {
   type LucideIcon,
 } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
+import { useQuery } from '@tanstack/react-query';
+import { staffRegistrationApi } from '../../api/staffRegistration.api';
 import { useAuthStore } from '../../store/authStore';
 import { useUIStore } from '../../store/uiStore';
 import { PermissionCode, type PermissionCodeType } from '../../hooks/usePermission';
@@ -42,6 +44,9 @@ interface NavItem {
   labelKey: string;
   permission: PermissionCodeType;
 }
+
+/** Yonida hisoblagich ko'rsatiladigan bo'lim. */
+const STAFF_REQUESTS_PATH = '/admin/staff-requests';
 
 interface NavGroup {
   key: string;
@@ -139,6 +144,28 @@ export function Sidebar() {
     });
   };
 
+  /**
+   * Ko'rib chiqilmagan xodimlik arizalari soni.
+   *
+   * <p>`enabled` ruxsatga bog'langan: aks holda ruxsatsiz foydalanuvchida
+   * har ochilishda 403 so'rovi ketardi.
+   *
+   * <p>Kesh kaliti `['staff-registration', ...]` prefiksida — arizani
+   * tasdiqlash/rad etish sahifasi shu prefiksni invalidatsiya qiladi, ya'ni
+   * qaror qabul qilingan zahoti hisoblagich o'zi yangilanadi. Interval esa
+   * boshqa sahifada turganda kelgan yangi ariza uchun.
+   */
+  const canReviewRequests = permissions.has(PermissionCode.EMPLOYEES_VIEW);
+  const { data: pendingRequests = 0 } = useQuery({
+    queryKey: ['staff-registration', 'pending-count'],
+    queryFn: () => staffRegistrationApi.pendingCount(),
+    enabled: canReviewRequests,
+    staleTime: 30_000,
+    refetchInterval: 60_000,
+    // Yordamchi ko'rsatkich — xato bo'lsa menyu baribir ishlashi kerak
+    retry: false,
+  });
+
   const visibleGroups = NAV_GROUPS.map((group) => ({
     ...group,
     items: group.items.filter((item) => permissions.has(item.permission)),
@@ -146,7 +173,10 @@ export function Sidebar() {
 
   const showDashboard = permissions.has(PermissionCode.DASHBOARD_VIEW);
 
-  const renderItem = (item: NavItem, index: number) => (
+  const renderItem = (item: NavItem, index: number) => {
+    const badge = item.path === STAFF_REQUESTS_PATH ? pendingRequests : 0;
+
+    return (
     <li key={item.path} style={{ '--i': index } as CSSProperties}>
       <NavLink
         to={item.path}
@@ -170,20 +200,32 @@ export function Sidebar() {
             )}
             <span
               className={clsx(
-                'grid h-8 w-8 shrink-0 place-items-center rounded-lg transition',
+                'relative grid h-8 w-8 shrink-0 place-items-center rounded-lg transition',
                 isActive
                   ? 'bg-primary text-primary-content shadow-sm'
                   : 'bg-base-200/70 text-base-content/50 group-hover:text-primary'
               )}
             >
               <item.icon className="h-[18px] w-[18px]" />
+              {/* Menyu yig'ilgan holatda (md) matn ko'rinmaydi — o'sha yerda
+                  raqam o'rniga nuqta, aks holda hisoblagich umuman
+                  bilinmay qolardi. */}
+              {badge > 0 && (
+                <span className="absolute -right-0.5 -top-0.5 hidden h-2.5 w-2.5 rounded-full bg-warning ring-2 ring-base-100 md:block lg:hidden" />
+              )}
             </span>
             <span className="truncate md:hidden lg:inline">{t(item.labelKey)}</span>
+            {badge > 0 && (
+              <span className="badge badge-warning badge-sm ml-auto md:hidden lg:inline-flex">
+                {badge}
+              </span>
+            )}
           </>
         )}
       </NavLink>
     </li>
-  );
+    );
+  };
 
   return (
     <>
