@@ -13,6 +13,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.core.io.ByteArrayResource;
 import org.springframework.core.io.Resource;
+import uz.shinamagazin.api.dto.request.DebtFullPaymentRequest;
 import uz.shinamagazin.api.dto.request.DebtPaymentRequest;
 import uz.shinamagazin.api.dto.response.ApiResponse;
 import uz.shinamagazin.api.dto.response.DebtResponse;
@@ -153,7 +154,7 @@ public class DebtController {
     @RequiresPermission(PermissionCode.DEBTS_PAY)
     public ResponseEntity<ApiResponse<DebtResponse>> makeFullPayment(
             @PathVariable Long id,
-            @Valid @RequestBody DebtPaymentRequest request) {
+            @Valid @RequestBody DebtFullPaymentRequest request) {
 
         DebtResponse debt = debtService.makeFullPayment(id, request);
         return ResponseEntity.ok(ApiResponse.success("Qarz to'liq to'landi", debt));

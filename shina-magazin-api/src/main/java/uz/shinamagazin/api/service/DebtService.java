@@ -6,6 +6,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import uz.shinamagazin.api.dto.request.DebtFullPaymentRequest;
 import uz.shinamagazin.api.dto.request.DebtPaymentRequest;
 import uz.shinamagazin.api.dto.response.DebtResponse;
 import uz.shinamagazin.api.dto.response.PaymentResponse;
@@ -164,13 +165,25 @@ public class DebtService {
     }
 
     @Transactional
-    public DebtResponse makeFullPayment(Long debtId, DebtPaymentRequest request) {
+    /**
+     * Qarzni to'liq to'lash — summa qoldiqdan olinadi.
+     *
+     * <p>Chaqiruvchi summa yubormaydi ({@link DebtFullPaymentRequest} da u
+     * umuman yo'q): qoldiq server tomonda o'qiladi, ya'ni sahifa ochilgandan
+     * keyin boshqa xodim qisman to'lov qabul qilgan bo'lsa ham, bu yerda
+     * ANIQ qoldiq to'lanadi.
+     */
+    public DebtResponse makeFullPayment(Long debtId, DebtFullPaymentRequest request) {
         Debt debt = debtRepository.findById(debtId)
                 .orElseThrow(() -> new ResourceNotFoundException("Qarz", "id", debtId));
 
-        // Set amount to remaining amount for full payment
-        request.setAmount(debt.getRemainingAmount());
-        return makePayment(debtId, request);
+        DebtPaymentRequest payment = new DebtPaymentRequest();
+        payment.setAmount(debt.getRemainingAmount());
+        payment.setMethod(request.getMethod());
+        payment.setReferenceNumber(request.getReferenceNumber());
+        payment.setNotes(request.getNotes());
+
+        return makePayment(debtId, payment);
     }
 
     public BigDecimal getTotalActiveDebt() {
