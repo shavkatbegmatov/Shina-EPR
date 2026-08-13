@@ -86,7 +86,7 @@ Xuddi shu holat bekor qilingan (CANCELLED) sotuv uchun ham: 1 500 000 nasiya sot
 
 ## 4. Z-hisobot naqd qaytarimni IKKI MARTA ayiradi — kassa nazorati ishlamaydi
 
-- [ ] Tuzatildi
+- [x] Tuzatildi — yangi `SaleReturnRepository.sumCashRefundedNettedInPaid` so'rovi NAQD + shu smenadagi savdolarning qaytarimini (ular `paidAmount` orqali `cashReceived`da allaqachon aks etgan) aniqlaydi va `buildReport` uni `expectedCash`ga qaytarib qo'shadi; `cashRefunded` hisobotda to'liq ko'rsatilaveradi. Maskalovchi test real `createReturn` oqimiga o'tkazildi, +3 yangi ssenariy (same-shift to'liq qaytarim, KARTA savdo naqd qaytarimi, cross-shift). `CashShiftReportTest` 19/19.
 
 **Fayllar:**
 - `shina-magazin-api/src/main/java/uz/shinamagazin/api/service/CashShiftService.java:149-172` (`buildReport`)

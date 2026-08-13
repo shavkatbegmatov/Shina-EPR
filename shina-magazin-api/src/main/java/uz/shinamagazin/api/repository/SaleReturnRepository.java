@@ -48,6 +48,25 @@ public interface SaleReturnRepository extends JpaRepository<SaleReturn, Long> {
             WHERE r.shift.id = :shiftId""")
     BigDecimal sumCashRefundedByShift(@Param("shiftId") Long shiftId);
 
+    /**
+     * Shu smenadagi qaytarimlarning naqd hisobda ALLAQACHON aks etgan qismi.
+     *
+     * <p>Savdo NAQD bo'lib, AYNI SHU smenada qilingan bo'lsa,
+     * {@code createReturn} uning {@code paidAmount} ini kamaytirgan —
+     * {@code summarizeByPaymentMethod} dagi naqd tushum shu kamayishni o'zi
+     * ko'rsatadi. Z-hisobotda {@code cashRefunded} ni to'liq ayirishdan oldin
+     * shu qism qaytarib qo'shiladi, aks holda qaytarim IKKI MARTA ayirilib,
+     * kassir aynan qaytarim summasi miqdorida kamomadni yashira olardi.
+     */
+    @Query("""
+            SELECT COALESCE(SUM(r.cashRefunded), 0)
+            FROM SaleReturn r
+            JOIN r.sale s
+            WHERE r.shift.id = :shiftId
+              AND s.paymentMethod = uz.shinamagazin.api.enums.PaymentMethod.CASH
+              AND s.shift.id = :shiftId""")
+    BigDecimal sumCashRefundedNettedInPaid(@Param("shiftId") Long shiftId);
+
     @Query("SELECT COUNT(r) FROM SaleReturn r WHERE r.shift.id = :shiftId")
     long countByShift(@Param("shiftId") Long shiftId);
 

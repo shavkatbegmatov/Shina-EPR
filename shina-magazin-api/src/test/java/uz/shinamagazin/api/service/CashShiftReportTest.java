@@ -7,24 +7,32 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.jdbc.AutoConfigureTestDatabase;
 import org.springframework.boot.test.autoconfigure.orm.jpa.DataJpaTest;
 import uz.shinamagazin.api.dto.request.CloseShiftRequest;
+import uz.shinamagazin.api.dto.request.CreateSaleReturnRequest;
 import uz.shinamagazin.api.dto.request.OpenShiftRequest;
 import uz.shinamagazin.api.dto.response.ZReportResponse;
 import uz.shinamagazin.api.entity.CashShift;
 import uz.shinamagazin.api.entity.Expense;
+import uz.shinamagazin.api.entity.Product;
 import uz.shinamagazin.api.entity.Sale;
-import uz.shinamagazin.api.entity.SaleReturn;
+import uz.shinamagazin.api.entity.SaleItem;
 import uz.shinamagazin.api.entity.User;
 import uz.shinamagazin.api.enums.*;
 import uz.shinamagazin.api.exception.BadRequestException;
 import uz.shinamagazin.api.repository.CashShiftRepository;
+import uz.shinamagazin.api.repository.CustomerRepository;
+import uz.shinamagazin.api.repository.DebtRepository;
 import uz.shinamagazin.api.repository.ExpenseRepository;
+import uz.shinamagazin.api.repository.ProductRepository;
+import uz.shinamagazin.api.repository.SaleItemRepository;
 import uz.shinamagazin.api.repository.SaleRepository;
 import uz.shinamagazin.api.repository.SaleReturnRepository;
+import uz.shinamagazin.api.repository.StockMovementRepository;
 import uz.shinamagazin.api.repository.UserRepository;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
@@ -56,23 +64,48 @@ class CashShiftReportTest {
 
     @Autowired private CashShiftRepository shiftRepository;
     @Autowired private SaleRepository saleRepository;
+    @Autowired private SaleItemRepository saleItemRepository;
     @Autowired private UserRepository userRepository;
     @Autowired private SaleReturnRepository saleReturnRepository;
     @Autowired private ExpenseRepository expenseRepository;
+    @Autowired private ProductRepository productRepository;
+    @Autowired private StockMovementRepository stockMovementRepository;
+    @Autowired private CustomerRepository customerRepository;
+    @Autowired private DebtRepository debtRepository;
 
     private CashShiftService service;
+    private SaleReturnService returnService;
     private User cashier;
+    private Product product;
     private int invoiceSeq;
+
+    /** Hujjat raqami — H2'da `ON CONFLICT` yo'q, shuning uchun oddiy hisoblagich. */
+    private static class SequentialNumbers extends DocumentNumberService {
+        private int n = 0;
+        @Override public String nextSaleReturnNumber() { return "SR-" + (++n); }
+    }
 
     @BeforeEach
     void setUp() {
+        stockMovementRepository.deleteAll();
+        debtRepository.deleteAll();
+        saleReturnRepository.deleteAll();
         expenseRepository.deleteAll();
         saleRepository.deleteAll();
+        productRepository.deleteAll();
         shiftRepository.deleteAll();
+        customerRepository.deleteAll();
         userRepository.deleteAll();
 
         service = new CashShiftService(shiftRepository, userRepository, saleReturnRepository, expenseRepository);
+        // Qaytarimlar REAL servis orqali yuradi: u paidAmount'ni ham kamaytiradi.
+        // Repository bilan qo'lda qurilgan qaytarim bu mutatsiyani chetlab o'tib,
+        // ikki marta ayirish xatosini yashirgan edi.
+        returnService = new SaleReturnService(saleReturnRepository, saleRepository, saleItemRepository,
+                productRepository, stockMovementRepository, customerRepository, userRepository,
+                new SequentialNumbers(), service, debtRepository);
         cashier = userRepository.saveAndFlush(user("kassir"));
+        product = productRepository.saveAndFlush(product());
         invoiceSeq = 0;
     }
 
@@ -171,55 +204,96 @@ class CashShiftReportTest {
         assertThat(service.getReport(first.getId()).getCashReceived()).isEqualByComparingTo("100000");
     }
 
-    // Qaytarishda kassadan pul CHIQADI. Buni ayirmasa kassa kam chiqib,
-    // kassirga asossiz kamomad yozilardi — shuning uchun alohida test.
+    // ─── Qaytarimlar ───
+    // Qaytarishda kassadan pul CHIQADI — ayirmasa kassirga asossiz kamomad
+    // yozilardi. Lekin createReturn NAQD savdoning paidAmount'ini HAM
+    // kamaytiradi, shuning uchun shu smenadagi savdoning qaytarimi
+    // cashReceived'da allaqachon aks etgan bo'ladi: uni cashRefunded orqali
+    // yana ayirish qaytarimni IKKI MARTA hisoblab, halol kassirga soxta
+    // "ortiqcha", insofsiziga esa aynan shu summadagi o'g'irlikka niqob
+    // berardi. Testlar shuning uchun REAL createReturn orqali yuradi.
+
     @Test
-    @DisplayName("Naqd qaytarish kutilgan kassani kamaytiradi")
+    @DisplayName("Naqd qaytarish kutilgan kassani BIR marta kamaytiradi")
     void cashRefundReducesExpectedCash() {
         CashShift shift = openShift("100000");
-        sale(shift, PaymentMethod.CASH, "500000", "500000", "0", SaleStatus.COMPLETED);
+        Sale sold = soldWithItem(shift, PaymentMethod.CASH, "50000", 10, "500000", "0");
 
         assertThat(service.getReport(shift.getId()).getExpectedCash()).isEqualByComparingTo("600000");
 
-        saleReturnRepository.saveAndFlush(SaleReturn.builder()
-                .returnNumber("SR-TEST-1")
-                .sale(saleRepository.findAll().get(0))
-                .returnDate(LocalDateTime.now())
-                .refundAmount(new BigDecimal("150000"))
-                .debtReduced(BigDecimal.ZERO)
-                .cashRefunded(new BigDecimal("150000"))
-                .shift(shift)
-                .createdBy(cashier)
-                .build());
+        returnService.createReturn(sold.getId(), cashier.getId(), returnOf(sold, 3));
 
         ZReportResponse report = service.getReport(shift.getId());
         assertThat(report.getCashRefunded()).isEqualByComparingTo("150000");
         assertThat(report.getReturnsCount()).isEqualTo(1);
         assertThat(report.getExpectedCash())
-                .as("100 000 + 500 000 − 150 000")
+                .as("kassada fizik: 100 000 + 500 000 − 150 000")
                 .isEqualByComparingTo("450000");
+    }
+
+    @Test
+    @DisplayName("Shu smenada to'liq naqd qaytarim: kassa boshlang'ich holatga qaytadi, minusga emas")
+    void sameShiftFullRefundBalancesToFloat() {
+        CashShift shift = openShift("0");
+        Sale sold = soldWithItem(shift, PaymentMethod.CASH, "500000", 1, "500000", "0");
+
+        returnService.createReturn(sold.getId(), cashier.getId(), returnOf(sold, 1));
+
+        ZReportResponse report = service.getReport(shift.getId());
+        assertThat(report.getCashRefunded()).isEqualByComparingTo("500000");
+        assertThat(report.getExpectedCash())
+                .as("500 000 kirdi, 500 000 chiqdi — ilgari −500 000 chiqib, kassir "
+                        + "aynan shu summani o'zlashtirsa farq 0 bo'lib qolardi")
+                .isEqualByComparingTo("0");
+    }
+
+    @Test
+    @DisplayName("KARTA savdoning naqd qaytarimi kassadan to'liq ayiriladi")
+    void cardSaleCashRefundStillReducesExpectedCash() {
+        CashShift shift = openShift("500000");
+        Sale sold = soldWithItem(shift, PaymentMethod.CARD, "500000", 1, "500000", "0");
+
+        returnService.createReturn(sold.getId(), cashier.getId(), returnOf(sold, 1));
+
+        assertThat(service.getReport(shift.getId()).getExpectedCash())
+                .as("karta puli kassada emas, qaytarim esa kassadan chiqdi")
+                .isEqualByComparingTo("0");
+    }
+
+    @Test
+    @DisplayName("Boshqa smenada qilingan savdoning qaytarimi shu smenadan ayiriladi")
+    void crossShiftRefundIsSubtractedFromRefundingShift() {
+        CashShift first = openShift("0");
+        Sale sold = soldWithItem(first, PaymentMethod.CASH, "500000", 1, "500000", "0");
+        service.closeShift(cashier.getId(), close("500000", null));
+
+        CashShift second = openShift("600000");
+        returnService.createReturn(sold.getId(), cashier.getId(), returnOf(sold, 1));
+
+        assertThat(service.getReport(second.getId()).getExpectedCash())
+                .as("pul ikkinchi smenaning kassasidan chiqdi")
+                .isEqualByComparingTo("100000");
+        assertThat(shiftRepository.findById(first.getId()))
+                .get()
+                .satisfies(s -> assertThat(s.getExpectedCash())
+                        .as("yopilgan smenaning saqlangan hisobi o'zgarmaydi")
+                        .isEqualByComparingTo("500000"));
     }
 
     @Test
     @DisplayName("Qarzdan qaytarilgan qism kassaga ta'sir qilmaydi")
     void debtOnlyRefundDoesNotAffectCash() {
-        CashShift shift = openShift("0");
-        sale(shift, PaymentMethod.CASH, "500000", "500000", "0", SaleStatus.COMPLETED);
+        CashShift shift = openShift("200000");
+        // To'liq nasiyaga sotilgan: qaytarimda pul kassadan chiqmaydi, qarz kamayadi
+        Sale sold = soldWithItem(shift, PaymentMethod.CASH, "500000", 1, "0", "500000");
 
-        saleReturnRepository.saveAndFlush(SaleReturn.builder()
-                .returnNumber("SR-TEST-2")
-                .sale(saleRepository.findAll().get(0))
-                .returnDate(LocalDateTime.now())
-                .refundAmount(new BigDecimal("200000"))
-                .debtReduced(new BigDecimal("200000"))   // faqat qarz kamaydi
-                .cashRefunded(BigDecimal.ZERO)
-                .shift(shift)
-                .createdBy(cashier)
-                .build());
+        returnService.createReturn(sold.getId(), cashier.getId(), returnOf(sold, 1));
 
-        assertThat(service.getReport(shift.getId()).getExpectedCash())
+        ZReportResponse report = service.getReport(shift.getId());
+        assertThat(report.getCashRefunded()).isEqualByComparingTo("0");
+        assertThat(report.getExpectedCash())
                 .as("kassadan pul chiqmagan")
-                .isEqualByComparingTo("500000");
+                .isEqualByComparingTo("200000");
     }
 
     // ─── Naqd xarajatlar ───
@@ -380,6 +454,56 @@ class CashShiftReportTest {
                 .shift(shift)
                 .build();
         return saleRepository.saveAndFlush(sale);
+    }
+
+    /** Qatorli savdo — real {@code createReturn} orqali qaytarish uchun. */
+    private Sale soldWithItem(CashShift shift, PaymentMethod method, String unitPrice, int qty,
+                              String paid, String debt) {
+        BigDecimal total = new BigDecimal(unitPrice).multiply(BigDecimal.valueOf(qty));
+        Sale sale = Sale.builder()
+                .invoiceNumber("INV-" + (++invoiceSeq))
+                .saleDate(LocalDateTime.now())
+                .subtotal(total)
+                .totalAmount(total)
+                .paidAmount(new BigDecimal(paid))
+                .debtAmount(new BigDecimal(debt))
+                .paymentMethod(method)
+                .paymentStatus(new BigDecimal(debt).signum() > 0 ? PaymentStatus.PARTIAL : PaymentStatus.PAID)
+                .status(SaleStatus.COMPLETED)
+                .createdBy(cashier)
+                .shift(shift)
+                .build();
+        sale.getItems().add(SaleItem.builder()
+                .sale(sale)
+                .product(product)
+                .quantity(qty)
+                .unitPrice(new BigDecimal(unitPrice))
+                .discount(BigDecimal.ZERO)
+                .totalPrice(total)
+                .build());
+        return saleRepository.saveAndFlush(sale);
+    }
+
+    private CreateSaleReturnRequest returnOf(Sale sale, int quantity) {
+        Sale fresh = saleRepository.findByIdWithItems(sale.getId()).orElseThrow();
+        CreateSaleReturnRequest.Item item = new CreateSaleReturnRequest.Item();
+        item.setSaleItemId(fresh.getItems().get(0).getId());
+        item.setQuantity(quantity);
+
+        CreateSaleReturnRequest request = new CreateSaleReturnRequest();
+        request.setItems(List.of(item));
+        request.setReason("Mijoz qaytardi");
+        return request;
+    }
+
+    private static Product product() {
+        return Product.builder()
+                .sku("SKU-Z-1")
+                .name("Michelin Primacy 4")
+                .sellingPrice(new BigDecimal("500000"))
+                .quantity(100)
+                .active(true)
+                .build();
     }
 
     private Expense expense(CashShift shift, PaymentMethod method, String amount) {

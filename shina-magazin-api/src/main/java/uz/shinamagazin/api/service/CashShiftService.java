@@ -165,10 +165,18 @@ public class CashShiftService {
         // Qaytarishlarda va naqd xarajatlarda kassadan chiqqan pul AYIRILADI —
         // aks holda kassa kam chiqib, kassirga asossiz kamomad yozilardi.
         BigDecimal cashRefunded = saleReturnRepository.sumCashRefundedByShift(shift.getId());
+        // NAQD va shu smenadagi savdoning qaytarimi `paidAmount` orqali
+        // `cashReceived` da allaqachon aks etgan (createReturn uni kamaytiradi).
+        // Uni yana ayirish qaytarimni IKKI MARTA hisoblab, halol kassirga soxta
+        // "ortiqcha", insofsiziga esa aynan shu summadagi o'g'irlikka niqob
+        // berardi. Shu qism qaytarib qo'shiladi; cashRefunded esa hisobotda
+        // to'liq ko'rsatilaveradi.
+        BigDecimal refundsNettedInPaid = saleReturnRepository.sumCashRefundedNettedInPaid(shift.getId());
         BigDecimal cashExpenses = expenseRepository.sumCashByShift(shift.getId());
         BigDecimal expectedCash = shift.getOpeningFloat()
                 .add(cashReceived)
                 .subtract(cashRefunded)
+                .add(refundsNettedInPaid)
                 .subtract(cashExpenses);
 
         return ZReportResponse.builder()
