@@ -282,12 +282,13 @@ class StaffRegistrationServiceTest {
     }
 
     /**
-     * Vaqtinchalik parol Telegramga YOZILMAYDI: u chat tarixida abadiy
-     * qolardi va bot tokeni bor har kim o'qiy olardi.
+     * Kredensiallar Telegramga yuboriladi (do'kon qaroriga ko'ra), lekin
+     * xabar parolni almashtirish va xabarni o'chirish haqida ogohlantirishi
+     * SHART — parol chat tarixida qolib ketmasin.
      */
     @Test
-    @DisplayName("Tasdiqlash xabarida login bor, PAROL yo'q")
-    void approveNotifiesWithoutPassword() {
+    @DisplayName("Tasdiqlash xabarida login, parol va ogohlantirish bo'ladi")
+    void approveNotifiesWithCredentials() {
         StaffRegistrationRequest pending = pending("SELLER");
         pending.setTelegramChatId(555L);
         when(requestRepository.findById(1L)).thenReturn(Optional.of(pending));
@@ -298,7 +299,8 @@ class StaffRegistrationServiceTest {
         ArgumentCaptor<String> text = ArgumentCaptor.forClass(String.class);
         verify(telegramApiClient).sendMessage(eq(555L), text.capture(), any());
         assertThat(text.getValue()).contains("a.karimov");
-        assertThat(text.getValue()).doesNotContain("SirliParol123");
+        assertThat(text.getValue()).contains("SirliParol123");
+        assertThat(text.getValue()).contains("o'chirib tashlang");
     }
 
     @Test

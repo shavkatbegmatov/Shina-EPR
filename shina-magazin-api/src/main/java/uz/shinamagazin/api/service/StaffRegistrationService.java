@@ -221,27 +221,31 @@ public class StaffRegistrationService {
         log.info("Xodimlikka so'rov tasdiqlandi: {} ({}), rol: {}",
                 request.getFullName(), request.getPhone(), roleCode);
 
-        // Login yuboriladi, PAROL esa ATAYLAB yuborilmaydi.
+        // Login VA vaqtinchalik parol yuboriladi — do'kon shunday qaror qildi:
+        // parolni og'zaki yetkazish amalda noqulay.
         //
-        // Vaqtinchalik parol xodimga bir marta ko'rsatiladi va serverda ochiq
-        // saqlanmaydi. Uni Telegramga yozish chat tarixida abadiy qoldirardi
-        // (arizachining qurilmasida ham, Telegram serverida ham) va bot
-        // tokeni bor har kim uni o'qiy olardi. Xodim parolni og'zaki
-        // yetkazgani xavfsizroq.
-        String username = employee.getNewCredentials() != null
-                ? employee.getNewCredentials().getUsername() : null;
+        // Bu parol chat tarixida qoladi (arizachining qurilmasida ham,
+        // Telegram serverida ham). Ikki narsa xavfni cheklaydi: parol
+        // VAQTINCHALIK va birinchi kirishda majburan almashtiriladi
+        // (`mustChangePassword`), hamda xabarda uni o'chirish tavsiya etiladi.
+        var credentials = employee.getNewCredentials();
+        String username = credentials != null ? credentials.getUsername() : null;
+        String password = credentials != null ? credentials.getTemporaryPassword() : null;
+
         notifyApplicant(request, """
                 ✅ Arizangiz tasdiqlandi!
 
                 Lavozim: <b>%s</b>
                 Login: <b><code>%s</code></b>
+                Vaqtinchalik parol: <b><code>%s</code></b>
 
-                Parolni do'kon administratoridan oling — u xavfsizlik uchun \
-                bu yerga yuborilmaydi. Birinchi kirishda parolni o'zgartirasiz.
+                Kirish: %s/admin/login
 
-                Kirish: %s/admin/login"""
+                ⚠️ Birinchi kirishda parolni o'zgartirishingiz so'raladi. \
+                Shundan keyin bu xabarni o'chirib tashlang."""
                 .formatted(escapeHtml(employeeRequest.getPosition()),
                         escapeHtml(username == null ? "—" : username),
+                        escapeHtml(password == null ? "—" : password),
                         publicBaseUrl()));
 
         return employee;
