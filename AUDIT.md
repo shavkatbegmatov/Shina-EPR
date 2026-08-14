@@ -106,7 +106,7 @@ Xuddi shu holat bekor qilingan (CANCELLED) sotuv uchun ham: 1 500 000 nasiya sot
 
 ## 5. Qaytarimdan keyin sotuvni bekor qilish omborni IKKI MARTA to'ldiradi
 
-- [ ] Tuzatildi
+- [x] Tuzatildi — `cancelSale` endi REFUNDED sotuvni ("to'liq qaytarilgan") va birorta qaytarishi bor sotuvni (`saleReturnRepository.existsBySaleId`) rad etadi; state-machine bir tomonlama yakunlandi (`createReturn` CANCELLED'ni avvaldan rad etardi). Qisman qaytarilgan sotuv faqat qolgan tovarlarni qaytarish orqali yopiladi — bu pul taqsimotini ham to'g'ri saqlaydi. REFUNDED blok hisobotdagi ikki marta jazolashni (revenue'dan chiqib, returnsTotal'da qolish) ham yopadi. Testlar: `SaleCancelServiceTest` +2 — audit ssenariysi real qaytarish oqimi bilan (10→6→8, bekor rad → 8 qoladi, 12 emas).
 
 **Fayllar:**
 - `shina-magazin-api/src/main/java/uz/shinamagazin/api/service/SaleService.java:250-292` (`cancelSale`, guard faqat 255-qatorda)

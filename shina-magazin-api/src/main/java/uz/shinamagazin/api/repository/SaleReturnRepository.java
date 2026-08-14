@@ -17,6 +17,9 @@ public interface SaleReturnRepository extends JpaRepository<SaleReturn, Long> {
     @EntityGraph(attributePaths = {"sale", "createdBy"})
     List<SaleReturn> findBySaleIdOrderByReturnDateDesc(Long saleId);
 
+    /** Sotuvda birorta qaytarish borligini tekshirish (bekor qilish guardi uchun). */
+    boolean existsBySaleId(Long saleId);
+
     /**
      * Savdo qatorlari bo'yicha allaqachon qaytarilgan miqdorlar.
      *

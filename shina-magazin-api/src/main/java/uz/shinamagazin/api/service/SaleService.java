@@ -36,6 +36,7 @@ public class SaleService {
     private final UserRepository userRepository;
     private final DebtRepository debtRepository;
     private final StockMovementRepository stockMovementRepository;
+    private final SaleReturnRepository saleReturnRepository;
     private final StaffNotificationService staffNotificationService;
     private final NotificationService customerNotificationService;
     private final SettingsService settingsService;
@@ -254,6 +255,24 @@ public class SaleService {
 
         if (sale.getStatus() == SaleStatus.CANCELLED) {
             throw new BadRequestException("Bu sotuv allaqachon bekor qilingan");
+        }
+
+        // Qaytarish boshlangan sotuvni bekor qilib bo'lmaydi — state-machine
+        // bir tomonlama (createReturn ham CANCELLED sotuvni rad etadi).
+        // Busiz ombor IKKI MARTA to'ldirilardi: restoreStock qaytarilgan
+        // donalarni allaqachon kirim qilgan, quyidagi tsikl esa to'liq asl
+        // miqdorni yana qo'shardi (4 tadan 2 tasi qaytarilgan sotuvni bekor
+        // qilish 10 donalik omborni 12 taga chiqarardi). REFUNDED sotuvni
+        // bekor qilish esa hisobotda daromadni ikki marta jazolardi: sotuv
+        // revenue'dan chiqib, qaytarimlari returnsTotal'da qolaverardi.
+        if (sale.getStatus() == SaleStatus.REFUNDED) {
+            throw new BadRequestException(
+                    "Bu sotuv to'liq qaytarilgan — endi bekor qilib bo'lmaydi");
+        }
+        if (saleReturnRepository.existsBySaleId(id)) {
+            throw new BadRequestException(
+                    "Bu sotuvda qaytarishlar bor — uni bekor qilib bo'lmaydi. "
+                            + "Qolgan tovarlarni ham qaytarish orqali rasmiylashtiring");
         }
 
         User currentUser = getCurrentUser();
