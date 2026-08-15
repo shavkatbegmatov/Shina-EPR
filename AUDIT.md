@@ -183,5 +183,5 @@ Dastlab tekshiruvsiz qolgan 19 topilma (18 noyob — purchase-return ikki finder
 
 - Asosiy 5 klaster qator raqamlari `c576d5d`, ikkinchi bosqich tekshiruvi `e217939` holatiga tegishli.
 - Har ikkala bosqichda ham tekshiruvchi agent kodni, chaqiruvchilarni, DB constraint'larni va mavjud testlarni o'qib chiqib topilmani RAD ETISHGA harakat qilgan.
-- Tasdiqlangan 5 asosiy klaster tuzatilgan: 1fdaa48 (№3), 5895e93 (№4), aad43a0 (№2), 732fdf1 (№1), 673b779 (№5); V38 tozalash migratsiyasi — e217939.
+- Tasdiqlangan 5 asosiy klaster tuzatilgan: 1fdaa48 (№3), 5895e93 (№4), aad43a0 (№2), 732fdf1 (№1), 673b779 (№5); tozalash migratsiyasi — e217939 (dastlab V38 sifatida qo'shilib, V38 raqami band bo'lgani uchun keyin V40 ga ko'chirilgan).
 - Ikkinchi bosqich uchun tavsiya etilgan tartib: H1 (POS manfiy summa — pul), H3 (qarz to'lovlari Z-hisobotda — o'g'irlik niqobi), H2 (purchase return — supplier ikki kredit), keyin M1 (lockout DoS) va qolgan MEDIUM'lar.

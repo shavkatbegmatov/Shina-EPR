@@ -1,5 +1,5 @@
 import api from './axios';
-import type { ApiResponse, Debt, DebtPaymentRequest, DebtStatus, PagedResponse, Payment } from '../types';
+import type { ApiResponse, Debt, DebtPaymentRequest, DebtPaymentStats, DebtStatus, PagedResponse, Payment } from '../types';
 import { createExportApi } from './export.utils';
 
 export interface DebtFilters {
@@ -64,6 +64,12 @@ export const debtsApi = {
 
   getTotalActiveDebt: async (): Promise<number> => {
     const response = await api.get<ApiResponse<number>>('/v1/debts/total');
+    return response.data.data;
+  },
+
+  /** "Bugun/hafta/oy to'landi" — haqiqiy to'lov yozuvlaridan (server hisoblaydi). */
+  getPaymentStats: async (): Promise<DebtPaymentStats> => {
+    const response = await api.get<ApiResponse<DebtPaymentStats>>('/v1/debts/stats/payments');
     return response.data.data;
   },
 

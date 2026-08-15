@@ -32,6 +32,19 @@ public interface PaymentRepository extends JpaRepository<Payment, Long> {
     BigDecimal getTodayPaymentsTotal(@Param("start") LocalDateTime start, @Param("end") LocalDateTime end);
 
     /**
+     * Davr ichida qabul qilingan qarz to'lovlari yig'indisi — Qarzlar
+     * sahifasidagi "bugun/hafta/oy to'landi" statistikasi uchun. Ilgari bu
+     * raqamlar to'lovlardan emas, PAID qarzlarning yaratilgan sanasi va asl
+     * summasidan hisoblanardi: bugun undirilgan eski qarz 0 ko'rinar, qisman
+     * to'lovlar umuman sanalmas edi.
+     */
+    @Query("""
+            SELECT COALESCE(SUM(p.amount), 0) FROM Payment p
+            WHERE p.paymentType = uz.shinamagazin.api.enums.PaymentType.DEBT_PAYMENT
+              AND p.paymentDate >= :start AND p.paymentDate < :end""")
+    BigDecimal sumDebtPaymentsBetween(@Param("start") LocalDateTime start, @Param("end") LocalDateTime end);
+
+    /**
      * Shu smenada QABUL QILINGAN naqd qarz to'lovlari — kassaga fizik tushgan
      * pul. Z-hisobotda expectedCash'ga QO'SHILADI: busiz qarz puli kassada
      * turib hisobotda ko'rinmas, o'zlashtirilsa aniqlanmas edi.

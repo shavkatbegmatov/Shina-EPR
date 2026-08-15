@@ -16,7 +16,7 @@ UPDATE debts
 SET remaining_amount = 0,
     status = 'CANCELLED',
     notes = LEFT(COALESCE(notes || '; ', '')
-                || 'V38 tozalash: sotuv qaytarilgan yoki bekor qilingan', 500),
+                || 'V40 tozalash: sotuv qaytarilgan yoki bekor qilingan', 500),
     updated_at = CURRENT_TIMESTAMP
 WHERE status IN ('ACTIVE', 'OVERDUE')
   AND remaining_amount > 0
@@ -31,7 +31,7 @@ SET status = CASE
         WHEN (SELECT GREATEST(s.debt_amount, 0) FROM sales s WHERE s.id = debts.sale_id) = 0
         THEN 'CANCELLED' ELSE status END,
     notes = LEFT(COALESCE(notes || '; ', '')
-                || 'V38 tozalash: qaytarishlar bilan sinxronlandi', 500),
+                || 'V40 tozalash: qaytarishlar bilan sinxronlandi', 500),
     updated_at = CURRENT_TIMESTAMP,
     remaining_amount = (SELECT GREATEST(s.debt_amount, 0) FROM sales s WHERE s.id = debts.sale_id)
 WHERE status IN ('ACTIVE', 'OVERDUE')

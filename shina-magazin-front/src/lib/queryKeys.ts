@@ -178,6 +178,8 @@ export const queryKeys = {
     /** Statistika uchun sahifalanmagan to'liq ro'yxat. */
     forStats: () => ['debts', 'for-stats'] as const,
     totalActive: () => ['debts', 'total-active'] as const,
+    /** To'lov statistikasi (bugun/hafta/oy) — haqiqiy to'lovlardan. */
+    paymentStats: () => ['debts', 'payment-stats'] as const,
     payments: (debtId: number) => ['debts', 'payments', debtId] as const,
     detail: (id: number) => ['debts', 'detail', id] as const,
   },

@@ -16,6 +16,7 @@ import org.springframework.core.io.Resource;
 import uz.shinamagazin.api.dto.request.DebtFullPaymentRequest;
 import uz.shinamagazin.api.dto.request.DebtPaymentRequest;
 import uz.shinamagazin.api.dto.response.ApiResponse;
+import uz.shinamagazin.api.dto.response.DebtPaymentStatsResponse;
 import uz.shinamagazin.api.dto.response.DebtResponse;
 import uz.shinamagazin.api.dto.response.PagedResponse;
 import uz.shinamagazin.api.dto.response.PaymentResponse;
@@ -89,6 +90,14 @@ public class DebtController {
         } catch (Exception e) {
             throw new RuntimeException("Eksport qilishda xatolik: " + e.getMessage(), e);
         }
+    }
+
+    @GetMapping("/stats/payments")
+    @Operation(summary = "Debt payment stats",
+            description = "Qarz to'lovlari statistikasi (bugun/hafta/oy) — haqiqiy to'lovlardan")
+    @RequiresPermission(PermissionCode.DEBTS_VIEW)
+    public ResponseEntity<ApiResponse<DebtPaymentStatsResponse>> getPaymentStats() {
+        return ResponseEntity.ok(ApiResponse.success(debtService.getPaymentStats()));
     }
 
     @GetMapping("/active")

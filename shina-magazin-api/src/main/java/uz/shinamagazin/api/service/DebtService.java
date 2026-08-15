@@ -8,6 +8,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import uz.shinamagazin.api.dto.request.DebtFullPaymentRequest;
 import uz.shinamagazin.api.dto.request.DebtPaymentRequest;
+import uz.shinamagazin.api.dto.response.DebtPaymentStatsResponse;
 import uz.shinamagazin.api.dto.response.DebtResponse;
 import uz.shinamagazin.api.dto.response.PaymentResponse;
 import uz.shinamagazin.api.entity.Customer;
@@ -207,6 +208,26 @@ public class DebtService {
         payment.setNotes(request.getNotes());
 
         return makePayment(debtId, payment);
+    }
+
+    /**
+     * "Bugun/hafta/oy to'landi" — haqiqiy to'lov yozuvlaridan.
+     *
+     * <p>Ilgari frontend buni PAID qarzlarning {@code createdAt} va
+     * {@code originalAmount} idan hisoblardi: bugun undirilgan eski qarz 0
+     * ko'rinar, qisman to'lovlar umuman sanalmas, to'liq to'langan qarzning
+     * butun summasi esa yaratilgan davriga yozilardi.
+     */
+    public DebtPaymentStatsResponse getPaymentStats() {
+        LocalDate today = LocalDate.now();
+        LocalDateTime end = today.plusDays(1).atStartOfDay();
+        return DebtPaymentStatsResponse.builder()
+                .paidToday(paymentRepository.sumDebtPaymentsBetween(today.atStartOfDay(), end))
+                .paidThisWeek(paymentRepository.sumDebtPaymentsBetween(
+                        today.with(java.time.DayOfWeek.MONDAY).atStartOfDay(), end))
+                .paidThisMonth(paymentRepository.sumDebtPaymentsBetween(
+                        today.withDayOfMonth(1).atStartOfDay(), end))
+                .build();
     }
 
     public BigDecimal getTotalActiveDebt() {

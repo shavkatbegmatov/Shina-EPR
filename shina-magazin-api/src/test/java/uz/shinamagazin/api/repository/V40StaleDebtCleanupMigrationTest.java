@@ -19,7 +19,7 @@ import java.time.LocalDateTime;
 import static org.assertj.core.api.Assertions.assertThat;
 
 /**
- * V38 migratsiyasi: fantom qarzlarni tozalash.
+ * V40 migratsiyasi: fantom qarzlarni tozalash.
  *
  * <p>1fdaa48 tuzatilishidan OLDIN qaytarish/bekor qilish {@code debts}
  * qatoriga tegmasdi — bazada qaytarilgan/bekor qilingan sotuvlarning
@@ -30,7 +30,7 @@ import static org.assertj.core.api.Assertions.assertThat;
         "spring.flyway.enabled=false",
         "spring.jpa.hibernate.ddl-auto=create-drop",
         "spring.jpa.properties.hibernate.dialect=org.hibernate.dialect.H2Dialect",
-        "spring.datasource.url=jdbc:h2:mem:v38-cleanup;MODE=PostgreSQL;DB_CLOSE_DELAY=-1;DB_CLOSE_ON_EXIT=false;NON_KEYWORDS=VALUE",
+        "spring.datasource.url=jdbc:h2:mem:v40-cleanup;MODE=PostgreSQL;DB_CLOSE_DELAY=-1;DB_CLOSE_ON_EXIT=false;NON_KEYWORDS=VALUE",
         "spring.datasource.driver-class-name=org.h2.Driver",
         "spring.datasource.username=sa",
         "spring.datasource.password=",
@@ -38,7 +38,7 @@ import static org.assertj.core.api.Assertions.assertThat;
         "logging.level.org.hibernate.SQL=OFF"
 })
 @AutoConfigureTestDatabase(replace = AutoConfigureTestDatabase.Replace.NONE)
-class V38StaleDebtCleanupMigrationTest {
+class V40StaleDebtCleanupMigrationTest {
 
     @Autowired private SaleRepository saleRepository;
     @Autowired private DebtRepository debtRepository;
@@ -57,7 +57,7 @@ class V38StaleDebtCleanupMigrationTest {
         userRepository.deleteAll();
 
         User u = new User();
-        u.setUsername("kassir-v38");
+        u.setUsername("kassir-v40");
         u.setPassword("{noop}x");
         u.setFullName("Kassir");
         u.setRole(Role.SELLER);
@@ -89,7 +89,7 @@ class V38StaleDebtCleanupMigrationTest {
                 .satisfies(d -> {
                     assertThat(d.getRemainingAmount()).isEqualByComparingTo("0");
                     assertThat(d.getStatus()).isEqualTo(DebtStatus.CANCELLED);
-                    assertThat(d.getNotes()).contains("V38");
+                    assertThat(d.getNotes()).contains("V40");
                 });
         assertThat(reload(refundedSaleDebt))
                 .satisfies(d -> {
@@ -145,7 +145,7 @@ class V38StaleDebtCleanupMigrationTest {
         entityManager.unwrap(org.hibernate.Session.class).doWork(conn -> {
             try (Reader reader = new InputStreamReader(
                     getClass().getResourceAsStream(
-                            "/db/migration/V38__cleanup_stale_debts_for_voided_sales.sql"),
+                            "/db/migration/V40__cleanup_stale_debts_for_voided_sales.sql"),
                     StandardCharsets.UTF_8)) {
                 org.h2.tools.RunScript.execute(conn, reader);
             } catch (java.io.IOException e) {
@@ -163,7 +163,7 @@ class V38StaleDebtCleanupMigrationTest {
         BigDecimal debt = new BigDecimal(debtAmount);
         BigDecimal total = debt.abs().max(new BigDecimal("500000"));
         return saleRepository.saveAndFlush(Sale.builder()
-                .invoiceNumber("INV-V38-" + System.nanoTime())
+                .invoiceNumber("INV-V40-" + System.nanoTime())
                 .customer(buyer)
                 .saleDate(LocalDateTime.now())
                 .subtotal(total)

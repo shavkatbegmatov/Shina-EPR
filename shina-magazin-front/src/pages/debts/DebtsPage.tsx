@@ -254,36 +254,31 @@ export function DebtsPage() {
       .sort((a, b) => b.daysOverdue - a.daysOverdue);
   }, [allDebts]);
 
+  // "To'landi" statistikasi SERVERDAN — haqiqiy to'lov yozuvlaridan.
+  // Ilgari PAID qarzlarning createdAt/originalAmount'idan hisoblanardi:
+  // bugun undirilgan eski qarz 0 ko'rinar, qisman to'lovlar umuman
+  // sanalmas, to'liq to'langan qarzning butun summasi esa yaratilgan
+  // davriga yozilardi.
+  const paymentStatsQuery = useQuery({
+    queryKey: queryKeys.debts.paymentStats(),
+    queryFn: debtsApi.getPaymentStats,
+  });
+
   // Statistics calculations
   const stats = useMemo(() => {
     const activeDebts = allDebts.filter(d => d.status !== 'PAID' && d.status !== 'CANCELLED');
-    const paidDebts = allDebts.filter(d => d.status === 'PAID');
-
-    const today = new Date();
-    const startOfDay = new Date(today.getFullYear(), today.getMonth(), today.getDate());
-    const startOfWeek = new Date(today);
-    startOfWeek.setDate(today.getDate() - today.getDay());
-    const startOfMonth = new Date(today.getFullYear(), today.getMonth(), 1);
-
-    // Calculate paid amounts by period (based on debt creation dates)
-    const paidToday = paidDebts.filter(d => new Date(d.createdAt) >= startOfDay)
-      .reduce((sum, d) => sum + d.originalAmount, 0);
-    const paidThisWeek = paidDebts.filter(d => new Date(d.createdAt) >= startOfWeek)
-      .reduce((sum, d) => sum + d.originalAmount, 0);
-    const paidThisMonth = paidDebts.filter(d => new Date(d.createdAt) >= startOfMonth)
-      .reduce((sum, d) => sum + d.originalAmount, 0);
 
     return {
       totalActiveDebt: activeDebts.reduce((sum, d) => sum + d.remainingAmount, 0),
       totalDebtsCount: activeDebts.length,
       overdueCount: activeDebts.filter(d => d.overdue).length,
       overdueAmount: activeDebts.filter(d => d.overdue).reduce((sum, d) => sum + d.remainingAmount, 0),
-      paidToday,
-      paidThisWeek,
-      paidThisMonth,
+      paidToday: paymentStatsQuery.data?.paidToday ?? 0,
+      paidThisWeek: paymentStatsQuery.data?.paidThisWeek ?? 0,
+      paidThisMonth: paymentStatsQuery.data?.paidThisMonth ?? 0,
       topDebtors: customerDebtSummaries.slice(0, 5),
     };
-  }, [allDebts, customerDebtSummaries]);
+  }, [allDebts, customerDebtSummaries, paymentStatsQuery.data]);
 
   // Filtered debts for search
   const filteredDebts = useMemo(() => {

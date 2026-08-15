@@ -704,6 +704,13 @@ export interface SaleRequest {
 
 // Debt Types
 export type DebtStatus = 'ACTIVE' | 'PAID' | 'OVERDUE' | 'CANCELLED';
+
+/** "Bugun/hafta/oy to'landi" — haqiqiy to'lov yozuvlaridan (server hisoblaydi). */
+export interface DebtPaymentStats {
+  paidToday: number;
+  paidThisWeek: number;
+  paidThisMonth: number;
+}
 export type PaymentType = 'SALE_PAYMENT' | 'DEBT_PAYMENT';
 
 export interface Debt {
