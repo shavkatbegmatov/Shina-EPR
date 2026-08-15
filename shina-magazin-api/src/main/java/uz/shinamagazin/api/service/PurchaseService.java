@@ -22,6 +22,7 @@ import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.YearMonth;
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 
 @Service
@@ -307,6 +308,14 @@ public class PurchaseService {
         User currentUser = getCurrentUser();
         String returnNumber = generateReturnNumber();
 
+        // Boshqa (hali yakunlanmagan) qaytarishlarda band qilingan miqdorlar.
+        // Faqat receivedQuantity bilan solishtirish yetarli emas edi: u faqat
+        // COMPLETE paytida kamayadi, ya'ni to'liq miqdorga bir nechta parallel
+        // PENDING qaytarish yaratib, hammasini yakunlash mumkin edi —
+        // receivedQuantity manfiyga tushar, ta'minotchi balansi esa har
+        // biriga alohida kreditlanar edi.
+        Map<Long, Long> outstanding = purchaseReturnRepository.outstandingReturnQuantities(purchaseId);
+
         // Calculate refund amount and validate quantities
         BigDecimal refundAmount = BigDecimal.ZERO;
         for (ReturnItemRequest itemRequest : request.getItems()) {
@@ -315,9 +324,14 @@ public class PurchaseService {
                     .findFirst()
                     .orElseThrow(() -> new BadRequestException("Mahsulot xaridda mavjud emas: " + itemRequest.getProductId()));
 
-            if (itemRequest.getQuantity() > purchaseItem.getReceivedQuantity()) {
-                throw new BadRequestException("Qaytarish miqdori qabul qilingan miqdordan (" +
-                        purchaseItem.getReceivedQuantity() + ") katta bo'lishi mumkin emas");
+            long alreadyClaimed = outstanding.getOrDefault(purchaseItem.getProduct().getId(), 0L);
+            long available = purchaseItem.getReceivedQuantity() - alreadyClaimed;
+            if (itemRequest.getQuantity() > available) {
+                throw new BadRequestException(String.format(
+                        "\"%s\" uchun qaytarish mumkin bo'lgan miqdor: %d "
+                                + "(qabul qilingan: %d, boshqa qaytarishlarda band: %d)",
+                        purchaseItem.getProduct().getName(), Math.max(0, available),
+                        purchaseItem.getReceivedQuantity(), alreadyClaimed));
             }
 
             BigDecimal itemRefund = purchaseItem.getUnitPrice()
@@ -387,6 +401,26 @@ public class PurchaseService {
 
         User currentUser = getCurrentUser();
         PurchaseOrder purchase = purchaseReturn.getPurchaseOrder();
+
+        // Yakunlashdan OLDIN barcha qatorlar qayta tekshiriladi: guard'dan
+        // avval yaratilgan ustma-ust qaytarishlar (yoki oradagi boshqa
+        // yakunlangan qaytarish) receivedQuantity'ni manfiyga tushirib,
+        // ta'minotchi balansini ikki marta kreditlashi mumkin edi.
+        for (PurchaseReturnItem returnItem : purchaseReturn.getItems()) {
+            PurchaseOrderItem purchaseItem = purchase.getItems().stream()
+                    .filter(i -> i.getProduct().getId().equals(returnItem.getProduct().getId()))
+                    .findFirst()
+                    .orElse(null);
+            if (purchaseItem != null
+                    && returnItem.getReturnedQuantity() > purchaseItem.getReceivedQuantity()) {
+                throw new BadRequestException(String.format(
+                        "\"%s\" uchun qaytarish miqdori (%d) qabul qilingan qoldiqdan (%d) ko'p — "
+                                + "bu miqdor boshqa qaytarishda allaqachon qaytarilgan",
+                        returnItem.getProduct().getName(),
+                        returnItem.getReturnedQuantity(),
+                        purchaseItem.getReceivedQuantity()));
+            }
+        }
 
         // Process each return item
         for (PurchaseReturnItem returnItem : purchaseReturn.getItems()) {
