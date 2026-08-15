@@ -123,48 +123,65 @@ Xuddi shu holat bekor qilingan (CANCELLED) sotuv uchun ham: 1 500 000 nasiya sot
 
 ---
 
-# TEKSHIRUVSIZ QOLGAN EHTIMOLIY TOPILMALAR (19)
+# QOLGAN TOPILMALAR — ADVERSARIAL TEKSHIRUV NATIJALARI
 
-Bular qidiruvchi agentlar tomonidan topilgan, lekin adversarial tekshiruvdan o'tkazilmagan (sig'im chegarasi). Har birini tuzatishdan oldin tasdiqlash kerak.
+Dastlab tekshiruvsiz qolgan 19 topilma (18 noyob — purchase-return ikki finder tomonidan topilgan edi) ikkinchi bosqichda har biri alohida tekshirildi: agent kodni, chaqiruvchilarni, guard'larni va testlarni o'qib rad etishga harakat qildi. Natija: **15 TASDIQLANDI, 2 QISMAN TUZATILGAN (qoldiq bor), 1 RAD ETILDI.**
 
-## HIGH (1)
+## TASDIQLANGAN — HIGH (3)
 
-| Fayl | Muammo |
-|---|---|
-| `shina-magazin-front/src/pages/sales/POSPage.tsx:532` | Savat darajasidagi summa-chegirma faqat kiritish paytida clamp qilinadi (`Math.min(subtotal, ...)` onChange ichida) — keyin tovar olib tashlansa chegirma subtotal'dan katta bo'lib qoladi va **manfiy jami summa** bilan sotuv o'tkazish mumkin |
+### H1. POS: manfiy jami summa bilan sotuv o'tkazish mumkin
+- [ ] Tuzatildi
 
-## MEDIUM (13)
+`shina-magazin-front/src/pages/sales/POSPage.tsx:532`, `store/cartStore.ts:56-112`, `...api/service/SaleService.java:173-205`. Chegirma faqat onChange'da clamp qilinadi; `removeItem/updateQuantity` chegirmaga tegmaydi, `getTotal()` da floor yo'q, submit'da guard yo'q. Backend ham himoyasiz: `SaleRequest.discountAmount` faqat `@DecimalMin("0")`, `SaleService` da `discount ≤ subtotal` / `totalAmount ≥ 0` tekshiruvi yo'q — manfiy jami bilan COMPLETED/PAID sotuv saqlanadi, revenue/Z-hisobot/dashboard buziladi. **Tuzatish:** savat o'zgarganda chegirmani qayta clamp qilish + submit'da manfiy jami blok + backend'da `discountAmount ≤ subtotal` validatsiya.
 
-| Fayl | Muammo |
-|---|---|
-| `...api/service/LoginAttemptService.java:104` | Lockout paytidagi urinishlar ham yangi xato sifatida sanaladi — 30 daqiqalik bloklash **cheksiz o'z-o'zini uzaytiradi**, to'g'ri parol bilan ham |
-| `...api/service/AuthService.java:140` | Refresh endpoint HAR QANDAY imzolangan JWT'ni qabul qiladi (access token, customer token, sessiyasi bekor qilingan token) — session-tekshirmaydigan WebSocket interceptor bilan birga session revocation'ni chetlab o'tadi |
-| `...api/security/CustomerUserDetailsService.java:21` | Deaktivatsiya qilingan mijozlar (active=false) portalga kirishda davom etadi: faqat login active flag'ni tekshiradi, customer access tokenlar refresh token vazifasini ham bajaradi |
-| `...api/service/PurchaseService.java:318` | Ustma-ust purchase return'lar aniqlanmaydi: miqdor faqat yaratishda tekshiriladi — ikkitasini complete qilish `receivedQuantity`, `totalAmount`, `paidAmount` ni manfiyga tushiradi va supplier balansini ikki marta kreditlaydi (ikki finder mustaqil topdi) |
-| `...api/service/CashShiftService.java:131` | CLOSED smena uchun Z-hisobot `expectedCash` ni jonli ma'lumotdan qayta hisoblaydi — yonida ko'rsatilgan saqlangan `difference` bilan zid kelishi mumkin |
-| `...api/service/TelegramRegistrationService.java:194` | Telegram chat allaqachon boshqa mijozga bog'langan bo'lsa, contact-registratsiya jimgina crash bo'ladi |
-| `...api/resources/db/demo/demo-cleanup.sql:187` | Demo-cleanup eski demo-prefiksga mos telefonli **real xodimlar va hujjatsiz mijozlarni** o'chirib yuborishi mumkin |
-| `...api/service/CashShiftService.java:169` | Z-hisobot `expectedCash` naqd qarz to'lovlarini hisobga olmaydi — kassa solishtirish tizimli noto'g'ri |
-| `shina-magazin-front/src/shop/data/useCatalog.ts:107` | Storefront tovar sahifasi katalogning birinchi 200 tasidan tashqaridagi har qanday real tovar uchun "topilmadi" ko'rsatadi |
-| `shina-magazin-front/src/pages/debts/DebtsPage.tsx:201` | Qarz to'lovi faqat debts cache'ni invalidatsiya qiladi — mijoz balansi, dashboard va hisobotlar eskirgan qoladi |
-| `shina-magazin-front/src/pages/suppliers/PurchaseFormModal.tsx:306` | "To'langan summa" maydoni jami summadan katta (yoki manfiy) qiymatni yuborishga ruxsat beradi, backend tekshirmasdan saqlaydi |
-| `shina-magazin-front/src/pages/debts/DebtsPage.tsx:267` | "Bugun/hafta/oy to'landi" statistikasi haqiqiy to'lovlardan emas, qarzning yaratilgan sanasi va asl summasidan hisoblanadi |
+### H2. Ustma-ust purchase return'lar — supplier ikki marta kreditlanadi (medium'dan ko'tarildi)
+- [ ] Tuzatildi
 
-## LOW (5)
+`...api/service/PurchaseService.java:318,362,384,404,436-448`. Yangi return faqat `receivedQuantity` ga qarab tekshiriladi, u esa faqat COMPLETE paytida kamayadi; PENDING/APPROVED return'lar yig'indisi hisobga olinmaydi (`SaleReturnRepository.returnedQuantitiesBySale` ekvivalenti yo'q). To'liq miqdorga ikkita PENDING return yaratib, ikkalasini complete qilish mumkin: `receivedQuantity`/`totalAmount` manfiyga tushadi (DB CHECK yo'q), `SupplierService.updateBalance` ikki marta debetlanadi. Yagona to'siq — GLOBAL product stock ≥ 0, boshqa partiyalardan zaxira bo'lsa u ham o'tadi. Purchase return uchun birorta test yo'q. **Tuzatish:** createReturn'da mavjud return'lar yig'indisini ayirish + completeReturn'da qayta validatsiya (sale-return guard'iga o'xshash).
 
-| Fayl | Muammo |
-|---|---|
-| `...api/service/StaffNotificationService.java:131` | WebSocket bildirishnoma tranzaksiya ichida yuboriladi — rollback bo'lsa "sharpa" bildirishnomalar |
-| `...api/security/SimpleRateLimiter.java:135` | Rate-limiter eviction (30 min) Telegram contact oynasidan (60 min) qisqa — e'lon qilingan 1 soatlik blok ~30 daqiqada ochiladi |
-| `...api/resources/db/demo/demo-seed.sql:109` | Demo-seed mavjud zaxiradan ko'p sotuvlar yaratadi va product quantity'ni to'g'irlamaydi — demo ombor ledgeri ichki ziddiyatli |
-| `shina-magazin-front/src/pages/sales/SalesPage.tsx:473` | Mobil kartada cancel tugmasi SALES_REFUND ortida, desktop va amal esa SALES_UPDATE talab qiladi |
-| `shina-magazin-front/src/pages/expenses/ExpensesPage.tsx:257` | `erp.reports.startDate` / `erp.reports.endDate` i18n kalitlari ikkala lokalda ham yo'q — xom kalitlar label sifatida ko'rinadi |
+### H3. Naqd qarz to'lovlari Z-hisobotga umuman tushmaydi (medium'dan ko'tarildi)
+- [ ] Tuzatildi
+
+`...api/entity/Payment.java` (shift maydoni YO'Q), `...api/service/DebtService.java:174`, `CashShiftService.buildReport`. `makePayment` naqd to'lovni hech qanday smenaga bog'lamaydi — kassaga tushgan qarz puli `expectedCash`da ko'rinmaydi (o'zlashtirish aniqlanmaydi). Yagona iz — `sale.paidAmount` oshishi, u esa noto'g'ri smenani (sotuv qilingan, ehtimol yopilgan smenani) kreditlaydi va KARTA to'lovlarda ham ishlab fantom kamomad yasaydi. **Tuzatish:** `Payment`ga nullable `shift_id` qo'shish (sale_returns/expenses kabi), `expectedCash`ga `sumCashDebtPaymentsByShift` qo'shish, reconciliation uchun sotuv smenasini `paidAmount` orqali kreditlashni to'xtatish.
+
+## TASDIQLANGAN — MEDIUM (6)
+
+| # | Joy | Muammo va tuzatish yo'nalishi |
+|---|---|---|
+| M1 | `LoginAttemptService.java:85-126`, `LoginAttemptRepository.java:44-50` | Lockout paytidagi urinishlar (ACCOUNT_LOCKED sababi bilan ham) FAILED deb yoziladi va hisobga kiradi — blok cheksiz o'z-o'zini uzaytiradi; hujumchi ~6 daqiqada 1 so'rov bilan istalgan hisobni abadiy qulflab tura oladi. **Tuzatish:** ACCOUNT_LOCKED qatorlarini `countRecentFailedAttempts`dan chiqarish |
+| M2 | `PurchaseService.createPurchase:67-137` + `PurchaseFormModal.tsx:306` | Yaratishda `paidAmount > totalAmount` tekshirilmaydi (manfiy `@DecimalMin` bilan yopiq; `addPayment`da chegara bor, create'da yo'q) — ortiqcha to'lov PAID deb saqlanadi, `debtAmount` manfiy. **Tuzatish:** create'da `paidAmount ≤ totalAmount` + frontend clamp |
+| M3 | `DebtsPage.tsx:268-274` | "Bugun/hafta/oy to'landi" statistikasi to'lovlardan emas, PAID qarzlarning `createdAt`/`originalAmount`idan — real oqimlarda raqamlar noto'g'ri (bugun undirilgan eski qarz 0 ko'rinadi, qisman to'lovlar umuman sanalmaydi). **Tuzatish:** haqiqiy `Payment` yozuvlaridan agregat |
+| M4 | `CashShiftService.getReport:127-132` | CLOSED smena hisoboti `expectedCash`ni jonli qayta hisoblaydi, yonida saqlangan `difference` — bitta javobda ikki qarama-qarshi qiymat (bekor qilish, cross-shift qaytarim, qarz to'lovi keyin o'zgartiradi). **Tuzatish:** CLOSED uchun saqlangan qiymatlarni ko'rsatish |
+| M5 | `TelegramRegistrationService.onContact:173-256` | Chat boshqa mijozga bog'langan holatda kontakt yuborilsa unique index buziladi, catch-all faqat log qiladi — foydalanuvchiga jimlik, xodim eski linkni tozalamaguncha qotib qoladi (oqim "Yangi PIN olish" tugmasi bilan chaqiriladi). **Tuzatish:** `findByTelegramChatId` tekshiruvi + aniq javob xabari |
+| M6 | `catalogApi.ts:51` (`size=200`), `useCatalog.ts:107`, `ProductDetailPage.tsx:25-37` | Tovar sahifasi faqat birinchi 200 talik ro'yxatdan qidiradi; `getById` so'rovi `enabled: Boolean(product)` bilan bog'langan — ro'yxatda yo'q tovarni hech qachon qutqara olmaydi. Katalog 200 dan oshsa filtrlangan ro'yxat/to'g'ridan-to'g'ri URL'lar "topilmadi" beradi. **Tuzatish:** ro'yxatda topilmasa `getById` fallback |
+
+## TASDIQLANGAN — LOW (6)
+
+| # | Joy | Muammo |
+|---|---|---|
+| L1 | `StaffNotificationService.java:131` | WS bildirishnoma tranzaksiya ichida yuboriladi — rollback'da "sharpa" bildirishnoma (Telegram kanali AFTER_COMMIT bilan to'g'ri qilingan, WS esa yo'q; `notifyLowStock` keyin `InsufficientStockException` bilan real rollback oynasi bor). Tuzatish: WS'ni ham AFTER_COMMIT'ga ko'chirish |
+| L2 | `SimpleRateLimiter.java:120-135` | Eviction cutoff (30 min) 60-daqiqalik oynalardan (Telegram contact, staff registration) qisqa — "1 soatlik" blok ~30-35 daqiqada ochiladi, byudjet ikki baravar. Tuzatish: `MAX_WINDOW_MS` ≥ 60 min yoki per-entry cutoff |
+| L3 | `demo-cleanup.sql:161-188` (medium'dan tushirildi) | Legacy prefikslar (`+9989099000%`, `+9989300100%`) real Beeline/Ucell bloklariga mos kelishi mumkin; xodimlar uchun external-reference guard umuman yo'q. Ehtimollik past (~100 raqamlik bloklar), lekin o'chirish jim. Tuzatish: qo'shimcha marker yoki xodimlarni guard'ga qo'shish |
+| L4 | `demo-seed.sql:36-111,172-179` | Demo sotuvlar seeded zaxiradan ko'p (3 talikdan 4 sotilgan), OUT movement'lar yo'q — demo ombor ledgeri ichki ziddiyatli (faqat demo ko'rinishiga ta'sir qiladi) |
+| L5 | `SalesPage.tsx:472-478` | Mobil kartada cancel tugmasi SALES_REFUND ortida, desktop/backend esa SALES_UPDATE — faqat maxsus rollarda seziladi (seed rollar ajratmaydi). Tuzatish: mobil gate'ni SALES_UPDATE ga almashtirish |
+| L6 | `ExpensesPage.tsx:257,266` | `erp.reports.startDate/endDate` kalitlari ikkala lokalda ham yo'q — xom kalit label bo'lib chiqadi. Locale-parity testi buni tutmaydi (faqat uz↔ru tenglikni tekshiradi). Tuzatish: kalitlarni qo'shish |
+
+## QISMAN TUZATILGAN — qoldiq ishlar (2)
+
+| # | Joy | Yopilgani / Qolgani |
+|---|---|---|
+| Q1 (medium) | Refresh token revocation | 732fdf1 asosini yopdi (refresh claim, mijoz/access rad, WS sessiya). **Qoldiq:** refresh tokenlar server tomonida hech qayerda saqlanmaydi/bekor qilinmaydi — logout, admin revoke, hatto parol almashtirish ham qo'ldagi 7 kunlik refresh tokenni o'ldirmaydi, har refresh yangi 7 kunlik beradi (faqat `active=false` uzadi). Tuzatish: refresh tokenlarni (yoki session-id claim'ni) persist qilib, refresh'da revocation holatini tekshirish; logout/parol almashtirishda bekor qilish; rotation + qayta ishlatishni aniqlash |
+| Q2 (low) | `CustomerAuthService.refreshToken:135-156`, `JwtChannelInterceptor:42-52` | aad43a0 filtrni yopdi (har so'rovda `isEnabled`). **Qoldiq:** mijoz refresh endpointi `isRefreshToken`ni ham, `active`ni ham tekshirmaydi (access token refresh vazifasini bajaradi, deaktiv mijoz token yangilay oladi); WS interceptor mijoz tokenlariga enabled tekshiruvi qo'llamaydi. Tuzatish: mijoz refresh'ida ikkala tekshiruv + WS'da mijoz enabled tekshiruvi |
+
+## RAD ETILGAN (1)
+
+- ~~`DebtsPage.tsx:201` — qarz to'lovi faqat debts cache'ni invalidatsiya qiladi~~ — fakt to'g'ri, lekin eskirish real oqimda yuz bermaydi: xuddi shu `makePayment` staff-notification yuboradi, WS orqali `useInvalidateOnNotification` mijozlar/dashboard/hisobotlar sahifalarida cache'ni yangilaydi; qolgan xavf 30-60s staleTime bilan cheklangan. Ixtiyoriy mustahkamlash: aniq `invalidateAfter.debtPayment` ro'yxati
 
 ---
 
 ## Eslatmalar
 
-- Barcha qator raqamlari 2026-08-05 dagi `master` (`c576d5d`) holatiga tegishli.
-- Tasdiqlangan har bir topilma uchun tekshiruvchi agent kodni, chaqiruvchilarni, DB constraint'larni va mavjud testlarni o'qib chiqib rad etishga harakat qilgan — muvaffaqiyatsiz.
-- №4 dagi mavjud test (`CashShiftReportTest.cashRefundReducesExpectedCash`) bugni yashiradi — tuzatishda testni real service oqimi orqali qayta yozish shart.
-- №1 va №2 bir-biri bilan bog'liq: refresh oqimini tuzatishda `user.getActive()` tekshiruvini ham qo'shish kerak, aks holda №2 ning refresh-varianti ochilib qoladi.
+- Asosiy 5 klaster qator raqamlari `c576d5d`, ikkinchi bosqich tekshiruvi `e217939` holatiga tegishli.
+- Har ikkala bosqichda ham tekshiruvchi agent kodni, chaqiruvchilarni, DB constraint'larni va mavjud testlarni o'qib chiqib topilmani RAD ETISHGA harakat qilgan.
+- Tasdiqlangan 5 asosiy klaster tuzatilgan: 1fdaa48 (№3), 5895e93 (№4), aad43a0 (№2), 732fdf1 (№1), 673b779 (№5); V38 tozalash migratsiyasi — e217939.
+- Ikkinchi bosqich uchun tavsiya etilgan tartib: H1 (POS manfiy summa — pul), H3 (qarz to'lovlari Z-hisobotda — o'g'irlik niqobi), H2 (purchase return — supplier ikki kredit), keyin M1 (lockout DoS) va qolgan MEDIUM'lar.
