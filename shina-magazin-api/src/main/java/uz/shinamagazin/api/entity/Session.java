@@ -17,6 +17,8 @@ import java.util.Set;
 @Table(name = "sessions", indexes = {
     @Index(name = "idx_sessions_user", columnList = "user_id"),
     @Index(name = "idx_sessions_token_hash", columnList = "token_hash", unique = true),
+    @Index(name = "idx_sessions_refresh_token_hash", columnList = "refresh_token_hash"),
+    @Index(name = "idx_sessions_prev_refresh_hash", columnList = "previous_refresh_token_hash"),
     @Index(name = "idx_sessions_expires_at", columnList = "expires_at"),
     @Index(name = "idx_sessions_is_active", columnList = "is_active"),
     @Index(name = "idx_sessions_last_activity", columnList = "last_activity_at"),
@@ -37,6 +39,22 @@ public class Session extends BaseEntity implements Auditable {
 
     @Column(name = "token_hash", nullable = false, unique = true, length = 64)
     private String tokenHash; // SHA-256 hash of JWT token
+
+    /**
+     * Joriy refresh token hashi. Refresh faqat shu sessiya TIRIK bo'lsa
+     * ishlaydi — logout/parol almashtirish/deaktivatsiya refresh tokenni
+     * ham avtomatik o'ldiradi. Har refresh'da rotatsiya qilinadi.
+     */
+    @Column(name = "refresh_token_hash", length = 64)
+    private String refreshTokenHash;
+
+    /**
+     * Rotatsiyadan chiqqan OLDINGI refresh token hashi — qayta ishlatishni
+     * aniqlash uchun: shu hash bilan kelgan so'rov o'g'irlangan token
+     * belgisi, butun sessiya bekor qilinadi.
+     */
+    @Column(name = "previous_refresh_token_hash", length = 64)
+    private String previousRefreshTokenHash;
 
     @Column(name = "ip_address", length = 50)
     private String ipAddress;
@@ -113,6 +131,6 @@ public class Session extends BaseEntity implements Auditable {
 
     @Override
     public Set<String> getSensitiveFields() {
-        return Set.of("tokenHash"); // Mask token hash
+        return Set.of("tokenHash", "refreshTokenHash", "previousRefreshTokenHash");
     }
 }

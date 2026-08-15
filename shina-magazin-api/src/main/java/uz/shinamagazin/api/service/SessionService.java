@@ -40,16 +40,23 @@ public class SessionService {
     }
 
     /**
-     * Create a new session when user logs in
+     * Create a new session when user logs in.
+     *
+     * <p>Refresh token hashi ham saqlanadi: refresh faqat TIRIK sessiya
+     * bilan ishlaydi, ya'ni barcha revocation yo'llari (logout, parol
+     * almashtirish, deaktivatsiya, admin revoke) refresh tokenni ham
+     * avtomatik o'ldiradi.
      */
     @Transactional
-    public Session createSession(User user, String token, String ipAddress, String userAgent, LocalDateTime expiresAt) {
+    public Session createSession(User user, String token, String refreshToken,
+                                 String ipAddress, String userAgent, LocalDateTime expiresAt) {
         String tokenHash = hashToken(token);
         UserAgentParser.DeviceInfo deviceInfo = userAgentParser.parse(userAgent);
 
         Session session = Session.builder()
                 .user(user)
                 .tokenHash(tokenHash)
+                .refreshTokenHash(refreshToken != null ? hashToken(refreshToken) : null)
                 .ipAddress(ipAddress)
                 .userAgent(userAgent)
                 .deviceType(deviceInfo.getDeviceType())
@@ -154,6 +161,67 @@ public class SessionService {
         return sessionRepository.findByTokenHash(tokenHash)
                 .map(session -> session.getIsActive() && session.getExpiresAt().isAfter(LocalDateTime.now()))
                 .orElse(false);
+    }
+
+    /**
+     * Refresh token bo'yicha TIRIK sessiyani topadi.
+     */
+    @Transactional(readOnly = true)
+    public Optional<Session> findActiveSessionByRefreshToken(String refreshToken) {
+        return sessionRepository.findByRefreshTokenHash(hashToken(refreshToken))
+                .filter(Session::getIsActive);
+    }
+
+    /**
+     * Rotatsiyadan chiqqan eski refresh token qayta kelsa — bu o'g'irlangan
+     * token belgisi (yoki juda kam holda parallel refresh poygasi). Ikkala
+     * holatda ham xavfsiz javob bitta: butun sessiyani bekor qilish, shunda
+     * o'g'irlangan JUFTLIKNING yangisi ham ishlamay qoladi.
+     *
+     * @return true — qayta ishlatish aniqlanib, sessiya bekor qilindi
+     */
+    @Transactional
+    public boolean revokeIfRefreshTokenReused(String refreshToken) {
+        return sessionRepository.findByPreviousRefreshTokenHash(hashToken(refreshToken))
+                .filter(Session::getIsActive)
+                .map(session -> {
+                    session.setIsActive(false);
+                    session.setRevokedAt(LocalDateTime.now());
+                    session.setRevokedBy(session.getUser().getId());
+                    session.setRevokeReason("Refresh token qayta ishlatildi — xavfsizlik uchun sessiya yopildi");
+                    sessionRepository.save(session);
+                    log.warn("Session {} revoked: rotated refresh token was reused", session.getId());
+                    return true;
+                })
+                .orElse(false);
+    }
+
+    /**
+     * Refresh: ikkala token ham AYNI SHU sessiya qatorida almashtiriladi.
+     * Eski refresh hash previous_* ga ko'chadi (reuse-detection uchun),
+     * eski access token hashi almashgani zahoti filtrda o'tmay qoladi.
+     */
+    @Transactional
+    public Session rotateSessionTokens(Session session, String newAccessToken,
+                                       String newRefreshToken, LocalDateTime newExpiresAt) {
+        session.setPreviousRefreshTokenHash(session.getRefreshTokenHash());
+        session.setTokenHash(hashToken(newAccessToken));
+        session.setRefreshTokenHash(hashToken(newRefreshToken));
+        session.setExpiresAt(newExpiresAt);
+        session.setLastActivityAt(LocalDateTime.now());
+        return sessionRepository.save(session);
+    }
+
+    /**
+     * Mutlaq muddat tugagan sessiyani yopadi (qurilma qayta login qilishi shart).
+     */
+    @Transactional
+    public void expireSessionFamily(Session session) {
+        session.setIsActive(false);
+        session.setRevokedAt(LocalDateTime.now());
+        session.setRevokedBy(session.getUser().getId());
+        session.setRevokeReason("Sessiyaning mutlaq muddati tugadi");
+        sessionRepository.save(session);
     }
 
     /**

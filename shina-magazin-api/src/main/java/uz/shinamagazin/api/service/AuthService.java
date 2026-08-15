@@ -39,6 +39,9 @@ public class AuthService {
     @Value("${jwt.expiration}")
     private long jwtExpiration;
 
+    @Value("${jwt.refresh-expiration}")
+    private long refreshExpiration;
+
     public JwtResponse login(LoginRequest request, String ipAddress, String userAgent) {
         String username = request.getUsername();
 
@@ -82,11 +85,12 @@ public class AuthService {
             );
             String refreshToken = tokenProvider.generateStaffRefreshToken(userDetails.getUsername(), userId);
 
-            // Create session in database
+            // Create session in database (refresh token hashi ham bog'lanadi)
             LocalDateTime expiresAt = LocalDateTime.now().plusSeconds(jwtExpiration / 1000);
             Session session = sessionService.createSession(
                 userDetails.getUser(),
                 accessToken,
+                refreshToken,
                 ipAddress,
                 userAgent,
                 expiresAt
@@ -151,6 +155,33 @@ public class AuthService {
             throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Refresh token yaroqsiz");
         }
 
+        // Refresh faqat TIRIK sessiya bilan ishlaydi. Ilgari refresh tokenlar
+        // server tomonida hech qayerda saqlanmasdi: logout, admin revoke,
+        // hatto parol almashtirish ham qo'ldagi 7 kunlik refresh tokenni
+        // o'ldirmasdi — har refresh yana yangi 7 kunlik berar, kirish amalda
+        // cheksiz uzayardi. Endi barcha revocation yo'llari sessiyani
+        // o'chirgani zahoti refresh ham to'xtaydi.
+        Session session = sessionService.findActiveSessionByRefreshToken(refreshToken)
+                .orElse(null);
+        if (session == null) {
+            // Rotatsiyadan chiqqan eski token qayta kelsa — o'g'irlangan
+            // bo'lishi mumkin: butun sessiya (yangi juftlik bilan birga)
+            // bekor qilinadi.
+            sessionService.revokeIfRefreshTokenReused(refreshToken);
+            throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Refresh token yaroqsiz");
+        }
+
+        // Mutlaq muddat: rotatsiya har safar yangi 7 kunlik JWT beradi —
+        // usiz kunda bir yangilab turgan qurilma ABADIY kirishda qolardi.
+        // Qurilma birinchi login'dan refresh-expiration o'tgach to'liq
+        // qayta kiradi.
+        LocalDateTime familyDeadline = session.getCreatedAt().plusSeconds(refreshExpiration / 1000);
+        if (LocalDateTime.now().isAfter(familyDeadline)) {
+            sessionService.expireSessionFamily(session);
+            throw new ResponseStatusException(HttpStatus.UNAUTHORIZED,
+                    "Sessiya muddati tugadi — qayta kiring");
+        }
+
         String username = tokenProvider.getUsernameFromToken(refreshToken);
         User user = userRepository.findByUsernameWithRolesAndPermissions(username)
                 .orElseThrow(() -> new ResourceNotFoundException("Foydalanuvchi", "username", username));
@@ -173,12 +204,11 @@ public class AuthService {
         );
         String newRefreshToken = tokenProvider.generateStaffRefreshToken(username, user.getId());
 
-        // Yangi access token uchun sessiya OCHILADI. Busiz refresh mexanizmi
-        // umuman ishlamasdi: filtr sessiya yozuvi bo'lmagan har qanday staff
-        // tokenni rad etadi, ya'ni refresh 200 qaytarsa ham berilgan token
-        // o'lik edi va har bir xodim 24 soatda bir qulflanib qolardi.
-        LocalDateTime expiresAt = LocalDateTime.now().plusSeconds(jwtExpiration / 1000);
-        sessionService.createSession(user, newAccessToken, ipAddress, userAgent, expiresAt);
+        // Yangi juftlik AYNI SHU sessiya qatorida rotatsiya qilinadi: eski
+        // access hash almashgani zahoti filtrda o'tmay qoladi, eski refresh
+        // esa previous_* ga ko'chib, qayta ishlatilsa sessiyani yopadi.
+        sessionService.rotateSessionTokens(session, newAccessToken, newRefreshToken,
+                LocalDateTime.now().plusSeconds(jwtExpiration / 1000));
 
         return JwtResponse.builder()
                 .accessToken(newAccessToken)
