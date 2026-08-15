@@ -130,7 +130,7 @@ Dastlab tekshiruvsiz qolgan 19 topilma (18 noyob — purchase-return ikki finder
 ## TASDIQLANGAN — HIGH (3)
 
 ### H1. POS: manfiy jami summa bilan sotuv o'tkazish mumkin
-- [ ] Tuzatildi
+- [x] Tuzatildi — `cartStore` endi tovar olib tashlanganda/miqdor kamayganda/qator chegirmasi oshganda savat chegirmasini yangi subtotal bilan qayta clamp qiladi; `handleCompleteSale`da manfiy jami guard; backend'da ikki validatsiya: qator chegirmasi ≤ qator summasi, savdo chegirmasi ≤ subtotal (`SaleService.createSale`, `BadRequestException`). Testlar: `cartStore.test.ts` (5), `SaleCreateValidationTest` (4).
 
 `shina-magazin-front/src/pages/sales/POSPage.tsx:532`, `store/cartStore.ts:56-112`, `...api/service/SaleService.java:173-205`. Chegirma faqat onChange'da clamp qilinadi; `removeItem/updateQuantity` chegirmaga tegmaydi, `getTotal()` da floor yo'q, submit'da guard yo'q. Backend ham himoyasiz: `SaleRequest.discountAmount` faqat `@DecimalMin("0")`, `SaleService` da `discount ≤ subtotal` / `totalAmount ≥ 0` tekshiruvi yo'q — manfiy jami bilan COMPLETED/PAID sotuv saqlanadi, revenue/Z-hisobot/dashboard buziladi. **Tuzatish:** savat o'zgarganda chegirmani qayta clamp qilish + submit'da manfiy jami blok + backend'da `discountAmount ≤ subtotal` validatsiya.
 

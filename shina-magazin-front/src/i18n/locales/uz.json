@@ -742,6 +742,7 @@
       "viewAll": "Barchasini ko'rish",
       "viewAllCustomersTitle": "Barcha mijozlarni ko'rish",
       "cartEmpty": "Savat bo'sh",
+      "discountExceedsSubtotal": "Chegirma savdo summasidan katta — avval chegirmani to'g'rilang",
       "discountLabel": "Chegirma: {{amount}}",
       "subtotal": "Sub-jami",
       "discountSum": "Chegirma (so'm)",

@@ -742,6 +742,7 @@
       "viewAll": "Показать все",
       "viewAllCustomersTitle": "Показать всех клиентов",
       "cartEmpty": "Корзина пуста",
+      "discountExceedsSubtotal": "Скидка больше суммы продажи — сначала исправьте скидку",
       "discountLabel": "Скидка: {{amount}}",
       "subtotal": "Подытог",
       "discountSum": "Скидка (сум)",

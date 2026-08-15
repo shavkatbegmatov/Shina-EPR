@@ -129,6 +129,14 @@ public class SaleService {
             BigDecimal discount = itemRequest.getDiscount() != null ? itemRequest.getDiscount() : BigDecimal.ZERO;
             BigDecimal itemFinalTotal = itemTotal.subtract(discount);
 
+            // DTO'da faqat pastki chegara bor (@DecimalMin 0) — yuqorisiz
+            // qator chegirmasi qator summasidan oshib, jami manfiyga tushardi
+            if (itemFinalTotal.signum() < 0) {
+                throw new BadRequestException(String.format(
+                        "\"%s\" qatoridagi chegirma qator summasidan katta bo'lishi mumkin emas",
+                        product.getName()));
+            }
+
             SaleItem saleItem = SaleItem.builder()
                     .product(product)
                     .quantity(itemRequest.getQuantity())
@@ -178,6 +186,14 @@ public class SaleService {
         if (discountPercent.compareTo(BigDecimal.ZERO) > 0) {
             discountAmount = subtotal.multiply(discountPercent)
                     .divide(BigDecimal.valueOf(100), 2, RoundingMode.HALF_UP);
+        }
+
+        // Chegirma savdo summasidan oshsa jami MANFIY bo'lib, sotuv
+        // COMPLETED/PAID holatda saqlanardi — revenue, Z-hisobot va
+        // dashboard buzilardi. Frontend clamp'iga ishonib bo'lmaydi:
+        // POS'da tovar olib tashlanganda chegirma qayta tekshirilmasdi.
+        if (discountAmount.compareTo(subtotal) > 0) {
+            throw new BadRequestException("Chegirma savdo summasidan katta bo'lishi mumkin emas");
         }
 
         sale.setDiscountAmount(discountAmount);

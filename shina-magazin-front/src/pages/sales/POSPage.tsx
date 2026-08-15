@@ -227,6 +227,13 @@ export function POSPage() {
       return;
     }
 
+    // Store clamp'i buni oldini oladi, lekin manfiy jami bilan so'rov
+    // ketishi mumkin bo'lgan har qanday yo'lni shu yerda ham to'samiz.
+    if (cart.getTotal() < 0) {
+      toast.error(t('erp.pos.discountExceedsSubtotal'));
+      return;
+    }
+
     setLoading(true);
     try {
       // Javob ilgari tashlab yuborilardi — chek uchun hisob-faktura raqami,

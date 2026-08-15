@@ -22,6 +22,22 @@ interface CartState {
   getItemCount: () => number;
 }
 
+/** Savat qatorlarining jami (qator chegirmalari bilan). */
+const subtotalOf = (items: CartItem[]) =>
+  items.reduce(
+    (sum, item) => sum + item.product.sellingPrice * item.quantity - item.discount,
+    0
+  );
+
+/**
+ * Summa-chegirma yangi subtotal'dan oshmasligi kerak. Chegirma faqat kiritish
+ * paytida clamp qilinardi — keyin tovar olib tashlansa (yoki miqdor kamaysa)
+ * chegirma subtotal'dan katta bo'lib qolar va manfiy jami summa bilan sotuv
+ * o'tkazish mumkin edi.
+ */
+const clampDiscount = (discount: number, items: CartItem[]) =>
+  Math.min(discount, Math.max(0, subtotalOf(items)));
+
 export const useCartStore = create<CartState>((set, get) => ({
   items: [],
   customer: null,
@@ -54,25 +70,28 @@ export const useCartStore = create<CartState>((set, get) => ({
   },
 
   removeItem: (productId) => {
-    set((state) => ({
-      items: state.items.filter((i) => i.product.id !== productId),
-    }));
+    set((state) => {
+      const items = state.items.filter((i) => i.product.id !== productId);
+      return { items, discount: clampDiscount(state.discount, items) };
+    });
   },
 
   updateQuantity: (productId, quantity) => {
-    set((state) => ({
-      items: state.items.map((i) =>
+    set((state) => {
+      const items = state.items.map((i) =>
         i.product.id === productId ? { ...i, quantity: Math.max(1, quantity) } : i
-      ),
-    }));
+      );
+      return { items, discount: clampDiscount(state.discount, items) };
+    });
   },
 
   updateItemDiscount: (productId, discount) => {
-    set((state) => ({
-      items: state.items.map((i) =>
+    set((state) => {
+      const items = state.items.map((i) =>
         i.product.id === productId ? { ...i, discount } : i
-      ),
-    }));
+      );
+      return { items, discount: clampDiscount(state.discount, items) };
+    });
   },
 
   setCustomer: (customer) => set({ customer }),
