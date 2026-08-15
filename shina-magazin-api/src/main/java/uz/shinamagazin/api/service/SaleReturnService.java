@@ -87,35 +87,46 @@ public class SaleReturnService {
 
         BigDecimal refundAmount = BigDecimal.ZERO;
 
-        for (CreateSaleReturnRequest.Item requested : request.getItems()) {
-            SaleItem soldItem = itemsById.get(requested.getSaleItemId());
+        // Bitta so'rov ICHIDA bir qator bir necha marta kelishi mumkin. Miqdor
+        // chegarasi har qatorni mustaqil tekshirgani uchun ular bir xil
+        // qoldiqni ko'rib, ikkalasi ham o'tardi: `restoreStock` har biri uchun
+        // ishlab, MAVJUD BO'LMAGAN zaxira paydo qilardi (pul tomoni ham faqat
+        // butun savdo summasi bilan cheklangan edi). Shuning uchun qatorlar
+        // avval saleItemId bo'yicha YIG'ILADI.
+        Map<Long, Integer> requestedByItem = new java.util.LinkedHashMap<>();
+        request.getItems().forEach(i ->
+                requestedByItem.merge(i.getSaleItemId(), i.getQuantity(), Integer::sum));
+
+        for (Map.Entry<Long, Integer> requested : requestedByItem.entrySet()) {
+            SaleItem soldItem = itemsById.get(requested.getKey());
             if (soldItem == null) {
-                throw new BadRequestException("Bu savdo qatori topilmadi: " + requested.getSaleItemId());
+                throw new BadRequestException("Bu savdo qatori topilmadi: " + requested.getKey());
             }
 
+            int quantity = requested.getValue();
             long remaining = soldItem.getQuantity()
                     - alreadyReturned.getOrDefault(soldItem.getId(), 0L);
-            if (requested.getQuantity() > remaining) {
+            if (quantity > remaining) {
                 throw new BadRequestException(String.format(
                         "\"%s\" uchun qaytarish mumkin bo'lgan miqdor: %d (so'ralgan: %d)",
-                        soldItem.getProduct().getName(), remaining, requested.getQuantity()));
+                        soldItem.getProduct().getName(), remaining, quantity));
             }
 
             // Narx AYNAN o'sha qatordan: bir mahsulot bitta savdoda turli
             // chegirma bilan ikki qatorda bo'lishi mumkin.
             BigDecimal unitPrice = effectiveUnitPrice(sale, soldItem);
-            BigDecimal lineTotal = unitPrice.multiply(BigDecimal.valueOf(requested.getQuantity()));
+            BigDecimal lineTotal = unitPrice.multiply(BigDecimal.valueOf(quantity));
             refundAmount = refundAmount.add(lineTotal);
 
             saleReturn.addItem(SaleReturnItem.builder()
                     .saleItem(soldItem)
                     .product(soldItem.getProduct())
-                    .quantity(requested.getQuantity())
+                    .quantity(quantity)
                     .unitPrice(unitPrice)
                     .totalPrice(lineTotal)
                     .build());
 
-            restoreStock(soldItem.getProduct(), requested.getQuantity(), sale, currentUser);
+            restoreStock(soldItem.getProduct(), quantity, sale, currentUser);
         }
 
         // Jami qaytarish savdo summasidan oshmasligi kerak. Miqdor chegarasi

@@ -111,6 +111,35 @@ class PurchaseReturnOverlapTest {
                 .hasMessageContaining("band");
     }
 
+    // Kvota guard'i har qatorni MUSTAQIL tekshirardi: bitta so'rovdagi
+    // takroriy qatorlar bir xil qoldiqni ko'rib, ikkalasi ham o'tib ketardi.
+    @Test
+    @DisplayName("Bitta so'rovdagi takroriy qatorlar YIG'ILIB tekshiriladi")
+    void duplicateLinesInOneRequestAreAggregated() {
+        PurchaseOrder purchase = receivedPurchase(10);
+
+        assertThatThrownBy(() -> service.createReturn(purchase.getId(), returnOfTwice(10, 10)))
+                .isInstanceOf(BadRequestException.class)
+                .hasMessageContaining("qaytarish mumkin bo'lgan miqdor");
+    }
+
+    @Test
+    @DisplayName("Kvota ichidagi takroriy qatorlar bitta qatorga yig'iladi")
+    void duplicateLinesWithinQuotaMergeIntoOneItem() {
+        PurchaseOrder purchase = receivedPurchase(10);
+
+        PurchaseReturnResponse response = service.createReturn(purchase.getId(), returnOfTwice(4, 6));
+
+        PurchaseReturn saved = purchaseReturnRepository.findById(response.getId()).orElseThrow();
+        assertThat(saved.getItems())
+                .as("mahsulotga bitta qator, miqdor yig'indi")
+                .singleElement()
+                .satisfies(i -> assertThat(i.getReturnedQuantity()).isEqualTo(10));
+        assertThat(saved.getRefundAmount())
+                .as("summa ham ikki marta sanalmaydi")
+                .isEqualByComparingTo("1000000");
+    }
+
     @Test
     @DisplayName("Kvota bir nechta qaytarish o'rtasida to'g'ri taqsimlanadi")
     void quotaIsSharedAcrossOutstandingReturns() {
@@ -220,6 +249,22 @@ class PurchaseReturnOverlapTest {
         request.setReturnDate(LocalDate.now());
         request.setReason("Sifatsiz partiya");
         request.setItems(List.of(item));
+        return request;
+    }
+
+    /** Bitta so'rovda AYNI mahsulot ikki marta. */
+    private ReturnRequest returnOfTwice(int first, int second) {
+        ReturnItemRequest a = new ReturnItemRequest();
+        a.setProductId(product.getId());
+        a.setQuantity(first);
+        ReturnItemRequest b = new ReturnItemRequest();
+        b.setProductId(product.getId());
+        b.setQuantity(second);
+
+        ReturnRequest request = new ReturnRequest();
+        request.setReturnDate(LocalDate.now());
+        request.setReason("Sifatsiz partiya");
+        request.setItems(List.of(a, b));
         return request;
     }
 

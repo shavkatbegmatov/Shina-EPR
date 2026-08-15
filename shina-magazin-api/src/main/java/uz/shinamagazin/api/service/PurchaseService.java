@@ -331,17 +331,28 @@ public class PurchaseService {
         // biriga alohida kreditlanar edi.
         Map<Long, Long> outstanding = purchaseReturnRepository.outstandingReturnQuantities(purchaseId);
 
+        // Bitta so'rov ICHIDA bir mahsulot bir necha marta kelishi mumkin.
+        // Kvota har qatorni mustaqil tekshirgani uchun ular bir xil qoldiqni
+        // ko'rib, ikkalasi ham o'tib ketardi: receivedQuantity manfiyga
+        // tushar, ta'minotchi qo'sh kreditlanar, totalAmount manfiy bo'lib
+        // ham PAID deb belgilanardi. Shuning uchun qatorlar avval mahsulot
+        // bo'yicha YIG'ILADI — tekshiruv ham, yozuv ham yig'indi ustida.
+        Map<Long, Integer> requestedByProduct = new java.util.LinkedHashMap<>();
+        for (ReturnItemRequest itemRequest : request.getItems()) {
+            requestedByProduct.merge(itemRequest.getProductId(), itemRequest.getQuantity(), Integer::sum);
+        }
+
         // Calculate refund amount and validate quantities
         BigDecimal refundAmount = BigDecimal.ZERO;
-        for (ReturnItemRequest itemRequest : request.getItems()) {
+        for (Map.Entry<Long, Integer> requested : requestedByProduct.entrySet()) {
             PurchaseOrderItem purchaseItem = purchase.getItems().stream()
-                    .filter(i -> i.getProduct().getId().equals(itemRequest.getProductId()))
+                    .filter(i -> i.getProduct().getId().equals(requested.getKey()))
                     .findFirst()
-                    .orElseThrow(() -> new BadRequestException("Mahsulot xaridda mavjud emas: " + itemRequest.getProductId()));
+                    .orElseThrow(() -> new BadRequestException("Mahsulot xaridda mavjud emas: " + requested.getKey()));
 
             long alreadyClaimed = outstanding.getOrDefault(purchaseItem.getProduct().getId(), 0L);
             long available = purchaseItem.getReceivedQuantity() - alreadyClaimed;
-            if (itemRequest.getQuantity() > available) {
+            if (requested.getValue() > available) {
                 throw new BadRequestException(String.format(
                         "\"%s\" uchun qaytarish mumkin bo'lgan miqdor: %d "
                                 + "(qabul qilingan: %d, boshqa qaytarishlarda band: %d)",
@@ -350,7 +361,7 @@ public class PurchaseService {
             }
 
             BigDecimal itemRefund = purchaseItem.getUnitPrice()
-                    .multiply(BigDecimal.valueOf(itemRequest.getQuantity()));
+                    .multiply(BigDecimal.valueOf(requested.getValue()));
             refundAmount = refundAmount.add(itemRefund);
         }
 
@@ -365,19 +376,19 @@ public class PurchaseService {
                 .createdBy(currentUser)
                 .build();
 
-        // Create return items
-        for (ReturnItemRequest itemRequest : request.getItems()) {
+        // Create return items (yig'ilgan miqdorlar bo'yicha — mahsulotga bitta qator)
+        for (Map.Entry<Long, Integer> requested : requestedByProduct.entrySet()) {
             PurchaseOrderItem purchaseItem = purchase.getItems().stream()
-                    .filter(i -> i.getProduct().getId().equals(itemRequest.getProductId()))
+                    .filter(i -> i.getProduct().getId().equals(requested.getKey()))
                     .findFirst()
                     .get();
 
             PurchaseReturnItem returnItem = PurchaseReturnItem.builder()
                     .purchaseReturn(purchaseReturn)
                     .product(purchaseItem.getProduct())
-                    .returnedQuantity(itemRequest.getQuantity())
+                    .returnedQuantity(requested.getValue())
                     .unitPrice(purchaseItem.getUnitPrice())
-                    .totalPrice(purchaseItem.getUnitPrice().multiply(BigDecimal.valueOf(itemRequest.getQuantity())))
+                    .totalPrice(purchaseItem.getUnitPrice().multiply(BigDecimal.valueOf(requested.getValue())))
                     .build();
 
             purchaseReturn.addItem(returnItem);

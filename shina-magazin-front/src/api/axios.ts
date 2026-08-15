@@ -24,6 +24,39 @@ api.interceptors.request.use(
   }
 );
 
+/**
+ * Bir vaqtda ketgan bir nechta 401 uchun YAGONA refresh (single-flight).
+ *
+ * Server refresh tokenni har chaqiruvda ROTATSIYA qiladi va rotatsiyadan
+ * chiqqan eskisi qayta kelsa butun sessiyani o'ldiradi — bu o'g'irlangan
+ * token himoyasi. Dedup bo'lmasa sahifadagi 2-3 parallel so'rov (dashboard
+ * statistikasi + grafik + sidebar hisoblagichi) aynan shu himoyani o'ziga
+ * qarshi ishlatardi: birinchi refresh tokenni aylantirar, ikkinchisi eski
+ * token bilan kelib sessiyani yopardi va foydalanuvchi HAR token muddati
+ * tugashida tizimdan chiqib qolardi.
+ *
+ * Eslatma: tokenlar localStorage'da, ya'ni bu qulf bitta tab doirasida.
+ * Ko'p tabli poyga tor oyna sifatida qoladi (AUDIT.md Q1).
+ */
+let refreshPromise: Promise<string> | null = null;
+
+const refreshAccessToken = (refreshToken: string): Promise<string> => {
+  if (!refreshPromise) {
+    refreshPromise = axios
+      .post(`${API_BASE_URL}/v1/auth/refresh-token`, null, { params: { refreshToken } })
+      .then((response) => {
+        const { accessToken, refreshToken: newRefreshToken } = response.data.data;
+        localStorage.setItem('accessToken', accessToken);
+        localStorage.setItem('refreshToken', newRefreshToken);
+        return accessToken as string;
+      })
+      .finally(() => {
+        refreshPromise = null;
+      });
+  }
+  return refreshPromise;
+};
+
 // Response interceptor - handle errors
 api.interceptors.response.use(
   (response) => response,
@@ -37,15 +70,8 @@ api.interceptors.response.use(
       const refreshToken = localStorage.getItem('refreshToken');
       if (refreshToken && !originalRequest.url?.includes('/auth/refresh-token')) {
         try {
-          const response = await axios.post(
-            `${API_BASE_URL}/v1/auth/refresh-token`,
-            null,
-            { params: { refreshToken } }
-          );
-
-          const { accessToken, refreshToken: newRefreshToken } = response.data.data;
-          localStorage.setItem('accessToken', accessToken);
-          localStorage.setItem('refreshToken', newRefreshToken);
+          // Parallel 401'lar bitta refresh natijasini kutadi
+          const accessToken = await refreshAccessToken(refreshToken);
 
           originalRequest.headers.Authorization = `Bearer ${accessToken}`;
           return api(originalRequest);

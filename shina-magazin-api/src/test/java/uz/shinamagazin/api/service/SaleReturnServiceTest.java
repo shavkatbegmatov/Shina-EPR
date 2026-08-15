@@ -272,6 +272,41 @@ class SaleReturnServiceTest {
                 .isGreaterThanOrEqualTo(BigDecimal.ZERO);
     }
 
+    // ─── Bitta so'rovdagi takroriy qatorlar ───
+    // Miqdor chegarasi har qatorni MUSTAQIL tekshirardi: takroriy qatorlar bir
+    // xil qoldiqni ko'rib, ikkalasi ham o'tar va restoreStock har biri uchun
+    // ishlab, mavjud bo'lmagan zaxira paydo qilardi.
+
+    @Test
+    @DisplayName("Takroriy qatorlar yig'ilib tekshiriladi — zaxira ikki marta tiklanmaydi")
+    void duplicateItemsInOneRequestAreAggregated() {
+        Sale sale = saleWithItem(4, "1000000", "4000000", "4000000", "0");
+        int stockBefore = product.getQuantity();
+
+        assertThatThrownBy(() -> service.createReturn(sale.getId(), cashier.getId(), requestTwice(sale, 3, 3)))
+                .isInstanceOf(BadRequestException.class)
+                .hasMessageContaining("qaytarish mumkin bo'lgan miqdor");
+
+        assertThat(reload(product).getQuantity())
+                .as("rad etilgan qaytarish zaxiraga tegmaydi")
+                .isEqualTo(stockBefore);
+    }
+
+    @Test
+    @DisplayName("Kvota ichidagi takroriy qatorlar bitta qatorga yig'iladi")
+    void duplicateItemsWithinQuotaMergeIntoOneLine() {
+        Sale sale = saleWithItem(4, "1000000", "4000000", "4000000", "0");
+        int stockBefore = product.getQuantity();
+
+        SaleReturnResponse ret = service.createReturn(sale.getId(), cashier.getId(), requestTwice(sale, 2, 2));
+
+        assertThat(ret.getRefundAmount()).isEqualByComparingTo("4000000");
+        assertThat(reload(product).getQuantity())
+                .as("2+2=4 dona qaytdi, 8 emas")
+                .isEqualTo(stockBefore + 4);
+        assertThat(reload(sale).getStatus()).isEqualTo(SaleStatus.REFUNDED);
+    }
+
     // ─── Qarz yozuvi sinxronligi ───
     // Ilgari qaytarish faqat `sale.debtAmount` ni kamaytirardi, `debts`
     // jadvalidagi qator esa to'liq summa bilan ACTIVE qolaverardi: eslatmalar
@@ -342,6 +377,24 @@ class SaleReturnServiceTest {
 
         CreateSaleReturnRequest request = new CreateSaleReturnRequest();
         request.setItems(List.of(item));
+        request.setReason("Mijoz qaytardi");
+        return request;
+    }
+
+    /** Bitta so'rovda AYNI savdo qatori ikki marta. */
+    private CreateSaleReturnRequest requestTwice(Sale sale, int first, int second) {
+        Sale fresh = saleRepository.findByIdWithItems(sale.getId()).orElseThrow();
+        Long saleItemId = fresh.getItems().get(0).getId();
+
+        CreateSaleReturnRequest.Item a = new CreateSaleReturnRequest.Item();
+        a.setSaleItemId(saleItemId);
+        a.setQuantity(first);
+        CreateSaleReturnRequest.Item b = new CreateSaleReturnRequest.Item();
+        b.setSaleItemId(saleItemId);
+        b.setQuantity(second);
+
+        CreateSaleReturnRequest request = new CreateSaleReturnRequest();
+        request.setItems(List.of(a, b));
         request.setReason("Mijoz qaytardi");
         return request;
     }
