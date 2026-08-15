@@ -22,7 +22,21 @@ export function ProductDetailPage() {
   const [qty, setQty] = useState(1);
   const [added, setAdded] = useState(false);
 
-  const { product, isLoading, isError, retry } = useProduct(id);
+  const { product: listProduct, isLoading, isError, retry } = useProduct(id);
+
+  // Katalog ro'yxati faqat birinchi 200 mahsulotni oladi — undan tashqaridagi
+  // real mahsulot (filtrlangan katalogdan yoki to'g'ridan-to'g'ri havoladan
+  // ochilgan) ro'yxatda topilmaydi. Ilgari bunday sahifa "topilmadi" deb
+  // yolg'on gapirardi; endi bitta-mahsulot endpoint'idan yuklab olinadi.
+  const fallback = useQuery({
+    queryKey: ['catalog-product-fallback', id],
+    queryFn: () => catalogApi.getById(id!),
+    enabled: Boolean(id) && !isLoading && !isError && !listProduct,
+    staleTime: 5 * 60 * 1000,
+    retry: false,
+  });
+
+  const product = listProduct ?? fallback.data;
   const related = useRelatedProducts(product);
   const addRecent = useRecentStore((s) => s.add);
 
@@ -55,8 +69,9 @@ export function ProductDetailPage() {
   });
 
   // Yuklanish paytida "topilmadi" ko'rsatib bo'lmaydi — mahsulot bor bo'lsa ham
-  // bir zumga "mavjud emas" degan yolg'on xabar chiqardi.
-  if (isLoading) {
+  // bir zumga "mavjud emas" degan yolg'on xabar chiqardi. Fallback so'rovi
+  // ketayotganda ham xuddi shunday: skelet ko'rsatiladi.
+  if (isLoading || (!listProduct && fallback.isLoading)) {
     return (
       <div className="mx-auto max-w-6xl px-4 py-10 sm:px-6">
         <div className="grid gap-8 md:grid-cols-2">
