@@ -79,12 +79,30 @@ public class DebtService {
                 .collect(Collectors.toList());
     }
 
+    /**
+     * SHU qarzning to'lovlari.
+     *
+     * <p>Ilgari mijozning BARCHA qarz to'lovlari qaytarilardi: qarz B ning
+     * "To'lovlar tarixi" ro'yxatida qarz A ning to'lovi ko'rinib, uning
+     * ustidagi qoldiq raqamlariga zid kelardi. To'lov qarzning SOTUVIga
+     * bog'langan, shuning uchun filtr shu bo'yicha.
+     */
     public List<PaymentResponse> getDebtPayments(Long debtId) {
         Debt debt = debtRepository.findById(debtId)
                 .orElseThrow(() -> new ResourceNotFoundException("Qarz", "id", debtId));
 
-        return paymentRepository.findByCustomerIdAndPaymentType(
-                        debt.getCustomer().getId(), PaymentType.DEBT_PAYMENT).stream()
+        List<Payment> payments = paymentRepository.findByCustomerIdAndPaymentType(
+                debt.getCustomer().getId(), PaymentType.DEBT_PAYMENT);
+
+        // Sotuvsiz qarz (qo'lda kiritilgan) — filtrlash uchun asos yo'q,
+        // mijoz bo'yicha ro'yxat qoladi
+        if (debt.getSale() == null) {
+            return payments.stream().map(PaymentResponse::from).collect(Collectors.toList());
+        }
+
+        Long saleId = debt.getSale().getId();
+        return payments.stream()
+                .filter(p -> p.getSale() != null && saleId.equals(p.getSale().getId()))
                 .map(PaymentResponse::from)
                 .collect(Collectors.toList());
     }

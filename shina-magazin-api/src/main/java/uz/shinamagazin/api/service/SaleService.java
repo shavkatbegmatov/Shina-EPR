@@ -202,8 +202,15 @@ public class SaleService {
         BigDecimal totalAmount = subtotal.subtract(discountAmount);
         sale.setTotalAmount(totalAmount);
 
-        // Handle payment
-        BigDecimal paidAmount = request.getPaidAmount();
+        // Handle payment.
+        // Kassaga TUSHGAN pul savdo summasidan ortiq bo'lishi mumkin emas:
+        // POS'da "to'langan summa" maydoni mijoz uzatgan pulni ham qabul
+        // qiladi (yonida "qaytim" ko'rsatiladi), lekin qaytim mijozga
+        // qaytariladi — u kassada qolmaydi. Ortiqcha qiymat saqlansa
+        // Z-hisobot, sotuv hisoboti va chek uni tushum deb sanardi va
+        // kassirga aynan qaytim summasicha soxta kamomad yozilardi.
+        // Xaridlarda bunday chegara allaqachon bor (createPurchase).
+        BigDecimal paidAmount = request.getPaidAmount().min(totalAmount);
         sale.setPaidAmount(paidAmount);
 
         BigDecimal debtAmount = totalAmount.subtract(paidAmount);

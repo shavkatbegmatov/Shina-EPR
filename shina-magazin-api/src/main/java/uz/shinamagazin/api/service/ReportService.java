@@ -666,9 +666,15 @@ public class ReportService {
                 .filter(d -> d.getStatus() == DebtStatus.ACTIVE)
                 .collect(Collectors.toList());
 
-        // Paid debts in period
+        // Davr ichida YOPILGAN qarzlar. Ilgari bu yerda davr umuman
+        // hisobga olinmasdi — butun tarixdagi PAID qarzlar sanalar va
+        // yonidagi davr bo'yicha filtrlangan totalPaymentsReceived bilan
+        // zid ikki xil "to'langan" raqami chiqardi.
         List<Debt> paidDebts = allDebts.stream()
                 .filter(d -> d.getStatus() == DebtStatus.PAID)
+                .filter(d -> d.getUpdatedAt() != null
+                        && !d.getUpdatedAt().isBefore(start)
+                        && !d.getUpdatedAt().isAfter(end))
                 .collect(Collectors.toList());
 
         // Overdue debts
@@ -681,9 +687,10 @@ public class ReportService {
                 .map(Debt::getRemainingAmount)
                 .reduce(BigDecimal.ZERO, BigDecimal::add);
 
-        BigDecimal totalPaidDebt = paidDebts.stream()
-                .map(Debt::getOriginalAmount)
-                .reduce(BigDecimal.ZERO, BigDecimal::add);
+        // Undirilgan summa — HAQIQIY to'lovlardan. `originalAmount` noto'g'ri
+        // asos edi: qaytarish qarzni qisman kamaytirgan bo'lsa, u hech qachon
+        // undirilmagan qismni ham "to'langan" deb ko'rsatardi.
+        BigDecimal totalPaidDebt = paymentRepository.sumDebtPaymentsBetween(start, end);
 
         BigDecimal totalOverdueDebt = overdueDebts.stream()
                 .map(Debt::getRemainingAmount)

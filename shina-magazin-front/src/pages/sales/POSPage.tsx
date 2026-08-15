@@ -247,7 +247,10 @@ export function POSPage() {
         })),
         discountAmount: cart.discount,
         discountPercent: cart.discountPercent,
-        paidAmount,
+        // Kassaga TUSHGAN pul — mijoz uzatgani emas: qaytim unga qaytariladi.
+        // Ortiqcha qiymat Z-hisobotda tushum bo'lib sanalib, kassirga soxta
+        // kamomad yozardi (server ham shu chegarani qo'llaydi).
+        paidAmount: Math.min(paidAmount, total),
         paymentMethod,
       });
 

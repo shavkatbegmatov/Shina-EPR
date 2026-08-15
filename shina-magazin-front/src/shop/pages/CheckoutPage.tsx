@@ -70,7 +70,11 @@ export function CheckoutPage() {
     const e: Record<string, string> = {};
     if (idx === 0) {
       if (!form.name.trim()) e.name = t('shop.checkout.required');
-      if (form.phone.replace(/\D/g, '').length < 9) e.phone = t('shop.checkout.invalidPhone');
+      // PhoneInput har doim `+998` + 9 ta abonent raqamini beradi, ya'ni
+      // to'liq raqam 12 ta raqamdan iborat. Ilgari `< 9` tekshiruvi prefiks
+      // raqamlarini ham sanab, atigi 6 ta abonent raqamini o'tkazardi —
+      // buyurtma bog'lanib bo'lmaydigan telefon bilan saqlanardi.
+      if (form.phone.replace(/\D/g, '').length !== 12) e.phone = t('shop.checkout.invalidPhone');
       if (form.email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.email)) e.email = t('shop.checkout.invalidEmail');
     }
     if (idx === 1 && form.deliveryMethod === 'delivery' && !form.address.trim()) {

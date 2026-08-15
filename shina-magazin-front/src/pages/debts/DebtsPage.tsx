@@ -18,6 +18,7 @@ import {
   Clock,
 } from 'lucide-react';
 import clsx from 'clsx';
+import toast from 'react-hot-toast';
 import { useTranslation } from 'react-i18next';
 import { getApiErrorMessage } from '../../utils/apiError';
 import { debtsApi } from '../../api/debts.api';
@@ -346,6 +347,10 @@ export function DebtsPage() {
       // Tanlangan qarz kartochkasi ham yangi qoldiqni ko'rsatishi kerak
       setSelectedDebt(await debtsApi.getById(selectedDebt.id));
     } catch (error) {
+      // Server aniq sabab qaytaradi (qarz bekor qilingan, sotuv qaytarilgan,
+      // summa qoldiqdan ko'p) — ilgari u jimgina yutilardi va kassir
+      // qabul qilgan naqd pul yozilgan deb o'ylab qolishi mumkin edi.
+      toast.error(getApiErrorMessage(error));
       console.error('Failed to process payment:', error);
     } finally {
       setSubmitting(false);

@@ -79,10 +79,15 @@ export function evaluatePassword(password: string): PasswordEvaluation {
       met: password.length >= PASSWORD_MIN_LENGTH,
       minLength: PASSWORD_MIN_LENGTH,
     },
-    { code: 'uppercase', met: /[A-Z]/.test(password) },
-    { code: 'lowercase', met: /[a-z]/.test(password) },
-    { code: 'number', met: /[0-9]/.test(password) },
-    { code: 'symbol', met: /[^A-Za-z0-9\s]/.test(password) },
+    // Unicode sinflar — backend `Character.isUpperCase/isLowerCase/isDigit`
+    // va `!isLetterOrDigit` bilan bir xil qoidani qo'llaydi. ASCII-only
+    // regexlar ikki tomonlama nomuvofiqlik berardi: kirill harfli parol
+    // ro'yxatni to'liq yashil qilib, backend'da 400 olardi; teskarisiga,
+    // backend qabul qiladigan "Пароль123!" da yuborish tugmasi o'chiq edi.
+    { code: 'uppercase', met: /\p{Lu}/u.test(password) },
+    { code: 'lowercase', met: /\p{Ll}/u.test(password) },
+    { code: 'number', met: /\p{Nd}/u.test(password) },
+    { code: 'symbol', met: /[^\p{L}\p{N}\s]/u.test(password) },
     { code: 'noSpaces', met: password.length > 0 && !/\s/.test(password) },
   ];
   const score = requirements.filter((requirement) => requirement.met).length;

@@ -28,6 +28,10 @@ public class SessionService {
     private final UserAgentParser userAgentParser;
     private final NotificationDispatcher notificationDispatcher;
 
+    /** Sessiya oilasining umri — tozalash aynan shu bo'yicha ketadi. */
+    @org.springframework.beans.factory.annotation.Value("${jwt.refresh-expiration}")
+    private long refreshExpiration;
+
     // Constructor with @Lazy to break circular dependency
     public SessionService(
             SessionRepository sessionRepository,
@@ -248,7 +252,10 @@ public class SessionService {
     @Transactional
     @Scheduled(cron = "0 0 2 * * *") // Daily at 2 AM
     public void cleanupExpiredSessions() {
-        int deleted = sessionRepository.deleteExpiredSessions(LocalDateTime.now());
+        // Sessiya oilasining muddati — refresh-expiration (access oynasi emas),
+        // qarang SessionRepository.deleteExpiredSessions izohi
+        LocalDateTime cutoff = LocalDateTime.now().minusSeconds(refreshExpiration / 1000);
+        int deleted = sessionRepository.deleteExpiredSessions(cutoff);
         log.info("Cleaned up {} expired sessions", deleted);
     }
 

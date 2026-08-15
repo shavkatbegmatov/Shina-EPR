@@ -26,8 +26,13 @@ public class CreateShopOrderRequest {
     @Size(max = 120, message = "Ism familiya 120 ta belgidan oshmasligi kerak")
     private String name;
 
+    // Faqat UZUNLIK tekshiruvi yetarli emas edi: "+998901234" (10 belgi)
+    // o'tib ketardi va PhoneNumberUtils.normalize uni "+998998901234" ga
+    // aylantirardi — buyurtma bog'lanib bo'lmaydigan raqam bilan qolardi va
+    // mijoz kabineti bilan hech qachon bog'lanmasdi.
     @NotBlank(message = "Telefon raqam kiritilishi shart")
-    @Pattern(regexp = "^[+()0-9\\s-]{9,30}$", message = "Telefon raqam formati noto'g'ri")
+    @Pattern(regexp = "^\\+?998[\\s()-]?\\d{2}[\\s()-]?\\d{3}[\\s()-]?\\d{2}[\\s()-]?\\d{2}$",
+            message = "Telefon raqam formati noto'g'ri (+998 XX XXX XX XX)")
     private String phone;
 
     @Email(message = "Email formati noto'g'ri")

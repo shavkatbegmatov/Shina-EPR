@@ -61,9 +61,19 @@ public interface SessionRepository extends JpaRepository<Session, Long> {
     @Query("UPDATE Session s SET s.lastActivityAt = :activityTime WHERE s.tokenHash = :tokenHash AND s.isActive = true")
     void updateLastActivity(@Param("tokenHash") String tokenHash, @Param("activityTime") LocalDateTime activityTime);
 
+    /**
+     * Sessiya OILASINING muddati tugagan yozuvlarni o'chiradi.
+     *
+     * <p>Kalit — {@code createdAt}, {@code expiresAt} emas: ikkinchisi ACCESS
+     * token oynasi (24 soat), sessiya esa refresh orqali refresh-expiration
+     * (7 kun) davomida yashashi kerak. Ilgari o'chirish access oynasi bo'yicha
+     * ketardi va V41'dan keyin sessiya qatori refresh amalining yagona
+     * tashuvchisi bo'lgani uchun bir kunlik tanaffus (dam olish kuni) refresh
+     * tokenni o'ldirardi.
+     */
     @Modifying
-    @Query("DELETE FROM Session s WHERE s.expiresAt < :now")
-    int deleteExpiredSessions(@Param("now") LocalDateTime now);
+    @Query("DELETE FROM Session s WHERE s.createdAt < :cutoff")
+    int deleteExpiredSessions(@Param("cutoff") LocalDateTime cutoff);
 
     @Query("SELECT COUNT(s) FROM Session s WHERE s.user.id = :userId AND s.isActive = true")
     long countActiveSessionsByUserId(@Param("userId") Long userId);
