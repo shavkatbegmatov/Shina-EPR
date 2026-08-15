@@ -170,6 +170,52 @@ class PurchaseReturnOverlapTest {
                 .isInstanceOf(BadRequestException.class);
     }
 
+    // APPROVED holatidan chiqishning yagona yo'li completeReturn edi, u esa
+    // zaxira yetmasa xato beradi — xato yaratilgan qaytarish kvotani band
+    // qilib turaverardi.
+    @Test
+    @DisplayName("Rad etilgan APPROVED qaytarish kvotani bo'shatadi")
+    void rejectedApprovedReturnFreesQuota() {
+        PurchaseOrder purchase = receivedPurchase(10);
+        PurchaseReturnResponse first = service.createReturn(purchase.getId(), returnOf(10));
+        service.approveReturn(first.getId());
+
+        // Kvota band — yangi qaytarish o'tmaydi
+        assertThatThrownBy(() -> service.createReturn(purchase.getId(), returnOf(1)))
+                .isInstanceOf(BadRequestException.class);
+
+        service.rejectReturn(first.getId(), "Ta'minotchi qabul qilmadi");
+
+        assertThat(purchaseReturnRepository.findById(first.getId()))
+                .get()
+                .satisfies(r -> {
+                    assertThat(r.getStatus()).isEqualTo(PurchaseReturnStatus.REJECTED);
+                    assertThat(r.getReason()).contains("qabul qilmadi");
+                });
+        assertThat(service.createReturn(purchase.getId(), returnOf(10)).getId())
+                .as("kvota bo'shadi")
+                .isNotNull();
+        assertThat(productRepository.findById(product.getId()).orElseThrow().getQuantity())
+                .as("rad etish zaxiraga tegmaydi")
+                .isEqualTo(20);
+        assertThat(supplierRepository.findById(supplier.getId()).orElseThrow().getBalance())
+                .as("ta'minotchi balansi ham o'zgarmaydi")
+                .isEqualByComparingTo("0");
+    }
+
+    @Test
+    @DisplayName("Yakunlangan qaytarishni rad etib bo'lmaydi")
+    void completedReturnCannotBeRejected() {
+        PurchaseOrder purchase = receivedPurchase(10);
+        PurchaseReturnResponse ret = service.createReturn(purchase.getId(), returnOf(4));
+        service.approveReturn(ret.getId());
+        service.completeReturn(ret.getId());
+
+        assertThatThrownBy(() -> service.rejectReturn(ret.getId(), null))
+                .isInstanceOf(BadRequestException.class)
+                .hasMessageContaining("Yakunlangan");
+    }
+
     @Test
     @DisplayName("O'chirilgan (PENDING) qaytarish kvotani bo'shatadi")
     void deletedReturnFreesQuota() {

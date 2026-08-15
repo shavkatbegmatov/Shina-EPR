@@ -416,6 +416,46 @@ public class PurchaseService {
         return mapToReturnResponse(purchaseReturn);
     }
 
+    /**
+     * Qaytarishni rad etadi — yagona "ORQAGA" yo'l.
+     *
+     * <p>Ilgari APPROVED holatidan chiqish faqat {@code completeReturn} orqali
+     * edi, u esa joriy zaxira yetmasa xato beradi (mol allaqachon sotilgan
+     * bo'lishi mumkin). Natijada xato yaratilgan yoki endi keraksiz qaytarish
+     * APPROVED bo'lib qolib, o'sha mahsulotning kvotasini band qilib turardi
+     * ({@code outstandingReturnQuantities} PENDING va APPROVED ni sanaydi) —
+     * yangi qaytarish "boshqa qaytarishlarda band" deb rad etilardi.
+     * REJECTED kvotaga kirmaydi, ya'ni rad etish uni bo'shatadi.
+     *
+     * <p>Zaxira va ta'minotchi balansiga TEGILMAYDI: rad etilgan qaytarish
+     * hech qachon yakunlanmagan, ya'ni hech narsa o'zgartirmagan.
+     */
+    @Transactional
+    public PurchaseReturnResponse rejectReturn(Long returnId, String reason) {
+        PurchaseReturn purchaseReturn = purchaseReturnRepository.findById(returnId)
+                .orElseThrow(() -> new ResourceNotFoundException("Qaytarish", "id", returnId));
+
+        if (purchaseReturn.getStatus() == PurchaseReturnStatus.COMPLETED) {
+            throw new BadRequestException(
+                    "Yakunlangan qaytarishni rad etib bo'lmaydi — zaxira va balans allaqachon o'zgargan");
+        }
+        if (purchaseReturn.getStatus() == PurchaseReturnStatus.REJECTED) {
+            throw new BadRequestException("Bu qaytarish allaqachon rad etilgan");
+        }
+
+        User currentUser = getCurrentUser();
+        purchaseReturn.setStatus(PurchaseReturnStatus.REJECTED);
+        purchaseReturn.setApprovedBy(currentUser);
+        purchaseReturn.setApprovedAt(LocalDate.now());
+        if (reason != null && !reason.isBlank()) {
+            String combined = purchaseReturn.getReason() + " | Rad etildi: " + reason.trim();
+            purchaseReturn.setReason(combined.length() > 500 ? combined.substring(0, 500) : combined);
+        }
+
+        purchaseReturnRepository.save(purchaseReturn);
+        return mapToReturnResponse(purchaseReturn);
+    }
+
     @Transactional
     public PurchaseReturnResponse completeReturn(Long returnId) {
         PurchaseReturn purchaseReturn = purchaseReturnRepository.findById(returnId)

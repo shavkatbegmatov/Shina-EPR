@@ -245,14 +245,14 @@ Birinchi ikki bosqich tuzatilgach, butun loyiha qayta tekshirildi (6 parallel qi
 | `147548a` | R11 (qaror xabari AFTER_COMMIT'ga ko'chirildi) |
 | keyingi | R9 (davriy hisobot ustunlari keyingi qarz to'lovlaridan tozalandi) |
 
-| keyingi | R15 (checkout narxlarni qayta oladi, farq bo'lsa mijozdan tasdiq so'raydi) |
+| `534446d` | R15 (checkout narxlarni qayta oladi, farq bo'lsa mijozdan tasdiq so'raydi) |
+| keyingi | R-RET (`rejectReturn` o'tishi — PENDING/APPROVED → REJECTED, kvotani bo'shatadi) |
 
-**Qoldi — 2 ta (alohida rejalashtirish kerak):**
+**Qoldi — 1 ta (alohida rejalashtirish kerak):**
 
 | # | Nima kerak |
 |---|---|
-| R2-qoldiq (low) | Bekor qilish naqd chiqimni qayd etmaydi: to'lovlar qaytarilganda kassa hisobsiz kamayadi. Yechim — bekor qilishda `sale.paidAmount` bo'yicha chiqim yozuvi (yoki qaytarish oqimiga yo'naltirish) |
-| R-RET (low) | APPROVED qaytarish uchun `rejectReturn` o'tish (PENDING/APPROVED → REJECTED) — servis + endpoint + tugma. Kvota so'rovi REJECTED'ni allaqachon chiqarib tashlaydi |
+| R2-qoldiq (low) | Bekor qilish naqd chiqimni qayd etmaydi: to'lovlar qaytarilganda kassa hisobsiz kamayadi. Yechim — bekor qilishda `sale.paidAmount` bo'yicha chiqim yozuvi (yoki qaytarish oqimiga yo'naltirish). Avval "bekor qilinganda pul qanday qaytariladi" biznes qoidasini aniqlashtirish kerak |
 
 ---
 

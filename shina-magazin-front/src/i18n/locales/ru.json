@@ -1212,6 +1212,8 @@
       "notFound": "Закупка не найдена",
       "goBack": "Вернуться назад",
       "deleteReturnConfirm": "Вы действительно хотите удалить возврат?",
+      "rejectReturn": "Отклонить",
+      "rejectReturnPrompt": "Причина отклонения (необязательно):",
       "statusReceived": "Получено",
       "statusDraft": "Черновик",
       "statusCancelled": "Отменено",

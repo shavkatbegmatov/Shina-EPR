@@ -122,6 +122,22 @@ export const purchasesApi = {
     return response.data.data;
   },
 
+  /**
+   * Qaytarishni rad etadi (PENDING yoki APPROVED).
+   *
+   * <p>O'chirish faqat PENDING uchun ishlaydi; APPROVED holatidagi
+   * qaytarish zaxira yetmasa yakunlanmaydi ham, ya'ni rad etishsiz u
+   * mahsulotning qaytarish kvotasini band qilib turardi.
+   */
+  rejectReturn: async (returnId: number, reason?: string): Promise<PurchaseReturn> => {
+    const response = await api.put<ApiResponse<PurchaseReturn>>(
+      `/v1/purchase-returns/${returnId}/reject`,
+      null,
+      { params: reason ? { reason } : undefined }
+    );
+    return response.data.data;
+  },
+
   deleteReturn: async (returnId: number): Promise<void> => {
     await api.delete(`/v1/purchase-returns/${returnId}`);
   },

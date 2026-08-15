@@ -21,6 +21,7 @@ import {
   Printer,
   Trash2,
   CheckCircle,
+  XCircle,
   X,
 } from 'lucide-react';
 import clsx from 'clsx';
@@ -235,6 +236,22 @@ export function PurchaseDetailPage() {
       invalidatePurchase();
     } catch (error) {
       console.error('Failed to complete return:', error);
+      toast.error(getApiErrorMessage(error));
+    }
+  };
+
+  // Reject return — APPROVED holatidan chiqishning yagona yo'li.
+  // O'chirish faqat PENDING uchun ishlaydi, yakunlash esa zaxira yetmasa
+  // xato beradi: rad etishsiz bunday qaytarish mahsulotning qaytarish
+  // kvotasini band qilib turardi.
+  const handleRejectReturn = async (returnId: number) => {
+    const reason = prompt(t('erp.purchaseDetail.rejectReturnPrompt'));
+    if (reason === null) return;
+    try {
+      await purchasesApi.rejectReturn(returnId, reason.trim() || undefined);
+      invalidatePurchase();
+    } catch (error) {
+      console.error('Failed to reject return:', error);
       toast.error(getApiErrorMessage(error));
     }
   };
@@ -618,14 +635,28 @@ export function PurchaseDetailPage() {
                         </>
                       )}
                       {returnItem.status === 'APPROVED' && (
-                        <Button
-                          variant="primary"
-                          size="sm"
-                          onClick={() => handleCompleteReturn(returnItem.id)}
-                        >
-                          <CheckCircle className="h-4 w-4" />
-                          {t('erp.purchaseDetail.complete')}
-                        </Button>
+                        <>
+                          <Button
+                            variant="primary"
+                            size="sm"
+                            onClick={() => handleCompleteReturn(returnItem.id)}
+                          >
+                            <CheckCircle className="h-4 w-4" />
+                            {t('erp.purchaseDetail.complete')}
+                          </Button>
+                          {/* Yakunlash zaxira yetmasa xato beradi (mol sotilgan
+                              bo'lishi mumkin), o'chirish esa faqat PENDING uchun —
+                              rad etishsiz bunday qaytarish kvotani band qilib
+                              turaverardi */}
+                          <Button
+                            variant="danger"
+                            size="sm"
+                            onClick={() => handleRejectReturn(returnItem.id)}
+                          >
+                            <XCircle className="h-4 w-4" />
+                            {t('erp.purchaseDetail.rejectReturn')}
+                          </Button>
+                        </>
                       )}
                     </div>
                   </div>

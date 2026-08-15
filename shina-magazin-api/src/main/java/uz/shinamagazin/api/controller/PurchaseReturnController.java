@@ -107,6 +107,17 @@ public class PurchaseReturnController {
         return ResponseEntity.ok(ApiResponse.success("Qaytarish yakunlandi", returnResponse));
     }
 
+    @PutMapping("/{id}/reject")
+    @Operation(summary = "Reject return",
+            description = "Qaytarishni rad etadi (PENDING yoki APPROVED) va band qilingan kvotani bo'shatadi")
+    @RequiresPermission(PermissionCode.PURCHASES_RETURN)
+    public ResponseEntity<ApiResponse<PurchaseReturnResponse>> rejectReturn(
+            @PathVariable Long id,
+            @RequestParam(required = false) String reason) {
+        PurchaseReturnResponse returnResponse = purchaseService.rejectReturn(id, reason);
+        return ResponseEntity.ok(ApiResponse.success("Qaytarish rad etildi", returnResponse));
+    }
+
     @DeleteMapping("/{id}")
     @Operation(summary = "Delete return", description = "Qaytarishni o'chirish (faqat PENDING)")
     @RequiresPermission(PermissionCode.PURCHASES_DELETE)

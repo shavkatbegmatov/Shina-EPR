@@ -1212,6 +1212,8 @@
       "notFound": "Xarid topilmadi",
       "goBack": "Orqaga qaytish",
       "deleteReturnConfirm": "Qaytarishni o'chirishni xohlaysizmi?",
+      "rejectReturn": "Rad etish",
+      "rejectReturnPrompt": "Rad etish sababi (ixtiyoriy):",
       "statusReceived": "Qabul qilingan",
       "statusDraft": "Qoralama",
       "statusCancelled": "Bekor qilingan",
