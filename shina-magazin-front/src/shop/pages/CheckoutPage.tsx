@@ -1,13 +1,15 @@
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
+import { useQuery } from '@tanstack/react-query';
 import toast from 'react-hot-toast';
-import { Check, ChevronLeft, ChevronRight, Truck, Store, Banknote, CreditCard, Wallet, ShoppingBag, UserCheck } from 'lucide-react';
+import { AlertTriangle, Check, ChevronLeft, ChevronRight, Truck, Store, Banknote, CreditCard, Wallet, ShoppingBag, UserCheck } from 'lucide-react';
 import { Card, Button, EmptyState, buttonVariants, cn } from '@/ui';
 import { formatCurrency } from '../../config/constants';
 import { useCartStore, selectCartSubtotal } from '../store/cartStore';
 import { useOrderStore, calcDeliveryFee, type PaymentMethod, type DeliveryMethod } from '../store/orderStore';
 import { ProductImage } from '../components/ProductImage';
+import { catalogApi } from '../data/catalogApi';
 import { ordersApi } from '../data/ordersApi';
 import { usePortalAuthStore } from '../../portal/store/portalAuthStore';
 import { PhoneInput } from '../../components/ui/PhoneInput';
@@ -35,6 +37,7 @@ export function CheckoutPage() {
   const items = useCartStore((s) => s.items);
   const subtotal = useCartStore(selectCartSubtotal);
   const clear = useCartStore((s) => s.clear);
+  const syncProducts = useCartStore((s) => s.syncProducts);
   const addOrder = useOrderStore((s) => s.addOrder);
   const portalCustomer = usePortalAuthStore((s) => s.customer);
   const isPortalAuth = usePortalAuthStore((s) => s.isAuthenticated);
@@ -52,6 +55,39 @@ export function CheckoutPage() {
 
   const deliveryFee = calcDeliveryFee(form.deliveryMethod, subtotal);
   const total = subtotal + deliveryFee;
+
+  // Savat localStorage'da muddatsiz yashaydi va narx nusxasini ham saqlaydi,
+  // server esa buyurtmani JORIY narx bilan hisoblaydi (va to'lov shlyuziga
+  // ham serverning summasi ketadi). Farqni oxirida "kutilmagan summa" qilib
+  // ko'rsatmaslik uchun checkout narxlarni qayta oladi va o'zgargan bo'lsa
+  // mijozdan TASDIQ so'raydi.
+  const cartIds = items.map((i) => i.product.id);
+  const freshQuery = useQuery({
+    queryKey: ['checkout-prices', cartIds],
+    queryFn: () => Promise.all(cartIds.map((id) => catalogApi.getById(id))),
+    enabled: cartIds.length > 0,
+    staleTime: 0,
+    retry: false,
+  });
+
+  // Narxni tekshirib bo'lmasa (tarmoq uzilishi) buyurtma TO'SILMAYDI:
+  // server baribir to'g'ri narxlaydi, mijoz shunchaki ogohlantirish olmaydi.
+  const freshProducts = useMemo(
+    () => (freshQuery.data ?? []).filter(Boolean),
+    [freshQuery.data]
+  );
+
+  const priceChanges = useMemo(
+    () =>
+      items.flatMap((item) => {
+        const updated = freshProducts.find((p) => p.id === item.product.id);
+        if (!updated || updated.sellingPrice === item.product.sellingPrice) return [];
+        return [{ name: item.product.name, was: item.product.sellingPrice, now: updated.sellingPrice }];
+      }),
+    [freshProducts, items]
+  );
+
+  const acceptNewPrices = () => syncProducts(freshProducts);
 
   if (items.length === 0) {
     return (
@@ -89,6 +125,12 @@ export function CheckoutPage() {
 
   const submit = async () => {
     if (!validateStep(stepIdx)) return;
+    // Narx o'zgargan bo'lsa buyurtma yaratilmaydi — mijoz avval yangi
+    // summani tasdiqlashi kerak
+    if (priceChanges.length > 0) {
+      toast.error(t('shop.checkout.priceChangedToast'));
+      return;
+    }
     setSubmitting(true);
 
     try {
@@ -281,9 +323,49 @@ export function CheckoutPage() {
             {stepIdx < STEPS.length - 1 ? (
               <Button onClick={next} className="gap-1">{t('shop.checkout.next')} <ChevronRight size={16} /></Button>
             ) : (
-              <Button variant="success" onClick={submit} loading={submitting} disabled={submitting} className="gap-2"><Check size={18} /> {t('shop.checkout.placeOrder')}</Button>
+              <Button
+                variant="success"
+                onClick={submit}
+                loading={submitting}
+                disabled={submitting || priceChanges.length > 0}
+                className="gap-2"
+              >
+                <Check size={18} /> {t('shop.checkout.placeOrder')}
+              </Button>
             )}
           </div>
+
+          {/* Narx o'zgargan bo'lsa buyurtma TASDIQSIZ yaratilmaydi: server
+              joriy narx bilan hisoblaydi va to'lov shlyuziga ham o'sha summa
+              ketadi, ya'ni mijoz ko'rgan summa bilan farq qilib qolardi. */}
+          {priceChanges.length > 0 && (
+            <div className="mt-4 rounded-xl border border-warning/40 bg-warning/10 p-4">
+              <div className="flex items-start gap-3">
+                <AlertTriangle className="mt-0.5 h-5 w-5 shrink-0 text-warning" />
+                <div className="min-w-0 flex-1">
+                  <p className="font-semibold">{t('shop.checkout.priceChangedTitle')}</p>
+                  <p className="mt-1 text-sm text-base-content/70">
+                    {t('shop.checkout.priceChangedHint')}
+                  </p>
+                  <ul className="mt-3 space-y-1 text-sm">
+                    {priceChanges.map((change) => (
+                      <li key={change.name} className="flex flex-wrap items-center gap-2">
+                        <span className="font-medium">{change.name}</span>
+                        <span className="text-base-content/50 line-through">
+                          {formatCurrency(change.was)}
+                        </span>
+                        <ChevronRight size={14} className="text-base-content/40" />
+                        <span className="font-semibold">{formatCurrency(change.now)}</span>
+                      </li>
+                    ))}
+                  </ul>
+                  <Button variant="warning" size="sm" className="mt-3" onClick={acceptNewPrices}>
+                    {t('shop.checkout.priceChangedAccept')}
+                  </Button>
+                </div>
+              </div>
+            </div>
+          )}
         </Card>
 
         {/* Summary */}

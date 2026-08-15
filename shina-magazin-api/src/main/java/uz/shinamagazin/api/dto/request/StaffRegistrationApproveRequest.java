@@ -6,14 +6,15 @@ import lombok.Data;
 /**
  * So'rovni tasdiqlash — yakuniy qaror xodimniki.
  *
- * <p>Ikkala maydon ham ixtiyoriy: berilmasa so'rovdagi taklif ishlatiladi.
- * Lekin rolni bu yerda QAYTA belgilash mumkinligi muhim — so'rovchi o'ziga
- * ADMIN so'ragan bo'lishi mumkin, tasdiqlovchi esa SELLER berishi kerak.
+ * <p>Ikkala maydon ham ixtiyoriy, lekin ROL uchun zaxira qiymat arizadagi
+ * taklif EMAS: uni istalgan odam ochiq shakldan ADMIN deb yuborishi mumkin.
+ * Rol ko'rsatilmasa eng kam huquqli rol beriladi, lavozim esa rol nomidan
+ * olinadi.
  */
 @Data
 public class StaffRegistrationApproveRequest {
 
-    /** Yakuniy rol kodi. Bo'sh bo'lsa — so'rovdagi taklif. */
+    /** Yakuniy rol kodi. Bo'sh bo'lsa — eng kam huquqli rol (SELLER). */
     @Size(max = 30, message = "Rol kodi 30 ta belgidan oshmasligi kerak")
     private String roleCode;
 

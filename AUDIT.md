@@ -245,11 +245,12 @@ Birinchi ikki bosqich tuzatilgach, butun loyiha qayta tekshirildi (6 parallel qi
 | `147548a` | R11 (qaror xabari AFTER_COMMIT'ga ko'chirildi) |
 | keyingi | R9 (davriy hisobot ustunlari keyingi qarz to'lovlaridan tozalandi) |
 
-**Qoldi — 3 ta (alohida rejalashtirish kerak):**
+| keyingi | R15 (checkout narxlarni qayta oladi, farq bo'lsa mijozdan tasdiq so'raydi) |
+
+**Qoldi — 2 ta (alohida rejalashtirish kerak):**
 
 | # | Nima kerak |
 |---|---|
-| R15 (low) | Do'kon savati localStorage narx snapshot'idan hisoblaydi. To'g'ri yechim — checkout'ga kirishda narxlarni qayta olish yoki server "quote" qaytarishi va farq bo'lsa qayta tasdiqlatish. UX qarori kerak |
 | R2-qoldiq (low) | Bekor qilish naqd chiqimni qayd etmaydi: to'lovlar qaytarilganda kassa hisobsiz kamayadi. Yechim — bekor qilishda `sale.paidAmount` bo'yicha chiqim yozuvi (yoki qaytarish oqimiga yo'naltirish) |
 | R-RET (low) | APPROVED qaytarish uchun `rejectReturn` o'tish (PENDING/APPROVED → REJECTED) — servis + endpoint + tugma. Kvota so'rovi REJECTED'ni allaqachon chiqarib tashlaydi |
 

@@ -12,6 +12,16 @@ interface CartState {
   add: (product: Product, qty?: number) => void;
   remove: (productId: number) => void;
   setQty: (productId: number, qty: number) => void;
+  /**
+   * Savatdagi mahsulot nusxalarini serverdagi joriy holat bilan almashtiradi.
+   *
+   * <p>Savat localStorage'da MUDDATSIZ yashaydi va narx nusxasini ham o'zi
+   * bilan olib yuradi, server esa buyurtmani JORIY narx bilan hisoblaydi —
+   * mijoz tasdiqlagan summa undirilgan summadan farq qilishi mumkin edi.
+   * Checkout narxlarni qayta olib, farq bo'lsa mijozdan tasdiq so'raydi va
+   * shu amal orqali nusxani yangilaydi.
+   */
+  syncProducts: (fresh: Product[]) => void;
   clear: () => void;
 }
 
@@ -53,6 +63,19 @@ export const useCartStore = create<CartState>()(
                     ? { ...i, qty: Math.min(qty, i.product.quantity ?? Number.MAX_SAFE_INTEGER) }
                     : i
                 ),
+        })),
+      syncProducts: (fresh) =>
+        set((state) => ({
+          items: state.items
+            .map((item) => {
+              const updated = fresh.find((p) => p.id === item.product.id);
+              if (!updated) return item;
+              // Zaxira ham yangilanadi: narx o'zgargan paytda qoldiq ham
+              // kamaygan bo'lishi mumkin
+              const limit = updated.quantity ?? Number.MAX_SAFE_INTEGER;
+              return { product: updated, qty: Math.min(item.qty, limit) };
+            })
+            .filter((item) => item.qty > 0),
         })),
       clear: () => set({ items: [] }),
     }),
