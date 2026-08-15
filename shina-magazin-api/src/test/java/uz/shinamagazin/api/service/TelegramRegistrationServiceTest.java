@@ -54,6 +54,7 @@ class TelegramRegistrationServiceTest {
 
         when(settingsService.isTelegramRegistrationEnabled()).thenReturn(true);
         when(customerRepository.findByPhone(anyString())).thenReturn(Optional.empty());
+        when(customerRepository.findByTelegramChatId(anyLong())).thenReturn(Optional.empty());
         when(customerRepository.save(any(Customer.class))).thenAnswer(inv -> inv.getArgument(0));
 
         service = new TelegramRegistrationService(
@@ -134,6 +135,27 @@ class TelegramRegistrationServiceTest {
         BotReply reply = service.onContact(CHAT_ID, sender, USER_ID, RAW_PHONE);
 
         assertThat(reply.text()).contains("boshqa Telegram akkauntga bog'langan");
+        verify(customerRepository, never()).save(any());
+    }
+
+    /**
+     * Teskari holat: CHAT boshqa mijozga bog'langan (foydalanuvchi raqamini
+     * almashtirgan yoki xodim mijoz raqamini tahrirlagan). Ilgari bu holat
+     * unique indeksga urilib JIMGINA yiqilardi — foydalanuvchi javobsiz
+     * qolar, "Yangi PIN olish" tugmasi esa aynan shu oqimga taklif qilardi.
+     */
+    @Test
+    @DisplayName("Boshqa mijozga bog'langan chat aniq javob oladi — jim crash emas")
+    void chatLinkedToDifferentCustomerGetsExplicitReply() {
+        Customer other = existingCustomer();
+        other.setPhone("+998909999999");
+        other.setTelegramChatId(CHAT_ID);
+        when(customerRepository.findByTelegramChatId(CHAT_ID)).thenReturn(Optional.of(other));
+        // kontakt raqami hech qanday mijozga tegishli emas (default: empty)
+
+        BotReply reply = service.onContact(CHAT_ID, sender, USER_ID, RAW_PHONE);
+
+        assertThat(reply.text()).contains("boshqa raqam bilan ro'yxatdan o'tgan");
         verify(customerRepository, never()).save(any());
     }
 

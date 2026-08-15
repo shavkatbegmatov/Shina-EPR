@@ -172,6 +172,24 @@ public class TelegramRegistrationService {
 
         Customer customer = customerRepository.findByPhone(phone).orElse(null);
 
+        // Bu chat ALLAQACHON boshqa mijoz yozuviga bog'langan bo'lishi mumkin
+        // (foydalanuvchi raqamini almashtirgan yoki xodim mijoz raqamini
+        // tahrirlagan). Busiz registerNew/linkExisting noyob
+        // ux_customers_telegram_chat_id indeksiga urilib JIMGINA yiqilardi:
+        // foydalanuvchi javobsiz qolar, "Yangi PIN olish" tugmasi esa aynan
+        // shu oqimga taklif qilib turardi.
+        Customer linkedToChat = customerRepository.findByTelegramChatId(chatId).orElse(null);
+        if (linkedToChat != null
+                && (customer == null || !java.util.Objects.equals(linkedToChat.getId(), customer.getId()))) {
+            log.warn("Telegram: chat {} allaqachon boshqa mijozga bog'langan (mavjud={}, kontakt={})",
+                    chatId, linkedToChat.getPhone(), phone);
+            return BotReply.of("""
+                    ⚠️ Bu Telegram hisobi allaqachon boshqa raqam bilan ro'yxatdan o'tgan.
+
+                    Raqamni almashtirish uchun do'kon bilan bog'laning.""",
+                    TelegramApiClient.removeKeyboard());
+        }
+
         if (customer == null) {
             return registerNew(chatId, from, phone);
         }
