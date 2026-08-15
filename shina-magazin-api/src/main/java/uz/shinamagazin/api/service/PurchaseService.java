@@ -81,6 +81,14 @@ public class PurchaseService {
             totalAmount = totalAmount.add(itemTotal);
         }
 
+        // Xarid summasidan ORTIQCHA to'lab bo'lmaydi. addPayment'da bu chegara
+        // bor edi, yaratishda esa yo'q: ortiqcha summa tekshirilmasdan PAID
+        // deb saqlanib, javobdagi debtAmount manfiyga tushardi.
+        if (request.getPaidAmount() != null && request.getPaidAmount().compareTo(totalAmount) > 0) {
+            throw new BadRequestException(String.format(
+                    "To'langan summa xarid summasidan (%s) katta bo'lishi mumkin emas", totalAmount));
+        }
+
         // Determine payment status
         PaymentStatus paymentStatus = calculatePaymentStatus(request.getPaidAmount(), totalAmount);
 
@@ -175,6 +183,13 @@ public class PurchaseService {
                     .build();
 
             purchase.addItem(item);
+        }
+
+        // Yaratishdagi bilan bir xil chegara: qoralama tahrirlanganda ham
+        // to'langan summa yangi jami summadan oshib ketmasligi kerak
+        if (purchase.getPaidAmount() != null && purchase.getPaidAmount().compareTo(totalAmount) > 0) {
+            throw new BadRequestException(String.format(
+                    "To'langan summa xarid summasidan (%s) katta bo'lishi mumkin emas", totalAmount));
         }
 
         purchase.setTotalAmount(totalAmount);

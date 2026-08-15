@@ -102,10 +102,15 @@ function PurchaseForm({ suppliers, onClose }: Pick<Props, 'suppliers' | 'onClose
   const handleSave = () => {
     if (!selectedSupplier || items.length === 0) return;
 
+    // Input'dagi min/max faqat brauzer strelkalarini cheklaydi, terilgan
+    // qiymatni emas — jami summadan ortiq (yoki manfiy) to'lov shu yerda
+    // kesiladi; backend ham endi ortiqcha to'lovni 400 bilan rad etadi.
+    const safePaidAmount = Math.min(Math.max(0, paidAmount), total);
+
     save.mutate({
       supplierId: selectedSupplier.id,
       orderDate: purchaseDate,
-      paidAmount,
+      paidAmount: safePaidAmount,
       notes: notes || undefined,
       items: items.map<PurchaseItemRequest>((item) => ({
         productId: item.product.id,
