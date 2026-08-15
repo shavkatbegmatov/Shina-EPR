@@ -181,48 +181,58 @@ Dastlab tekshiruvsiz qolgan 19 topilma (18 noyob — purchase-return ikki finder
 
 # UCHINCHI BOSQICH — QAYTA AUDIT (2026-08-15, `224430a` holatida)
 
-Birinchi ikki bosqich tuzatilgach, butun loyiha qayta tekshirildi (6 parallel qidiruvchi agent, har biri AUDIT.md'dagi ma'lum topilmalarni chiqarib tashlab, faqat YANGI xatolarni qidirdi — ayniqsa parallel ishdan kelgan Telegram/xodim-ro'yxatga-olish oqimi va mening o'z tuzatishlarim regressiyalariga). Natija: **~26 yangi topilma**, shundan 4 tasi ikki agent tomonidan mustaqil topilgan. Hali TEKSHIRILMAGAN — tuzatishdan oldin adversarial tasdiqlash kerak.
+Birinchi ikki bosqich tuzatilgach, butun loyiha qayta tekshirildi (6 parallel qidiruvchi agent, har biri AUDIT.md'dagi ma'lum topilmalarni chiqarib tashlab, faqat YANGI xatolarni qidirdi). Topilgan 26 da'vo keyin **6 ta adversarial tekshiruvchi** tomonidan rad etishga urinildi (noaniqlikda REFUTED tomonga xato qilish sharti bilan).
 
-## R-HIGH (5)
+**Tekshiruv natijasi: 3 RAD ETILDI, 23 tasdiqlandi — 1 HIGH, 9 MEDIUM, 13 LOW.** Dastlab HIGH deb belgilangan 5 da'vodan faqat bittasi HIGH bo'lib qoldi.
 
-| # | Joy | Muammo |
+## R-HIGH — tasdiqlangan (1)
+
+| # | Joy | Muammo va tuzatish |
 |---|---|---|
-| R1 (2 agent) | `shina-magazin-front/src/api/axios.ts:34` | **Q1 REGRESSIYASI:** 401 interceptor'da single-flight yo'q — bitta tab ichida 2+ parallel so'rov 401 olsa, ikkalasi bir xil refresh token bilan yangilaydi; ikkinchisi reuse-detection'ni ishga tushirib BUTUN sessiyani o'ldiradi. Har ertalab dashboard 3-4 parallel so'rov yuboradi → har token muddati tugashida majburiy re-login + soxta "o'g'irlangan token" logi. Tuzatish: single-flight (bitta umumiy refresh promise) |
-| R2 | `SaleService.cancelSale:319` | Qarz to'lovidan KEYIN sotuvni bekor qilish to'lovni izsiz o'zlashtiradi — cancelSale PaymentRepository'ni tekshirmaydi (inject ham qilinmagan), faqat `sale.debtAmount` (to'lanmagan qism) tiklanadi, Payment qatori qoladi va stats/kassada sanaladi. Mijoz 700k bergan, tovar qaytargan, balans 0 — 300k izsiz do'konda |
-| R3 | `PurchaseService.createReturn:342` | Bitta qaytarish so'rovi ichidagi TAKRORIY mahsulot qatorlari kvota guard'ini chetlab o'tadi (H2 fix faqat so'rovlar ORASIni qamragan) — `[{T,10},{T,10}]` ikkalasi ham o'tadi, supplier 2× kreditlanadi, receivedQuantity/totalAmount manfiy |
-| R4 | `ProductImportService.applyRow:195` | Excel import mavjud mahsulot zaxirasini StockMovement'siz ustidan yozadi (va bo'sh katak purchasePrice'ni null qiladi) — eksport qilingan faylni qayta yuklash haftalik sotuvlarni bekor qiladi, fantom zaxira |
-| R5 (2 agent) | `POSPage.tsx:250` + backend | POS mijoz UZATGAN pulni (qaytim bilan) `paidAmount` deb saqlaydi; Z-hisobot uni naqd tushum deb sanaydi → har qaytimli naqd sotuvda kassirga qaytim summasicha soxta kamomad. SaleDetailPage ham noto'g'ri "to'landi" ko'rsatadi |
+| R3 | `PurchaseService.createReturn:342` | Bitta qaytarish so'rovi ichidagi TAKRORIY mahsulot qatorlari kvota guard'ini chetlab o'tadi (H2 fix faqat so'rovlar ORASIni qamragan): `outstanding` map tsikldan oldin bir marta olinadi va ichida yangilanmaydi, `completeReturn` re-validatsiyasi ham butun tsikldan OLDIN tugaydi. **Shart:** boshqa partiyadan ortiqcha zaxira bo'lishi kerak (aks holda `newStock < 0` guard'i to'sadi). Natija: `receivedQuantity` −10, supplier 2× kreditlanadi, `totalAmount` manfiy bo'lib ham PAID. **Tuzatish:** `request.getItems()`ni productId bo'yicha yig'ish + `completeReturn`da validatsiya va dekrementni bitta tsiklga birlashtirish |
 
-## R-MEDIUM (10)
+## R-MEDIUM — tasdiqlangan (9)
 
-| # | Joy | Muammo |
+| # | Joy | Muammo va tuzatish |
 |---|---|---|
-| R6 (2 agent) | `CashShiftService.buildReport:191` | Boshqa ochiq smenada qilingan qaytarim SOTUV smenasining kutilgan naqdini kompensatsiyasiz kamaytiradi — `sumCashRefundedNettedInPaid` faqat same-shift'ni qamraydi, lekin har kassirning parallel ochiq smenasi bo'lishi mumkin. Bir qaytarim ikki kassadan ayiriladi |
-| R7 | `PaymentRepository.java:77` | `sumDebtPaymentsAppliedToCashSalesOfShift`da `sale.status <> CANCELLED` filtri yo'q — bekor qilingan sotuvning paidAmount'i cashReceived'da yo'q, lekin ayirishda bor: formula ikki xil sotuv to'plami bo'yicha yig'adi |
-| R8 | `SaleReturnService.createReturn:96` | Bitta sotuv-qaytarish so'rovi ichidagi takroriy saleItemId'lar zaxirani ikki marta tiklaydi (R3 ning sotuv tomondagi egizi) — refund clamp puni cheklaydi, lekin stock tiklash cheklanmagan |
-| R9 | `ReportService.sumPaidByMethod:230` | Sotuvlar hisobotining naqd/karta/o'tkazma summalari keyingi qarz to'lovlarini sotuvning davri va usuli ostida yutadi (H3 Z-hisobot uchun tuzatilgan, lekin bu davriy hisobot mutatsiya maydonida qolgan) — yanvar naqd tushumi martdagi karta to'lovi bilan o'sadi |
-| R10 | `TelegramNotifier.sendTestMessage:117` | Bot TOKENI xato javobida sizib chiqadi — `ResourceAccessException` xabari to'liq URL (`apiBase + botToken`) ni o'z ichiga oladi, u BadRequestException bilan ERP klientiga va toast'ga qaytadi. SETTINGS foydalanuvchisi botni to'liq egallaydi (setWebhook → barcha kelajakdagi parol/PIN xabarlarini ushlash) |
-| R11 (2 agent) | `StaffRegistrationService.approve/reject` | Qaror xabari (login+vaqtinchalik parol) tranzaksiya COMMIT'idan OLDIN yuboriladi — ikki reviewer parallel harakat qilsa, yutqazgan `@Version` rollback'idan keyin "sharpa" login/parol yoki qo'sh xabar yetkaziladi. Konvensiya: AFTER_COMMIT (L1) |
-| R12 (2 agent) | `StaffRegistrationService.approve:206` | Body'siz approve arizachi O'ZI so'ragan rolni beradi (ADMIN ham) — `firstNonBlank(body, requestedRole, SELLER)`, controller body'ni `required=false` deb e'lon qilgan. Swagger/curl/skript ADMIN akkaunt yaratadi. Faqat React modal himoya qiladi |
-| R13 | `PasswordChangeModal.tsx:90` | "Majburiy" birinchi-kirish parol almashtirish UI'da o'tkazib yuborilishi mumkin (doim faol X tugmasi) va backend `mustChangePassword`ni hech qayerda tekshirmaydi — Telegram tarixidagi vaqtinchalik parol muddatsiz amal qiladi |
-| R14 | `CheckoutPage.tsx:73` | Checkout telefon validatsiyasi +998 prefiks raqamlarini sanaydi — 9 o'rniga 6 abonent raqami o'tadi (backend pattern ham faqat uzunlik). Buyurtma bog'lanib bo'lmaydigan telefon bilan saqlanadi |
-| R15 | `shop/store/cartStore.ts:58` | Do'kon savati localStorage narx snapshot'idan jami hisoblaydi, server esa joriy `sellingPrice` bilan narxlaydi — tasdiqlangan summa Payme/Click'da undirilgan summadan farq qilishi mumkin (mijoz 980k tasdiqlab 1050k to'laydi) |
+| R1 ⬇high | `front/src/api/axios.ts:34` | **Q1 REGRESSIYASI:** single-flight yo'q (`isRefreshing\|refreshPromise\|failedQueue` — nol natija), dashboard 2+ parallel so'rov yuboradi. Ikkinchi refresh reuse-detection'ni ishga tushiradi (yoki `@Version` konflikti beradi) — ikkala holatda ham majburiy re-login. Fail-closed, ruxsatsiz kirish yo'q → medium. **Tuzatish:** modul darajasidagi `refreshPromise` + backend'da bir necha soniyalik grace oynasi (eski token kelsa joriy juftlikni qaytarish) |
+| R5 ⬇high | `POSPage.tsx:250` + `SaleService` | `paidAmount` hech qayerda clamp qilinmaydi (xaridlarda bunday guard BOR — `PurchaseService:87-90`), Z-hisobot, sotuv hisoboti va chekka o'tadi. **Qayta ramkalandi:** modal aniq jamiga oldindan to'ldirilgan (test bilan qulflangan), tugmalar +1K/+10K qo'shuvchilar — ya'ni kassir qiymatni qo'lda oshirgan holat, "har sotuv" emas. **Tuzatish:** `max={total}` + backend `paidAmount <= totalAmount` |
+| R6 | `CashShiftService.buildReport:191` | Boshqa ochiq smenada qilingan qaytarim SOTUV smenasining naqdini kompensatsiyasiz qoldiradi (refund qiluvchi menejer/admin bo'lishi kerak — SELLER'da `SALES_REFUND` yo'q). **Nafis tuzatish:** `sumCashRefundedNettedInPaid`dan `AND r.shift.id` ni olib tashlab, SOTUV smenasi bo'yicha kalitlash — same-shift o'zgarmaydi, cross-shift avtomatik to'g'rilanadi |
+| R8 | `SaleReturnService.createReturn:96` | Takroriy `saleItemId` zaxirani ikki marta tiklaydi. **Da'vodan yomonroq:** ko'p qatorli sotuvda pul ham cheklanmaydi (`maxRefundable` butun sotuv summasi), qatorlar soni ham chegaralanmagan. **Tuzatish:** `saleItemId` bo'yicha yig'ish |
+| R9 | `ReportService.sumPaidByMethod:230` | Yanvar CASH sotuvining martdagi CARD to'lovi yanvar `cashTotal`ini oshiradi va `debtTotal`ini kamaytiradi; `totalRevenue` barqaror qolgani uchun drift jimgina o'tadi. **Tuzatish:** `Payment` qatorlaridan (`method` + `paymentDate`) hisoblash |
+| R10 | `TelegramNotifier:117` | Bot TOKENI toast'da va WARN loglarda sizib chiqadi (token URL yo'lida; Spring `ResourceAccessException` xabari URI'ni o'z ichiga oladi — jar'dan tasdiqlangan; mavjud test aynan shu satrni ko'rsatadi; logbackda maskalash yo'q). **Tuzatish:** tokenni maskalovchi helper + barcha uch chiqish nuqtasini shundan o'tkazish |
+| R13 | `PasswordChangeModal.tsx:90` | **Da'vodan kuchliroq:** modalda "majburiy" varianti umuman yo'q (X + alohida "o'tkazib yuborish" tugmasi), backend `mustChangePassword`ni hech qayerda tekshirmaydi — Telegram orqali parol yuborishni oqlaydigan yagona asos mavjud emas. **Tuzatish:** server tomonda gate (faqat me/change-password/logout) + `forced` prop |
+| R4 ⬇high | `ProductImportService.applyRow:195` | Mavjud mahsulot zaxirasini movement'siz ustidan yozadi; `purchasePrice` nullashi da'vodan kengroq (ustun yo'q bo'lsa ham). **Pasaytirildi:** `dryRun=true` default va ikki bosqichli UI bor, lekin preview maydon-darajasidagi farqni ko'rsatmaydi. **Tuzatish:** Miqdorni faqat `isNew`da qo'llash yoki ADJUSTMENT movement yozish |
+| R-STOCK2 | `ProductService.deleteProduct:131` | To'rttala qism ham tasdiqlandi + qo'shimcha: SKU abadiy band qoladi (`existsBySku` flagni tekshirmaydi). Zaxira stats'dan yo'qoladi, tiklash yo'li yo'q, `createSale` `active`ni tekshirmaydi. **Tuzatish:** `quantity > 0` da bloklash + `createSale`da active tekshiruvi |
 
-## R-LOW (6)
+## R-LOW — tasdiqlangan (13)
 
-| # | Joy | Muammo |
+| # | Joy | Qisqacha |
 |---|---|---|
-| R16 | `SessionRepository.deleteExpiredSessions` | **Q1 REGRESSIYASI:** kechalik tozalash sessiyani access-token muddati (24h) bo'yicha o'chiradi — V41'dan keyin sessiya qatori refresh amalining yagona tashuvchisi, ya'ni ~1 kun dam olishdan keyin 7 kunlik refresh token o'ladi (dam olish kuni → dushanba majburiy re-login). Tuzatish: `createdAt + refresh-expiration` bo'yicha o'chirish yoki isActive tekshiruvi |
-| R17 | `portal/pages/PurchaseDetailPage.tsx:15` | 1a1452c cheksiz-skelet tuzatishi mijoz-portal xarid sahifasini o'tkazib yuborgan — aynan tuzatilgan naqsh qolgan (id bo'lmasa cheksiz spinner) |
-| R18 | `StaffRegistrationService.linkTelegram:151` | "Bir martalik" link tokeni hech qachon bekor qilinmaydi va har /start'da chatni qayta bog'laydi — sizib ketgan linkni oxirgi ochgan odam vaqtinchalik parolli qaror xabarini oladi |
-| R19 | `DebtService.getDebtPayments:86` | Qarz to'lovlari tarixi shu qarzning emas, mijozning BARCHA DEBT_PAYMENT'larini qaytaradi — xodim qarz B'ni A ning to'lovi bilan aralashtiradi |
-| R20 | `StaffRequestsPage.tsx:201` | Rad etish modali oldingi arizachining sababini qayta ishlatadi (faqat muvaffaqiyatda tozalanadi) — sabab Telegram orqali yetkaziladi, B arizachi A ning sababini oladi |
-| R21 | Boshqalar | `deleteReturn` faqat PENDING qabul qiladi, APPROVED qaytarish stock yetmasa abadiy qamalib qoladi (R6-purchase); POS foiz chegirma yaxlitlash farqi mijozsiz sotuvni rad ettiradi (R2-front); parol siyosati front(ASCII)/back(Unicode) mos emas (2 agent); DebtsPage to'lov xatosini jim yutadi; shop savat stock clamp'i yo'q; ReportService "davr ichida to'langan" davrni e'tiborsiz qoldiradi; product deactivate zaxirani yo'qotadi + sotiladigan qoladi; PATCH /stock movement'siz |
+| R7 ⬇med | `PaymentRepository:77` | `sale.status <> CANCELLED` filtri yo'q. Uchta shart kerak; same-shift naqdda `+cashDebtPayments` buni aynan nolga kompensatsiya qiladi |
+| R16 | `SessionRepository.deleteExpiredSessions` | **Q1 REGRESSIYASI:** tozalash access-muddati bo'yicha o'chiradi. Kunlik foydalanuvchilar zarar ko'rmaydi — faqat dam olish tanaffusi (juma 17:00 → yakshanba 02:00 → dushanba re-login) |
+| R2-qoldiq | `SaleService.cancelSale` | Asosiy da'vo RAD ETILDI (pastga qarang), lekin qoldiq bor: bekor qilish naqd chiqimni qayd etmaydi — pul keyingi smenada qaytarilsa kassa hisobsiz kamayadi |
+| R11 ⬇med | `StaffRegistrationService` | Xabar commit'dan oldin yuboriladi, lekin **trigger rad etildi**: ikkala tranzaksiya ham avval `createEmployee` chaqiradi, `username` UNIQUE ikkinchisini yuborishga yetkazmaydi. Qoldiq oyna tor |
+| R12 ⬇med | `StaffRegistrationService:206` | Eskalatsiya sifatida **rad etildi** (`approve` = `EMPLOYEES_CREATE` = faqat ADMIN; u baribir `roleCode: ADMIN` yubora olardi). Least-privilege default nuqsoni |
+| R18 | `linkTelegram:151` | Token bir martalik emas, chatni qayta bog'lash guard'i yo'q (mijoz oqimida BOR). Link sizib ketishi kerak (18 random bayt) |
+| R19 | `DebtService:86` | Qarz to'lovlari tarixi mijozning barcha to'lovlarini ko'rsatadi — sarlavha "To'lovlar tarixi", ustidagi raqamlarga zid |
+| R20 | `StaffRequestsPage:201` | Rad sababi oldingi arizachidan qoladi (Telegram orqali yetkaziladi); tasdiqlashdan oldin ko'rinadi |
+| R-RPT | `ReportService:670` | "Davr ichida to'langan" davrni e'tiborsiz qoldiradi va `originalAmount` yig'adi. **Tayyor yechim:** M3 uchun yozilgan `sumDebtPaymentsBetween` |
+| R-PWD | `passwordPolicy.ts:82` | Front ASCII / back Unicode — ikki tomonlama nomuvofiqlik. "Generate" faqat ASCII chiqargani uchun bu yo'l xavfsiz |
+| R-DEBTUI | `DebtsPage:348` | To'lov xatosi jim yutiladi (toast yo'q); modal ochiq qolishi yagona signal |
+| R-SHOPCART | `shop/cartStore.ts:26` | Zaxira clamp'i yo'q (POS'da BOR); xato faqat oxirgi qadamda chiqadi |
+| R14, R15, R-STOCK1, R-RET | — | Telefon validatsiyasi prefiksni sanaydi (+ `normalize` uni `+998998901234` ga aylantiradi); savat narx snapshot'i (haqiqiy summa to'lov shlyuzida ko'rinadi); `adjustStock` — frontend wrapper'i o'lik kod; APPROVED qaytarish "abadiy" emas (zaxira to'ldirilsa yakunlanadi) |
+
+## RAD ETILDI (3)
+
+- **R2** (HIGH da'vo qilingan) — mexanika to'g'ri, **arifmetika xato**: `createSale` balansga faqat qarzni yozadi, ya'ni −300k→0 to'g'ri obligatsiya ledgeri; do'kon 300k emas, to'liq 700k qarzdor va buni hech qanday kod o'zlashtirmaydi. "Iz yo'q" ham noto'g'ri — Payment qatori, qarz izohi, `sale.paidAmount`, audit_log saqlanadi
+- **R17** — portal sahifasi marshruti `xaridlar/:id`, React Router v6 dinamik segmenti bo'sh qiymat bilan mos kelmaydi; ERP egizlarida hang faqat sun'iy id'siz marshrut bilan qayta tiklangan. Konvensiya uchun ixtiyoriy
+- **R-POS** — mexanizm bor, lekin ishlamaydi: 245 005 butun-foizli va 33 326 ikki-kasrli holat **to'liq** tekshirildi, float va BigDecimal jami AYNAN mos keldi (narxlar 100 ga karrali bo'lgani uchun). Chang-qarz faqat sun'iy kirishlarda
 
 ## Qayta-audit — CLEAN deb tasdiqlangan (regressiya YO'Q)
 - Same-shift va closed-cross-shift'dagi yettala `expectedCash` termi kombinatsiyalari (raqamli tekshirildi); `closeShift` saqlashi; `makeFullPayment` (3df36cc); parallel qisman to'lovlar (`@Version` himoyalaydi); `OVERDUE` o'lik enum; M1 lockout matematikasi; L2 rate-limiter per-entry; webhook secret; cleanupRejected scheduler; SessionsTab rotatsiya bilan; ERP 6 tafsilot sahifasi (faqat portal PurchaseDetail qolgan); i18n kalitlari (o'zgargan sahifalarda ikkala lokal to'liq)
 
-**Tavsiya etilgan tuzatish tartibi:** R1 (Q1 regressiyasi — har kuni har xodimga ta'sir), R5 (POS qaytim — har qaytimli sotuv), R2 (to'lov o'zlashtirilishi), R3+R8 (takroriy qatorlar), R4 (import), keyin R-MEDIUM'lar. R10 (token sizishi) va R12 (ADMIN eskalatsiya) xavfsizlik jihatidan tez tuzatilishi kerak.
+**Tekshiruvdan keyingi tuzatish tartibi:** R3+R8 (takroriy qatorlar — bir xil shakl, ombor/pul buzilishi), R1 (Q1 regressiyasi — har kuni har xodimga ta'sir), R6+R7 (smena formulasi), R10+R13 (xavfsizlik), R5, R9, keyin LOW'lar.
 
 ---
 
