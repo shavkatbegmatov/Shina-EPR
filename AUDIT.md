@@ -179,9 +179,103 @@ Dastlab tekshiruvsiz qolgan 19 topilma (18 noyob — purchase-return ikki finder
 
 ---
 
+# UCHINCHI BOSQICH — QAYTA AUDIT (2026-08-15, `224430a` holatida)
+
+Birinchi ikki bosqich tuzatilgach, butun loyiha qayta tekshirildi (6 parallel qidiruvchi agent, har biri AUDIT.md'dagi ma'lum topilmalarni chiqarib tashlab, faqat YANGI xatolarni qidirdi — ayniqsa parallel ishdan kelgan Telegram/xodim-ro'yxatga-olish oqimi va mening o'z tuzatishlarim regressiyalariga). Natija: **~26 yangi topilma**, shundan 4 tasi ikki agent tomonidan mustaqil topilgan. Hali TEKSHIRILMAGAN — tuzatishdan oldin adversarial tasdiqlash kerak.
+
+## R-HIGH (5)
+
+| # | Joy | Muammo |
+|---|---|---|
+| R1 (2 agent) | `shina-magazin-front/src/api/axios.ts:34` | **Q1 REGRESSIYASI:** 401 interceptor'da single-flight yo'q — bitta tab ichida 2+ parallel so'rov 401 olsa, ikkalasi bir xil refresh token bilan yangilaydi; ikkinchisi reuse-detection'ni ishga tushirib BUTUN sessiyani o'ldiradi. Har ertalab dashboard 3-4 parallel so'rov yuboradi → har token muddati tugashida majburiy re-login + soxta "o'g'irlangan token" logi. Tuzatish: single-flight (bitta umumiy refresh promise) |
+| R2 | `SaleService.cancelSale:319` | Qarz to'lovidan KEYIN sotuvni bekor qilish to'lovni izsiz o'zlashtiradi — cancelSale PaymentRepository'ni tekshirmaydi (inject ham qilinmagan), faqat `sale.debtAmount` (to'lanmagan qism) tiklanadi, Payment qatori qoladi va stats/kassada sanaladi. Mijoz 700k bergan, tovar qaytargan, balans 0 — 300k izsiz do'konda |
+| R3 | `PurchaseService.createReturn:342` | Bitta qaytarish so'rovi ichidagi TAKRORIY mahsulot qatorlari kvota guard'ini chetlab o'tadi (H2 fix faqat so'rovlar ORASIni qamragan) — `[{T,10},{T,10}]` ikkalasi ham o'tadi, supplier 2× kreditlanadi, receivedQuantity/totalAmount manfiy |
+| R4 | `ProductImportService.applyRow:195` | Excel import mavjud mahsulot zaxirasini StockMovement'siz ustidan yozadi (va bo'sh katak purchasePrice'ni null qiladi) — eksport qilingan faylni qayta yuklash haftalik sotuvlarni bekor qiladi, fantom zaxira |
+| R5 (2 agent) | `POSPage.tsx:250` + backend | POS mijoz UZATGAN pulni (qaytim bilan) `paidAmount` deb saqlaydi; Z-hisobot uni naqd tushum deb sanaydi → har qaytimli naqd sotuvda kassirga qaytim summasicha soxta kamomad. SaleDetailPage ham noto'g'ri "to'landi" ko'rsatadi |
+
+## R-MEDIUM (10)
+
+| # | Joy | Muammo |
+|---|---|---|
+| R6 (2 agent) | `CashShiftService.buildReport:191` | Boshqa ochiq smenada qilingan qaytarim SOTUV smenasining kutilgan naqdini kompensatsiyasiz kamaytiradi — `sumCashRefundedNettedInPaid` faqat same-shift'ni qamraydi, lekin har kassirning parallel ochiq smenasi bo'lishi mumkin. Bir qaytarim ikki kassadan ayiriladi |
+| R7 | `PaymentRepository.java:77` | `sumDebtPaymentsAppliedToCashSalesOfShift`da `sale.status <> CANCELLED` filtri yo'q — bekor qilingan sotuvning paidAmount'i cashReceived'da yo'q, lekin ayirishda bor: formula ikki xil sotuv to'plami bo'yicha yig'adi |
+| R8 | `SaleReturnService.createReturn:96` | Bitta sotuv-qaytarish so'rovi ichidagi takroriy saleItemId'lar zaxirani ikki marta tiklaydi (R3 ning sotuv tomondagi egizi) — refund clamp puni cheklaydi, lekin stock tiklash cheklanmagan |
+| R9 | `ReportService.sumPaidByMethod:230` | Sotuvlar hisobotining naqd/karta/o'tkazma summalari keyingi qarz to'lovlarini sotuvning davri va usuli ostida yutadi (H3 Z-hisobot uchun tuzatilgan, lekin bu davriy hisobot mutatsiya maydonida qolgan) — yanvar naqd tushumi martdagi karta to'lovi bilan o'sadi |
+| R10 | `TelegramNotifier.sendTestMessage:117` | Bot TOKENI xato javobida sizib chiqadi — `ResourceAccessException` xabari to'liq URL (`apiBase + botToken`) ni o'z ichiga oladi, u BadRequestException bilan ERP klientiga va toast'ga qaytadi. SETTINGS foydalanuvchisi botni to'liq egallaydi (setWebhook → barcha kelajakdagi parol/PIN xabarlarini ushlash) |
+| R11 (2 agent) | `StaffRegistrationService.approve/reject` | Qaror xabari (login+vaqtinchalik parol) tranzaksiya COMMIT'idan OLDIN yuboriladi — ikki reviewer parallel harakat qilsa, yutqazgan `@Version` rollback'idan keyin "sharpa" login/parol yoki qo'sh xabar yetkaziladi. Konvensiya: AFTER_COMMIT (L1) |
+| R12 (2 agent) | `StaffRegistrationService.approve:206` | Body'siz approve arizachi O'ZI so'ragan rolni beradi (ADMIN ham) — `firstNonBlank(body, requestedRole, SELLER)`, controller body'ni `required=false` deb e'lon qilgan. Swagger/curl/skript ADMIN akkaunt yaratadi. Faqat React modal himoya qiladi |
+| R13 | `PasswordChangeModal.tsx:90` | "Majburiy" birinchi-kirish parol almashtirish UI'da o'tkazib yuborilishi mumkin (doim faol X tugmasi) va backend `mustChangePassword`ni hech qayerda tekshirmaydi — Telegram tarixidagi vaqtinchalik parol muddatsiz amal qiladi |
+| R14 | `CheckoutPage.tsx:73` | Checkout telefon validatsiyasi +998 prefiks raqamlarini sanaydi — 9 o'rniga 6 abonent raqami o'tadi (backend pattern ham faqat uzunlik). Buyurtma bog'lanib bo'lmaydigan telefon bilan saqlanadi |
+| R15 | `shop/store/cartStore.ts:58` | Do'kon savati localStorage narx snapshot'idan jami hisoblaydi, server esa joriy `sellingPrice` bilan narxlaydi — tasdiqlangan summa Payme/Click'da undirilgan summadan farq qilishi mumkin (mijoz 980k tasdiqlab 1050k to'laydi) |
+
+## R-LOW (6)
+
+| # | Joy | Muammo |
+|---|---|---|
+| R16 | `SessionRepository.deleteExpiredSessions` | **Q1 REGRESSIYASI:** kechalik tozalash sessiyani access-token muddati (24h) bo'yicha o'chiradi — V41'dan keyin sessiya qatori refresh amalining yagona tashuvchisi, ya'ni ~1 kun dam olishdan keyin 7 kunlik refresh token o'ladi (dam olish kuni → dushanba majburiy re-login). Tuzatish: `createdAt + refresh-expiration` bo'yicha o'chirish yoki isActive tekshiruvi |
+| R17 | `portal/pages/PurchaseDetailPage.tsx:15` | 1a1452c cheksiz-skelet tuzatishi mijoz-portal xarid sahifasini o'tkazib yuborgan — aynan tuzatilgan naqsh qolgan (id bo'lmasa cheksiz spinner) |
+| R18 | `StaffRegistrationService.linkTelegram:151` | "Bir martalik" link tokeni hech qachon bekor qilinmaydi va har /start'da chatni qayta bog'laydi — sizib ketgan linkni oxirgi ochgan odam vaqtinchalik parolli qaror xabarini oladi |
+| R19 | `DebtService.getDebtPayments:86` | Qarz to'lovlari tarixi shu qarzning emas, mijozning BARCHA DEBT_PAYMENT'larini qaytaradi — xodim qarz B'ni A ning to'lovi bilan aralashtiradi |
+| R20 | `StaffRequestsPage.tsx:201` | Rad etish modali oldingi arizachining sababini qayta ishlatadi (faqat muvaffaqiyatda tozalanadi) — sabab Telegram orqali yetkaziladi, B arizachi A ning sababini oladi |
+| R21 | Boshqalar | `deleteReturn` faqat PENDING qabul qiladi, APPROVED qaytarish stock yetmasa abadiy qamalib qoladi (R6-purchase); POS foiz chegirma yaxlitlash farqi mijozsiz sotuvni rad ettiradi (R2-front); parol siyosati front(ASCII)/back(Unicode) mos emas (2 agent); DebtsPage to'lov xatosini jim yutadi; shop savat stock clamp'i yo'q; ReportService "davr ichida to'langan" davrni e'tiborsiz qoldiradi; product deactivate zaxirani yo'qotadi + sotiladigan qoladi; PATCH /stock movement'siz |
+
+## Qayta-audit — CLEAN deb tasdiqlangan (regressiya YO'Q)
+- Same-shift va closed-cross-shift'dagi yettala `expectedCash` termi kombinatsiyalari (raqamli tekshirildi); `closeShift` saqlashi; `makeFullPayment` (3df36cc); parallel qisman to'lovlar (`@Version` himoyalaydi); `OVERDUE` o'lik enum; M1 lockout matematikasi; L2 rate-limiter per-entry; webhook secret; cleanupRejected scheduler; SessionsTab rotatsiya bilan; ERP 6 tafsilot sahifasi (faqat portal PurchaseDetail qolgan); i18n kalitlari (o'zgargan sahifalarda ikkala lokal to'liq)
+
+**Tavsiya etilgan tuzatish tartibi:** R1 (Q1 regressiyasi — har kuni har xodimga ta'sir), R5 (POS qaytim — har qaytimli sotuv), R2 (to'lov o'zlashtirilishi), R3+R8 (takroriy qatorlar), R4 (import), keyin R-MEDIUM'lar. R10 (token sizishi) va R12 (ADMIN eskalatsiya) xavfsizlik jihatidan tez tuzatilishi kerak.
+
+---
+
 ## Eslatmalar
 
 - Asosiy 5 klaster qator raqamlari `c576d5d`, ikkinchi bosqich tekshiruvi `e217939` holatiga tegishli.
 - Har ikkala bosqichda ham tekshiruvchi agent kodni, chaqiruvchilarni, DB constraint'larni va mavjud testlarni o'qib chiqib topilmani RAD ETISHGA harakat qilgan.
 - Tasdiqlangan 5 asosiy klaster tuzatilgan: 1fdaa48 (№3), 5895e93 (№4), aad43a0 (№2), 732fdf1 (№1), 673b779 (№5); tozalash migratsiyasi — e217939 (dastlab V38 sifatida qo'shilib, V38 raqami band bo'lgani uchun keyin V40 ga ko'chirilgan).
 - Ikkinchi bosqich uchun tavsiya etilgan tartib: H1 (POS manfiy summa — pul), H3 (qarz to'lovlari Z-hisobotda — o'g'irlik niqobi), H2 (purchase return — supplier ikki kredit), keyin M1 (lockout DoS) va qolgan MEDIUM'lar.
+
+---
+
+# QAYTA AUDIT (`224430a` holatida, barcha tuzatishlardan keyin)
+
+6 qidiruvchi agent parallel: tuzatishlar to'lqinidan keyingi regressiyalar, parallel sessiyada kirgan yangi funksiyalar (xodim ro'yxatga olish, parol siyosati) va avval qamralmagan joylar. AUDIT.md'dagi ma'lum topilmalar chiqarib tashlangan. **4 topilma ikki agent tomonidan mustaqil topilgan** (belgi: 2×). Natija: 6 HIGH, 14 MEDIUM, 10 LOW (~26 noyob).
+
+## R-HIGH (6)
+
+### R1. 2× Axios interceptor'ida single-flight yo'q — Q1 rotatsiyasi bilan birga har kuni majburiy logout
+- [ ] Tuzatildi
+
+`shina-magazin-front/src/api/axios.ts:34`. Har 401 mustaqil refresh yuboradi (umumiy promise/mutex yo'q). Yangi backend rotatsiyasida birinchi so'rov juftlikni almashtiradi, xuddi shu eski token bilan kelgan ikkinchisi `revokeIfRefreshTokenReused`ga tushib **butun sessiyani o'ldiradi** (g'olibning yangi juftligi ham). Oddiy sahifa ochilishi 3-4 parallel so'rov beradi (Dashboard stats+chart, `useSessionMonitor`, Sidebar pending-count) — ya'ni token muddati tugashi ≈ majburiy logout, "reused" xavfsizlik logi esa yolg'on signalga to'ladi. **Tuzatish:** interceptor'da single-flight (bitta refresh promise'ini bo'lishish), navbatdagi 401'lar shu promise'ni kutadi.
+
+### R2. `cancelSale` qarz to'lovidan keyin to'lovni izsiz o'zlashtiradi
+- [ ] Tuzatildi
+
+`SaleService.java:319`. `makePayment` CANCELLED sotuvni bloklaydi, lekin TESKARI tartib himoyasiz: bekor qilish faqat qaytarimlarni tekshiradi, `PaymentRepository` inject ham qilinmagan. Balans faqat `sale.debtAmount` (to'lanmagan qism) ga tiklanadi — qilingan to'lov hech qayerda majburiyat sifatida qolmaydi. Ssenariy: 1M sotuv (400k to'langan, 600k qarz), mijoz 300k qarz to'laydi, keyin sotuv bekor qilinadi: mijoz 700k bergan, tovarni to'liq qaytargan, balansi 0 — 300k do'konda izsiz qoladi. **Tuzatish:** bekor qilishda qarz to'lovlari borligini tekshirib bloklash (yoki to'lovni balansga kreditlash).
+
+### R3. Ikki OCHIQ smena orasidagi qaytarim ikki kassadan ayiriladi
+- [ ] Tuzatildi
+
+`CashShiftService.java:191`. `sumCashRefundedNettedInPaid` faqat return va sotuv AYNI smenada bo'lgan holatni qoplaydi. Sotuv smenasi hali OCHIQ bo'lib, qaytarimni BOSHQA kassir (o'z ochiq smenasida) qabul qilsa: qaytargan kassaning hisoboti to'g'ri, sotuv kassasining `cashReceived`i esa mutatsiya tufayli kamayadi va hech qanday kompensatsiya termi yo'q — sotuv kassasidagi real pul hisobotdan yo'qoladi (kassir o'zlashtirsa farq 0). M4 himoyasi faqat CLOSED smenalarni qoplaydi; testlar birinchi smenani yopib yuborgani uchun bu yo'l ochiq qolgan. **Tuzatish:** netting shartini "sotuv smenasi hali OCHIQ va boshqa smena" holatini ham hisobga oladigan qilish (yoki mutatsiya o'rniga hisob-kitobni to'liq return-jadvalidan olish).
+
+### R4. Bitta so'rov ichidagi TAKRORIY qatorlar purchase-return kvotasini chetlab o'tadi
+- [ ] Tuzatildi
+
+`PurchaseService.java:342`. H2 guard'i faqat SAQLANGAN qaytarishlarni sanaydi — bitta so'rovda ayni mahsulotga ikki qator kelsa, har biri bir xil kvotani ko'radi; `completeReturn` re-validatsiyasi ham har qatorni decrement'dan OLDIN alohida tekshiradi. `[{T,10},{T,10}]` → supplier 2× kreditlanadi, `receivedQuantity` −10, `totalAmount` manfiy. Sale-return'da ham xuddi shu naqsh bor (`SaleReturnService.java:96`, medium): `[{77,3},{77,3}]` → ombor +6 (4 sotilgan bo'lsa ham), pul clamp'i bor lekin stok clamp'i yo'q. **Tuzatish:** so'rov ichida mahsulot/qator bo'yicha miqdorlarni JAMLAB tekshirish (ikkala servisda), completeReturn'da esa qatorlarni jamlab yoki ketma-ket decrement bilan tekshirish.
+
+### R5. Excel import mavjud mahsulot zaxirasini movement'siz ustidan yozadi
+- [ ] Tuzatildi
+
+`ProductImportService.java:195`. "Miqdor" katagi bo'sh bo'lmasa mavjud mahsulotda `setQuantity(qiymat)` — StockMovement yozilmaydi (ProductService:120 dagi invariant buziladi); bo'sh "xarid narxi" katagi esa `purchasePrice`ni NULL qiladi (updateProduct buni ataylab himoya qiladi). Eksport har doim "Miqdor" ustunini o'z ichiga oladi va Javadoc aynan "eksport qilib, tahrirlab, qayta yuklash"ni taklif qiladi — haftalik sotuvlar eskirgan fayl importi bilan "qaytariladi". **Tuzatish:** mavjud mahsulotlarda miqdorni import orqali o'zgartirmaslik (yoki farqni ADJUSTMENT movement bilan yozish); purchasePrice'ni bo'sh katakda tegmaslik.
+
+### R6. POS qaytim puli: `paidAmount`ga uzatilgan pul yoziladi — har qaytimli sotuvda soxta kamomad
+- [ ] Tuzatildi
+
+`POSPage.tsx:250` + `SaleService.createSale`. To'lov modali uzatilgan pulni hisoblagich (banknot tugmalari, qaytim ko'rsatkichi) — lekin submit xom `paidAmount`ni yuboradi, backend clamp'lamaydi (`debtAmount.max(0)` ortiqchani yashiradi), Z-hisobot esa `SUM(paidAmount)`ni kassa tushumi deb oladi. 450k sotuvga 500k uzatilsa: qaytim 50k berilgan, hisobot 500k kutadi → halol kassirga har qaytimda "kamomad". **Tuzatish:** submit'da `paidAmount = min(kiritilgan, total)` (naqd uchun) + backend'da ham clamp; tendered/change faqat UI hisobi bo'lib qolsin.
+
+## R-MEDIUM (14)
+
+| # | Joy | Muammo |
+|---|---|---|
+| R7 | `SessionRepository.java:65` | Tungi tozalash `expiresAt < now` bo'yicha O'CHIRADI — V41'dan keyin sessiya qatori refresh yaroqliligining yagona tashuvchisi: 24-48 soatlik tanaffus (yakshanba!) 7 kunlik refresh'ni o'ldiradi, majburiy qayta login. Tuzatish: faqat `createdAt + refresh-expiration` dan o'tganlarni o'chirish |
+| R8 | `PaymentRepository.java:77` | `sumDebtPaymentsAppliedToCashSalesOfShift`da `sale.status <> CANCELLED` filtri yo'q — summarize CANCELLED'ni chiqaradi, ayirish esa yo'q: ikki term har xil populyatsiya ustida, smena hisobi kam ko'rsatiladi |
+| R9 | `ReportService.java:230` | Davr hisoboti keyingi qarz to'lovlarini sotuv davri/usuliga singdiradi (`sumPaidByMethod` jonli `paidAmount`dan) — yanvar hisoboti mart'dagi karta to'lovi bilan orqaga qarab o'zgaradi. Z-hisobot uchun tuzatilgan (H3), davr hisoboti qolgan |
+| R10 | `StaffRegistrationService.java:
