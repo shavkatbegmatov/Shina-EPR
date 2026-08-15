@@ -15,6 +15,7 @@ import uz.shinamagazin.api.dto.request.StaffRegistrationApproveRequest;
 import uz.shinamagazin.api.dto.request.StaffRegistrationSubmitRequest;
 import uz.shinamagazin.api.dto.response.EmployeeResponse;
 import uz.shinamagazin.api.entity.StaffRegistrationRequest;
+import uz.shinamagazin.api.event.StaffDecisionNotificationEvent;
 import uz.shinamagazin.api.enums.StaffNotificationType;
 import uz.shinamagazin.api.enums.StaffRegistrationStatus;
 import uz.shinamagazin.api.exception.BadRequestException;
@@ -55,6 +56,7 @@ class StaffRegistrationServiceTest {
     private StaffNotificationService staffNotificationService;
     private SettingsService settingsService;
     private TelegramApiClient telegramApiClient;
+    private org.springframework.context.ApplicationEventPublisher eventPublisher;
     private StaffRegistrationService service;
 
     @BeforeEach
@@ -69,9 +71,13 @@ class StaffRegistrationServiceTest {
         telegramApiClient = mock(TelegramApiClient.class);
         when(settingsService.getTelegramBotUsername()).thenReturn("protektor_uz_bot");
 
+        // Qaror xabari endi hodisa orqali (AFTER_COMMIT) ketadi — test uni
+        // eventPublisher chaqiruvi bo'yicha tekshiradi
+        eventPublisher = mock(org.springframework.context.ApplicationEventPublisher.class);
         service = new StaffRegistrationService(
                 requestRepository, employeeRepository, userRepository,
-                employeeService, staffNotificationService, settingsService, telegramApiClient);
+                employeeService, staffNotificationService, settingsService, telegramApiClient,
+                eventPublisher);
         ReflectionTestUtils.setField(service, "publicBaseUrl", "https://protektor.uz");
 
         when(requestRepository.existsByPhoneAndStatus(anyString(), any())).thenReturn(false);
@@ -338,11 +344,13 @@ class StaffRegistrationServiceTest {
 
         service.approve(1L, null);
 
-        ArgumentCaptor<String> text = ArgumentCaptor.forClass(String.class);
-        verify(telegramApiClient).sendMessage(eq(555L), text.capture(), any());
-        assertThat(text.getValue()).contains("a.karimov");
-        assertThat(text.getValue()).contains("SirliParol123");
-        assertThat(text.getValue()).contains("o'chirib tashlang");
+        // Xabar AFTER_COMMIT hodisasi orqali ketadi: commit'gacha yuborilsa,
+        // rollback'da mavjud bo'lmagan akkauntning paroli yetkazilib bo'lardi
+        StaffDecisionNotificationEvent event = capturedDecisionEvent();
+        assertThat(event.chatId()).isEqualTo(555L);
+        assertThat(event.text()).contains("a.karimov");
+        assertThat(event.text()).contains("SirliParol123");
+        assertThat(event.text()).contains("o'chirib tashlang");
     }
 
     @Test
@@ -354,10 +362,21 @@ class StaffRegistrationServiceTest {
 
         service.reject(1L, "Bo'sh ish o'rni yo'q");
 
-        ArgumentCaptor<String> text = ArgumentCaptor.forClass(String.class);
-        verify(telegramApiClient).sendMessage(eq(555L), text.capture(), any());
-        assertThat(text.getValue()).contains("rad etildi");
-        assertThat(text.getValue()).contains("Bo'sh ish o'rni yo'q");
+        StaffDecisionNotificationEvent event = capturedDecisionEvent();
+        assertThat(event.chatId()).isEqualTo(555L);
+        assertThat(event.text()).contains("rad etildi");
+        assertThat(event.text()).contains("Bo'sh ish o'rni yo'q");
+    }
+
+    /** Qaror hodisasini ushlaydi (boshqa hodisalar ham nashr etiladi). */
+    private StaffDecisionNotificationEvent capturedDecisionEvent() {
+        ArgumentCaptor<Object> events = ArgumentCaptor.forClass(Object.class);
+        verify(eventPublisher, org.mockito.Mockito.atLeastOnce()).publishEvent(events.capture());
+        return events.getAllValues().stream()
+                .filter(StaffDecisionNotificationEvent.class::isInstance)
+                .map(StaffDecisionNotificationEvent.class::cast)
+                .findFirst()
+                .orElseThrow(() -> new AssertionError("Qaror hodisasi nashr etilmadi"));
     }
 
     @Test
@@ -368,7 +387,7 @@ class StaffRegistrationServiceTest {
 
         service.reject(1L, "sabab");
 
-        verify(telegramApiClient, never()).sendMessage(anyLong(), anyString(), any());
+        verify(eventPublisher, never()).publishEvent(any(StaffDecisionNotificationEvent.class));
     }
 
     // ─── Tozalash ───

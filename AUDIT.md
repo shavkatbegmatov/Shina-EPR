@@ -232,7 +232,26 @@ Birinchi ikki bosqich tuzatilgach, butun loyiha qayta tekshirildi (6 parallel qi
 ## Qayta-audit — CLEAN deb tasdiqlangan (regressiya YO'Q)
 - Same-shift va closed-cross-shift'dagi yettala `expectedCash` termi kombinatsiyalari (raqamli tekshirildi); `closeShift` saqlashi; `makeFullPayment` (3df36cc); parallel qisman to'lovlar (`@Version` himoyalaydi); `OVERDUE` o'lik enum; M1 lockout matematikasi; L2 rate-limiter per-entry; webhook secret; cleanupRejected scheduler; SessionsTab rotatsiya bilan; ERP 6 tafsilot sahifasi (faqat portal PurchaseDetail qolgan); i18n kalitlari (o'zgargan sahifalarda ikkala lokal to'liq)
 
-**Tekshiruvdan keyingi tuzatish tartibi:** R3+R8 (takroriy qatorlar — bir xil shakl, ombor/pul buzilishi), R1 (Q1 regressiyasi — har kuni har xodimga ta'sir), R6+R7 (smena formulasi), R10+R13 (xavfsizlik), R5, R9, keyin LOW'lar.
+## Tuzatish holati (uchinchi bosqich)
+
+**Tuzatildi — 20 ta:**
+
+| Commit | Topilmalar |
+|---|---|
+| `2e76531` | R3 (HIGH — takroriy xarid qatorlari), R8 (takroriy sotuv qatorlari), R1 (axios single-flight) |
+| `55a3833` | R6 (netting savdo smenasi bo'yicha), R7 (CANCELLED filtri), R10 (bot tokeni maskalash), R13 (majburiy parol — server gate + forced modal), R12 (least-privilege default), R18 (chat qayta bog'lanmaydi), R20 (rad sababi tozalanadi) |
+| `fa02057` | R5 (POS qaytimi clamp), R16 (sessiya oilasi muddati), R19 (qarz to'lovlari filtri), R-RPT (davr + haqiqiy to'lovlar), R-PWD (Unicode siyosat), R-DEBTUI (toast), R-SHOPCART (zaxira clamp), R14 (telefon validatsiyasi) |
+| `00e3c3a` | R4 (import zaxirani ustidan yozmaydi), R-STOCK2 (zaxirali mahsulot arxivlanmaydi + arxivlangan sotilmaydi), R-STOCK1 (ledgersiz endpoint olib tashlandi) |
+| keyingi | R11 (qaror xabari AFTER_COMMIT'ga ko'chirildi) |
+
+**Qoldi — 3 ta (kattaroq ish, alohida rejalashtirish kerak):**
+
+| # | Nima kerak |
+|---|---|
+| R9 (medium) | `ReportService.sumPaidByMethod` ni `Payment` qatorlaridan (method + paymentDate) qayta qurish. Hozir davriy hisobot mutatsiya qilinadigan `sale.paidAmount` ustida ishlaydi — yanvar naqd tushumi martdagi karta to'lovi bilan o'sadi. Z-hisobot uchun bu H3'da hal qilingan, davriy hisobot uchun alohida agregatsiya kerak |
+| R15 (low) | Do'kon savati localStorage narx snapshot'idan hisoblaydi. To'g'ri yechim — checkout'ga kirishda narxlarni qayta olish yoki server "quote" qaytarishi va farq bo'lsa qayta tasdiqlatish. UX qarori kerak |
+| R2-qoldiq (low) | Bekor qilish naqd chiqimni qayd etmaydi: to'lovlar qaytarilganda kassa hisobsiz kamayadi. Yechim — bekor qilishda `sale.paidAmount` bo'yicha chiqim yozuvi (yoki qaytarish oqimiga yo'naltirish) |
+| R-RET (low) | APPROVED qaytarish uchun `rejectReturn` o'tish (PENDING/APPROVED → REJECTED) — servis + endpoint + tugma. Kvota so'rovi REJECTED'ni allaqachon chiqarib tashlaydi |
 
 ---
 

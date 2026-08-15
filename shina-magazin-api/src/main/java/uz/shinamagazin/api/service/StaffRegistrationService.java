@@ -3,7 +3,9 @@ package uz.shinamagazin.api.service;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.data.domain.Page;
+import uz.shinamagazin.api.event.StaffDecisionNotificationEvent;
 import org.springframework.data.domain.Pageable;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
@@ -76,6 +78,7 @@ public class StaffRegistrationService {
     private final StaffNotificationService staffNotificationService;
     private final SettingsService settingsService;
     private final TelegramApiClient telegramApiClient;
+    private final ApplicationEventPublisher eventPublisher;
 
     /** ERP manzili — arizachiga yuboriladigan "kirish" havolasi uchun. */
     @Value("${shop.public-base-url:http://localhost:5183}")
@@ -344,22 +347,25 @@ public class StaffRegistrationService {
     }
 
     /**
-     * Arizachiga qaror haqida xabar beradi.
+     * Arizachiga qaror haqida xabar beradi — TRANZAKSIYA TASDIQLANGACH.
      *
-     * <p>Hech qachon yiqilmaydi: Telegram ishlamasligi tasdiqlashni bekor
-     * qilmasligi kerak — xodim allaqachon qaror qabul qilgan va akkaunt
-     * yaratilgan. Xabar bormasa, u qo'lda bog'lanadi.
+     * <p>Xabar hodisa orqali yuboriladi: ilgari u shu yerdan, commit'dan
+     * OLDIN ketardi va commit paytidagi xatolik (masalan ikki tekshiruvchi
+     * bir vaqtda harakat qilganda {@code @Version} konflikti) yuz bersa,
+     * arizachi ROLLBACK bo'lgan qaror haqida — ba'zan mavjud bo'lmagan
+     * akkauntning login va vaqtinchalik paroli bilan — xabar olib bo'lgan
+     * bo'lardi. Bu loyihadagi boshqa tashqi kanallar bilan bir xil naqsh
+     * ({@link TelegramNotificationListener}).
+     *
+     * <p>Telegram ishlamasligi qarorni bekor qilmaydi — xabar bormasa,
+     * xodim qo'lda bog'lanadi.
      */
     private void notifyApplicant(StaffRegistrationRequest request, String text) {
         Long chatId = request.getTelegramChatId();
         if (chatId == null) {
             return;
         }
-        try {
-            telegramApiClient.sendMessage(chatId, text, TelegramApiClient.removeKeyboard());
-        } catch (Exception e) {
-            log.warn("Arizachiga xabar yuborilmadi ({}): {}", request.getPhone(), e.getMessage());
-        }
+        eventPublisher.publishEvent(new StaffDecisionNotificationEvent(chatId, text));
     }
 
     /** ERP manzili — botdagi "kirish" havolasi uchun. */
