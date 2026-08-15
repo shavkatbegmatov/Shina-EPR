@@ -21,9 +21,14 @@ public interface LoginAttemptRepository extends JpaRepository<LoginAttempt, Long
     // Get login attempts by username (even if user doesn't exist)
     List<LoginAttempt> findByUsernameOrderByCreatedAtDesc(String username);
 
-    // Get recent failed attempts for a user/IP (for lockout logic)
+    // Get recent failed attempts for a user/IP (for lockout logic).
+    // ACCOUNT_LOCKED sanalmaydi: bu qulflangan paytdagi RAD ETILGAN urinish —
+    // parol umuman tekshirilmagan. Uni sanash blokni cheksiz uzaytirardi:
+    // ~6 daqiqada 1 so'rov bilan istalgan hisobni abadiy qulflab turish
+    // mumkin edi (to'g'ri parol bilan ham).
     @Query("SELECT la FROM LoginAttempt la WHERE la.username = :username " +
            "AND la.status = 'FAILED' " +
+           "AND (la.failureReason IS NULL OR la.failureReason <> 'ACCOUNT_LOCKED') " +
            "AND la.createdAt > :since " +
            "ORDER BY la.createdAt DESC")
     List<LoginAttempt> findRecentFailedAttempts(
@@ -40,9 +45,11 @@ public interface LoginAttemptRepository extends JpaRepository<LoginAttempt, Long
         @Param("since") LocalDateTime since
     );
 
-    // Count failed attempts in time window
+    // Count failed attempts in time window (ACCOUNT_LOCKED sanalmaydi —
+    // yuqoridagi findRecentFailedAttempts izohiga qarang)
     @Query("SELECT COUNT(la) FROM LoginAttempt la WHERE la.username = :username " +
            "AND la.status = 'FAILED' " +
+           "AND (la.failureReason IS NULL OR la.failureReason <> 'ACCOUNT_LOCKED') " +
            "AND la.createdAt > :since")
     long countRecentFailedAttempts(
         @Param("username") String username,
