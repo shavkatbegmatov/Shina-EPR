@@ -242,13 +242,13 @@ Birinchi ikki bosqich tuzatilgach, butun loyiha qayta tekshirildi (6 parallel qi
 | `55a3833` | R6 (netting savdo smenasi bo'yicha), R7 (CANCELLED filtri), R10 (bot tokeni maskalash), R13 (majburiy parol — server gate + forced modal), R12 (least-privilege default), R18 (chat qayta bog'lanmaydi), R20 (rad sababi tozalanadi) |
 | `fa02057` | R5 (POS qaytimi clamp), R16 (sessiya oilasi muddati), R19 (qarz to'lovlari filtri), R-RPT (davr + haqiqiy to'lovlar), R-PWD (Unicode siyosat), R-DEBTUI (toast), R-SHOPCART (zaxira clamp), R14 (telefon validatsiyasi) |
 | `00e3c3a` | R4 (import zaxirani ustidan yozmaydi), R-STOCK2 (zaxirali mahsulot arxivlanmaydi + arxivlangan sotilmaydi), R-STOCK1 (ledgersiz endpoint olib tashlandi) |
-| keyingi | R11 (qaror xabari AFTER_COMMIT'ga ko'chirildi) |
+| `147548a` | R11 (qaror xabari AFTER_COMMIT'ga ko'chirildi) |
+| keyingi | R9 (davriy hisobot ustunlari keyingi qarz to'lovlaridan tozalandi) |
 
-**Qoldi — 3 ta (kattaroq ish, alohida rejalashtirish kerak):**
+**Qoldi — 3 ta (alohida rejalashtirish kerak):**
 
 | # | Nima kerak |
 |---|---|
-| R9 (medium) | `ReportService.sumPaidByMethod` ni `Payment` qatorlaridan (method + paymentDate) qayta qurish. Hozir davriy hisobot mutatsiya qilinadigan `sale.paidAmount` ustida ishlaydi — yanvar naqd tushumi martdagi karta to'lovi bilan o'sadi. Z-hisobot uchun bu H3'da hal qilingan, davriy hisobot uchun alohida agregatsiya kerak |
 | R15 (low) | Do'kon savati localStorage narx snapshot'idan hisoblaydi. To'g'ri yechim — checkout'ga kirishda narxlarni qayta olish yoki server "quote" qaytarishi va farq bo'lsa qayta tasdiqlatish. UX qarori kerak |
 | R2-qoldiq (low) | Bekor qilish naqd chiqimni qayd etmaydi: to'lovlar qaytarilganda kassa hisobsiz kamayadi. Yechim — bekor qilishda `sale.paidAmount` bo'yicha chiqim yozuvi (yoki qaytarish oqimiga yo'naltirish) |
 | R-RET (low) | APPROVED qaytarish uchun `rejectReturn` o'tish (PENDING/APPROVED → REJECTED) — servis + endpoint + tugma. Kvota so'rovi REJECTED'ni allaqachon chiqarib tashlaydi |

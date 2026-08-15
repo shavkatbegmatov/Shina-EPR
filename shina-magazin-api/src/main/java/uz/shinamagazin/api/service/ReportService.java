@@ -89,14 +89,29 @@ public class ReportService {
         BigDecimal averageSaleAmount = sales.isEmpty() ? BigDecimal.ZERO :
                 totalRevenue.divide(BigDecimal.valueOf(sales.size()), 2, RoundingMode.HALF_UP);
 
+        // Sotuvlar yopilgandan KEYIN qilingan qarz to'lovlari. `makePayment`
+        // ularni `sale.paidAmount` ga qo'shib, `debtAmount` dan ayiradi —
+        // ya'ni tugagan davrning hisoboti keyinchalik jimgina siljib turardi:
+        // yanvardagi NAQD sotuvning qarzi martda KARTA bilan yopilsa, yanvar
+        // "naqd" ustuni o'sar, "qarz" ustuni esa kamayardi (jami daromad
+        // o'zgarmagani uchun bu ko'zga tashlanmasdi). Bu hisobot `saleDate`
+        // bo'yicha, ya'ni ustunlar SHU sotuvlar keltirgan pulni ko'rsatishi
+        // kerak; keyingi to'lovlar o'z davrida — Qarzlar hisobotida va
+        // "to'landi" statistikasida — allaqachon sanaladi.
+        Map<Long, BigDecimal> laterDebtPayments = paymentRepository.debtPaymentsBySale(
+                sales.stream().map(Sale::getId).toList());
+
         // To'lov usullari `paidAmount` dan olinadi, u esa naqd qaytarishda
         // KAMAYTIRILADI — ya'ni bu summalar allaqachon qaytarishlardan toza.
-        BigDecimal cashTotal = sumPaidByMethod(sales, PaymentMethod.CASH);
-        BigDecimal cardTotal = sumPaidByMethod(sales, PaymentMethod.CARD);
-        BigDecimal transferTotal = sumPaidByMethod(sales, PaymentMethod.TRANSFER);
+        BigDecimal cashTotal = sumPaidByMethod(sales, PaymentMethod.CASH, laterDebtPayments);
+        BigDecimal cardTotal = sumPaidByMethod(sales, PaymentMethod.CARD, laterDebtPayments);
+        BigDecimal transferTotal = sumPaidByMethod(sales, PaymentMethod.TRANSFER, laterDebtPayments);
 
+        // Qarz ham xuddi shunday: bu sotuvlar BERGAN qarz (keyin qancha
+        // yopilganidan qat'i nazar), qaytarishlar bilan tuzatilgan holda
         BigDecimal debtTotal = sales.stream()
-                .map(Sale::getDebtAmount)
+                .map(s -> s.getDebtAmount()
+                        .add(laterDebtPayments.getOrDefault(s.getId(), BigDecimal.ZERO)))
                 .reduce(BigDecimal.ZERO, BigDecimal::add);
 
         List<SalesReportResponse.DailySalesData> dailyData =
@@ -227,10 +242,22 @@ public class ReportService {
         return lineTotal.multiply(total).divide(subtotal, 2, RoundingMode.HALF_UP);
     }
 
-    private BigDecimal sumPaidByMethod(List<Sale> sales, PaymentMethod method) {
+    /**
+     * Sotuv paytida shu usulda tushgan pul.
+     *
+     * <p>{@code paidAmount} keyingi qarz to'lovlari bilan o'sadi, shuning
+     * uchun ular ayiriladi: aks holda boshqa usulda (masalan KARTA) va
+     * boshqa davrda kelgan pul shu davrning NAQD ustuniga yozilardi.
+     * Qaytarishlar esa ataylab ayirilgan holida qoladi.
+     */
+    private BigDecimal sumPaidByMethod(List<Sale> sales, PaymentMethod method,
+                                       Map<Long, BigDecimal> laterDebtPayments) {
         return sales.stream()
                 .filter(s -> s.getPaymentMethod() == method)
-                .map(Sale::getPaidAmount)
+                .map(s -> s.getPaidAmount()
+                        .subtract(laterDebtPayments.getOrDefault(s.getId(), BigDecimal.ZERO)))
+                // Qaytarish to'lovdan ko'p bo'lsa manfiyga tushmasin
+                .map(paid -> paid.max(BigDecimal.ZERO))
                 .reduce(BigDecimal.ZERO, BigDecimal::add);
     }
 

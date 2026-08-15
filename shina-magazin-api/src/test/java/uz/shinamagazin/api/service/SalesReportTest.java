@@ -74,6 +74,34 @@ class SalesReportTest {
         product = productRepository.saveAndFlush(product());
     }
 
+    // ─── Keyingi qarz to'lovlari davriy hisobotni siljitmasligi ───
+    // `makePayment` to'lovni sale.paidAmount ga qo'shib, debtAmount dan
+    // ayiradi. Ustunlar shu maydonlardan olingani uchun TUGAGAN davrning
+    // hisoboti keyinchalik jimgina o'zgarardi: boshqa usulda va boshqa
+    // davrda kelgan pul shu davrning NAQD ustuniga yozilardi.
+
+    @Test
+    @DisplayName("Keyingi qarz to'lovi o'tgan davr ustunlarini o'zgartirmaydi")
+    void laterDebtPaymentDoesNotShiftPeriodTotals() {
+        // Naqd usulli sotuv: 400 000 to'landi, 600 000 qarz
+        Sale sale = creditSale(TODAY, "1000000", "400000", "600000");
+
+        SalesReportResponse before = report();
+        assertThat(before.getCashTotal()).isEqualByComparingTo("400000");
+        assertThat(before.getDebtTotal()).isEqualByComparingTo("600000");
+
+        // Keyinroq qarz KARTA bilan yopiladi (makePayment kabi)
+        debtPayment(sale, "600000");
+
+        SalesReportResponse after = report();
+        assertThat(after.getCashTotal())
+                .as("karta puli naqd ustuniga yozilmasligi kerak")
+                .isEqualByComparingTo("400000");
+        assertThat(after.getDebtTotal())
+                .as("bu sotuvlar BERGAN qarz o'zgarmaydi")
+                .isEqualByComparingTo("600000");
+    }
+
     // ─── Qaytarishlar ───
 
     // Ilgari REFUNDED savdo `status == COMPLETED` filtridan o'tmasdi va
@@ -294,6 +322,32 @@ class SalesReportTest {
                 .costPrice(new BigDecimal("700000"))
                 .build());
         return saleRepository.saveAndFlush(sale);
+    }
+
+    /** Qisman to'langan naqd usulli sotuv (qolgani qarz). */
+    private Sale creditSale(LocalDate date, String total, String paid, String debt) {
+        Sale sale = buildSale(date, 1, total, total, "0");
+        sale.setPaidAmount(new BigDecimal(paid));
+        sale.setDebtAmount(new BigDecimal(debt));
+        sale.setPaymentStatus(PaymentStatus.PARTIAL);
+        return saleRepository.saveAndFlush(sale);
+    }
+
+    /** Qarz to'lovi — DebtService.makePayment kabi sale maydonlarini ham o'zgartiradi. */
+    private void debtPayment(Sale sale, String amount) {
+        BigDecimal value = new BigDecimal(amount);
+        sale.setPaidAmount(sale.getPaidAmount().add(value));
+        sale.setDebtAmount(sale.getDebtAmount().subtract(value));
+        saleRepository.saveAndFlush(sale);
+
+        paymentRepository.saveAndFlush(Payment.builder()
+                .sale(sale)
+                .amount(value)
+                .method(PaymentMethod.CARD)
+                .paymentType(PaymentType.DEBT_PAYMENT)
+                .paymentDate(TODAY.plusDays(40).atTime(10, 0))
+                .receivedBy(cashier)
+                .build());
     }
 
     private void saleReturn(Sale sale, LocalDate date, int quantity, String refund) {

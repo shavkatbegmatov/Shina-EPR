@@ -12,6 +12,7 @@ import uz.shinamagazin.api.enums.PaymentType;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Map;
 
 @Repository
 public interface PaymentRepository extends JpaRepository<Payment, Long> {
@@ -30,6 +31,32 @@ public interface PaymentRepository extends JpaRepository<Payment, Long> {
 
     @Query("SELECT COALESCE(SUM(p.amount), 0) FROM Payment p WHERE p.paymentDate >= :start AND p.paymentDate < :end")
     BigDecimal getTodayPaymentsTotal(@Param("start") LocalDateTime start, @Param("end") LocalDateTime end);
+
+    /**
+     * Sotuvlar bo'yicha KEYINCHALIK qilingan qarz to'lovlari.
+     *
+     * <p>`makePayment` to'lovni `sale.paidAmount` ga qo'shadi, ya'ni sotuv
+     * yopilgandan keyin ham u o'sib boradi. Davriy hisobotda ustunlar SHU
+     * sotuvlar keltirgan pulni ko'rsatishi kerak, shuning uchun keyingi
+     * to'lovlar ayiriladi — ular o'z davrida (Qarzlar hisoboti va
+     * "to'landi" statistikasi) allaqachon sanaladi.
+     */
+    @Query("""
+            SELECT p.sale.id, COALESCE(SUM(p.amount), 0) FROM Payment p
+            WHERE p.paymentType = uz.shinamagazin.api.enums.PaymentType.DEBT_PAYMENT
+              AND p.sale.id IN :saleIds
+            GROUP BY p.sale.id""")
+    List<Object[]> sumDebtPaymentsBySale(@Param("saleIds") java.util.Collection<Long> saleIds);
+
+    default Map<Long, BigDecimal> debtPaymentsBySale(java.util.Collection<Long> saleIds) {
+        if (saleIds.isEmpty()) {
+            return Map.of();
+        }
+        return sumDebtPaymentsBySale(saleIds).stream()
+                .collect(java.util.stream.Collectors.toMap(
+                        row -> (Long) row[0],
+                        row -> (BigDecimal) row[1]));
+    }
 
     /**
      * Davr ichida qabul qilingan qarz to'lovlari yig'indisi — Qarzlar
