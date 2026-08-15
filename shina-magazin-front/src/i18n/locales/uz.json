@@ -628,6 +628,8 @@
     "reports": {
       "title": "Hisobotlar",
       "subtitle": "Sotuvlar, ombor va qarzlar hisobotlari",
+      "startDate": "Boshlanish sanasi",
+      "endDate": "Tugash sanasi",
       "selectDateRange": "Iltimos, sana oralig'ini tanlang",
       "loadError": "Hisobotlarni yuklashda xatolik yuz berdi",
       "refreshed": "Yangilandi",

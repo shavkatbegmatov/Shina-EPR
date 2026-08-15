@@ -155,23 +155,23 @@ Dastlab tekshiruvsiz qolgan 19 topilma (18 noyob — purchase-return ikki finder
 | M5 ✅ `78b1ef5` | `TelegramRegistrationService.onContact:173-256` | Chat boshqa mijozga bog'langan holatda kontakt yuborilsa unique index buziladi, catch-all faqat log qiladi — foydalanuvchiga jimlik, xodim eski linkni tozalamaguncha qotib qoladi (oqim "Yangi PIN olish" tugmasi bilan chaqiriladi). **Tuzatish:** `findByTelegramChatId` tekshiruvi + aniq javob xabari |
 | M6 ✅ `62f177e` | `catalogApi.ts:51` (`size=200`), `useCatalog.ts:107`, `ProductDetailPage.tsx:25-37` | Tovar sahifasi faqat birinchi 200 talik ro'yxatdan qidiradi; `getById` so'rovi `enabled: Boolean(product)` bilan bog'langan — ro'yxatda yo'q tovarni hech qachon qutqara olmaydi. Katalog 200 dan oshsa filtrlangan ro'yxat/to'g'ridan-to'g'ri URL'lar "topilmadi" beradi. **Tuzatish:** ro'yxatda topilmasa `getById` fallback |
 
-## TASDIQLANGAN — LOW (6)
+## TASDIQLANGAN — LOW (6) — ✅ barchasi tuzatildi
 
 | # | Joy | Muammo |
 |---|---|---|
-| L1 | `StaffNotificationService.java:131` | WS bildirishnoma tranzaksiya ichida yuboriladi — rollback'da "sharpa" bildirishnoma (Telegram kanali AFTER_COMMIT bilan to'g'ri qilingan, WS esa yo'q; `notifyLowStock` keyin `InsufficientStockException` bilan real rollback oynasi bor). Tuzatish: WS'ni ham AFTER_COMMIT'ga ko'chirish |
-| L2 | `SimpleRateLimiter.java:120-135` | Eviction cutoff (30 min) 60-daqiqalik oynalardan (Telegram contact, staff registration) qisqa — "1 soatlik" blok ~30-35 daqiqada ochiladi, byudjet ikki baravar. Tuzatish: `MAX_WINDOW_MS` ≥ 60 min yoki per-entry cutoff |
-| L3 | `demo-cleanup.sql:161-188` (medium'dan tushirildi) | Legacy prefikslar (`+9989099000%`, `+9989300100%`) real Beeline/Ucell bloklariga mos kelishi mumkin; xodimlar uchun external-reference guard umuman yo'q. Ehtimollik past (~100 raqamlik bloklar), lekin o'chirish jim. Tuzatish: qo'shimcha marker yoki xodimlarni guard'ga qo'shish |
-| L4 | `demo-seed.sql:36-111,172-179` | Demo sotuvlar seeded zaxiradan ko'p (3 talikdan 4 sotilgan), OUT movement'lar yo'q — demo ombor ledgeri ichki ziddiyatli (faqat demo ko'rinishiga ta'sir qiladi) |
-| L5 | `SalesPage.tsx:472-478` | Mobil kartada cancel tugmasi SALES_REFUND ortida, desktop/backend esa SALES_UPDATE — faqat maxsus rollarda seziladi (seed rollar ajratmaydi). Tuzatish: mobil gate'ni SALES_UPDATE ga almashtirish |
-| L6 | `ExpensesPage.tsx:257,266` | `erp.reports.startDate/endDate` kalitlari ikkala lokalda ham yo'q — xom kalit label bo'lib chiqadi. Locale-parity testi buni tutmaydi (faqat uz↔ru tenglikni tekshiradi). Tuzatish: kalitlarni qo'shish |
+| L1 ✅ | `StaffNotificationService.java:131` | WS bildirishnoma tranzaksiya ichida yuboriladi — rollback'da "sharpa" bildirishnoma (Telegram kanali AFTER_COMMIT bilan to'g'ri qilingan, WS esa yo'q; `notifyLowStock` keyin `InsufficientStockException` bilan real rollback oynasi bor). Tuzatish: WS'ni ham AFTER_COMMIT'ga ko'chirish |
+| L2 ✅ | `SimpleRateLimiter.java:120-135` | Eviction cutoff (30 min) 60-daqiqalik oynalardan (Telegram contact, staff registration) qisqa — "1 soatlik" blok ~30-35 daqiqada ochiladi, byudjet ikki baravar. Tuzatish: `MAX_WINDOW_MS` ≥ 60 min yoki per-entry cutoff |
+| L3 ✅ | `demo-cleanup.sql:161-188` (medium'dan tushirildi) | Legacy prefikslar (`+9989099000%`, `+9989300100%`) real Beeline/Ucell bloklariga mos kelishi mumkin; xodimlar uchun external-reference guard umuman yo'q. Ehtimollik past (~100 raqamlik bloklar), lekin o'chirish jim. Tuzatish: qo'shimcha marker yoki xodimlarni guard'ga qo'shish |
+| L4 ✅ | `demo-seed.sql:36-111,172-179` | Demo sotuvlar seeded zaxiradan ko'p (3 talikdan 4 sotilgan), OUT movement'lar yo'q — demo ombor ledgeri ichki ziddiyatli (faqat demo ko'rinishiga ta'sir qiladi) |
+| L5 ✅ | `SalesPage.tsx:472-478` | Mobil kartada cancel tugmasi SALES_REFUND ortida, desktop/backend esa SALES_UPDATE — faqat maxsus rollarda seziladi (seed rollar ajratmaydi). Tuzatish: mobil gate'ni SALES_UPDATE ga almashtirish |
+| L6 ✅ | `ExpensesPage.tsx:257,266` | `erp.reports.startDate/endDate` kalitlari ikkala lokalda ham yo'q — xom kalit label bo'lib chiqadi. Locale-parity testi buni tutmaydi (faqat uz↔ru tenglikni tekshiradi). Tuzatish: kalitlarni qo'shish |
 
 ## QISMAN TUZATILGAN — qoldiq ishlar (2)
 
 | # | Joy | Yopilgani / Qolgani |
 |---|---|---|
 | Q1 (medium) | Refresh token revocation | 732fdf1 asosini yopdi (refresh claim, mijoz/access rad, WS sessiya). **Qoldiq:** refresh tokenlar server tomonida hech qayerda saqlanmaydi/bekor qilinmaydi — logout, admin revoke, hatto parol almashtirish ham qo'ldagi 7 kunlik refresh tokenni o'ldirmaydi, har refresh yangi 7 kunlik beradi (faqat `active=false` uzadi). Tuzatish: refresh tokenlarni (yoki session-id claim'ni) persist qilib, refresh'da revocation holatini tekshirish; logout/parol almashtirishda bekor qilish; rotation + qayta ishlatishni aniqlash |
-| Q2 (low) | `CustomerAuthService.refreshToken:135-156`, `JwtChannelInterceptor:42-52` | aad43a0 filtrni yopdi (har so'rovda `isEnabled`). **Qoldiq:** mijoz refresh endpointi `isRefreshToken`ni ham, `active`ni ham tekshirmaydi (access token refresh vazifasini bajaradi, deaktiv mijoz token yangilay oladi); WS interceptor mijoz tokenlariga enabled tekshiruvi qo'llamaydi. Tuzatish: mijoz refresh'ida ikkala tekshiruv + WS'da mijoz enabled tekshiruvi |
+| Q2 (low) ✅ | `CustomerAuthService.refreshToken:135-156`, `JwtChannelInterceptor:42-52` | TUZATILDI: mijoz refresh endpointi endi `isRefreshToken` (access token refresh vazifasini bajara olmaydi) va `customer.getActive()` (deaktiv mijoz token yangilay olmaydi) tekshiradi; WS interceptor refresh tokenlarni rad etadi va mijoz tokenlari uchun `active && portalEnabled` tekshiradi (REST filtridagi `isEnabled` ekvivalenti). Eslatma: eski (claim'siz) mijoz refresh tokenlari rad etiladi — mijoz bir marta qayta login qiladi |
 
 ## RAD ETILGAN (1)
 

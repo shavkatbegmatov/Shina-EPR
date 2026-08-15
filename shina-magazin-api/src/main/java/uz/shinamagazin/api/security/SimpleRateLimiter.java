@@ -42,7 +42,15 @@ public class SimpleRateLimiter {
      */
     private static final int MAX_TRACKED_KEYS = 100_000;
 
-    /** key -> [windowStartMs, count] */
+    /**
+     * key -> [windowStartMs, count, windowMs].
+     *
+     * <p>Oyna uzunligi yozuvning O'ZIDA saqlanadi: tozalash har xil oynali
+     * iste'molchilarni (login 15 daqiqa, Telegram/staff-registratsiya 60
+     * daqiqa) bitta global konstanta bilan o'lchay olmaydi. Ilgari 30
+     * daqiqalik global cutoff bor edi — "bir soatlik" Telegram bloki ~30-35
+     * daqiqada tozalanib, byudjet ikki baravar bo'lib qolardi.
+     */
     private final ConcurrentHashMap<String, long[]> windows = new ConcurrentHashMap<>();
 
     /** true = ruxsat; false = limit oshib ketdi. Chaqiruvning O'ZI hisoblanadi. */
@@ -59,7 +67,7 @@ public class SimpleRateLimiter {
         long now = now();
         long[] w = windows.compute(key, (k, v) -> {
             if (v == null || now - v[0] > windowMs) {
-                return new long[]{now, 1};
+                return new long[]{now, 1, windowMs};
             }
             v[1]++;
             return v;
@@ -97,7 +105,7 @@ public class SimpleRateLimiter {
         long now = now();
         windows.compute(key, (k, v) -> {
             if (v == null || now - v[0] > windowMs) {
-                return new long[]{now, 1};
+                return new long[]{now, 1, windowMs};
             }
             v[1]++;
             return v;
@@ -115,22 +123,25 @@ public class SimpleRateLimiter {
     }
 
     /**
-     * Eskirgan oynalarni tozalaydi.
+     * Eskirgan oynalarni tozalaydi — har bir yozuv O'Z oynasi bo'yicha.
      *
-     * <p>Eng uzun oyna (login: 15 daqiqa) dan kattaroq yoshdagi yozuvlar
-     * o'chiriladi — ular endi hech qanday qarorga ta'sir qilmaydi.
+     * <p>Yozuv o'z oynasidan chiqqach hech qanday qarorga ta'sir qilmaydi
+     * ({@code isBlocked} va {@code allow} uni baribir eskirgan deb hisoblaydi),
+     * shuning uchun xotiradan olib tashlash xavfsiz. Global cutoff ishlatilmaydi:
+     * u eng uzun oynadan qisqa bo'lsa, blok muddatidan oldin "unutilardi".
      */
     @Scheduled(fixedDelay = 5 * 60_000)
     public void evictExpired() {
-        long cutoff = now() - MAX_WINDOW_MS;
+        long now = now();
         int before = windows.size();
-        windows.entrySet().removeIf(e -> e.getValue()[0] < cutoff);
+        windows.entrySet().removeIf(e -> {
+            long[] v = e.getValue();
+            long windowMs = v.length > 2 ? v[2] : WINDOW_MS;
+            return now - v[0] > windowMs;
+        });
         int removed = before - windows.size();
         if (removed > 0) {
             log.debug("Rate limiter: {} eskirgan yozuv tozalandi, {} qoldi", removed, windows.size());
         }
     }
-
-    /** Tozalash uchun ishlatiladigan eng uzun oyna (login oynasidan kichik bo'lmasin). */
-    private static final long MAX_WINDOW_MS = 30 * 60_000;
 }

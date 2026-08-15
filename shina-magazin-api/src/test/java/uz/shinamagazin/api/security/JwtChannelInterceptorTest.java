@@ -8,9 +8,14 @@ import org.springframework.messaging.MessageChannel;
 import org.springframework.messaging.simp.stomp.StompCommand;
 import org.springframework.messaging.simp.stomp.StompHeaderAccessor;
 import org.springframework.messaging.support.MessageBuilder;
+import uz.shinamagazin.api.entity.Customer;
+import uz.shinamagazin.api.repository.CustomerRepository;
 import uz.shinamagazin.api.service.SessionService;
 
+import java.util.Optional;
+
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
@@ -30,17 +35,28 @@ class JwtChannelInterceptorTest {
 
     private JwtTokenProvider tokenProvider;
     private SessionService sessionService;
+    private CustomerRepository customerRepository;
     private JwtChannelInterceptor interceptor;
 
     @BeforeEach
     void setUp() {
         tokenProvider = mock(JwtTokenProvider.class);
         sessionService = mock(SessionService.class);
-        interceptor = new JwtChannelInterceptor(tokenProvider, sessionService);
+        customerRepository = mock(CustomerRepository.class);
+        interceptor = new JwtChannelInterceptor(tokenProvider, sessionService, customerRepository);
 
         when(tokenProvider.validateToken(anyString())).thenReturn(true);
         when(tokenProvider.getUsernameFromToken(anyString())).thenReturn("kassir");
         when(tokenProvider.getUserIdFromToken(anyString())).thenReturn(5L);
+    }
+
+    private static Customer customer(boolean active, boolean portalEnabled) {
+        return Customer.builder()
+                .fullName("Test Mijoz")
+                .phone("+998901234567")
+                .active(active)
+                .portalEnabled(portalEnabled)
+                .build();
     }
 
     private StompHeaderAccessor connect(String token) {
@@ -82,11 +98,36 @@ class JwtChannelInterceptorTest {
     @DisplayName("Mijoz tokeni sessiya tekshiruvidan o'tmaydi (unda sessiya yozuvi yo'q)")
     void customerTokenSkipsSessionCheck() {
         when(tokenProvider.getTokenType(anyString())).thenReturn("CUSTOMER");
+        when(customerRepository.findById(anyLong())).thenReturn(Optional.of(customer(true, true)));
 
         StompHeaderAccessor accessor = connect("customer-token");
 
         assertThat(accessor.getUser()).isNotNull();
         assertThat(accessor.getUser().getName()).isEqualTo("customer_5");
         verify(sessionService, never()).isSessionValid(anyString());
+    }
+
+    @Test
+    @DisplayName("Deaktivatsiya qilingan mijoz WebSocket'ga ulanmaydi")
+    void disabledCustomerIsRejected() {
+        when(tokenProvider.getTokenType(anyString())).thenReturn("CUSTOMER");
+        when(customerRepository.findById(anyLong())).thenReturn(Optional.of(customer(false, true)));
+
+        StompHeaderAccessor accessor = connect("customer-token");
+
+        assertThat(accessor.getUser())
+                .as("REST filtridagi isEnabled tekshiruvining WS ekvivalenti")
+                .isNull();
+    }
+
+    @Test
+    @DisplayName("Refresh token WebSocket ulanishi uchun ham yaramaydi")
+    void refreshTokenIsRejected() {
+        when(tokenProvider.isRefreshToken(anyString())).thenReturn(true);
+        when(tokenProvider.getTokenType(anyString())).thenReturn("CUSTOMER");
+
+        StompHeaderAccessor accessor = connect("refresh-token");
+
+        assertThat(accessor.getUser()).isNull();
     }
 }

@@ -158,8 +158,13 @@ SET balance = -COALESCE((
 WHERE s.id IN (SELECT id FROM protektor_demo_affected_suppliers)
 @@
 
+-- Legacy prefiks (+998 93 001-00-XX) real Ucell blokiga to'g'ri kelishi
+-- mumkin. Hujjatli mijozlarni ensureNoExternalReferences 409 bilan himoya
+-- qiladi; telegram_chat_id NOT NULL esa mijoz o'zi ro'yxatdan o'tganining
+-- ANIQ belgisi — bunday yozuv hech qachon o'chirilmasligi kerak.
 DELETE FROM customers
-WHERE notes = '[PROTEKTOR_DEMO]' OR phone LIKE '+9989300100%'
+WHERE notes = '[PROTEKTOR_DEMO]'
+   OR (phone LIKE '+9989300100%' AND telegram_chat_id IS NULL)
 @@
 
 DELETE FROM products
@@ -183,8 +188,15 @@ WHERE notes = '[PROTEKTOR_DEMO]'
                'Global Tyre Trade')
 @@
 
+-- +9980002% — mavjud bo'lmagan operator kodi, xavfsiz. Legacy
+-- +9989099000% esa real Beeline blokiga (+998 90 990-00-XX) to'g'ri
+-- kelishi mumkin: pasport yoki bank rekvizitlari to'ldirilgan yozuv real
+-- HR kartasi — demo hech qachon bu maydonlarni to'ldirmagan.
 DELETE FROM employees
-WHERE phone LIKE '+9980002%' OR phone LIKE '+9989099000%'
+WHERE phone LIKE '+9980002%'
+   OR (phone LIKE '+9989099000%'
+       AND passport_number IS NULL
+       AND bank_account_number IS NULL)
 @@
 
 DELETE FROM brands b

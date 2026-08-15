@@ -12,6 +12,7 @@ import org.springframework.security.authentication.UsernamePasswordAuthenticatio
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.stereotype.Component;
 import org.springframework.util.StringUtils;
+import uz.shinamagazin.api.repository.CustomerRepository;
 import uz.shinamagazin.api.service.SessionService;
 
 import java.security.Principal;
@@ -24,6 +25,7 @@ public class JwtChannelInterceptor implements ChannelInterceptor {
 
     private final JwtTokenProvider jwtTokenProvider;
     private final SessionService sessionService;
+    private final CustomerRepository customerRepository;
 
     @Override
     public Message<?> preSend(Message<?> message, MessageChannel channel) {
@@ -36,6 +38,13 @@ public class JwtChannelInterceptor implements ChannelInterceptor {
                 String token = authHeader.substring(7);
 
                 if (jwtTokenProvider.validateToken(token)) {
+                    // Refresh token ulanish uchun ham yaramaydi — u faqat
+                    // /refresh-token endpointlariga tegishli
+                    if (jwtTokenProvider.isRefreshToken(token)) {
+                        log.warn("WebSocket CONNECT rejected: refresh token used as access");
+                        return message;
+                    }
+
                     String username = jwtTokenProvider.getUsernameFromToken(token);
                     String tokenType = jwtTokenProvider.getTokenType(token);
                     Long userId = jwtTokenProvider.getUserIdFromToken(token);
@@ -49,6 +58,21 @@ public class JwtChannelInterceptor implements ChannelInterceptor {
                     if (!isCustomer && !sessionService.isSessionValid(token)) {
                         log.warn("WebSocket CONNECT rejected: session revoked or missing for {}", username);
                         return message;
+                    }
+
+                    // Mijoz tokenida sessiya yozuvi yo'q — REST filtridagi
+                    // isEnabled tekshiruvining ekvivalenti shu yerda qilinadi.
+                    // Busiz deaktivatsiya qilingan mijoz token muddati tugagunga
+                    // qadar /user/customer_{id} bildirishnomalarini olaverardi.
+                    if (isCustomer) {
+                        boolean enabled = userId != null && customerRepository.findById(userId)
+                                .map(c -> Boolean.TRUE.equals(c.getActive())
+                                        && Boolean.TRUE.equals(c.getPortalEnabled()))
+                                .orElse(false);
+                        if (!enabled) {
+                            log.warn("WebSocket CONNECT rejected: customer {} disabled or portal off", userId);
+                            return message;
+                        }
                     }
 
                     // Principal yaratish - userId ishlatiladi (convertAndSendToUser uchun)

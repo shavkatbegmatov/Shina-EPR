@@ -11,6 +11,7 @@ import uz.shinamagazin.api.dto.response.StaffNotificationResponse;
 import uz.shinamagazin.api.entity.StaffNotification;
 import uz.shinamagazin.api.entity.User;
 import uz.shinamagazin.api.enums.StaffNotificationType;
+import uz.shinamagazin.api.event.StaffNotificationBroadcastEvent;
 import uz.shinamagazin.api.event.StaffNotificationCreatedEvent;
 import uz.shinamagazin.api.exception.ResourceNotFoundException;
 import uz.shinamagazin.api.repository.StaffNotificationRepository;
@@ -27,7 +28,6 @@ public class StaffNotificationService {
 
     private final StaffNotificationRepository notificationRepository;
     private final UserRepository userRepository;
-    private final NotificationDispatcher notificationDispatcher;
     private final ApplicationEventPublisher eventPublisher;
 
     /**
@@ -127,12 +127,12 @@ public class StaffNotificationService {
 
         StaffNotification saved = notificationRepository.save(notification);
 
-        // WebSocket orqali real-time yuborish
-        notificationDispatcher.notifyAllStaff(saved);
-
-        // Tashqi kanallar (Telegram) — hodisa orqali, chunki ular tranzaksiya
-        // TASDIQLANGANDAN KEYIN ishlashi kerak. Savdo keyin xatolik bilan
-        // qaytarilsa, "kam zaxira" haqidagi soxta xabar ketib bo'lgan bo'lardi.
+        // Ikkala kanal ham (WebSocket va Telegram) hodisa orqali — tranzaksiya
+        // TASDIQLANGANDAN KEYIN ishlaydi. Ilgari WS to'g'ridan-to'g'ri shu
+        // yerda yuborilardi: savdo keyin xatolik bilan qaytarilsa, barcha
+        // xodim brauzerlariga bosilganda 404 beradigan "sharpa" bildirishnoma
+        // yetib borgan bo'lardi.
+        eventPublisher.publishEvent(new StaffNotificationBroadcastEvent(saved, null));
         eventPublisher.publishEvent(new StaffNotificationCreatedEvent(
                 title, message, type, referenceType));
 
@@ -166,8 +166,9 @@ public class StaffNotificationService {
 
         StaffNotification saved = notificationRepository.save(notification);
 
-        // WebSocket orqali real-time yuborish (faqat shu foydalanuvchiga)
-        notificationDispatcher.notifyStaff(userId, saved);
+        // WebSocket yuborish AFTER_COMMIT'da (faqat shu foydalanuvchiga) —
+        // sabab createGlobalNotification'dagi bilan bir xil
+        eventPublisher.publishEvent(new StaffNotificationBroadcastEvent(saved, userId));
 
         return saved;
     }

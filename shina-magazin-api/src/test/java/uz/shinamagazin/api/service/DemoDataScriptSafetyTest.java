@@ -29,6 +29,21 @@ class DemoDataScriptSafetyTest {
         assertTrue(seed.contains("WHERE product.sku LIKE 'DEMO-%'"));
     }
 
+    /**
+     * Legacy telefon prefikslari real operator bloklariga to'g'ri kelishi
+     * mumkin (+998 93 001-00-XX Ucell, +998 90 990-00-XX Beeline). Prefiks
+     * bo'yicha o'chirish real belgilar bilan cheklangan bo'lishi shart:
+     * Telegram'ga bog'langan mijoz va pasport/bank rekvizitli xodim — real.
+     */
+    @Test
+    void legacyPhonePrefixDeletesAreGuarded() throws IOException {
+        String cleanup = read("/db/demo/demo-cleanup.sql");
+
+        assertTrue(cleanup.contains("AND telegram_chat_id IS NULL"));
+        assertTrue(cleanup.contains("AND passport_number IS NULL"));
+        assertTrue(cleanup.contains("AND bank_account_number IS NULL"));
+    }
+
     @Test
     void customDelimiterAppearsOnlyOnDedicatedLines() throws IOException {
         assertDelimiterPlacement(read("/db/demo/demo-cleanup.sql"));

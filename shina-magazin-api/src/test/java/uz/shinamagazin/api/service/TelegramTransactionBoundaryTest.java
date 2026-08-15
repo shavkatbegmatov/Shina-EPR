@@ -15,6 +15,7 @@ import uz.shinamagazin.api.repository.StaffNotificationRepository;
 import java.util.EnumSet;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.after;
 import static org.mockito.Mockito.never;
@@ -46,7 +47,8 @@ import static org.mockito.Mockito.when;
         "logging.level.org.hibernate.SQL=OFF"
 })
 @AutoConfigureTestDatabase(replace = AutoConfigureTestDatabase.Replace.NONE)
-@Import({StaffNotificationService.class, TelegramNotificationListener.class})
+@Import({StaffNotificationService.class, TelegramNotificationListener.class,
+        WebSocketNotificationListener.class})
 class TelegramTransactionBoundaryTest {
 
     @Autowired private StaffNotificationService notificationService;
@@ -69,11 +71,13 @@ class TelegramTransactionBoundaryTest {
 
         // Hali tasdiqlanmagan — xabar ketmasligi kerak
         verify(telegramNotifier, never()).send(anyString());
+        verify(notificationDispatcher, never()).notifyAllStaff(any());
 
         TestTransaction.flagForCommit();
         TestTransaction.end();
 
         verify(telegramNotifier, timeout(2000)).send(anyString());
+        verify(notificationDispatcher, timeout(2000)).notifyAllStaff(any());
     }
 
     // Aynan shu holat uchun `AFTER_COMMIT` tanlangan.
@@ -86,6 +90,9 @@ class TelegramTransactionBoundaryTest {
         TestTransaction.end();
 
         verify(telegramNotifier, after(300).never()).send(anyString());
+        // Ilgari WS yuborish tranzaksiya ICHIDA edi: rollback'da barcha xodim
+        // brauzerlariga bosilganda 404 beradigan "sharpa" bildirishnoma ketardi
+        verify(notificationDispatcher, never()).notifyAllStaff(any());
         assertThat(notificationRepository.count())
                 .as("bildirishnoma ham qaytarilgan")
                 .isZero();

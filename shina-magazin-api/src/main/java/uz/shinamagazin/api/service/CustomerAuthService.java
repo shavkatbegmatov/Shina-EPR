@@ -141,9 +141,23 @@ public class CustomerAuthService {
             throw new BadRequestException("Noto'g'ri token turi");
         }
 
+        // Faqat HAQIQIY refresh token qabul qilinadi. Ilgari access token ham
+        // o'tardi — ya'ni qisqa muddatli access token refresh vazifasini
+        // bajarib, kirishni cheksiz uzaytira olardi.
+        if (!tokenProvider.isRefreshToken(refreshToken)) {
+            throw new BadRequestException("Noto'g'ri token turi");
+        }
+
         String phone = tokenProvider.getUsernameFromToken(refreshToken);
         Customer customer = customerRepository.findByPhoneAndPortalEnabledTrue(phone)
                 .orElseThrow(() -> new ResourceNotFoundException("Mijoz", "telefon", phone));
+
+        // Deaktivatsiya qilingan mijoz token yangilay olmasligi kerak —
+        // portalEnabled filtri buni qamramaydi (deleteCustomer faqat
+        // active=false qiladi), profil ma'lumoti ham javob bilan ketadi.
+        if (!Boolean.TRUE.equals(customer.getActive())) {
+            throw new BadRequestException("Hisob faol emas");
+        }
 
         String newAccessToken = tokenProvider.generateCustomerToken(phone, customer.getId());
         String newRefreshToken = tokenProvider.generateCustomerRefreshToken(phone, customer.getId());

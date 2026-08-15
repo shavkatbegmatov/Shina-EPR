@@ -470,7 +470,12 @@ export function SalesPage() {
                   {t('common.view')}
                 </Button>
                 {sale.status === 'COMPLETED' && (
-                  <PermissionGate permission={PermissionCode.SALES_REFUND}>
+                  // Desktop, client-tekshiruv va backend (PUT /{id}/cancel) —
+                  // hammasi SALES_UPDATE talab qiladi. SALES_REFUND bilan
+                  // faqat SALES_REFUND'i bor foydalanuvchi doim yiqiladigan
+                  // tugmani ko'rar, faqat SALES_UPDATE'lisi esa mobil'da
+                  // amalni yo'qotardi.
+                  <PermissionGate permission={PermissionCode.SALES_UPDATE}>
                     <Button variant="ghost" size="sm" className="text-error" onClick={() => handleOpenCancelModal(sale)}>
                       <XCircle className="h-4 w-4" />
                     </Button>

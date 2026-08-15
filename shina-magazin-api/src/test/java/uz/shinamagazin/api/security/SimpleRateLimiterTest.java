@@ -152,6 +152,33 @@ class SimpleRateLimiterTest {
                 .isEqualTo(500);
     }
 
+    // Ilgari tozalash global 30-daqiqalik cutoff bilan ishlardi: Telegram va
+    // xodim-registratsiyasining 60-daqiqalik oynalari undan uzun, ya'ni
+    // "bir soatlik" blok ~30-35 daqiqada tozalanib, byudjet ikki baravar
+    // bo'lib qolardi.
+    @Test
+    @DisplayName("Uzun oynali yozuv (60 daqiqa) muddatidan oldin tozalanmaydi")
+    void longWindowEntrySurvivesEviction() {
+        long hourWindow = 60 * 60_000;
+        for (int i = 0; i < MAX; i++) {
+            limiter.recordFailure("telegram-register:777", hourWindow);
+        }
+        assertThat(limiter.isBlocked("telegram-register:777", MAX, hourWindow)).isTrue();
+
+        limiter.advance(35 * 60_000); // eski global cutoff (30 daqiqa) dan keyin
+        limiter.evictExpired();
+        assertThat(limiter.isBlocked("telegram-register:777", MAX, hourWindow))
+                .as("60 daqiqalik blok 35-daqiqada ochilib qolmasligi kerak")
+                .isTrue();
+
+        limiter.advance(26 * 60_000); // jami 61 daqiqa — oyna tugadi
+        limiter.evictExpired();
+        assertThat(limiter.trackedKeys())
+                .as("oynasi tugagan yozuv endi tozalanadi")
+                .isZero();
+        assertThat(limiter.isBlocked("telegram-register:777", MAX, hourWindow)).isFalse();
+    }
+
     @Test
     @DisplayName("allow() eski xatti-harakatni saqlaydi (buyurtma endpointi)")
     void allowStillCountsEveryCall() {
