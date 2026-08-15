@@ -196,6 +196,17 @@ public class CashShiftService {
                 .add(cashDebtPayments)
                 .subtract(cashExpenses);
 
+        // YOPILGAN smenada SAQLANGAN qiymat ko'rsatiladi: hisobot yopilish
+        // paytidagi haqiqatni aks ettirishi kerak. Jonli qayta hisob keyingi
+        // o'zgarishlar (sotuv bekor qilinishi, boshqa smenadagi qaytarimning
+        // paidAmount mutatsiyasi, qarz to'lovi) tufayli siljib, bitta javobda
+        // ikki xil expectedCash chiqarar va difference = countedCash −
+        // expectedCash invariantini buzardi. Savdo/qaytarim/xarajat
+        // taqsimotlari ma'lumot sifatida jonli qolaveradi.
+        if (shift.getStatus() == CashShiftStatus.CLOSED && shift.getExpectedCash() != null) {
+            expectedCash = shift.getExpectedCash();
+        }
+
         return ZReportResponse.builder()
                 .shift(CashShiftResponse.from(shift))
                 .salesCount(salesCount)

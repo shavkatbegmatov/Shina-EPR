@@ -462,6 +462,29 @@ class CashShiftReportTest {
                 });
     }
 
+    // Entity'dagi qiymat saqlansa-da, getReport ilgari expectedCash'ni JONLI
+    // qayta hisoblab qaytarardi: bitta javobda ikki xil expectedCash chiqar,
+    // difference = countedCash − expectedCash invarianti buzilardi.
+    @Test
+    @DisplayName("Yopilgan smena HISOBOTI ham saqlangan kutilgan summani ko'rsatadi")
+    void closedShiftReportServesPersistedExpectedCash() {
+        CashShift shift = openShift("0");
+        Sale sold = sale(shift, PaymentMethod.CASH, "500000", "500000", "0", SaleStatus.COMPLETED);
+        service.closeShift(cashier.getId(), close("500000", null));
+
+        // Yopilgandan keyin savdo bekor qilinadi — jonli hisob 0 ko'rsatardi
+        sold.setStatus(SaleStatus.CANCELLED);
+        saleRepository.saveAndFlush(sold);
+
+        ZReportResponse report = service.getReport(shift.getId());
+        assertThat(report.getExpectedCash())
+                .as("jonli qayta hisob emas, yopilish paytidagi haqiqat")
+                .isEqualByComparingTo("500000");
+        assertThat(report.getCountedCash().subtract(report.getExpectedCash()))
+                .as("difference invarianti tiklanadi")
+                .isEqualByComparingTo(report.getDifference());
+    }
+
     @Test
     @DisplayName("Ikkinchi smenani ochib bo'lmaydi")
     void cannotOpenTwoShifts() {
