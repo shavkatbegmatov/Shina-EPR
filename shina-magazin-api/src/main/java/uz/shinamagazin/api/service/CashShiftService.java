@@ -19,6 +19,7 @@ import uz.shinamagazin.api.exception.BadRequestException;
 import uz.shinamagazin.api.exception.ResourceNotFoundException;
 import uz.shinamagazin.api.repository.CashShiftRepository;
 import uz.shinamagazin.api.repository.ExpenseRepository;
+import uz.shinamagazin.api.repository.PaymentRepository;
 import uz.shinamagazin.api.repository.SaleReturnRepository;
 import uz.shinamagazin.api.repository.UserRepository;
 
@@ -45,6 +46,7 @@ public class CashShiftService {
     private final UserRepository userRepository;
     private final SaleReturnRepository saleReturnRepository;
     private final ExpenseRepository expenseRepository;
+    private final PaymentRepository paymentRepository;
 
     /** Kassirning ochiq smenasi (bo'lmasa bo'sh). */
     @Transactional(readOnly = true)
@@ -173,10 +175,25 @@ public class CashShiftService {
         // to'liq ko'rsatilaveradi.
         BigDecimal refundsNettedInPaid = saleReturnRepository.sumCashRefundedNettedInPaid(shift.getId());
         BigDecimal cashExpenses = expenseRepository.sumCashByShift(shift.getId());
+
+        // ─── Qarz to'lovlari ───
+        // makePayment to'lovni sale.paidAmount ga qo'shadi, summarize esa aynan
+        // shu maydonni yig'adi — lekin pul SOTUV smenasiga emas, to'lov QABUL
+        // QILINGAN smenaga tushadi (KARTA bo'lsa umuman kassaga tushmaydi).
+        // Shuning uchun: sotuv smenasidan keyingi to'lovlar AYIRILADI, shu
+        // smenada qabul qilingan NAQD qarz to'lovlari QO'SHILADI. Busiz
+        // kassadagi qarz puli hisobotda ko'rinmas (o'zlashtirish aniqlanmas),
+        // sotuv smenasida esa fantom "tushum" paydo bo'lardi.
+        BigDecimal cashDebtPayments = paymentRepository.sumCashDebtPaymentsReceivedInShift(shift.getId());
+        BigDecimal debtPaymentsAppliedToSales =
+                paymentRepository.sumDebtPaymentsAppliedToCashSalesOfShift(shift.getId());
+
         BigDecimal expectedCash = shift.getOpeningFloat()
                 .add(cashReceived)
+                .subtract(debtPaymentsAppliedToSales)
                 .subtract(cashRefunded)
                 .add(refundsNettedInPaid)
+                .add(cashDebtPayments)
                 .subtract(cashExpenses);
 
         return ZReportResponse.builder()
@@ -190,6 +207,8 @@ public class CashShiftService {
                 .cashReceived(cashReceived)
                 .cashRefunded(cashRefunded)
                 .returnsCount(saleReturnRepository.countByShift(shift.getId()))
+                .cashDebtPayments(cashDebtPayments)
+                .debtPaymentsCount(paymentRepository.countCashDebtPaymentsReceivedInShift(shift.getId()))
                 .cashExpenses(cashExpenses)
                 .expensesCount(expenseRepository.countByShift(shift.getId()))
                 .expectedCash(expectedCash)

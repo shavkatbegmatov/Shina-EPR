@@ -17,6 +17,7 @@ import uz.shinamagazin.api.enums.*;
 import uz.shinamagazin.api.exception.BadRequestException;
 import uz.shinamagazin.api.repository.CashShiftRepository;
 import uz.shinamagazin.api.repository.ExpenseRepository;
+import uz.shinamagazin.api.repository.PaymentRepository;
 import uz.shinamagazin.api.repository.SaleReturnRepository;
 import uz.shinamagazin.api.repository.UserRepository;
 
@@ -52,6 +53,7 @@ class ExpenseServiceTest {
     @Autowired private CashShiftRepository shiftRepository;
     @Autowired private SaleReturnRepository saleReturnRepository;
     @Autowired private UserRepository userRepository;
+    @Autowired private PaymentRepository paymentRepository;
 
     private ExpenseService service;
     private CashShiftService shiftService;
@@ -65,7 +67,8 @@ class ExpenseServiceTest {
         shiftRepository.deleteAll();
         userRepository.deleteAll();
 
-        shiftService = new CashShiftService(shiftRepository, userRepository, saleReturnRepository, expenseRepository);
+        shiftService = new CashShiftService(shiftRepository, userRepository, saleReturnRepository,
+                expenseRepository, paymentRepository);
         service = new ExpenseService(expenseRepository, userRepository, shiftService);
         cashier = userRepository.saveAndFlush(user());
     }

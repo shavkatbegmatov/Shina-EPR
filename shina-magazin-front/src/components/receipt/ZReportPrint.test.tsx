@@ -31,6 +31,8 @@ const BASE: ZReport = {
   cashReceived: 500_000,
   cashRefunded: 0,
   returnsCount: 0,
+  cashDebtPayments: 0,
+  debtPaymentsCount: 0,
   cashExpenses: 0,
   expensesCount: 0,
   expectedCash: 600_000,

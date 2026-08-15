@@ -30,4 +30,39 @@ public interface PaymentRepository extends JpaRepository<Payment, Long> {
 
     @Query("SELECT COALESCE(SUM(p.amount), 0) FROM Payment p WHERE p.paymentDate >= :start AND p.paymentDate < :end")
     BigDecimal getTodayPaymentsTotal(@Param("start") LocalDateTime start, @Param("end") LocalDateTime end);
+
+    /**
+     * Shu smenada QABUL QILINGAN naqd qarz to'lovlari — kassaga fizik tushgan
+     * pul. Z-hisobotda expectedCash'ga QO'SHILADI: busiz qarz puli kassada
+     * turib hisobotda ko'rinmas, o'zlashtirilsa aniqlanmas edi.
+     */
+    @Query("""
+            SELECT COALESCE(SUM(p.amount), 0) FROM Payment p
+            WHERE p.shift.id = :shiftId
+              AND p.method = uz.shinamagazin.api.enums.PaymentMethod.CASH
+              AND p.paymentType = uz.shinamagazin.api.enums.PaymentType.DEBT_PAYMENT""")
+    BigDecimal sumCashDebtPaymentsReceivedInShift(@Param("shiftId") Long shiftId);
+
+    @Query("""
+            SELECT COUNT(p) FROM Payment p
+            WHERE p.shift.id = :shiftId
+              AND p.method = uz.shinamagazin.api.enums.PaymentMethod.CASH
+              AND p.paymentType = uz.shinamagazin.api.enums.PaymentType.DEBT_PAYMENT""")
+    long countCashDebtPaymentsReceivedInShift(@Param("shiftId") Long shiftId);
+
+    /**
+     * Shu smenadagi NAQD savdolarga keyinchalik qilingan qarz to'lovlari.
+     *
+     * <p>{@code makePayment} to'lovni {@code sale.paidAmount} ga qo'shadi —
+     * summarize esa aynan shu maydonni yig'adi. Pul esa SOTUV smenasining
+     * kassasiga emas, to'lov qabul qilingan smenaga tushgan (yoki KARTA
+     * orqali umuman kassaga tushmagan). Z-hisobotda bu qism sotuv smenasining
+     * naqd tushumidan AYIRILADI, aks holda bir pul ikki smenada sanalardi.
+     */
+    @Query("""
+            SELECT COALESCE(SUM(p.amount), 0) FROM Payment p
+            WHERE p.sale.shift.id = :shiftId
+              AND p.sale.paymentMethod = uz.shinamagazin.api.enums.PaymentMethod.CASH
+              AND p.paymentType = uz.shinamagazin.api.enums.PaymentType.DEBT_PAYMENT""")
+    BigDecimal sumDebtPaymentsAppliedToCashSalesOfShift(@Param("shiftId") Long shiftId);
 }

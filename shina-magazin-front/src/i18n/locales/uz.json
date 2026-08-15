@@ -2049,6 +2049,7 @@
       "emptyDescription": "Birinchi smenani oching.",
       "cashRefunded": "Naqd qaytarishlar",
       "returnsCount": "Qaytarishlar soni",
+      "cashDebtPayments": "Qarz to'lovlari (naqd)",
       "cashExpenses": "Naqd xarajatlar"
     },
     "returns": {

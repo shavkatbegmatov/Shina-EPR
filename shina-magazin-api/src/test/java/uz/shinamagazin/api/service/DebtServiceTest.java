@@ -50,6 +50,9 @@ class DebtServiceTest {
     @Autowired private CustomerRepository customerRepository;
     @Autowired private UserRepository userRepository;
     @Autowired private SaleRepository saleRepository;
+    @Autowired private CashShiftRepository shiftRepository;
+    @Autowired private SaleReturnRepository saleReturnRepository;
+    @Autowired private ExpenseRepository expenseRepository;
 
     private DebtService service;
     private User cashier;
@@ -60,14 +63,21 @@ class DebtServiceTest {
         paymentRepository.deleteAll();
         debtRepository.deleteAll();
         saleRepository.deleteAll();
+        shiftRepository.deleteAll();
         customerRepository.deleteAll();
         userRepository.deleteAll();
 
         cashier = userRepository.saveAndFlush(user());
         buyer = customerRepository.saveAndFlush(customer());
 
+        // Smena qatlami REAL: to'lov qabul qilgan kassirning ochiq smenasiga
+        // bog'lanishi aynan shu testlarda qulflanadi.
+        CashShiftService shiftService = new CashShiftService(shiftRepository, userRepository,
+                saleReturnRepository, expenseRepository, paymentRepository);
+
         service = new DebtService(debtRepository, paymentRepository, customerRepository,
-                userRepository, mock(StaffNotificationService.class), mock(NotificationService.class));
+                userRepository, mock(StaffNotificationService.class), mock(NotificationService.class),
+                shiftService);
 
         CustomUserDetails principal = new CustomUserDetails(cashier);
         SecurityContextHolder.getContext().setAuthentication(
@@ -114,6 +124,40 @@ class DebtServiceTest {
         Debt after = debtRepository.findById(debt.getId()).orElseThrow();
         assertThat(after.getRemainingAmount()).isEqualByComparingTo("0");
         assertThat(after.getStatus()).isEqualTo(DebtStatus.PAID);
+    }
+
+    // ─── Smenaga bog'lanish ───
+    // Ilgari Payment hech qanday smenaga bog'lanmasdi: kassaga tushgan naqd
+    // qarz to'lovi Z-hisobotda ko'rinmas, o'zlashtirilsa aniqlanmas edi.
+
+    @Test
+    @DisplayName("To'lov qabul qilgan kassirning ochiq smenasiga bog'lanadi")
+    void paymentLinksToCashiersOpenShift() {
+        CashShift shift = shiftRepository.saveAndFlush(CashShift.builder()
+                .openedBy(cashier)
+                .openedAt(LocalDateTime.now())
+                .openingFloat(BigDecimal.ZERO)
+                .status(CashShiftStatus.OPEN)
+                .build());
+        Debt debt = debt(sale(SaleStatus.COMPLETED, "1000000"), "1000000", DebtStatus.ACTIVE);
+
+        service.makePayment(debt.getId(), payment("400000"));
+
+        assertThat(paymentRepository.findAll())
+                .singleElement()
+                .satisfies(p -> assertThat(p.getShift().getId()).isEqualTo(shift.getId()));
+    }
+
+    @Test
+    @DisplayName("Ochiq smenasiz qabul qilingan to'lovda smena bo'sh qoladi")
+    void paymentWithoutOpenShiftHasNullShift() {
+        Debt debt = debt(sale(SaleStatus.COMPLETED, "1000000"), "1000000", DebtStatus.ACTIVE);
+
+        service.makePayment(debt.getId(), payment("400000"));
+
+        assertThat(paymentRepository.findAll())
+                .singleElement()
+                .satisfies(p -> assertThat(p.getShift()).isNull());
     }
 
     // --- helpers ---

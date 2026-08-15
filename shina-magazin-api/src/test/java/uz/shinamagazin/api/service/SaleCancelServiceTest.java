@@ -61,6 +61,7 @@ class SaleCancelServiceTest {
     @Autowired private StockMovementRepository stockMovementRepository;
     @Autowired private CashShiftRepository shiftRepository;
     @Autowired private ExpenseRepository expenseRepository;
+    @Autowired private PaymentRepository paymentRepository;
     @Autowired private jakarta.persistence.EntityManager entityManager;
 
     private SaleService service;
@@ -98,7 +99,8 @@ class SaleCancelServiceTest {
         // Qaytarishlar REAL servis orqali — u omborni ham tiklaydi, aynan
         // shu bilan "ikki marta to'ldirish" ssenariysi haqiqiy bo'ladi.
         CashShiftService shiftService = new CashShiftService(
-                shiftRepository, userRepository, saleReturnRepository, expenseRepository);
+                shiftRepository, userRepository, saleReturnRepository, expenseRepository,
+                paymentRepository);
         returnService = new SaleReturnService(saleReturnRepository, saleRepository,
                 saleItemRepository, productRepository, stockMovementRepository,
                 customerRepository, userRepository, new SequentialNumbers(), shiftService,

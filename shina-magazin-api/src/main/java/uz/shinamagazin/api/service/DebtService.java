@@ -42,6 +42,7 @@ public class DebtService {
     private final UserRepository userRepository;
     private final StaffNotificationService staffNotificationService;
     private final NotificationService customerNotificationService;
+    private final CashShiftService cashShiftService;
 
     public Page<DebtResponse> getAllDebts(DebtStatus status, Pageable pageable) {
         Page<Debt> debts;
@@ -139,6 +140,11 @@ public class DebtService {
                 .notes(request.getNotes())
                 .paymentDate(LocalDateTime.now())
                 .receivedBy(currentUser)
+                // Pul QABUL QILGAN kassirning ochiq smenasiga bog'lanadi —
+                // naqd qarz to'lovi aynan shu kassaga tushadi va Z-hisobotda
+                // hisobga olinadi. Busiz kassadagi qarz puli hisobotda
+                // ko'rinmas, o'zlashtirilsa aniqlanmas edi.
+                .shift(cashShiftService.findOpenShift(currentUser.getId()).orElse(null))
                 .build();
         paymentRepository.save(payment);
 

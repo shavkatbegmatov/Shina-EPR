@@ -12,6 +12,7 @@ import uz.shinamagazin.api.dto.request.OpenShiftRequest;
 import uz.shinamagazin.api.dto.response.ZReportResponse;
 import uz.shinamagazin.api.entity.CashShift;
 import uz.shinamagazin.api.entity.Expense;
+import uz.shinamagazin.api.entity.Payment;
 import uz.shinamagazin.api.entity.Product;
 import uz.shinamagazin.api.entity.Sale;
 import uz.shinamagazin.api.entity.SaleItem;
@@ -22,6 +23,7 @@ import uz.shinamagazin.api.repository.CashShiftRepository;
 import uz.shinamagazin.api.repository.CustomerRepository;
 import uz.shinamagazin.api.repository.DebtRepository;
 import uz.shinamagazin.api.repository.ExpenseRepository;
+import uz.shinamagazin.api.repository.PaymentRepository;
 import uz.shinamagazin.api.repository.ProductRepository;
 import uz.shinamagazin.api.repository.SaleItemRepository;
 import uz.shinamagazin.api.repository.SaleRepository;
@@ -72,6 +74,7 @@ class CashShiftReportTest {
     @Autowired private StockMovementRepository stockMovementRepository;
     @Autowired private CustomerRepository customerRepository;
     @Autowired private DebtRepository debtRepository;
+    @Autowired private PaymentRepository paymentRepository;
 
     private CashShiftService service;
     private SaleReturnService returnService;
@@ -88,6 +91,7 @@ class CashShiftReportTest {
     @BeforeEach
     void setUp() {
         stockMovementRepository.deleteAll();
+        paymentRepository.deleteAll();
         debtRepository.deleteAll();
         saleReturnRepository.deleteAll();
         expenseRepository.deleteAll();
@@ -97,7 +101,8 @@ class CashShiftReportTest {
         customerRepository.deleteAll();
         userRepository.deleteAll();
 
-        service = new CashShiftService(shiftRepository, userRepository, saleReturnRepository, expenseRepository);
+        service = new CashShiftService(shiftRepository, userRepository, saleReturnRepository,
+                expenseRepository, paymentRepository);
         // Qaytarimlar REAL servis orqali yuradi: u paidAmount'ni ham kamaytiradi.
         // Repository bilan qo'lda qurilgan qaytarim bu mutatsiyani chetlab o'tib,
         // ikki marta ayirish xatosini yashirgan edi.
@@ -278,6 +283,62 @@ class CashShiftReportTest {
                 .satisfies(s -> assertThat(s.getExpectedCash())
                         .as("yopilgan smenaning saqlangan hisobi o'zgarmaydi")
                         .isEqualByComparingTo("500000"));
+    }
+
+    // ─── Qarz to'lovlari ───
+    // Payment endi qabul qilgan smenaga bog'lanadi. Ilgari kassaga tushgan
+    // naqd qarz to'lovi expectedCash'da ko'rinmas edi (o'zlashtirish
+    // aniqlanmasdi); sale.paidAmount mutatsiyasi esa pulni SOTUV smenasiga
+    // yozib, u yerda fantom tushum yasardi.
+
+    @Test
+    @DisplayName("Shu smenada qabul qilingan naqd qarz to'lovi kutilgan kassaga qo'shiladi")
+    void cashDebtPaymentReceivedInShiftIncreasesExpectedCash() {
+        CashShift shift = openShift("0");
+        // 1 000 000 lik naqd savdo: 400 000 to'langan, 600 000 qarz
+        Sale sold = sale(shift, PaymentMethod.CASH, "1000000", "400000", "600000", SaleStatus.COMPLETED);
+
+        debtPayment(shift, sold, PaymentMethod.CASH, "600000");
+
+        ZReportResponse report = service.getReport(shift.getId());
+        assertThat(report.getCashDebtPayments()).isEqualByComparingTo("600000");
+        assertThat(report.getDebtPaymentsCount()).isEqualTo(1);
+        assertThat(report.getExpectedCash())
+                .as("kassada fizik: 400 000 (savdo) + 600 000 (qarz to'lovi)")
+                .isEqualByComparingTo("1000000");
+    }
+
+    @Test
+    @DisplayName("Boshqa smenada qabul qilingan qarz to'lovi SOTUV smenasiga fantom tushum bermaydi")
+    void crossShiftDebtPaymentCountsOnlyInReceivingShift() {
+        CashShift first = openShift("0");
+        Sale sold = sale(first, PaymentMethod.CASH, "1000000", "400000", "600000", SaleStatus.COMPLETED);
+        service.closeShift(cashier.getId(), close("400000", null));
+
+        CashShift second = openShift("0");
+        debtPayment(second, sold, PaymentMethod.CASH, "600000");
+
+        assertThat(service.getReport(second.getId()).getExpectedCash())
+                .as("pul ikkinchi smenaning kassasiga tushdi")
+                .isEqualByComparingTo("600000");
+        assertThat(service.getReport(first.getId()).getExpectedCash())
+                .as("sotuv smenasi keyin kelgan pulni ko'rmasligi kerak — u boshqa kassada")
+                .isEqualByComparingTo("400000");
+    }
+
+    @Test
+    @DisplayName("KARTA bilan to'langan qarz kassaga tushmaydi")
+    void cardDebtPaymentDoesNotEnterDrawer() {
+        CashShift shift = openShift("0");
+        Sale sold = sale(shift, PaymentMethod.CASH, "1000000", "400000", "600000", SaleStatus.COMPLETED);
+
+        debtPayment(shift, sold, PaymentMethod.CARD, "600000");
+
+        ZReportResponse report = service.getReport(shift.getId());
+        assertThat(report.getCashDebtPayments()).isEqualByComparingTo("0");
+        assertThat(report.getExpectedCash())
+                .as("karta puli terminalda — kassada faqat savdoning 400 000 tasi")
+                .isEqualByComparingTo("400000");
     }
 
     @Test
@@ -504,6 +565,22 @@ class CashShiftReportTest {
                 .quantity(100)
                 .active(true)
                 .build();
+    }
+
+    /** Qarz to'lovi — DebtService.makePayment kabi sale.paidAmount ham oshiriladi. */
+    private Payment debtPayment(CashShift shift, Sale sale, PaymentMethod method, String amount) {
+        sale.setPaidAmount(sale.getPaidAmount().add(new BigDecimal(amount)));
+        sale.setDebtAmount(sale.getDebtAmount().subtract(new BigDecimal(amount)));
+        saleRepository.saveAndFlush(sale);
+        return paymentRepository.saveAndFlush(Payment.builder()
+                .sale(sale)
+                .amount(new BigDecimal(amount))
+                .method(method)
+                .paymentType(PaymentType.DEBT_PAYMENT)
+                .paymentDate(LocalDateTime.now())
+                .receivedBy(cashier)
+                .shift(shift)
+                .build());
     }
 
     private Expense expense(CashShift shift, PaymentMethod method, String amount) {

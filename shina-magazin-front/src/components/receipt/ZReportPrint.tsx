@@ -57,6 +57,13 @@ export function ZReportPrint({ report, settings }: { report: ZReport; settings?:
 
       {row(t('erp.shifts.openingFloat'), formatCurrency(report.openingFloat))}
       {row(t('erp.shifts.cashReceived'), formatCurrency(report.cashReceived))}
+      {/* Qarz to'lovlari ham kassaga KIRIM — ko'rinmasa kassir sanagan pul
+          hisobotdan ko'p chiqib, farq sababi tushunarsiz bo'lardi */}
+      {report.cashDebtPayments > 0 &&
+        row(
+          `${t('erp.shifts.cashDebtPayments')} (${report.debtPaymentsCount})`,
+          `+${formatCurrency(report.cashDebtPayments)}`
+        )}
       {/* Qaytarishlar kassadan pul CHIQARADI — kutilgan summadan ayirilgan */}
       {report.cashRefunded > 0 &&
         row(

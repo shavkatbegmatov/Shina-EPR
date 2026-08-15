@@ -58,6 +58,16 @@ public class Payment extends BaseEntity implements Auditable {
     @JoinColumn(name = "received_by", nullable = false)
     private User receivedBy;
 
+    /**
+     * To'lov QABUL QILINGAN smena (sotuvning smenasi emas!). Naqd qarz
+     * to'lovi aynan shu smenaning kassasiga tushadi va Z-hisobotning
+     * expectedCash'ida hisobga olinadi. Ochiq smenasiz qabul qilingan
+     * to'lovlarda null (savdolardagi bilan bir xil konvensiya).
+     */
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "shift_id")
+    private CashShift shift;
+
     // ============================================
     // Auditable Interface Implementation
     // ============================================

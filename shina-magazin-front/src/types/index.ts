@@ -121,6 +121,10 @@ export interface ZReport {
   /** Qaytarishlarda kassadan chiqqan pul. */
   cashRefunded: number;
   returnsCount: number;
+  /** Shu smenada qabul qilingan NAQD qarz to'lovlari — kassaga tushgan pul. */
+  cashDebtPayments: number;
+  /** Shu smenada qabul qilingan naqd qarz to'lovlari soni. */
+  debtPaymentsCount: number;
   /** Smenada kassadan chiqqan naqd xarajat. */
   cashExpenses: number;
   /** Smenadagi xarajatlar soni (naqd bo'lmaganlari ham). */

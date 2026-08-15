@@ -2049,6 +2049,7 @@
       "emptyDescription": "Откройте первую смену.",
       "cashRefunded": "Возвраты наличными",
       "returnsCount": "Количество возвратов",
+      "cashDebtPayments": "Погашение долгов (нал.)",
       "cashExpenses": "Наличные расходы"
     },
     "returns": {
