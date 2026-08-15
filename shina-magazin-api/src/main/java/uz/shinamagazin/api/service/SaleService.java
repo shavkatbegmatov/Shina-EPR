@@ -112,6 +112,13 @@ public class SaleService {
             Product product = productRepository.findById(itemRequest.getProductId())
                     .orElseThrow(() -> new ResourceNotFoundException("Mahsulot", "id", itemRequest.getProductId()));
 
+            // Arxivlangan mahsulot sotilmaydi: u barcha ombor hisobotlaridan
+            // chiqarilgan, ya'ni sotilsa zaxira ko'rinmas joyda o'zgarardi
+            if (!Boolean.TRUE.equals(product.getActive())) {
+                throw new BadRequestException(String.format(
+                        "\"%s\" arxivlangan — sotib bo'lmaydi", product.getName()));
+            }
+
             // Check stock
             if (product.getQuantity() < itemRequest.getQuantity()) {
                 throw new InsufficientStockException(

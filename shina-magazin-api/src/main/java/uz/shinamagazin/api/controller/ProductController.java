@@ -112,15 +112,10 @@ public class ProductController {
         return ResponseEntity.ok(ApiResponse.success("Mahsulot o'chirildi"));
     }
 
-    @PatchMapping("/{id}/stock")
-    @Operation(summary = "Adjust stock", description = "Zaxirani sozlash")
-    @RequiresPermission(PermissionCode.PRODUCTS_UPDATE)
-    public ResponseEntity<ApiResponse<ProductResponse>> adjustStock(
-            @PathVariable Long id,
-            @RequestParam int adjustment) {
-        ProductResponse product = productService.adjustStock(id, adjustment);
-        return ResponseEntity.ok(ApiResponse.success("Zaxira yangilandi", product));
-    }
+    // PATCH /{id}/stock OLIB TASHLANDI: u zaxirani StockMovement yozmasdan
+    // o'zgartirardi, ya'ni ombor jurnali bilan qoldiq o'rtasida tushuntirib
+    // bo'lmaydigan sakrash qolardi. Zaxira sozlash uchun yagona yo'l —
+    // StockMovementService.createStockAdjustment (Ombor sahifasi ishlatadi).
 
     @PostMapping("/image")
     @Operation(summary = "Upload product image", description = "Mahsulot rasmini storage'ga yuklaydi va URL qaytaradi")

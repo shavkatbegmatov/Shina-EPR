@@ -127,10 +127,26 @@ public class ProductService {
         return withAttributes(ProductResponse.from(savedProduct));
     }
 
+    /**
+     * Mahsulotni arxivlaydi (yumshoq o'chirish).
+     *
+     * <p>Zaxirasi bor mahsulotni arxivlab bo'lmaydi: ombor statistikasi va
+     * qiymat hisoboti faqat {@code active=true} bo'yicha yig'adi, ya'ni
+     * mahsulot javonda turgani holda hisobotlardan BIRDAN yo'qolar,
+     * StockMovement esa yozilmasdi — ombor jurnali bilan qoldiq o'rtasida
+     * tushuntirib bo'lmaydigan sakrash qolardi.
+     */
     @Transactional
     public void deleteProduct(Long id) {
         Product product = productRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Mahsulot", "id", id));
+
+        if (product.getQuantity() != null && product.getQuantity() > 0) {
+            throw new BadRequestException(String.format(
+                    "\"%s\" omborda %d dona turibdi — avval zaxirani chiqarib tashlang",
+                    product.getName(), product.getQuantity()));
+        }
+
         product.setActive(false);
         productRepository.save(product);
     }
@@ -141,19 +157,9 @@ public class ProductService {
                 .collect(Collectors.toList());
     }
 
-    @Transactional
-    public ProductResponse adjustStock(Long id, int adjustment) {
-        Product product = productRepository.findById(id)
-                .orElseThrow(() -> new ResourceNotFoundException("Mahsulot", "id", id));
-
-        int newQuantity = product.getQuantity() + adjustment;
-        if (newQuantity < 0) {
-            throw new BadRequestException("Zaxira manfiy bo'lishi mumkin emas");
-        }
-
-        product.setQuantity(newQuantity);
-        return ProductResponse.from(productRepository.save(product));
-    }
+    // adjustStock OLIB TASHLANDI: u zaxirani StockMovement yozmasdan
+    // o'zgartirardi va ledger'ni buzardi. Yagona to'g'ri yo'l —
+    // StockMovementService.createStockAdjustment.
 
     /**
      * Katalog (kartochka) maydonlarini map qiladi. MUHIM: zaxira (quantity) va

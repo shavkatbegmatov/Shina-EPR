@@ -65,14 +65,9 @@ export const productsApi = {
     await api.delete(`/v1/products/${id}`);
   },
 
-  adjustStock: async (id: number, adjustment: number): Promise<Product> => {
-    const response = await api.patch<ApiResponse<Product>>(
-      `/v1/products/${id}/stock`,
-      null,
-      { params: { adjustment } }
-    );
-    return response.data.data;
-  },
+  // adjustStock OLIB TASHLANDI: server endpointi ham yo'q — u zaxirani
+  // StockMovement yozmasdan o'zgartirardi. Zaxira sozlash uchun
+  // warehouseApi.createAdjustment ishlatiladi (Ombor sahifasi shundan boradi).
 
   // Rasm yuklash (multipart) -> ommaviy URL qaytaradi (imageUrl uchun)
   uploadImage: async (file: File): Promise<string> => {

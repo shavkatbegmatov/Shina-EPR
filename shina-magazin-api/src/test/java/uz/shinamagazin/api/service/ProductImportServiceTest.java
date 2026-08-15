@@ -12,6 +12,7 @@ import org.springframework.mock.web.MockMultipartFile;
 import org.springframework.web.multipart.MultipartFile;
 import uz.shinamagazin.api.dto.response.ProductImportResult;
 import uz.shinamagazin.api.entity.Brand;
+import uz.shinamagazin.api.entity.Product;
 import uz.shinamagazin.api.enums.Season;
 import uz.shinamagazin.api.exception.BadRequestException;
 import uz.shinamagazin.api.repository.BrandRepository;
@@ -104,6 +105,37 @@ class ProductImportServiceTest {
         assertThat(productRepository.findBySku("MCH-1"))
                 .get()
                 .satisfies(p -> assertThat(p.getName()).isEqualTo("Yangi nom"));
+    }
+
+    /**
+     * Eksport qilingan faylni tahrirlab qayta yuklash — hujjatlashtirilgan
+     * oqim. Import mavjud mahsulot zaxirasini ustidan yozsa, oradagi
+     * sotuvlar bekor bo'lib, StockMovement yozuvisiz fantom zaxira paydo
+     * bo'lardi (jurnal bilan qoldiq o'rtasida tushuntirib bo'lmaydigan farq).
+     */
+    @Test
+    @DisplayName("Mavjud mahsulot zaxirasi import bilan O'ZGARMAYDI")
+    void existingProductQuantityIsNotOverwritten() {
+        service.importProducts(file(row("MCH-1", "Shina", "Michelin", 1_000_000, 10)), false);
+
+        // Hayotda: 6 dona sotildi
+        Product product = productRepository.findBySku("MCH-1").orElseThrow();
+        product.setQuantity(4);
+        productRepository.saveAndFlush(product);
+
+        // Eski eksport fayli qayta yuklandi (Miqdor ustunida hali 10)
+        service.importProducts(file(row("MCH-1", "Shina", "Michelin", 1_200_000, 10)), false);
+
+        assertThat(productRepository.findBySku("MCH-1"))
+                .get()
+                .satisfies(p -> {
+                    assertThat(p.getQuantity())
+                            .as("zaxira faqat Ombor/Xarid/Savdo orqali o'zgaradi")
+                            .isEqualTo(4);
+                    assertThat(p.getSellingPrice())
+                            .as("narx esa yangilanaveradi — import aynan shuning uchun")
+                            .isEqualByComparingTo("1200000");
+                });
     }
 
     @Test

@@ -187,12 +187,26 @@ public class ProductImportService {
             throw new BadRequestException("Sotuv narxi musbat son bo'lishi kerak");
         }
         product.setSellingPrice(sellingPrice);
-        product.setPurchasePrice(decimal(row, columns, COL_PURCHASE_PRICE, formatter));
+
+        // Bo'sh katak (yoki umuman yo'q ustun) mavjud tannarxni O'CHIRMAYDI —
+        // aks holda ombor qiymati hisoboti mahsulotni 0 deb sanardi.
+        BigDecimal purchasePrice = decimal(row, columns, COL_PURCHASE_PRICE, formatter);
+        if (purchasePrice != null || isNew) {
+            product.setPurchasePrice(purchasePrice);
+        }
 
         Integer quantity = integer(row, columns, COL_QUANTITY, formatter);
         if (quantity != null) {
             if (quantity < 0) throw new BadRequestException("Miqdor manfiy bo'lishi mumkin emas");
-            product.setQuantity(quantity);
+            // Zaxira faqat YANGI mahsulotda import orqali o'rnatiladi.
+            // Mavjud mahsulotda u faqat Ombor/Xarid/Savdo orqali o'zgaradi
+            // (ProductService.updateProduct ham shu qoidani tutadi): eksport
+            // qilingan faylni tahrirlab qayta yuklash — hujjatlashtirilgan
+            // oqim — oradagi sotuvlarni bekor qilib, StockMovement yozuvisiz
+            // fantom zaxira paydo qilardi.
+            if (isNew) {
+                product.setQuantity(quantity);
+            }
         } else if (isNew) {
             product.setQuantity(0);
         }
