@@ -90,8 +90,24 @@ public class TelegramNotifier {
             deliver(chatId, text);
         } catch (Exception e) {
             // Faqat WARN: Telegram ishlamasligi biznes jarayonini buzmaydi
-            log.warn("Telegram xabarini yuborib bo'lmadi: {}", e.getMessage());
+            log.warn("Telegram xabarini yuborib bo'lmadi: {}", maskToken(e.getMessage()));
         }
+    }
+
+    /**
+     * Xato matnidan bot TOKENINI olib tashlaydi.
+     *
+     * <p>Token so'rov URL'ining YO'LIDA turadi, Spring esa I/O xatolarida
+     * ({@code ResourceAccessException}) to'liq URI'ni xabar ichiga qo'shadi.
+     * U xabar sozlamalar sahifasidagi toast'ga va loglarga tushardi — tokenni
+     * bilgan odam esa botni to'liq egallaydi ({@code setWebhook} orqali
+     * kelajakdagi barcha parol/PIN xabarlarini ushlab qolishi mumkin).
+     */
+    private String maskToken(String message) {
+        if (message == null || botToken == null || botToken.isBlank()) {
+            return message;
+        }
+        return message.replace(botToken, "***");
     }
 
     /**
@@ -114,7 +130,7 @@ public class TelegramNotifier {
         try {
             deliver(chatId.trim(), "✅ Protektor: Telegram xabarnomalari ishlayapti.");
         } catch (Exception e) {
-            throw new BadRequestException("Telegram javob bermadi: " + e.getMessage());
+            throw new BadRequestException("Telegram javob bermadi: " + maskToken(e.getMessage()));
         }
     }
 

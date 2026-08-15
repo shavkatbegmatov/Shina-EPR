@@ -54,9 +54,16 @@ class JwtAuthenticationFilterTest {
     }
 
     private void runFilter() throws Exception {
+        runFilter("/v1/sales");
+    }
+
+    private MockHttpServletResponse runFilter(String path) throws Exception {
         MockHttpServletRequest request = new MockHttpServletRequest();
+        request.setRequestURI(path);
         request.addHeader("Authorization", "Bearer token-123");
-        filter.doFilter(request, new MockHttpServletResponse(), new MockFilterChain());
+        MockHttpServletResponse response = new MockHttpServletResponse();
+        filter.doFilter(request, response, new MockFilterChain());
+        return response;
     }
 
     private static User staff(boolean active) {
@@ -91,6 +98,38 @@ class JwtAuthenticationFilterTest {
         runFilter();
 
         assertThat(SecurityContextHolder.getContext().getAuthentication()).isNotNull();
+    }
+
+    // Vaqtinchalik parol Telegram xabarida yetkaziladi va "birinchi kirishda
+    // majburan almashtiriladi" degan va'daga tayanadi — ilgari bu va'da
+    // hech qayerda bajarilmasdi.
+    @Test
+    @DisplayName("mustChangePassword tirik ekan oddiy endpointlar 403 qaytaradi")
+    void pendingPasswordChangeBlocksRegularEndpoints() throws Exception {
+        User staff = staff(true);
+        staff.setMustChangePassword(true);
+        when(staffService.loadUserByUsername("kassir")).thenReturn(new CustomUserDetails(staff));
+
+        MockHttpServletResponse response = runFilter("/v1/sales");
+
+        assertThat(response.getStatus()).isEqualTo(403);
+        assertThat(SecurityContextHolder.getContext().getAuthentication()).isNull();
+    }
+
+    @Test
+    @DisplayName("Parolni almashtirish va chiqish yo'llari ochiq qoladi")
+    void passwordChangeAndLogoutStayReachable() throws Exception {
+        User staff = staff(true);
+        staff.setMustChangePassword(true);
+        when(staffService.loadUserByUsername("kassir")).thenReturn(new CustomUserDetails(staff));
+
+        assertThat(runFilter("/v1/auth/change-password").getStatus()).isEqualTo(200);
+        assertThat(SecurityContextHolder.getContext().getAuthentication())
+                .as("parolni almashtirish uchun autentifikatsiya kerak")
+                .isNotNull();
+
+        SecurityContextHolder.clearContext();
+        assertThat(runFilter("/v1/auth/logout").getStatus()).isEqualTo(200);
     }
 
     @Test

@@ -57,9 +57,12 @@ export function MainLayout() {
         <Footer />
       </div>
 
-      {/* Password Change Modal - shows if user mustChangePassword */}
+      {/* Password Change Modal - shows if user mustChangePassword.
+          `forced`: server ham shu holatda boshqa endpointlarni 403 qiladi,
+          ya'ni modalni yopish foydasiz — yopish tugmalari ko'rsatilmaydi. */}
       <PasswordChangeModal
         isOpen={showPasswordModal}
+        forced
         onClose={() => setShowPasswordModal(false)}
       />
     </div>

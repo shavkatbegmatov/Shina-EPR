@@ -123,4 +123,22 @@ class TelegramNotifierTest {
                 .isInstanceOf(BadRequestException.class)
                 .hasMessageContaining("Telegram");
     }
+
+    /**
+     * Token so'rov URL'ining YO'LIDA turadi, Spring esa I/O xatolarida
+     * to'liq URI'ni xabar ichiga qo'shadi — u sozlamalar sahifasidagi
+     * toast'ga tushardi. Tokenni bilgan odam botni to'liq egallaydi
+     * ({@code setWebhook} bilan kelajakdagi parol/PIN xabarlarini ushlaydi).
+     */
+    @Test
+    @DisplayName("Xato xabarida bot TOKENI ko'rinmaydi")
+    void deliveryFailureNeverLeaksBotToken() {
+        String secret = "7654321:AAH-super-maxfiy-token";
+        TelegramNotifier notifier = new TelegramNotifier(secret, UNREACHABLE, settings);
+
+        assertThatThrownBy(() -> notifier.sendTestMessage("12345"))
+                .isInstanceOf(BadRequestException.class)
+                .hasMessageNotContaining(secret)
+                .hasMessageContaining("***");
+    }
 }

@@ -76,6 +76,7 @@ public interface PaymentRepository extends JpaRepository<Payment, Long> {
             SELECT COALESCE(SUM(p.amount), 0) FROM Payment p
             WHERE p.sale.shift.id = :shiftId
               AND p.sale.paymentMethod = uz.shinamagazin.api.enums.PaymentMethod.CASH
+              AND p.sale.status <> uz.shinamagazin.api.enums.SaleStatus.CANCELLED
               AND p.paymentType = uz.shinamagazin.api.enums.PaymentType.DEBT_PAYMENT""")
     BigDecimal sumDebtPaymentsAppliedToCashSalesOfShift(@Param("shiftId") Long shiftId);
 }

@@ -27,9 +27,19 @@ interface PasswordFormData {
 interface PasswordChangeModalProps {
   isOpen: boolean;
   onClose: () => void;
+  /**
+   * Majburiy rejim — yopish/o'tkazib yuborish tugmalari ko'rsatilmaydi.
+   *
+   * <p>Vaqtinchalik parol Telegram xabarida yetkaziladi va uning xavfsizligi
+   * "birinchi kirishda majburan almashtiriladi" degan va'daga tayanadi.
+   * Ilgari bu va'da bajarilmasdi: X va "o'tkazib yuborish" tugmalari modalni
+   * shunchaki yopar, server esa hech narsani talab qilmasdi. Endi server ham
+   * `mustChangePassword` tirik ekan boshqa endpointlarni 403 qiladi.
+   */
+  forced?: boolean;
 }
 
-export function PasswordChangeModal({ isOpen, onClose }: PasswordChangeModalProps) {
+export function PasswordChangeModal({ isOpen, onClose, forced = false }: PasswordChangeModalProps) {
   const { t } = useTranslation();
   const [changingPassword, setChangingPassword] = useState(false);
   const { logout } = useAuthStore();
@@ -110,16 +120,18 @@ export function PasswordChangeModal({ isOpen, onClose }: PasswordChangeModalProp
               </p>
             </div>
           </div>
-          <Button
-            type="button"
-            variant="ghost"
-            size="sm"
-            iconOnly
-            onClick={handleSkip}
-            disabled={changingPassword}
-          >
-            <XCircle className="h-5 w-5" />
-          </Button>
+          {!forced && (
+            <Button
+              type="button"
+              variant="ghost"
+              size="sm"
+              iconOnly
+              onClick={handleSkip}
+              disabled={changingPassword}
+            >
+              <XCircle className="h-5 w-5" />
+            </Button>
+          )}
         </div>
 
         {/* Form */}
@@ -190,14 +202,16 @@ export function PasswordChangeModal({ isOpen, onClose }: PasswordChangeModalProp
                 </>
               )}
             </Button>
-            <Button
-              type="button"
-              variant="ghost"
-              onClick={handleSkip}
-              disabled={changingPassword}
-            >
-              {t('erp.passwordChange.skipButton')}
-            </Button>
+            {!forced && (
+              <Button
+                type="button"
+                variant="ghost"
+                onClick={handleSkip}
+                disabled={changingPassword}
+              >
+                {t('erp.passwordChange.skipButton')}
+              </Button>
+            )}
           </div>
 
           <p className="text-xs text-base-content/50">

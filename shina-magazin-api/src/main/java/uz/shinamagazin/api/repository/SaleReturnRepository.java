@@ -52,22 +52,25 @@ public interface SaleReturnRepository extends JpaRepository<SaleReturn, Long> {
     BigDecimal sumCashRefundedByShift(@Param("shiftId") Long shiftId);
 
     /**
-     * Shu smenadagi qaytarimlarning naqd hisobda ALLAQACHON aks etgan qismi.
+     * Shu smena SAVDOLARINING naqd hisobida ALLAQACHON aks etgan qaytarimlar.
      *
-     * <p>Savdo NAQD bo'lib, AYNI SHU smenada qilingan bo'lsa,
-     * {@code createReturn} uning {@code paidAmount} ini kamaytirgan —
-     * {@code summarizeByPaymentMethod} dagi naqd tushum shu kamayishni o'zi
-     * ko'rsatadi. Z-hisobotda {@code cashRefunded} ni to'liq ayirishdan oldin
-     * shu qism qaytarib qo'shiladi, aks holda qaytarim IKKI MARTA ayirilib,
-     * kassir aynan qaytarim summasi miqdorida kamomadni yashira olardi.
+     * <p>{@code createReturn} naqd savdoning {@code paidAmount} ini
+     * kamaytiradi, ya'ni {@code summarizeByPaymentMethod} dagi naqd tushum
+     * qaytarimni o'zi hisobga olib bo'lgan. Z-hisobotda uni yana ayirmaslik
+     * uchun shu qism qaytarib qo'shiladi.
+     *
+     * <p>Kalit — SAVDO smenasi, qaytarim qaysi smenada rasmiylashtirilganidan
+     * qat'i nazar. Ilgari qaytarimning O'Z smenasi ham talab qilinardi:
+     * qaytarim boshqa (masalan menejerning) ochiq smenasida qilinsa, savdo
+     * smenasi kompensatsiyasiz qolib, pul ikkala kassadan ayirilardi —
+     * savdo kassiri o'sha summani o'zlashtirib, farqsiz yopa olardi.
      */
     @Query("""
             SELECT COALESCE(SUM(r.cashRefunded), 0)
             FROM SaleReturn r
             JOIN r.sale s
-            WHERE r.shift.id = :shiftId
-              AND s.paymentMethod = uz.shinamagazin.api.enums.PaymentMethod.CASH
-              AND s.shift.id = :shiftId""")
+            WHERE s.shift.id = :shiftId
+              AND s.paymentMethod = uz.shinamagazin.api.enums.PaymentMethod.CASH""")
     BigDecimal sumCashRefundedNettedInPaid(@Param("shiftId") Long shiftId);
 
     @Query("SELECT COUNT(r) FROM SaleReturn r WHERE r.shift.id = :shiftId")

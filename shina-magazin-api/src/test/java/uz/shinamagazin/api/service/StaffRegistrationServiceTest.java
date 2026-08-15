@@ -159,8 +159,16 @@ class StaffRegistrationServiceTest {
         assertThat(captor.getValue().getRoleCode()).isEqualTo("SELLER");
     }
 
+    /**
+     * Rolni FAQAT tasdiqlovchi belgilaydi.
+     *
+     * <p>Ilgari tanlanmagan holatda arizadagi `requestedRole` ishlatilardi —
+     * ochiq shakl esa ADMIN so'rashga ruxsat beradi. Ya'ni body'siz approve
+     * (Swagger/curl/skript) arizachiga o'zi so'ragan huquqni berardi.
+     * Endi tanlanmasa eng kam huquqli SELLER beriladi.
+     */
     @Test
-    @DisplayName("Tanlanmasa so'rovdagi rol ishlatiladi va xodim yaratiladi")
+    @DisplayName("Rol tanlanmasa so'rovdagi rol EMAS, eng kam huquqli rol beriladi")
     void approveCreatesEmployeeWithAccount() {
         StaffRegistrationRequest pending = pending("MANAGER");
         when(requestRepository.findById(1L)).thenReturn(Optional.of(pending));
@@ -173,7 +181,9 @@ class StaffRegistrationServiceTest {
         verify(employeeService).createEmployee(captor.capture());
         EmployeeRequest created = captor.getValue();
 
-        assertThat(created.getRoleCode()).isEqualTo("MANAGER");
+        assertThat(created.getRoleCode())
+                .as("arizachining o'z taklifi huquq bermaydi")
+                .isEqualTo("SELLER");
         assertThat(created.getPhone()).isEqualTo(PHONE);
         // Akkauntsiz tasdiqlashning ma'nosi yo'q — odam kira olmasdi
         assertThat(created.getCreateUserAccount()).isTrue();
@@ -182,6 +192,37 @@ class StaffRegistrationServiceTest {
 
         assertThat(pending.getStatus()).isEqualTo(StaffRegistrationStatus.APPROVED);
         assertThat(pending.getReviewedAt()).isNotNull();
+    }
+
+    /**
+     * Qaror xabarida login va VAQTINCHALIK PAROL ketadi — havolani oxirgi
+     * ochgan odam kredensiallarni olib qolmasligi kerak. Mijoz oqimida ham
+     * xuddi shunday guard bor.
+     */
+    @Test
+    @DisplayName("Boshqa chatga bog'langan arizani qayta bog'lab bo'lmaydi")
+    void linkTelegramRefusesRebindFromAnotherChat() {
+        StaffRegistrationRequest pending = pending("SELLER");
+        pending.setTelegramChatId(111L);
+        when(requestRepository.findByTelegramLinkToken("tok")).thenReturn(Optional.of(pending));
+
+        String reply = service.linkTelegram(222L, "tok");
+
+        assertThat(reply).contains("boshqa Telegram hisobiga bog'langan");
+        assertThat(pending.getTelegramChatId())
+                .as("eski bog'lanish saqlanadi")
+                .isEqualTo(111L);
+        verify(requestRepository, never()).save(pending);
+    }
+
+    @Test
+    @DisplayName("O'z chatidan qayta bog'lanish ishlayveradi")
+    void linkTelegramFromSameChatStillWorks() {
+        StaffRegistrationRequest pending = pending("SELLER");
+        pending.setTelegramChatId(111L);
+        when(requestRepository.findByTelegramLinkToken("tok")).thenReturn(Optional.of(pending));
+
+        assertThat(service.linkTelegram(111L, "tok")).contains("kuzatuvda");
     }
 
     /**

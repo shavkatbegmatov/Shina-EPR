@@ -214,9 +214,22 @@ public class TelegramApiClient {
             }
             return response.get("result");
         } catch (Exception e) {
-            log.warn("Telegram {} chaqiruvi muvaffaqiyatsiz: {}", method, e.getMessage());
+            log.warn("Telegram {} chaqiruvi muvaffaqiyatsiz: {}", method, maskToken(e.getMessage()));
             return null;
         }
+    }
+
+    /**
+     * Xato matnidan bot TOKENINI olib tashlaydi — u so'rov URL'ining yo'lida
+     * turadi va Spring I/O xatolarida to'liq URI'ni xabar ichiga qo'shadi.
+     * Tokenni bilgan odam botni to'liq egallaydi.
+     */
+    private String maskToken(String message) {
+        String token = props.getBotToken();
+        if (message == null || token == null || token.isBlank()) {
+            return message;
+        }
+        return message.replace(token, "***");
     }
 
     private static String truncate(String text) {

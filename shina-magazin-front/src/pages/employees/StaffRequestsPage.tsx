@@ -47,6 +47,19 @@ export function StaffRequestsPage() {
   const [approveRole, setApproveRole] = useState('SELLER');
   const [approvePosition, setApprovePosition] = useState('');
 
+  // Sabab arizachiga Telegram orqali yetkaziladi — modal ochilganda u
+  // ALBATTA tozalanishi kerak, aks holda oldingi arizachiga yozilgan matn
+  // (masalan "soxta telefon raqami") keyingisiga ketib qolardi.
+  const openReject = (request: StaffRegistration) => {
+    setRejecting(request);
+    setRejectReason('');
+  };
+
+  const closeReject = () => {
+    setRejecting(null);
+    setRejectReason('');
+  };
+
   const openApprove = (request: StaffRegistration) => {
     setApproving(request);
     // Arizadagi rol boshlang'ich qiymat sifatida qulay, lekin u faqat taklif —
@@ -198,7 +211,7 @@ export function StaffRequestsPage() {
                       size="sm"
                       variant="outline"
                       disabled={busy}
-                      onClick={() => setRejecting(request)}
+                      onClick={() => openReject(request)}
                     >
                       <XCircle className="h-4 w-4" />
                       {t('erp.staffRequests.reject')}
@@ -280,11 +293,11 @@ export function StaffRequestsPage() {
           "nega rad etilgan edi?" degan savolga javob beradi. */}
       <Modal
         open={rejecting !== null}
-        onClose={() => setRejecting(null)}
+        onClose={closeReject}
         title={t('erp.staffRequests.rejectTitle')}
         footer={
           <>
-            <Button variant="ghost" onClick={() => setRejecting(null)}>
+            <Button variant="ghost" onClick={closeReject}>
               {t('common.cancel')}
             </Button>
             <Button

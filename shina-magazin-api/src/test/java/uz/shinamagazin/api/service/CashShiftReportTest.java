@@ -265,6 +265,49 @@ class CashShiftReportTest {
                 .isEqualByComparingTo("0");
     }
 
+    // Ikkala smena ham OCHIQ bo'lgan holat: qaytarimni menejer o'z smenasida
+    // rasmiylashtiradi. Ilgari netting qaytarimning O'Z smenasini ham talab
+    // qilardi, ya'ni sotuv smenasi kompensatsiyasiz qolib, bir pul ikkala
+    // kassadan ayirilardi — sotuvchi o'sha summani o'zlashtirib, farqsiz
+    // yopa olardi.
+    @Test
+    @DisplayName("Boshqa OCHIQ smenadagi qaytarim sotuv smenasining naqdini kamaytirmaydi")
+    void refundInAnotherOpenShiftDoesNotDrainSaleShift() {
+        CashShift sellerShift = openShift("0");
+        Sale sold = soldWithItem(sellerShift, PaymentMethod.CASH, "500000", 1, "500000", "0");
+
+        User manager = userRepository.saveAndFlush(user("menejer"));
+        service.openShift(manager.getId(), open("0"));
+        CashShift managerShift = shiftRepository
+                .findByOpenedByIdAndStatus(manager.getId(), CashShiftStatus.OPEN).orElseThrow();
+
+        returnService.createReturn(sold.getId(), manager.getId(), returnOf(sold, 1));
+
+        assertThat(service.getReport(sellerShift.getId()).getExpectedCash())
+                .as("pul menejer kassasidan chiqdi — sotuvchi kassasida 500 000 qoladi")
+                .isEqualByComparingTo("500000");
+        assertThat(service.getReport(managerShift.getId()).getExpectedCash())
+                .as("qaytarim aynan menejer kassasidan")
+                .isEqualByComparingTo("-500000");
+    }
+
+    @Test
+    @DisplayName("Bekor qilingan sotuvga qilingan qarz to'lovi kutilgan kassani kamaytirmaydi")
+    void debtPaymentOnCancelledSaleIsNotSubtracted() {
+        CashShift shift = openShift("0");
+        Sale sold = sale(shift, PaymentMethod.CASH, "1000000", "400000", "600000", SaleStatus.COMPLETED);
+
+        // To'lov boshqa (smenasiz) joyda qabul qilindi — bu smenaga kirim bermaydi
+        debtPayment(null, sold, PaymentMethod.CASH, "300000");
+
+        sold.setStatus(SaleStatus.CANCELLED);
+        saleRepository.saveAndFlush(sold);
+
+        assertThat(service.getReport(shift.getId()).getExpectedCash())
+                .as("bekor qilingan sotuv na tushum, na ayirim berishi kerak")
+                .isEqualByComparingTo("0");
+    }
+
     @Test
     @DisplayName("Boshqa smenada qilingan savdoning qaytarimi shu smenadan ayiriladi")
     void crossShiftRefundIsSubtractedFromRefundingShift() {

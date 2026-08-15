@@ -99,6 +99,24 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
                 SecurityContextHolder.getContext().setAuthentication(authentication);
 
+                // Vaqtinchalik parol Telegram xabarida yetkaziladi va uning
+                // xavfsizligi "birinchi kirishda majburan almashtiriladi"
+                // degan va'daga tayanadi. Ilgari bu va'da hech qayerda
+                // bajarilmasdi: modal oddiygina yopilardi, server esa
+                // `mustChangePassword` ni umuman tekshirmasdi — Telegram
+                // tarixidagi parol muddatsiz amal qilardi.
+                if (!isCustomerToken && userDetails instanceof CustomUserDetails staff
+                        && Boolean.TRUE.equals(staff.getUser().getMustChangePassword())
+                        && !isAllowedWhilePasswordChangePending(request)) {
+                    log.warn("Parol almashtirilmagunga qadar kirish cheklangan: {}", username);
+                    SecurityContextHolder.clearContext();
+                    response.setStatus(HttpServletResponse.SC_FORBIDDEN);
+                    response.setContentType("application/json;charset=UTF-8");
+                    response.getWriter().write(
+                            "{\"success\":false,\"message\":\"Avval parolni almashtiring\"}");
+                    return;
+                }
+
                 // Update last activity for staff sessions
                 if (!isCustomerToken) {
                     try {
@@ -113,6 +131,18 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
         }
 
         filterChain.doFilter(request, response);
+    }
+
+    /**
+     * Parol almashtirish kutilayotganda ruxsat etilgan yo'llar — foydalanuvchi
+     * o'zini tanishtira olishi, parolni almashtira olishi va chiqa olishi kerak.
+     */
+    private boolean isAllowedWhilePasswordChangePending(HttpServletRequest request) {
+        String path = request.getRequestURI();
+        return path.equals("/v1/auth/change-password")
+                || path.equals("/v1/auth/me")
+                || path.equals("/v1/auth/logout")
+                || path.startsWith("/v1/auth/refresh-token");
     }
 
     private String getJwtFromRequest(HttpServletRequest request) {

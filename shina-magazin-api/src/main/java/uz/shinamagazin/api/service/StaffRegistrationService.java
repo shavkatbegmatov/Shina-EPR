@@ -160,6 +160,17 @@ public class StaffRegistrationService {
             return "Bu ariza allaqachon ko'rib chiqilgan. Savollar bo'lsa do'kon bilan bog'laning.";
         }
 
+        // Ariza BOSHQA chatga bog'langan bo'lsa qayta bog'lanmaydi: qaror
+        // xabarida login va vaqtinchalik parol ketadi, ya'ni havolani oxirgi
+        // ochgan odam kredensiallarni olib qolardi. Mijoz oqimida ham xuddi
+        // shunday guard bor (TelegramRegistrationService.linkExisting).
+        Long linkedChat = request.getTelegramChatId();
+        if (linkedChat != null && !linkedChat.equals(chatId)) {
+            log.warn("Xodimlik arizasi boshqa chatga bog'langan: {} (mavjud={}, yangi={})",
+                    request.getPhone(), linkedChat, chatId);
+            return "Bu ariza allaqachon boshqa Telegram hisobiga bog'langan. Do'kon bilan bog'laning.";
+        }
+
         request.setTelegramChatId(chatId);
         requestRepository.save(request);
         log.info("Xodimlik arizasi Telegramga bog'landi: {} (chat={})", request.getPhone(), chatId);
@@ -201,11 +212,13 @@ public class StaffRegistrationService {
     public EmployeeResponse approve(Long id, StaffRegistrationApproveRequest approveRequest) {
         StaffRegistrationRequest request = findPending(id);
 
-        // Rolni TASDIQLOVCHI belgilaydi. So'rovdagi qiymat faqat taklif:
-        // istalgan odam o'ziga ADMIN so'rab yuborishi mumkin.
+        // Rolni FAQAT tasdiqlovchi belgilaydi. Arizadagi `requestedRole` —
+        // ochiq shakldan kelgan TAKLIF (istalgan odam o'ziga ADMIN so'rab
+        // yuborishi mumkin), shuning uchun u zaxira qiymat sifatida ham
+        // ishlatilmaydi: tasdiqlovchi rolni ko'rsatmasa, eng kam huquqli
+        // DEFAULT_ROLE_CODE beriladi.
         String roleCode = firstNonBlank(
                 approveRequest != null ? approveRequest.getRoleCode() : null,
-                request.getRequestedRole(),
                 DEFAULT_ROLE_CODE);
 
         EmployeeRequest employeeRequest = new EmployeeRequest();
