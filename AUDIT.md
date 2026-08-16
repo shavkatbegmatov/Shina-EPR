@@ -1,6 +1,8 @@
 # Mantiqiy xatolar auditi
 
-**Holat: YAKUNLANGAN** — uch bosqichda topilgan **54 ta tasdiqlangan mantiqiy xato tuzatildi**, ochiq qolgani yo'q.
+**Holat: YAKUNLANGAN** — uch bosqichda topilgan **45 ta tasdiqlangan mantiqiy xato tuzatildi**
+(1-bosqich **5** + 2-bosqich **17** + 3-bosqich **23**), ochiq qolgani yo'q.
+Tuzatishlar **17.08.2026 da prodga chiqdi**.
 
 | | 1-bosqich | 2-bosqich | 3-bosqich (qayta audit) |
 |---|---|---|---|
@@ -12,17 +14,22 @@
 
 **Metodika (uchala bosqichda ham bir xil):** sohalar bo'yicha parallel qidiruv (auth-security, money-stock, telegram-demo, db-consistency, front-data, front-ui), so'ng har bir topilmani **mustaqil adversarial agent rad etishga harakat qiladi** — noaniqlikda REFUTED tomonga xato qilish sharti bilan. Faqat rad etib bo'lmaganlari tuzatiladi. Bu jarayon 4 ta yolg'on-ijobiy topilmani filtrladi va 9 tasining jiddiyligini pasaytirdi, ya'ni asossiz refaktoring qilinmadi.
 
-**Migratsiyalar:** V38→V40 (fantom qarzlarni tozalash), V39 (`payments.shift_id`), V41 (`sessions` refresh-token rotatsiyasi).
+**Migratsiyalar:** V39 (`payments.shift_id`), **V40** (fantom qarzlarni tozalash — dastlab `e217939` da
+V38 raqami bilan yozilgan, parallel sessiya bilan to'qnashgani uchun qayta raqamlangan),
+V41 (`sessions` refresh-token rotatsiyasi). Repodagi haqiqiy fayl nomlari — shu uchtasi.
 
 **Testlar:** backend **295 → 365**, frontend **335 → 341**.
 
-## Deploy'dan keyin seziladigan o'zgarishlar
+## Foydalanuvchi sezadigan o'zgarishlar — ✅ 17.08.2026 dan kuchda
+
+> Bular endi **jonli** (`https://protektor.uz`). Kassirlar uchun qisqa eslatma:
+> `KASSIRLAR-UCHUN.md` / `ДЛЯ-КАССИРОВ.md`.
 
 | O'zgarish | Ta'siri |
 |---|---|
 | Majburiy parol almashtirish (R13) | `mustChangePassword` tirik foydalanuvchilar parolni almashtirmaguncha boshqa endpointlarga kira olmaydi |
 | Refresh token rotatsiyasi (Q1) | Eski refresh tokenlar rad etiladi — barcha xodimlar bir marta qayta kiradi |
-| Pul olingan sotuvni bekor qilish taqiqlandi (R2) | Kassirlar endi qaytarish rasmiylashtiradi ("Hammasini tanlash" yorlig'i bilan) — ish jarayoni o'zgaradi, ogohlantirish kerak |
+| Pul olingan sotuvni bekor qilish taqiqlandi (**R2-qoldiq** — R2'ning asosiy da'vosi RAD ETILGAN, quyiga qarang) | Kassirlar endi qaytarish rasmiylashtiradi ("Hammasini tanlash" yorlig'i bilan) — ish jarayoni o'zgaradi, ogohlantirish kerak |
 | Excel import zaxirani o'zgartirmaydi (R4) | Import faqat narx/nom yangilaydi; zaxira Ombor orqali |
 | `PATCH /products/{id}/stock` olib tashlandi (R-STOCK1) | Tashqi integratsiya bo'lsa `warehouse/adjustment` ga o'tkazish kerak |
 
