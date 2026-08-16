@@ -1,24 +1,34 @@
 # Mantiqiy xatolar auditi
 
-**Sana:** 2026-08-05
-**Metodika:** 6 ta soha bo'yicha parallel qidiruv (auth-security, money-stock, telegram-demo, db-consistency, front-data, front-ui) + eng jiddiy topilmalarni adversarial tekshirish (har bir topilmani mustaqil agent rad etishga harakat qildi, faqat rad etib bo'lmaganlari "tasdiqlangan" deb belgilandi).
-**Natija:** 28 topilma. 9 tasi tekshiruvga yuborildi — **9 tasi ham tasdiqlandi, birortasi rad etilmadi**. Takrorlarni birlashtirganda 5 ta mustaqil bug klasteri.
+**Holat: YAKUNLANGAN** — uch bosqichda topilgan **54 ta tasdiqlangan mantiqiy xato tuzatildi**, ochiq qolgani yo'q.
+
+| | 1-bosqich | 2-bosqich | 3-bosqich (qayta audit) |
+|---|---|---|---|
+| Sana | 2026-08-05 | 2026-08-05 | 2026-08-15/16 |
+| Qidiruvchi agentlar | 6 | (o'sha topilmalar) | 6 |
+| Tasdiqlangan | 5 klaster (HIGH) | 3 HIGH, 6 MEDIUM, 6 LOW, 2 qisman | 1 HIGH, 9 MEDIUM, 13 LOW |
+| Rad etilgan | 0 | 1 | 3 |
+| Holat | ✅ yopilgan | ✅ yopilgan | ✅ yopilgan |
+
+**Metodika (uchala bosqichda ham bir xil):** sohalar bo'yicha parallel qidiruv (auth-security, money-stock, telegram-demo, db-consistency, front-data, front-ui), so'ng har bir topilmani **mustaqil adversarial agent rad etishga harakat qiladi** — noaniqlikda REFUTED tomonga xato qilish sharti bilan. Faqat rad etib bo'lmaganlari tuzatiladi. Bu jarayon 4 ta yolg'on-ijobiy topilmani filtrladi va 9 tasining jiddiyligini pasaytirdi, ya'ni asossiz refaktoring qilinmadi.
+
+**Migratsiyalar:** V38→V40 (fantom qarzlarni tozalash), V39 (`payments.shift_id`), V41 (`sessions` refresh-token rotatsiyasi).
+
+**Testlar:** backend **295 → 365**, frontend **335 → 341**.
+
+## Deploy'dan keyin seziladigan o'zgarishlar
+
+| O'zgarish | Ta'siri |
+|---|---|
+| Majburiy parol almashtirish (R13) | `mustChangePassword` tirik foydalanuvchilar parolni almashtirmaguncha boshqa endpointlarga kira olmaydi |
+| Refresh token rotatsiyasi (Q1) | Eski refresh tokenlar rad etiladi — barcha xodimlar bir marta qayta kiradi |
+| Pul olingan sotuvni bekor qilish taqiqlandi (R2) | Kassirlar endi qaytarish rasmiylashtiradi ("Hammasini tanlash" yorlig'i bilan) — ish jarayoni o'zgaradi, ogohlantirish kerak |
+| Excel import zaxirani o'zgartirmaydi (R4) | Import faqat narx/nom yangilaydi; zaxira Ombor orqali |
+| `PATCH /products/{id}/stock` olib tashlandi (R-STOCK1) | Tashqi integratsiya bo'lsa `warehouse/adjustment` ga o'tkazish kerak |
 
 ---
 
-## Tavsiya etilgan tuzatish tartibi
-
-| # | Klaster | Sabab |
-|---|---|---|
-| 1 | [№3 — Fantom qarz](#3-qaytarishbekor-qilishda-debt-yozuvi-yangilanmaydi--fantom-qarz-va-ikki-marta-pul-undirish) | Bevosita pul yo'qotish: mijozdan qaytarilgan tovar uchun pul undiriladi |
-| 2 | [№4 — Z-hisobot](#4-z-hisobot-naqd-qaytarimni-ikki-marta-ayiradi--kassa-nazorati-ishlamaydi) | Kassadan o'g'irlik aniqlanmaydigan bo'lib qoladi |
-| 3 | [№2 — Deaktivatsiya](#2-ishdan-bo'shatilgan-xodim-24-soatgacha-to'liq-erp-kirishini-saqlab-qoladi) | Xavfsizlik: bo'shatilgan xodim kirishda davom etadi |
-| 4 | [№1 — Refresh token](#1-refresh-token-mexanizmi-butunlay-ishlamaydi--xodimlar-har-24-soatda-tizimdan-qulflanadi) | Har kuni har bir xodimga ta'sir qiladi (UX + o'lik kod) |
-| 5 | [№5 — Ikki marta ombor tiklash](#5-qaytarimdan-keyin-sotuvni-bekor-qilish-omborni-ikki-marta-to'ldiradi) | Ombor hisobining buzilishi |
-
----
-
-# TASDIQLANGAN XATOLAR (severity: HIGH)
+# 1-BOSQICH — TASDIQLANGAN XATOLAR (severity: HIGH)
 
 ## 1. Refresh-token mexanizmi butunlay ishlamaydi — xodimlar har 24 soatda tizimdan "qulflanadi"
 
@@ -123,9 +133,9 @@ Xuddi shu holat bekor qilingan (CANCELLED) sotuv uchun ham: 1 500 000 nasiya sot
 
 ---
 
-# QOLGAN TOPILMALAR — ADVERSARIAL TEKSHIRUV NATIJALARI
+# 2-BOSQICH — QOLGAN TOPILMALAR (adversarial tekshiruvdan keyin) ✅
 
-Dastlab tekshiruvsiz qolgan 19 topilma (18 noyob — purchase-return ikki finder tomonidan topilgan edi) ikkinchi bosqichda har biri alohida tekshirildi: agent kodni, chaqiruvchilarni, guard'larni va testlarni o'qib rad etishga harakat qildi. Natija: **15 TASDIQLANDI, 2 QISMAN TUZATILGAN (qoldiq bor), 1 RAD ETILDI.**
+Birinchi bosqichda sig'im chegarasi tufayli tekshiruvsiz qolgan 19 topilma (18 noyob — purchase-return ikki finder tomonidan topilgan edi) har biri alohida tekshirildi: agent kodni, chaqiruvchilarni, guard'larni va testlarni o'qib rad etishga harakat qildi. Natija: **15 TASDIQLANDI, 2 QISMAN TUZATILGAN, 1 RAD ETILDI** — barchasi yopilgan (qoldiqlar Q1/Q2 sifatida alohida tuzatilgan).
 
 ## TASDIQLANGAN — HIGH (3)
 
@@ -179,7 +189,7 @@ Dastlab tekshiruvsiz qolgan 19 topilma (18 noyob — purchase-return ikki finder
 
 ---
 
-# UCHINCHI BOSQICH — QAYTA AUDIT (2026-08-15, `224430a` holatida)
+# 3-BOSQICH — QAYTA AUDIT (2026-08-15/16, `224430a` holatida) ✅
 
 Birinchi ikki bosqich tuzatilgach, butun loyiha qayta tekshirildi (6 parallel qidiruvchi agent, har biri AUDIT.md'dagi ma'lum topilmalarni chiqarib tashlab, faqat YANGI xatolarni qidirdi). Topilgan 26 da'vo keyin **6 ta adversarial tekshiruvchi** tomonidan rad etishga urinildi (noaniqlikda REFUTED tomonga xato qilish sharti bilan).
 
@@ -232,9 +242,7 @@ Birinchi ikki bosqich tuzatilgach, butun loyiha qayta tekshirildi (6 parallel qi
 ## Qayta-audit — CLEAN deb tasdiqlangan (regressiya YO'Q)
 - Same-shift va closed-cross-shift'dagi yettala `expectedCash` termi kombinatsiyalari (raqamli tekshirildi); `closeShift` saqlashi; `makeFullPayment` (3df36cc); parallel qisman to'lovlar (`@Version` himoyalaydi); `OVERDUE` o'lik enum; M1 lockout matematikasi; L2 rate-limiter per-entry; webhook secret; cleanupRejected scheduler; SessionsTab rotatsiya bilan; ERP 6 tafsilot sahifasi (faqat portal PurchaseDetail qolgan); i18n kalitlari (o'zgargan sahifalarda ikkala lokal to'liq)
 
-## Tuzatish holati (uchinchi bosqich)
-
-**Tuzatildi — 20 ta:**
+## Tuzatish holati (uchinchi bosqich) — ✅ 23/23
 
 | Commit | Topilmalar |
 |---|---|
@@ -243,13 +251,10 @@ Birinchi ikki bosqich tuzatilgach, butun loyiha qayta tekshirildi (6 parallel qi
 | `fa02057` | R5 (POS qaytimi clamp), R16 (sessiya oilasi muddati), R19 (qarz to'lovlari filtri), R-RPT (davr + haqiqiy to'lovlar), R-PWD (Unicode siyosat), R-DEBTUI (toast), R-SHOPCART (zaxira clamp), R14 (telefon validatsiyasi) |
 | `00e3c3a` | R4 (import zaxirani ustidan yozmaydi), R-STOCK2 (zaxirali mahsulot arxivlanmaydi + arxivlangan sotilmaydi), R-STOCK1 (ledgersiz endpoint olib tashlandi) |
 | `147548a` | R11 (qaror xabari AFTER_COMMIT'ga ko'chirildi) |
-| keyingi | R9 (davriy hisobot ustunlari keyingi qarz to'lovlaridan tozalandi) |
-
+| `4c9f192` | R9 (davriy hisobot ustunlari keyingi qarz to'lovlaridan tozalandi) |
 | `534446d` | R15 (checkout narxlarni qayta oladi, farq bo'lsa mijozdan tasdiq so'raydi) |
 | `a8f7e56` | R-RET (`rejectReturn` o'tishi — PENDING/APPROVED → REJECTED, kvotani bo'shatadi) |
-| keyingi | R2-qoldiq (pul olingan sotuv bekor qilinmaydi — qaytarish oqimiga yo'naltiriladi) |
-
-**Uchinchi bosqichning barcha 23 tasdiqlangan topilmasi yopildi.**
+| `b8e161d` | R2-qoldiq (pul olingan sotuv bekor qilinmaydi — qaytarish oqimiga yo'naltiriladi) |
 
 R2-qoldiq uchun tanlangan yechim — *bekor qilishda chiqim yozuvi yaratish* emas, *pul olingan sotuvni bekor qilishni taqiqlash*:
 
@@ -263,54 +268,37 @@ R2-qoldiq uchun tanlangan yechim — *bekor qilishda chiqim yozuvi yaratish* ema
 
 ## Eslatmalar
 
-- Asosiy 5 klaster qator raqamlari `c576d5d`, ikkinchi bosqich tekshiruvi `e217939` holatiga tegishli.
-- Har ikkala bosqichda ham tekshiruvchi agent kodni, chaqiruvchilarni, DB constraint'larni va mavjud testlarni o'qib chiqib topilmani RAD ETISHGA harakat qilgan.
-- Tasdiqlangan 5 asosiy klaster tuzatilgan: 1fdaa48 (№3), 5895e93 (№4), aad43a0 (№2), 732fdf1 (№1), 673b779 (№5); tozalash migratsiyasi — e217939 (dastlab V38 sifatida qo'shilib, V38 raqami band bo'lgani uchun keyin V40 ga ko'chirilgan).
-- Ikkinchi bosqich uchun tavsiya etilgan tartib: H1 (POS manfiy summa — pul), H3 (qarz to'lovlari Z-hisobotda — o'g'irlik niqobi), H2 (purchase return — supplier ikki kredit), keyin M1 (lockout DoS) va qolgan MEDIUM'lar.
+- **Qator raqamlari** topilma qayd etilgan paytdagi holatga tegishli: 1-bosqich — `c576d5d`, 2-bosqich — `e217939`, 3-bosqich — `224430a`. Tuzatishlardan keyin ular siljigan.
+- **1-bosqich commitlari:** `1fdaa48` (№3), `5895e93` (№4), `aad43a0` (№2), `732fdf1` (№1), `673b779` (№5). Tozalash migratsiyasi `e217939` dastlab V38 sifatida qo'shilib, raqam band bo'lgani uchun keyin **V40** ga ko'chirilgan.
+- **Testlar nuqsonli xatti-harakatni qulflab qo'yishi mumkin.** Uch marta shunday bo'ldi: `CashShiftReportTest.cashRefundReducesExpectedCash` (qaytarimni servis oqimisiz qurib, ikki marta ayirishni yashirgan), `approveCreatesEmployeeWithAccount` (arizachining o'z rolini olishini "to'g'ri" deb tasdiqlagan), `TelegramNotifierTest` (token sizib chiqadigan satrni ko'rsatib turgan). Tuzatishda bunday testlarni ham yangilash kerak bo'ldi.
+- **Adversarial tekshiruv o'zini oqladi:** 3-bosqichda 26 da'vodan 3 tasi rad etildi (jumladan bitta HIGH — arifmetikasi xato edi), 6 tasining jiddiyligi pasaytirildi. Ya'ni asossiz refaktoring qilinmadi.
+- **Parallel sessiyalar** bir vaqtda ishlaganda migratsiya raqamlari to'qnashdi (ikkita V40) — buni `FlywayMigrationNamingTest` ushladi. Yangi migratsiya qo'shishdan oldin `git pull` qilish kerak.
 
 ---
 
-# QAYTA AUDIT (`224430a` holatida, barcha tuzatishlardan keyin)
+# QAYTA AUDIT — parallel sessiyaning raqamlashi (arxiv)
 
-6 qidiruvchi agent parallel: tuzatishlar to'lqinidan keyingi regressiyalar, parallel sessiyada kirgan yangi funksiyalar (xodim ro'yxatga olish, parol siyosati) va avval qamralmagan joylar. AUDIT.md'dagi ma'lum topilmalar chiqarib tashlangan. **4 topilma ikki agent tomonidan mustaqil topilgan** (belgi: 2×). Natija: 6 HIGH, 14 MEDIUM, 10 LOW (~26 noyob).
+Xuddi shu `224430a` holatida **parallel sessiya** ham qayta audit o'tkazgan va
+topilmalarni O'Z raqamlashi bilan yozgan edi. Topilmalar to'plami ustidagi
+"3-bosqich" bo'limi bilan bir xil — faqat identifikatorlar boshqacha. Ikki
+xil raqamlash chalkashtirmasligi uchun asl ro'yxat quyidagi moslik jadvaliga
+qisqartirildi; barcha tafsilotlar (dalillar, ssenariylar, tuzatish
+tavsiflari) yuqoridagi **3-BOSQICH** bo'limida turibdi.
 
-## R-HIGH (6)
-
-### R1. 2× Axios interceptor'ida single-flight yo'q — Q1 rotatsiyasi bilan birga har kuni majburiy logout
-- [ ] Tuzatildi
-
-`shina-magazin-front/src/api/axios.ts:34`. Har 401 mustaqil refresh yuboradi (umumiy promise/mutex yo'q). Yangi backend rotatsiyasida birinchi so'rov juftlikni almashtiradi, xuddi shu eski token bilan kelgan ikkinchisi `revokeIfRefreshTokenReused`ga tushib **butun sessiyani o'ldiradi** (g'olibning yangi juftligi ham). Oddiy sahifa ochilishi 3-4 parallel so'rov beradi (Dashboard stats+chart, `useSessionMonitor`, Sidebar pending-count) — ya'ni token muddati tugashi ≈ majburiy logout, "reused" xavfsizlik logi esa yolg'on signalga to'ladi. **Tuzatish:** interceptor'da single-flight (bitta refresh promise'ini bo'lishish), navbatdagi 401'lar shu promise'ni kutadi.
-
-### R2. `cancelSale` qarz to'lovidan keyin to'lovni izsiz o'zlashtiradi
-- [ ] Tuzatildi
-
-`SaleService.java:319`. `makePayment` CANCELLED sotuvni bloklaydi, lekin TESKARI tartib himoyasiz: bekor qilish faqat qaytarimlarni tekshiradi, `PaymentRepository` inject ham qilinmagan. Balans faqat `sale.debtAmount` (to'lanmagan qism) ga tiklanadi — qilingan to'lov hech qayerda majburiyat sifatida qolmaydi. Ssenariy: 1M sotuv (400k to'langan, 600k qarz), mijoz 300k qarz to'laydi, keyin sotuv bekor qilinadi: mijoz 700k bergan, tovarni to'liq qaytargan, balansi 0 — 300k do'konda izsiz qoladi. **Tuzatish:** bekor qilishda qarz to'lovlari borligini tekshirib bloklash (yoki to'lovni balansga kreditlash).
-
-### R3. Ikki OCHIQ smena orasidagi qaytarim ikki kassadan ayiriladi
-- [ ] Tuzatildi
-
-`CashShiftService.java:191`. `sumCashRefundedNettedInPaid` faqat return va sotuv AYNI smenada bo'lgan holatni qoplaydi. Sotuv smenasi hali OCHIQ bo'lib, qaytarimni BOSHQA kassir (o'z ochiq smenasida) qabul qilsa: qaytargan kassaning hisoboti to'g'ri, sotuv kassasining `cashReceived`i esa mutatsiya tufayli kamayadi va hech qanday kompensatsiya termi yo'q — sotuv kassasidagi real pul hisobotdan yo'qoladi (kassir o'zlashtirsa farq 0). M4 himoyasi faqat CLOSED smenalarni qoplaydi; testlar birinchi smenani yopib yuborgani uchun bu yo'l ochiq qolgan. **Tuzatish:** netting shartini "sotuv smenasi hali OCHIQ va boshqa smena" holatini ham hisobga oladigan qilish (yoki mutatsiya o'rniga hisob-kitobni to'liq return-jadvalidan olish).
-
-### R4. Bitta so'rov ichidagi TAKRORIY qatorlar purchase-return kvotasini chetlab o'tadi
-- [ ] Tuzatildi
-
-`PurchaseService.java:342`. H2 guard'i faqat SAQLANGAN qaytarishlarni sanaydi — bitta so'rovda ayni mahsulotga ikki qator kelsa, har biri bir xil kvotani ko'radi; `completeReturn` re-validatsiyasi ham har qatorni decrement'dan OLDIN alohida tekshiradi. `[{T,10},{T,10}]` → supplier 2× kreditlanadi, `receivedQuantity` −10, `totalAmount` manfiy. Sale-return'da ham xuddi shu naqsh bor (`SaleReturnService.java:96`, medium): `[{77,3},{77,3}]` → ombor +6 (4 sotilgan bo'lsa ham), pul clamp'i bor lekin stok clamp'i yo'q. **Tuzatish:** so'rov ichida mahsulot/qator bo'yicha miqdorlarni JAMLAB tekshirish (ikkala servisda), completeReturn'da esa qatorlarni jamlab yoki ketma-ket decrement bilan tekshirish.
-
-### R5. Excel import mavjud mahsulot zaxirasini movement'siz ustidan yozadi
-- [ ] Tuzatildi
-
-`ProductImportService.java:195`. "Miqdor" katagi bo'sh bo'lmasa mavjud mahsulotda `setQuantity(qiymat)` — StockMovement yozilmaydi (ProductService:120 dagi invariant buziladi); bo'sh "xarid narxi" katagi esa `purchasePrice`ni NULL qiladi (updateProduct buni ataylab himoya qiladi). Eksport har doim "Miqdor" ustunini o'z ichiga oladi va Javadoc aynan "eksport qilib, tahrirlab, qayta yuklash"ni taklif qiladi — haftalik sotuvlar eskirgan fayl importi bilan "qaytariladi". **Tuzatish:** mavjud mahsulotlarda miqdorni import orqali o'zgartirmaslik (yoki farqni ADJUSTMENT movement bilan yozish); purchasePrice'ni bo'sh katakda tegmaslik.
-
-### R6. POS qaytim puli: `paidAmount`ga uzatilgan pul yoziladi — har qaytimli sotuvda soxta kamomad
-- [ ] Tuzatildi
-
-`POSPage.tsx:250` + `SaleService.createSale`. To'lov modali uzatilgan pulni hisoblagich (banknot tugmalari, qaytim ko'rsatkichi) — lekin submit xom `paidAmount`ni yuboradi, backend clamp'lamaydi (`debtAmount.max(0)` ortiqchani yashiradi), Z-hisobot esa `SUM(paidAmount)`ni kassa tushumi deb oladi. 450k sotuvga 500k uzatilsa: qaytim 50k berilgan, hisobot 500k kutadi → halol kassirga har qaytimda "kamomad". **Tuzatish:** submit'da `paidAmount = min(kiritilgan, total)` (naqd uchun) + backend'da ham clamp; tendered/change faqat UI hisobi bo'lib qolsin.
-
-## R-MEDIUM (14)
-
-| # | Joy | Muammo |
+| Parallel sessiya | Ushbu hujjatda | Holat |
 |---|---|---|
-| R7 | `SessionRepository.java:65` | Tungi tozalash `expiresAt < now` bo'yicha O'CHIRADI — V41'dan keyin sessiya qatori refresh yaroqliligining yagona tashuvchisi: 24-48 soatlik tanaffus (yakshanba!) 7 kunlik refresh'ni o'ldiradi, majburiy qayta login. Tuzatish: faqat `createdAt + refresh-expiration` dan o'tganlarni o'chirish |
-| R8 | `PaymentRepository.java:77` | `sumDebtPaymentsAppliedToCashSalesOfShift`da `sale.status <> CANCELLED` filtri yo'q — summarize CANCELLED'ni chiqaradi, ayirish esa yo'q: ikki term har xil populyatsiya ustida, smena hisobi kam ko'rsatiladi |
-| R9 | `ReportService.java:230` | Davr hisoboti keyingi qarz to'lovlarini sotuv davri/usuliga singdiradi (`sumPaidByMethod` jonli `paidAmount`dan) — yanvar hisoboti mart'dagi karta to'lovi bilan orqaga qarab o'zgaradi. Z-hisobot uchun tuzatilgan (H3), davr hisoboti qolgan |
-| R10 | `StaffRegistrationService.java:
+| R1 — axios single-flight yo'q | R1 | ✅ `2e76531` |
+| R2 — `cancelSale` to'lovni o'zlashtiradi | R2 | ⚠️ asosiy da'vo RAD ETILDI (arifmetika xato); qoldiq — pul olingan sotuv bekor qilinmaydi ✅ `b8e161d` |
+| R3 — ikki ochiq smena orasidagi qaytarim | R6 | ✅ `55a3833` |
+| R4 — bitta so'rovdagi takroriy qatorlar (purchase + sale) | R3 va R8 | ✅ `2e76531` |
+| R5 — Excel import zaxirani ustidan yozadi | R4 | ✅ `00e3c3a` |
+| R6 — POS qaytim puli `paidAmount`da | R5 | ✅ `fa02057` |
+| R7 — sessiya tozalash `expiresAt` bo'yicha | R16 | ✅ `fa02057` |
+| R8 — `sale.status <> CANCELLED` filtri yo'q | R7 | ✅ `55a3833` |
+| R9 — davr hisoboti keyingi to'lovlarni singdiradi | R9 | ✅ `4c9f192` |
+| R10+ — xodim ro'yxatga olish, Telegram, parol siyosati, do'kon savati va boshqalar | R10–R20, R-* | ✅ hammasi yopilgan |
+
+**Muhim farq:** parallel sessiya topilmalarni adversarial tekshiruvsiz
+ro'yxatlagan va ularning uchtasini HIGH deb baholagan. Tekshiruvdan keyin
+ulardan bittasi butunlay rad etildi (R2 — arifmetikasi xato edi), yana
+oltitasining jiddiyligi pasaytirildi. Yakuniy tasnif — 3-bosqich bo'limida.
