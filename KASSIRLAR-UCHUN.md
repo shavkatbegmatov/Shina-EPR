@@ -1,5 +1,7 @@
 # Yangilanish — kassirlar uchun
 
+> По-русски: [ДЛЯ-КАССИРОВ.md](ДЛЯ-КАССИРОВ.md)
+
 Tizimda kassa hisobiga tegishli bir nechta o'zgarish bo'ldi. Eng muhimi — **to'langan sotuvni bekor qilish tartibi**.
 
 ---
