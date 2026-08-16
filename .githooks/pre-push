@@ -1,0 +1,54 @@
+#!/usr/bin/env sh
+#
+# Push'dan oldin CI'ning AYNAN o'sha lint buyrug'ini ishlatadi.
+#
+# pre-commit stage'dagi fayllarnigina ko'radi; bu hook esa butun daraxtni
+# tekshiradi, ya'ni:
+#   - `--no-verify` bilan yoki hook yoqilishidan oldin tushgan xatolar,
+#   - master allaqachon QIZIL bo'lsa (aynan 15-16 avgustdagi holat: yetti
+#     push ketma-ket yiqilgan CI ustiga tushdi)
+# push'dan OLDIN ushlanadi.
+#
+# Ataylab shartsiz ishlaydi -- hujjat yoki backend push'ida ham. Sabab: CI
+# har push'da `eslint .` ni to'liq ishlatadi, demak qizil master'ga tushgan
+# hujjat commiti ham yiqiladi va deploy yana SKIP bo'ladi.
+#
+# Narxi ~5 sekund. Ushlab qoladigani -- prodga chiqmay qolgan kunlar.
+#
+# Yoqish (klondan keyin bir marta):  git config core.hooksPath .githooks
+#
+# Chetlab o'tish: git push --no-verify
+
+set -u
+
+FRONT_DIR="shina-magazin-front"
+
+[ -x "$FRONT_DIR/node_modules/.bin/eslint" ] || exit 0
+
+cd "$FRONT_DIR" || exit 0
+
+# `npm run lint` = `eslint .`. Bu yerda to'g'ridan-to'g'ri chaqiramiz --
+# natija bir xil, npm qatlami esa ortiqcha sekundlarni yemaydi.
+#
+# Natija ushlab turiladi va FAQAT yiqilganda chiqariladi. Repoda 11 ta eski
+# warning bor; ularni har push'da ko'rsatish shovqin bo'lardi, odam esa
+# shovqinni e'tiborsiz qoldirishni o'rganadi -- xato aynan shunday sezilmay
+# o'tib ketadi.
+out=$(node_modules/.bin/eslint . 2>&1)
+status=$?   # DARHOL saqlanadi: orasiga buyruq qo'shilsa `$?` boshqa narsani ko'rsatardi
+
+if [ "$status" -ne 0 ]; then
+  printf '%s\n' "$out" >&2
+  cat >&2 <<'MSG'
+
+  Lint xatosi -- push to'xtatildi.
+
+  Bu holatda CI yiqiladi, `build-and-push` va `deploy` job'lari SKIP
+  bo'ladi va push qilgan narsangiz PRODGA CHIQMAYDI.
+
+  Tuzatish:        cd shina-magazin-front && npx eslint --fix .
+  Majburan push:   git push --no-verify   (CI baribir yiqiladi)
+
+MSG
+  exit 1
+fi

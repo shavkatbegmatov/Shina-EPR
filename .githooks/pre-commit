@@ -1,0 +1,63 @@
+#!/usr/bin/env sh
+#
+# Stage'dagi frontend fayllarini eslint bilan tekshiradi.
+#
+# Nega kerak: 15-avgustda `axios.test.ts` ga ikkita `no-explicit-any` xatosi
+# tushdi. CI yiqildi -> `build-and-push` va `deploy` job'lari SKIP bo'ldi ->
+# ketma-ket YETTI commit prodga chiqmay qoldi. Buni ikki kun hech kim
+# sezmadi, chunki lokalda hech narsa ogohlantirmagan edi.
+#
+# Faqat STAGE'dagi frontend fayllari tekshiriladi, ya'ni backend yoki hujjat
+# commitlari sekinlashmaydi.
+#
+# Yoqish (klondan keyin bir marta):  git config core.hooksPath .githooks
+#
+# Chetlab o'tish: git commit --no-verify
+# (lekin CI baribir yiqiladi -- bu hook erta ogohlantirish, himoya emas.)
+
+set -u
+
+FRONT_DIR="shina-magazin-front"
+
+# --diff-filter=ACMR: o'chirilgan fayllar eslintga berilmasin.
+staged=$(git diff --cached --name-only --diff-filter=ACMR -- "$FRONT_DIR" \
+  | grep -E '\.(ts|tsx|js|jsx|mjs)$')
+
+# grep hech narsa topmasa 1 qaytaradi -- bu xato emas, tekshiradigan fayl yo'q.
+[ -z "$staged" ] && exit 0
+
+if [ ! -x "$FRONT_DIR/node_modules/.bin/eslint" ]; then
+  printf '\n  pre-commit: eslint topilmadi (npm install qilinmagan) -- tekshiruv o%stkazib yuborildi.\n\n' "'"
+  exit 0
+fi
+
+# Yo'llarni FRONT_DIR ga nisbatan qilamiz -- eslint o'sha katalogdan ishlaydi.
+# Heredoc (pipe EMAS): while sikli joriy shellda ketadi, shuning uchun `set --`
+# natijasi sikldan keyin ham saqlanadi.
+set --
+while IFS= read -r f; do
+  [ -n "$f" ] && set -- "$@" "${f#$FRONT_DIR/}"
+done <<EOF
+$staged
+EOF
+
+cd "$FRONT_DIR" || exit 0
+
+# --no-warn-ignored: e'tiborsiz qoldirilgan fayl stage'ga tushsa shovqin bo'lmasin.
+# Ogohlantirishlar commitni TO'XTATMAYDI -- CI ham faqat error'da yiqiladi,
+# hook CI'dan qattiqroq bo'lmasligi kerak (repoda 11 ta eski warning bor).
+if ! node_modules/.bin/eslint --no-warn-ignored "$@"; then
+  cat >&2 <<'MSG'
+
+  Lint xatosi -- commit to'xtatildi.
+
+  Xuddi shu xato CI'ni ham yiqitadi va deploy job'i SKIP bo'lib,
+  o'zgarishlaringiz prodga CHIQMAY qoladi.
+
+  Tuzatish:            cd shina-magazin-front && npx eslint --fix .
+  Hammasini ko'rish:   cd shina-magazin-front && npm run lint
+  Majburan commit:     git commit --no-verify   (CI baribir yiqiladi)
+
+MSG
+  exit 1
+fi

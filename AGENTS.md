@@ -18,6 +18,13 @@ Backend (run in `shina-magazin-api/`):
 - `mvn test` to run JUnit/Spring tests.
 - `mvn package` to build the jar.
 
+Git hooks — **run once per clone**, from the repo root:
+- `git config core.hooksPath .githooks`
+- `pre-commit` lints only the staged frontend files (backend/docs commits are untouched).
+- `pre-push` runs the full `eslint .`, byte-for-byte what CI runs, and stays silent unless it fails.
+- Both block on ESLint **errors** only; warnings pass, matching CI. Bypass with `--no-verify`.
+- Why this matters: a lint error makes CI red, and a red CI **skips** `build-and-push` and `deploy`. Nothing turns off — the last good image just keeps serving, so pushed work silently never reaches production. That went unnoticed for seven commits in August 2026.
+
 ## Coding Style & Naming Conventions
 - Indentation: TypeScript/TSX uses 2 spaces; Java uses 4 spaces.
 - React components/pages use PascalCase (`ProductsPage.tsx`, `MainLayout.tsx`); store files use camelCase (`cartStore.ts`).

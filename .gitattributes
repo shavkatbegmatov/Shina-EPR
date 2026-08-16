@@ -2,6 +2,11 @@
 *.sh text eol=lf
 mvnw text eol=lf
 
+# Git hook'larida kengaytma yo'q, ya'ni yuqoridagi *.sh qoidasi ularni QAMRAMAYDI.
+# core.autocrlf=true bo'lgan Windows klonida CRLF bilan checkout bo'lsa, Linux/macOS'da
+# "bad interpreter: /usr/bin/env sh^M" bilan yiqiladi va hook jimgina ishlamay qoladi.
+.githooks/** text eol=lf
+
 # Windows batch wrapperlari CRLF qoladi
 *.cmd text eol=crlf
 *.bat text eol=crlf
