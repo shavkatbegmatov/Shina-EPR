@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import axios from 'axios';
+import axios, { AxiosError, type AxiosAdapter, type InternalAxiosRequestConfig } from 'axios';
 
 vi.mock('react-hot-toast', () => ({
   default: { error: vi.fn(), success: vi.fn() },
@@ -25,16 +25,16 @@ interface AdapterState {
   refreshCalls: number;
 }
 
-const authHeaderOf = (config: { headers?: Record<string, unknown> & { get?: (k: string) => unknown } }) => {
+const authHeaderOf = (config: InternalAxiosRequestConfig) => {
   const headers = config.headers;
   if (!headers) return '';
   const direct = headers.Authorization;
   if (direct) return String(direct);
-  return headers.get ? String(headers.get('Authorization') ?? '') : '';
+  return typeof headers.get === 'function' ? String(headers.get('Authorization') ?? '') : '';
 };
 
 /** Eski token bilan kelgan so'rovga 401, refresh'ga yangi juftlik. */
-const makeAdapter = (state: AdapterState) => async (config: any) => {
+const makeAdapter = (state: AdapterState): AxiosAdapter => async (config) => {
   if (String(config.url ?? '').includes('/auth/refresh-token')) {
     state.refreshCalls++;
     // Javob darhol kelmaydi — parallel so'rovlar poyga oynasiga tushsin
@@ -49,10 +49,13 @@ const makeAdapter = (state: AdapterState) => async (config: any) => {
   }
 
   if (authHeaderOf(config) === 'Bearer old-access') {
-    const error: any = new Error('Unauthorized');
-    error.config = config;
-    error.response = { status: 401, data: {}, statusText: 'Unauthorized', headers: {}, config };
-    throw error;
+    throw new AxiosError('Unauthorized', AxiosError.ERR_BAD_REQUEST, config, undefined, {
+      status: 401,
+      data: {},
+      statusText: 'Unauthorized',
+      headers: {},
+      config,
+    });
   }
 
   return { data: { ok: true }, status: 200, statusText: 'OK', headers: {}, config };
