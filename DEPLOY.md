@@ -58,7 +58,8 @@ PAT olish: GitHub → Settings → Developer settings → Personal access tokens
 | `ADMIN_INITIAL_PASSWORD` | (kuchli parol) | tavsiya etiladi — pastdagi izohga qarang |
 | `DB_NAME` / `DB_USERNAME` | `shina_epr_db` / `shina_epr_user` | default'lar bor |
 | `PAYME_*`, `CLICK_*`, `SHOP_RETURN_URL` | — | jonli to'lov yoqilganda |
-| `SHOP_NOTIFY_SMS/EMAIL`, `SPRING_MAIL_*` | — | jonli xabarnoma yoqilganda |
+| `SHOP_NOTIFY_SMS/EMAIL` | — | jonli xabarnoma yoqilganda |
+| `SPRING_MAIL_*` | — | ⚠️ **hozircha yetmaydi** — pastdagi izohga qarang |
 | `TELEGRAM_BOT_TOKEN` | (@BotFather tokeni) | Telegram xabarnomalari uchun — pastdagi izohga qarang |
 | `TELEGRAM_MODE` | `webhook` | mijozlar bot orqali ro'yxatdan o'tishi uchun — pastdagi izohga qarang |
 | `TELEGRAM_WEBHOOK_URL` | `https://<domen>/api/v1/telegram/webhook` | `TELEGRAM_MODE=webhook` bo'lsa **majburiy** |
@@ -82,6 +83,15 @@ PAT olish: GitHub → Settings → Developer settings → Personal access tokens
 > qo'yiladi; **bo'sh bo'lsa tasodifiy parol generatsiya qilinib backend logiga WARN darajasida
 > bir marta yoziladi** (`docker logs` orqali oling). Har ikki holatda ham birinchi kirishda parolni
 > almashtirish talab qilinadi. `seller` namuna akkaunti har doim tasodifiy parolga o'tkaziladi.
+>
+> **`SPRING_MAIL_*` (email xabarnomasi) — Coolify UI'ga yozish YETARLI EMAS.** Compose'da
+> konteynerga faqat `backend.environment:` da e'lon qilingan o'zgaruvchilar uzatiladi; u yerda esa
+> hech qanday `SPRING_MAIL_*` yo'q. Ya'ni ularni Coolify'da qo'ysangiz ham backend ko'rmaydi va
+> email **xatosiz, jimgina** o'chiq qolaveradi (`JavaMailSender` bo'lmasa `OrderNotificationService`
+> email qadamini tashlab ketadi). Yoqish uchun `infra/coolify/docker-compose.yml` ga ham qo'shish kerak.
+> ⚠️ Qo'shganda `${SPRING_MAIL_HOST:-}` kabi **bo'sh default bermang**: boshqa ixtiyoriy env'lardan
+> farqli, `spring.mail.host` Spring'ning avtosozlash SHARTI — bo'sh qiymat ham "mavjud" hisoblanadi va
+> JavaMailSender'ni yaroqsiz host bilan ko'taradi. Faqat email kerak bo'lganda qo'shing.
 >
 > **`TELEGRAM_BOT_TOKEN`** — ixtiyoriy; o'rnatilmasa Telegram xabarnomalari jimgina o'chiq turadi.
 > Olish: Telegramda [@BotFather](https://t.me/BotFather) → `/newbot`. Token ATAYLAB faqat env'da
@@ -121,8 +131,18 @@ bilan yangi image'larni tortib stack'ni qayta ko'taradi. Migratsiyalar Flyway or
 Relizlar: `git tag vX.Y.Z && git push origin vX.Y.Z` → `release.yml` GitHub Release yaratadi
 (CHANGELOG.md'dan).
 
+## Deploy'dan OLDIN — ma'lumotga tegadigan migratsiya bo'lsa
+- [ ] `postgres_data` backup'i mavjudligini tasdiqlang (Coolify → scheduled backup). Flyway
+      migratsiyalari **avtomatik va qaytarilmas** ishlaydi; ba'zilari mavjud qatorlarni o'zgartiradi
+      (masalan `V40` fantom qarzlarni yopadi), ya'ni orqaga qaytarish faqat backup orqali.
+- [ ] Yangi migratsiyalarni ko'ring:
+      `git diff --name-only <oxirgi-deploy-sha>..HEAD -- shina-magazin-api/src/main/resources/db/migration`
+
 ## Post-deploy checklist
 - [ ] GitHub Actions: frontend/backend CI + build-and-push yashil; deploy job ishladi.
+      ⚠️ **CI qizil bo'lsa deploy job SKIP bo'ladi va hech narsa o'chmaydi** — eski image xizmat
+      qilaveradi, ya'ni push qilingan ish prodga chiqmagani sezilmasligi mumkin. Har push'dan keyin
+      Actions'ni ko'ring (lokalda `.githooks` buni oldindan ushlaydi — `AGENTS.md`).
 - [ ] Backend log: Flyway migratsiyalar + `Started`.
 - [ ] **Proksi sarlavhalari** (`forward-headers-strategy: native` ga o'tildi): storefront'ni
       Telegram'da ulashib OG kartani tekshiring (absolyut URL `https://<domen>` bo'lishi kerak,
@@ -134,6 +154,16 @@ Relizlar: `git tag vX.Y.Z && git push origin vX.Y.Z` → `release.yml` GitHub Re
 - [ ] ERP'da rasm yuklash → storefront'da ko'rinadi (`uploads_data` volume ishlayapti).
 - [ ] Telegram'da `<domen>` ulashish → OG karta (`VITE_SITE_URL`).
 - [ ] (Jonli to'lov) Payme/Click sandbox → webhook → `paymentStatus=PAID`.
+
+**Xodimlarga ta'sir qiladigan o'zgarishlar bo'lsa (17.08.2026 relizidagi kabi):**
+- [ ] **Hamma bir marta qayta kiradi** — refresh token rotatsiyasi (`V41`) joriy sessiyalarni
+      bekor qiladi. Bu kutilgan holat; xodimlarni oldindan ogohlantiring.
+- [ ] **Vaqtinchalik parol berilganlar** birinchi kirishda uni almashtirishga majbur — bu tekshiruv
+      endi serverda, oynani yopib ketib bo'lmaydi.
+- [ ] **`V40` tozalagan qatorlarni ko'rib chiqing** — migratsiya har biriga izoh qoldiradi:
+      `SELECT id, sale_id, remaining_amount, status, notes FROM debts WHERE notes LIKE '%V40 tozalash%';`
+- [ ] **Kassirlarga eslatmani tarqating** — `KASSIRLAR-UCHUN.md` / `ДЛЯ-КАССИРОВ.md`
+      (asosiysi: pul olingan sotuvni bekor qilish o'rniga **Qaytarish** rasmiylashtiriladi).
 
 ## Eslatma
 - **CORS:** env-driven — `CORS_ALLOWED_ORIGINS` (compose default: `https://protektor.uz`). Brauzer har
