@@ -5,6 +5,33 @@
 
 ---
 
+## ⚡ Hozirgi holat (17.08.2026)
+
+Quyidagi 1–8 bo'limlar **26.06.2026 holatida** yozilgan reja hujjati. O'shandan beri
+loyiha jiddiy o'zgardi — bu bo'lim uni ustidan yozadi, quyisi tarix sifatida qoladi.
+
+| | |
+|---|---|
+| **Prod** | 🟢 Jonli: `https://protektor.uz` (Coolify). `master`'ga push → CI → GHCR image → deploy avtomatik. Batafsil: `DEPLOY.md` |
+| **Marshrutlar** | Do'kon `/` · ERP `/admin` · Mijoz kabineti `/hisob` (B2 bajarilgan, `/magazin` va `/kabinet` **endi yo'q**) |
+| **Mantiqiy audit** | Uch bosqich, 54 tasdiqlangan xato tuzatildi, ochiq qolgani yo'q → **`AUDIT.md`** |
+| **Migratsiyalar** | V41 gacha (V39 to'lov–smena bog'i, V40 fantom qarz tozalash, V41 refresh rotatsiyasi) |
+| **Testlar** | Frontend 341 (67 fayl), backend 54 test klassi — ikkalasi ham CI'da har push'da ishlaydi |
+| **Git hook'lar** | `.githooks/` — klonda bir marta: `git config core.hooksPath .githooks` (qarang `AGENTS.md`) |
+
+**Hujjatlar taqsimoti:** joriy qoidalar va buyruqlar → `AGENTS.md` · deploy va env →
+`DEPLOY.md` · audit topilmalari → `AUDIT.md` · kassirlarga eslatma →
+`KASSIRLAR-UCHUN.md` / `ДЛЯ-КАССИРОВ.md` · **bu fayl** → iyun rejasining tarixi va
+hali ochiq qolgan ishlar.
+
+### Hali ochiq (tekshirildi 17.08.2026)
+- **Jonli to'lov** — Payme/Click default'da `enabled: false`. Kreditsial + webhook
+  ro'yxatdan o'tkazish kerak (2-bo'lim). Kod tayyor, sandbox'da sinalmagan.
+- **Jonli SMS** — `LogSmsSender` hamon stub; provayder implementatsiyasi kerak (5-bo'lim).
+- **To'liq per-sahifa prerender** — yengil SEO qilingan, per-mahsulot og:image qolgan (8-bo'lim, B3).
+
+---
+
 ## 0. Loyiha konteksti
 
 **Protektor** — `Shina Magazin` ERP'ning rebrendi + internet-magazin (storefront). Monorepo:
@@ -12,15 +39,15 @@
 | Papka | Texnologiya | Port |
 |---|---|---|
 | `shina-magazin-front` | React 18 + TS + Vite 7 + Tailwind 3 + DaisyUI 4; Zustand; React Query; react-router v6; i18next (uz/ru) | dev: **5183** |
-| `shina-magazin-api` | Spring Boot 3.3 (JDK **21**), JPA, Flyway, Spring Security (JWT), PostgreSQL | **8183**, context-path `/api` |
+| `shina-magazin-api` | Spring Boot **3.5.5** (target **Java 17** — `pom.xml` `java.version`, CI ham 17), JPA, Flyway, Spring Security (JWT), PostgreSQL | **8183**, context-path `/api` |
 
 **Baza:** PostgreSQL `localhost:5432`, DB **`shina_epr_db`**, user `shina_epr_user` (`application-dev.yml`).
 **GitHub:** `github.com/shavkatbegmatov/Shina-EPR`, branch `master`.
 
-**3 sirt (surface):**
-- ERP (xodim): `/` ostida (`MainLayout`, himoyalangan) — `src/pages/*`
-- B2B portal (mijoz kabineti): `/kabinet` ostida — `src/portal/*`
-- **Storefront (ommaviy magazin): `/magazin` ostida** — `src/shop/*` (arxitektura: `src/shop/README.md`)
+**3 sirt (surface)** — ⚠️ quyidagi yo'llar B2'dan **keyin** o'zgargan, hozirgi holat:
+- **Storefront (ommaviy magazin): `/`** — `src/shop/*` (arxitektura: `src/shop/README.md`)
+- ERP (xodim): **`/admin`** ostida (`MainLayout`, himoyalangan) — `src/pages/*`
+- Mijoz kabineti: **`/hisob`** ostida — `src/portal/*` (yagona login `/kirish`)
 
 ---
 
@@ -38,11 +65,14 @@
 
 ---
 
-## 2. 🔴 A) Faqat foydalanuvchi qila oladi (kod tayyor, bloklovchi)
+## 2. 🟡 A) Faqat foydalanuvchi qila oladi (kod tayyor — endi bloklovchi EMAS)
 
-> 📦 **Deploy tayyorgarligi BAJARILDI (26.06.2026) — qarang `DEPLOY.md`:** Coolify qo'llanma + barcha env;
-> `application-prod.yml` (env-driven prod profil); backend+frontend `Dockerfile` + `nginx.conf` (/api proxy);
-> CI lint yashil. Quyidagilar faqat kreditsial/sozlash (deploy paytida foydalanuvchi qiladi):
+> ✅ **DEPLOY BAJARILDI (17.08.2026) — prod jonli: `https://protektor.uz`.** `master`'ga push →
+> CI → GHCR image → Coolify webhook, hammasi avtomatik (`DEPLOY_ENABLED=true`, secretlar o'rnatilgan).
+> Shu bilan quyidagi ikkita eski 🔴 band ham yopildi: **rasm storage volume** (`uploads_data:/data/uploads`
+> + `SHOP_STORAGE_DIR`, compose'da) va **`VITE_SITE_URL`** (`https://protektor.uz`, repo Variable).
+>
+> Qolgani — faqat **jonli to'lov kreditsiallari** (kod tayyor, provayder tomonida sozlash kerak):
 
 - [ ] **To'lovni jonli qilish:** Payme/Click merchant kreditsiallarini `shina-magazin-api/src/main/resources/application.yml` (`shop.payment.*`) yoki env'ga qo'shing:
   ```
@@ -54,7 +84,11 @@
   - Click: `https://<domen>/api/v1/payments/click/prepare` va `.../complete`
 - [ ] **Sandbox'da** Payme/Click protokollarini tasdiqlang (kod spec bo'yicha, lekin sandbox'siz sinaб bo'lmadi). Payme uchun to'liq muvofiqlik uchun alohida `payme_transactions` jadvali kerak bo'lishi mumkin.
 - [~] **Jonli DB verify:** ✅ **Storefront oqimi tasdiqlandi (26.06.2026, dev DB):** V23/V24 migratsiya OK; `/v1/catalog` (ro'yxat+detal), guest `POST /v1/orders` (narx SERVERDA: 2×1.2M=2.4M), **stok rezervatsiya** (20→18), public `/status`, xodim ro'yxat + auth(401) + PATCH holat, **C2 bildirishnoma** (ORDER/SHOP_ORDER) + rasm upload (B4) — hammasi ishladi. ⏳ Qoldi: `/v1/payments/*` JONLI (Payme/Click kreditsial + webhook — A guruhi). _(Test buyurtma `PR-MQUR3PGI` dev DB'da qoldi — ERP `/admin/shop-orders`'dan o'chirsa bo'ladi; stok tiklangan.)_
-- [x] **CI** (GitHub Actions) — lint xatolari tuzatildi (`f098f7d`); lint/test/build yashil bo'lishi kerak. (Push'dan keyin Actions'da tasdiqlang.)
+- [x] **CI** (GitHub Actions) — lint/test/build + image build/push + deploy, hammasi yashil.
+  ⚠️ **Saboq (15–17.08.2026):** bitta lint xatosi CI'ni qizil qildi, qizil CI esa `build-and-push`
+  va `deploy` job'larini **SKIP** qildi. Hech narsa o'chmadi — eski image xizmat qilaverdi, shuning
+  uchun **yetti commit ikki kun davomida prodga chiqmadi va buni hech kim sezmadi.** Endi
+  `.githooks/pre-commit` + `pre-push` buni lokalda ushlaydi (`AGENTS.md`).
 
 ---
 
@@ -92,7 +126,7 @@
 ## 5. 📋 D) Asl rejadagi Faza 6 (kattaroq, ixtiyoriy)
 
 - [x] **Portal `/kabinet` → `/hisob` + B2B/B2C uyg'unligi** ✅ **BAJARILDI (26.06.2026):** to'liq birlashuv — `/kabinet`→`/hisob` rename; YAGONA login `/kirish` (portal login sahifasi olib tashlandi, `/hisob` guard auth'siz → `/kirish?redirect=`); `/hisob` hub ERP xaridlar (Sale) + do'kon buyurtmalari (ShopOrder, Faza 6 `/v1/account/orders` reuse) — dashboard karta + `/hisob/buyurtmalar` sahifa; storefront↔hisob cross-linklar. Commitlar `986984b..b16ac0c`. Preview verify: `/hisob`→`/kirish?redirect` ✅; build+test (94/94).
-- [x] **Storefront mijoz akkaunti** ✅ **BAJARILDI (26.06.2026):** mijoz storefront'da login qiladi (portal telefon+PIN auth qayta ishlatiladi — bitta mijoz akkaunti); login bo'lsa buyurtma `shop_orders.customer_id`ga bog'lanadi (V25 migratsiya); "Buyurtmalarim" backend'dan (`GET /v1/account/orders` — customerId YOKI telefon bo'yicha, login'gacha guest buyurtmalarni ham qamraydi). Login sahifa `/kirish`, header akkaunt menyusi (ism + Chiqish). Commitlar `2370903..33f0273`. Uchidan-uchiga verify (jonli DB): customerId bog'lanishi ✅, telefon-moslik ✅, guest bog'lanmasligi ✅, staff bloklandi ✅. ⏳ Qoldi: portal `/kabinet`↔storefront marshrut birlashuvi (item 1) va email/SMS (item 3).
+- [x] **Storefront mijoz akkaunti** ✅ **BAJARILDI (26.06.2026):** mijoz storefront'da login qiladi (portal telefon+PIN auth qayta ishlatiladi — bitta mijoz akkaunti); login bo'lsa buyurtma `shop_orders.customer_id`ga bog'lanadi (V25 migratsiya); "Buyurtmalarim" backend'dan (`GET /v1/account/orders` — customerId YOKI telefon bo'yicha, login'gacha guest buyurtmalarni ham qamraydi). Login sahifa `/kirish`, header akkaunt menyusi (ism + Chiqish). Commitlar `2370903..33f0273`. Uchidan-uchiga verify (jonli DB): customerId bog'lanishi ✅, telefon-moslik ✅, guest bog'lanmasligi ✅, staff bloklandi ✅. ⏳ Qoldi deb belgilangan edi: marshrut birlashuvi (item 1) — ✅ **bajarildi** (`/kabinet`→`/hisob`); va email/SMS (item 3) — ⏳ SMS provayderi hamon ochiq.
 - [~] **Email/SMS xabarnoma POYDEVORI** ✅ **BAJARILDI (26.06.2026):** `OrderNotificationService` (config-gated `shop.notify.*`, default o'chiq) + `SmsSender` interfeys + `LogSmsSender` (stub) + email SMTP (`JavaMailSender` `ObjectProvider`) + `createOrder` hook (per-kanal try/catch). Runtime verify: guest buyurtma → `[SMS-STUB]` log (SHOP_NOTIFY_SMS=true) ✅. Commitlar `da27409`+`6b25244` (bean-nom fix). ⏳ **Jonli (A-guruhi):** SMS provider impl (Eskiz.uz va h.k.) + kreditsial; email uchun `spring.mail.*` + `shop.notify.email.enabled=true`.
 
 ---
@@ -104,13 +138,14 @@
 # Frontend (papka: shina-magazin-front)
 npm install
 npm run build      # tsc -b && vite build  (TS gate)
-npm test           # vitest (pool:threads) — 44 test
-npm run lint       # eslint
-npm run dev        # http://localhost:5183  (/magazin = storefront)
+npm test           # vitest (pool:threads) — 341 test / 67 fayl (17.08.2026)
+npm run lint       # eslint — CI aynan shuni ishlatadi, xato bo'lsa deploy TO'XTAYDI
+npm run dev        # http://localhost:5183  (/ = do'kon, /admin = ERP, /hisob = kabinet)
 
-# Backend (papka: shina-magazin-api) — JDK 21 KERAK
-$env:JAVA_HOME="C:\Users\Sh.Begmatov\.jdks\ms-21.0.11"   # JBR 25 Lombok'ni buzadi!
-.\mvnw.cmd compile          # yoki spring-boot:run (PostgreSQL kerak)
+# Backend (papka: shina-magazin-api) — target Java 17 (pom.xml), CI ham 17
+.\mvnw.cmd test             # yoki spring-boot:run (PostgreSQL kerak)
+# ⚠️ IDE'ning ichki JetBrains Runtime'ini JAVA_HOME qilib qo'ymang — Lombok buziladi.
+#    Muammo bo'lsa oddiy JDK ko'rsating:  $env:JAVA_HOME="<jdk-yo'li>"
 # Backend /api context-path'da: http://localhost:8183/api/v1/...
 ```
 
@@ -124,8 +159,8 @@ $env:JAVA_HOME="C:\Users\Sh.Begmatov\.jdks\ms-21.0.11"   # JBR 25 Lombok'ni buza
 **To'lov sozlamasi:** `application.yml` → `shop:payment:` (Payme/Click, default `enabled: false`). Provayder o'chiq bo'lsa checkout URL `null` → frontend tasdiq sahifasiga (PENDING) o'tadi. `ShopPaymentService` da URL yaratish + `markPaid/markFailed`; webhooklar: `PaymeWebhookController`, `ClickWebhookController`.
 
 **Asosiy fayllar:**
-- Storefront: `src/shop/` (README bor), routerda `/magazin/*`
-- ERP buyurtma: `src/pages/shop-orders/ShopOrdersPage.tsx` + `src/api/shopOrders.api.ts`, route `/shop-orders` (`SALES_VIEW`)
+- Storefront: `src/shop/` (README bor), routerda `/*` (ildiz)
+- ERP buyurtma: `src/pages/shop-orders/ShopOrdersPage.tsx` + `src/api/shopOrders.api.ts`, route `/admin/shop-orders` (`SALES_VIEW`)
 - Backend order/payment: `shina-magazin-api/.../controller/{ShopOrder,ShopPayment,PaymeWebhook,ClickWebhook}Controller.java`, `service/{ShopOrderService,ShopPaymentService}.java`, `entity/ShopOrder*.java`, migratsiya `V23/V24`
 - Security: `config/SecurityConfig.java` (storefront permitAll qoidalari)
 
@@ -134,9 +169,9 @@ $env:JAVA_HOME="C:\Users\Sh.Begmatov\.jdks\ms-21.0.11"   # JBR 25 Lombok'ni buza
 ## 7. Tavsiya etilgan tartib
 
 1. **AV istisno** qo'shing (yuqorida) → lokal muhit barqaror bo'ladi. _(Uy mashinasida muammo kuzatilmadi.)_
-2. ✅ **C guruhi** (C1 test → C2 bildirishnoma → C3 SEO → C4 to'lov holati) — **bajarildi** (18.06.2026). C5 qoldi (B4 qarorga bog'liq).
+2. ✅ **C guruhi** (C1 test → C2 bildirishnoma → C3 SEO → C4 to'lov holati) — **bajarildi** (18.06.2026). **C5 ham bajarildi** (26.06.2026, B4 bilan birga — 4-bo'limga qarang).
 3. ✅ **B guruhi** qarorlari berildi (3-bo'lim). Implement: **B2 routing → B4 rasm/C5 → B3 prerender** (B1 kod o'zgarmaydi). ✅ **B2 + B4/C5 + B3 (yengil SEO) BAJARILDI (26.06.2026)** — B-guruhi implement yakunlandi (B1 kod o'zgarmaydi). ← **keyingi: A-guruhi (deploy/kreditsiallar) yoki D / Faza 6 (ixtiyoriy)**
-4. **A guruhi** — kreditsiallar bilan to'lovni jonli qiling + DB'da verify (C2/C4'ni ham jonli sinash).
+4. **A guruhi** — ✅ deploy qismi bajarildi (17.08.2026, prod jonli). ⏳ Qolgani: Payme/Click kreditsiallari + webhook ro'yxatdan o'tkazish, so'ng C4 to'lov holatini (PENDING→PAID) jonli sinash.
 
 > Har bosqichda: build + test yashil → commit → push (avvalgi uslub).
 
@@ -220,7 +255,8 @@ $env:JAVA_HOME="C:\Users\Sh.Begmatov\.jdks\ms-21.0.11"   # JBR 25 Lombok'ni buza
 > - `index.html`: Open Graph + Twitter Card teglar (Telegram/IG/FB/WhatsApp link-preview);
 >   `og:image=/og-cover.jpg`, absolyut uchun `%VITE_SITE_URL%` (Vite HTML env).
 > - `public/og-cover.jpg` (1200×630 brendli karta, SVG→canvas raster) + `og-cover.svg` manba.
-> - `scripts/gen-seo.mjs` + `prebuild`: build-vaqtida `robots.txt` (/admin,/kabinet disallow)
+> - `scripts/gen-seo.mjs` + `prebuild`: build-vaqtida `robots.txt` (hozirgi disallow ro'yxati:
+>   `/admin`, `/hisob`, `/kirish`, `/checkout`, `/buyurtma`)
 >   + `sitemap.xml` (storefront marshrutlari) — `VITE_SITE_URL`'dan (generatsiya .gitignore'da).
 > - build + test (94/94) yashil; `dist`da og-cover.jpg/robots.txt/sitemap.xml tasdiqlandi.
 > - **🔴 Coolify (A-guruhi):** build env'da `VITE_SITE_URL=https://<domen>` bering → OG va
@@ -239,4 +275,6 @@ Payme/Click yetarli (qaror B1). Karta to'lovi Payme/Click orqali. Jonli sozlash 
 
 ---
 
-> **Qisqacha holat (26.06.2026):** B2 routing ✅ + B4 rasm/C5 ✅ + B3 yengil SEO ✅ — **B-guruhi implement yakunlandi**. Qolgan: **A-guruhi** (jonli to'lov kreditsiallari + webhook + DB verify + **Coolify deploy**: rasm storage volume, `VITE_SITE_URL`) — foydalanuvchi qiladi; ixtiyoriy **D / Faza 6**; va to'liq per-sahifa prerender (kelajak).
+> **Qisqacha holat (26.06.2026, tarixiy):** B2 routing ✅ + B4 rasm/C5 ✅ + B3 yengil SEO ✅ — **B-guruhi implement yakunlandi**. Qolgan deb belgilangan edi: A-guruhi (jonli to'lov + **Coolify deploy**: rasm storage volume, `VITE_SITE_URL`), ixtiyoriy D / Faza 6, to'liq prerender.
+>
+> ➡️ **Bulardan deploy, storage volume va `VITE_SITE_URL` 17.08.2026 da bajarildi.** Bugungi haqiqiy holat va hali ochiq qolgan uchta band — fayl boshidagi **⚡ Hozirgi holat** bo'limida.
