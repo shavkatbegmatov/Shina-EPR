@@ -392,6 +392,7 @@
       "loadError": "Sotuvlarni yuklashda xatolik",
       "noPermission": "Sizda bu amalni bajarish huquqi yo'q",
       "cancelSuccess": "Sotuv bekor qilindi",
+      "cancelPaidHint": "Bu sotuv bo'yicha pul olingan — bekor qilish o'rniga qaytarishni rasmiylashtiring",
       "cancelError": "Sotuvni bekor qilishda xatolik"
     },
     "suppliers": {
@@ -2067,7 +2068,8 @@
       "created": "Qaytarish rasmiylashtirildi",
       "cashRefunded": "Naqd qaytarildi",
       "debtReduced": "Qarzdan ayirildi",
-      "estimatedRefund": "Qaytariladigan summa"
+      "estimatedRefund": "Qaytariladigan summa",
+      "selectAll": "Hammasini tanlash"
     },
     "import": {
       "action": "Excel import",

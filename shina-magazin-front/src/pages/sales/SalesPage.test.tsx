@@ -103,8 +103,13 @@ describe('SalesPage', () => {
     expect(call).toMatchObject({ sort: 'saleDate,desc' });
   });
 
+  // Bekor qilish faqat PUL OLINMAGAN savdo uchun: kassadan chiqadigan pul
+  // hujjat qoldirishi kerak, bekor qilish esa chiqim yozuvi yaratmaydi.
+  const UNPAID_SALE = { ...SALE, paidAmount: 0, debtAmount: 2_000_000, paymentStatus: 'UNPAID' } as unknown as Sale;
+
   it('bekor qilgandan keyin ro\'yxat qayta yuklanadi', async () => {
-    vi.mocked(salesApi.cancel).mockResolvedValue(SALE);
+    vi.mocked(salesApi.getAll).mockResolvedValue(pageOf([UNPAID_SALE]));
+    vi.mocked(salesApi.cancel).mockResolvedValue(UNPAID_SALE);
     renderPage();
     await waitFor(() =>
       expect(screen.getAllByText('INV202603150001').length).toBeGreaterThan(0)
@@ -119,6 +124,21 @@ describe('SalesPage', () => {
     await waitFor(() =>
       expect(vi.mocked(salesApi.getAll).mock.calls.length).toBeGreaterThan(before)
     );
+  });
+
+  // Pul olingan savdo "bo'lmagan" deb hisoblanmaydi: kassadan chiqadigan pul
+  // hujjat qoldirishi kerak, shuning uchun kassir qaytarish oqimiga
+  // yo'naltiriladi (server ham bekor qilishni rad etadi).
+  it("to'langan savdoda bekor qilish o'rniga qaytarishga yo'naltiradi", async () => {
+    renderPage();
+    await waitFor(() =>
+      expect(screen.getAllByText('INV202603150001').length).toBeGreaterThan(0)
+    );
+
+    fireEvent.click(screen.getAllByRole('button', { name: 'Bekor qilish' })[0]);
+
+    expect(screen.queryByRole('button', { name: /Ha, bekor qilish/i })).not.toBeInTheDocument();
+    expect(salesApi.cancel).not.toHaveBeenCalled();
   });
 
   it('yuklash xatosi qayta urinish tugmasi bilan ko\'rsatiladi', async () => {

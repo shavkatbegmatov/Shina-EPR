@@ -144,15 +144,55 @@ class SaleCancelServiceTest {
     }
 
     @Test
-    @DisplayName("Qarzsiz sotuvni bekor qilish qarz yozuvlariga tegmaydi")
+    @DisplayName("Qarz yozuvisiz sotuvni bekor qilish qarz jadvaliga tegmaydi")
     void cancelWithoutDebtIsNoOpOnDebts() {
-        Sale sale = creditSale(null, "0");
+        // To'liq nasiya, lekin Debt qatori yaratilmagan (eski ma'lumot)
+        Sale sale = creditSale(null, "500000");
 
         service.cancelSale(sale.getId());
 
         assertThat(debtRepository.count()).isZero();
         assertThat(saleRepository.findById(sale.getId()).orElseThrow().getStatus())
                 .isEqualTo(SaleStatus.CANCELLED);
+    }
+
+    // ─── To'lov olingan sotuv ───
+    // Pul qo'ldan-qo'lga o'tgach "sotuv bo'lmagan" deb bo'lmaydi: bekor
+    // qilish hech qanday chiqim yozuvi yaratmaydi, ya'ni mijozga pul
+    // qaytarilsa kassa hisobsiz kamayardi. Qaytarish oqimi esa buni
+    // to'g'ri qayd etadi (cashRefunded + smena + hujjat raqami).
+
+    @Test
+    @DisplayName("To'langan sotuvni bekor qilib bo'lmaydi — qaytarishga yo'naltiriladi")
+    void paidSaleCannotBeCancelled() {
+        Sale sale = soldItems(2);
+        int stockBefore = reloadProduct().getQuantity();
+
+        assertThatThrownBy(() -> service.cancelSale(sale.getId()))
+                .isInstanceOf(BadRequestException.class)
+                .hasMessageContaining("pul olingan");
+
+        assertThat(reloadProduct().getQuantity())
+                .as("rad etilgan bekor qilish omborga tegmaydi")
+                .isEqualTo(stockBefore);
+        assertThat(saleRepository.findById(sale.getId()).orElseThrow().getStatus())
+                .isEqualTo(SaleStatus.COMPLETED);
+    }
+
+    @Test
+    @DisplayName("Qarz to'lovi qilingan nasiya sotuvi ham bekor qilinmaydi")
+    void saleWithDebtPaymentCannotBeCancelled() {
+        Customer buyer = customerRepository.saveAndFlush(customer("-1000000"));
+        Sale sale = creditSale(buyer, "1000000");
+
+        // Mijoz keyinroq 300 000 to'ladi (makePayment paidAmount'ni oshiradi)
+        sale.setPaidAmount(new BigDecimal("300000"));
+        sale.setDebtAmount(new BigDecimal("700000"));
+        saleRepository.saveAndFlush(sale);
+
+        assertThatThrownBy(() -> service.cancelSale(sale.getId()))
+                .isInstanceOf(BadRequestException.class)
+                .hasMessageContaining("pul olingan");
     }
 
     // ─── Qaytarishdan keyin bekor qilish ───

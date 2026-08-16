@@ -305,6 +305,24 @@ public class SaleService {
                             + "Qolgan tovarlarni ham qaytarish orqali rasmiylashtiring");
         }
 
+        // Pul olingan bo'lsa "sotuv bo'lmagan" deb bo'lmaydi: kassadan real
+        // pul chiqadi va u IZ qoldirishi shart. Bekor qilish hech qanday
+        // chiqim yozuvi yaratmaydi — mijozga pul keyin qaytarilsa, kassa
+        // hisobsiz kamayardi va kassirga asossiz kamomad yozilardi.
+        //
+        // Qaytarish oqimi buni allaqachon to'g'ri qiladi: pulni qarz va naqd
+        // o'rtasida taqsimlaydi, `cashRefunded` ni QAYTARAYOTGAN smenaga
+        // bog'laydi va raqamlangan hujjat qoldiradi. Kassadan pul chiqishining
+        // yagona manbai — SaleReturn.
+        //
+        // `paidAmount` keyingi qarz to'lovlarini ham o'z ichiga oladi
+        // (makePayment uni oshiradi), ya'ni bitta shart ikkala holatni qamraydi.
+        if (sale.getPaidAmount() != null && sale.getPaidAmount().signum() > 0) {
+            throw new BadRequestException(
+                    "Bu sotuv bo'yicha pul olingan — bekor qilish o'rniga qaytarishni "
+                            + "rasmiylashtiring, shunda kassadan chiqqan pul hisobga olinadi");
+        }
+
         User currentUser = getCurrentUser();
 
         // Restore stock

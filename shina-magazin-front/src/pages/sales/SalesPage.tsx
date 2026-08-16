@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { keepPreviousData, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { ShoppingCart, Receipt, Eye, XCircle, Calendar, User, X, CreditCard, Banknote, ArrowRightLeft, Layers } from 'lucide-react';
 import clsx from 'clsx';
 import toast from 'react-hot-toast';
@@ -42,6 +42,7 @@ const paymentMethodIcons: Record<PaymentMethod, React.ReactNode> = {
 
 export function SalesPage() {
   const { t } = useTranslation();
+  const navigate = useNavigate();
   const [page, setPage] = useState(0);
   const [pageSize, setPageSize] = useState(20);
   const [search, setSearch] = useState('');
@@ -182,7 +183,20 @@ export function SalesPage() {
     }
   };
 
+  /**
+   * Bekor qilish — faqat pul olinmagan savdo uchun.
+   *
+   * <p>Pul olingan bo'lsa kassadan chiqadigan pul hujjat qoldirishi kerak,
+   * bekor qilish esa hech qanday chiqim yozuvi yaratmaydi (server ham uni
+   * rad etadi). Bunday savdoda kassir to'g'ridan-to'g'ri tafsilot
+   * sahifasidagi "Hammasini qaytarish" ga yo'naltiriladi.
+   */
   const handleOpenCancelModal = (sale: Sale) => {
+    if (sale.paidAmount > 0) {
+      toast.error(t('erp.sales.cancelPaidHint'));
+      navigate(`/admin/sales/${sale.id}`);
+      return;
+    }
     setSelectedSale(sale);
     setShowCancelModal(true);
   };

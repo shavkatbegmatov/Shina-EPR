@@ -246,13 +246,18 @@ Birinchi ikki bosqich tuzatilgach, butun loyiha qayta tekshirildi (6 parallel qi
 | keyingi | R9 (davriy hisobot ustunlari keyingi qarz to'lovlaridan tozalandi) |
 
 | `534446d` | R15 (checkout narxlarni qayta oladi, farq bo'lsa mijozdan tasdiq so'raydi) |
-| keyingi | R-RET (`rejectReturn` o'tishi — PENDING/APPROVED → REJECTED, kvotani bo'shatadi) |
+| `a8f7e56` | R-RET (`rejectReturn` o'tishi — PENDING/APPROVED → REJECTED, kvotani bo'shatadi) |
+| keyingi | R2-qoldiq (pul olingan sotuv bekor qilinmaydi — qaytarish oqimiga yo'naltiriladi) |
 
-**Qoldi — 1 ta (alohida rejalashtirish kerak):**
+**Uchinchi bosqichning barcha 23 tasdiqlangan topilmasi yopildi.**
 
-| # | Nima kerak |
-|---|---|
-| R2-qoldiq (low) | Bekor qilish naqd chiqimni qayd etmaydi: to'lovlar qaytarilganda kassa hisobsiz kamayadi. Yechim — bekor qilishda `sale.paidAmount` bo'yicha chiqim yozuvi (yoki qaytarish oqimiga yo'naltirish). Avval "bekor qilinganda pul qanday qaytariladi" biznes qoidasini aniqlashtirish kerak |
+R2-qoldiq uchun tanlangan yechim — *bekor qilishda chiqim yozuvi yaratish* emas, *pul olingan sotuvni bekor qilishni taqiqlash*:
+
+- "Bekor qilish" = sotuv umuman bo'lmagan; pul qo'ldan-qo'lga o'tgach bu yolg'on bo'ladi va kassadan chiqqan pul iz qoldirishi shart
+- Ikkinchi pul yo'li qo'shish — aynan shu auditning eng og'ir xatolar sinfi (`№4`, `H3`, `R6`, `R7` — bitta pulni ikki kod yo'li turlicha hisoblardi). `SaleReturn` kassadan pul chiqishining yagona manbai bo'lib qoladi
+- Qaytarish oqimi buni allaqachon to'g'ri qiladi: pulni qarz/naqd bo'yicha taqsimlaydi, `cashRefunded` ni qaytarayotgan smenaga bog'laydi, chegirma ulushini hisoblaydi, raqamlangan hujjat qoldiradi
+- Bitta predikat (`paidAmount > 0`) ikkala holatni qamraydi — dastlabki to'lov ham, keyingi qarz to'lovlari ham (`makePayment` uni oshiradi)
+- UX yo'qotilmadi: qaytarish modalida "Hammasini tanlash" yorlig'i bir bosishda barcha qatorlarni to'ldiradi
 
 ---
 

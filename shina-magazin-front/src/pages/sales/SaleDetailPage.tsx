@@ -83,6 +83,31 @@ export function SaleDetailPage() {
   };
 
   /**
+   * Barcha qatorlarni qolgan miqdorga to'ldiradi.
+   *
+   * <p>Bu "bekor qilish" o'rnini bosadi: pul olingan sotuvni bekor qilib
+   * bo'lmaydi (kassadan chiqqan pul iz qoldirishi kerak), lekin xato
+   * kiritilgan savdoni bir bosishda to'liq qaytarish qulayligi saqlanadi —
+   * farqi shundaki, natijada raqamlangan hujjat va to'g'ri kassa yozuvi
+   * qoladi.
+   */
+  const fillAllReturnQty = () => {
+    setReturnQty(
+      Object.fromEntries(
+        (sale?.items ?? [])
+          .map((item) => [item.id!, returnableQty(item)] as const)
+          .filter(([, qty]) => qty > 0)
+      )
+    );
+  };
+
+  const openReturn = () => {
+    setReturnQty({});
+    setReturnReason('');
+    setShowReturn(true);
+  };
+
+  /**
    * Kutilayotgan qaytarish summasi — server bilan bir xil formula.
    *
    * <p>Savdoga umumiy chegirma berilgan bo'lsa qatordagi narx mijoz to'lagan
@@ -251,7 +276,7 @@ export function SaleDetailPage() {
               shuning uchun V11 da u SELLER'ga berilmagan. */}
           {sale.status !== 'CANCELLED' && sale.status !== 'REFUNDED' && (
             <PermissionGate permission={PermissionCode.SALES_REFUND}>
-              <Button variant="ghost" size="sm" onClick={() => setShowReturn(true)}>
+              <Button variant="ghost" size="sm" onClick={() => openReturn()}>
                 <Undo2 className="mr-2 h-4 w-4" />
                 {t('erp.returns.action')}
               </Button>
@@ -542,8 +567,18 @@ export function SaleDetailPage() {
       {/* Qaytarish modali */}
       <ModalPortal isOpen={showReturn} onClose={() => setShowReturn(false)}>
         <div className="w-full max-w-lg rounded-2xl bg-base-100 p-6 shadow-2xl">
-          <h3 className="text-lg font-semibold">{t('erp.returns.modalTitle')}</h3>
-          <p className="mt-1 text-sm text-base-content/60">{t('erp.returns.modalHint')}</p>
+          <div className="flex items-start justify-between gap-3">
+            <div>
+              <h3 className="text-lg font-semibold">{t('erp.returns.modalTitle')}</h3>
+              <p className="mt-1 text-sm text-base-content/60">{t('erp.returns.modalHint')}</p>
+            </div>
+            {/* Pul olingan savdoni bekor qilib bo'lmaydi — kassadan chiqqan
+                pul hujjat qoldirishi kerak. Xato kiritilgan savdoni bir
+                bosishda to'liq qaytarish qulayligi shu yorliq bilan saqlanadi. */}
+            <Button variant="ghost" size="sm" onClick={() => fillAllReturnQty()}>
+              {t('erp.returns.selectAll')}
+            </Button>
+          </div>
 
           <div className="mt-4 space-y-3">
             {(sale.items ?? []).map((item) => {
