@@ -51,3 +51,11 @@ logging:
     uz.shinamagazin: INFO
     org.springframework.security: WARN
     org.hibernate.SQL: WARN
+
+# OpenAPI/Swagger prod'da O'CHIQ: ilgari /api/api-docs autentifikatsiyasiz barcha
+# endpointlar va DTO'larni (xodim marshrutlari bilan) qaytarardi.
+springdoc:
+  api-docs:
+    enabled: false
+  swagger-ui:
+    enabled: false

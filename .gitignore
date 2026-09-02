@@ -40,3 +40,6 @@ shina-magazin-front/public/sitemap.xml
 /audit-log-role-02.jpg
 /audit-log-role-01.jpg
 /shina-magazin-front/f-001.jpg
+
+# Backend lokal dev sirlari (application-dev.yml spring.config.import)
+shina-magazin-api/.env

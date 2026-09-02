@@ -2,6 +2,10 @@ spring:
   application:
     name: shina-magazin-api
 
+  # server.shutdown=graceful bilan juftlikda: joriy so'rovlar uchun kutish muddati
+  lifecycle:
+    timeout-per-shutdown-phase: 20s
+
   profiles:
     active: dev
 
@@ -14,10 +18,13 @@ spring:
     hibernate:
       ddl-auto: validate
     show-sql: false
+    # Ataylab yoqiq qoldirilgan: ko'plab response mapper'lar LAZY bog'lanishlarga
+    # tranzaksiyadan tashqarida tegadi. O'chirish uchun avval har bir ro'yxat
+    # so'roviga @EntityGraph kerak (N+1 tuzatishida boshlangan, hali to'liq emas).
+    open-in-view: true
     properties:
       hibernate:
         format_sql: true
-        dialect: org.hibernate.dialect.PostgreSQLDialect
         jdbc:
           time_zone: Asia/Tashkent
         # LAZY assotsiatsiyalarni to'plab yuklash — N+1 ga qarshi asosiy himoya.
@@ -29,7 +36,12 @@ spring:
 
   flyway:
     enabled: true
-    baseline-on-migrate: true
+    # baseline-on-migrate ATAYLAB o'chiq: tarix jadvali yo'q bo'sh bo'lmagan bazada
+    # Flyway jimgina "baseline" qilib BARCHA migratsiyalarni tashlab ketardi, ilova esa
+    # o'zi qurmagan sxema ustida ishga tushardi. Yangi baza bo'sh bo'ladi — baseline kerak emas.
+    baseline-on-migrate: false
+    validate-on-migrate: true
+    out-of-order: false
     locations: classpath:db/migration
 
   # Multipart (rasm upload) — shop.storage.max-size-bytes bilan mos bo'lsin
@@ -42,6 +54,27 @@ server:
   port: 8183
   servlet:
     context-path: /api
+  # Deploy paytida boshlangan so'rovlar (masalan POS savdosi) uzilmasin:
+  # yangi so'rovlar qabul qilinmaydi, joriylari 20 s ichida yakunlanadi.
+  shutdown: graceful
+  # JSON javoblarni siqish — nginx faqat o'z statik fayllarini gzip qiladi,
+  # proxy orqali kelgan API javoblari siqilmasdan ketardi.
+  compression:
+    enabled: true
+    mime-types: application/json,application/xml,text/html,text/plain,text/css,application/javascript
+    min-response-size: 1024
+
+# Actuator: faqat health, tafsilotsiz. SecurityConfig qolgan /actuator/** ni denyAll qiladi.
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health
+  endpoint:
+    health:
+      show-details: never
+      probes:
+        enabled: true
 
 # JWT Configuration
 # `secret` uchun DEFAULT QIYMAT YO'Q — ataylab. Ilgari bu yerda ishlaydigan base64

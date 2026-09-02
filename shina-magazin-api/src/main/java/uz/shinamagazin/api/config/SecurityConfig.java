@@ -7,6 +7,7 @@ import org.springframework.http.HttpMethod;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.AuthenticationProvider;
 import org.springframework.security.authentication.dao.DaoAuthenticationProvider;
+import org.springframework.security.config.Customizer;
 import org.springframework.security.config.annotation.authentication.configuration.AuthenticationConfiguration;
 import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
@@ -35,7 +36,8 @@ public class SecurityConfig {
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         http
                 .csrf(AbstractHttpConfigurer::disable)
-                .cors(cors -> cors.configure(http))
+                // WebConfig.corsConfigurationSource bean'ini ishlatadi
+                .cors(Customizer.withDefaults())
                 .exceptionHandling(exception -> exception
                         .authenticationEntryPoint(jwtAuthenticationEntryPoint)
                 )
@@ -73,8 +75,15 @@ public class SecurityConfig {
                         // akkaunt faqat xodim tasdiqlagach yaratiladi. Qolgan
                         // /v1/staff-registration/** metodlari ruxsat talab qiladi.
                         .requestMatchers(HttpMethod.POST, "/v1/staff-registration").permitAll()
+                        // OpenAPI/Swagger faqat dev'da mavjud — prod profilida springdoc
+                        // butunlay o'chirilgan (application-prod.yml), bu yerdagi ruxsat
+                        // u yerda hech narsani ochmaydi.
                         .requestMatchers("/swagger-ui/**", "/api-docs/**", "/swagger-ui.html").permitAll()
-                        .requestMatchers("/actuator/**").permitAll()
+                        // Actuator: faqat health ommaviy (Docker healthcheck + uptime tekshiruvi).
+                        // Qolgan endpointlar (env, heapdump, mappings...) hatto exposure
+                        // kengaytirilib qo'yilsa ham tashqaridan ochilmasin.
+                        .requestMatchers("/actuator/health", "/actuator/health/**").permitAll()
+                        .requestMatchers("/actuator/**").denyAll()
                         // WebSocket endpoint (JWT token interceptor'da tekshiriladi)
                         .requestMatchers("/v1/ws/**").permitAll()
 

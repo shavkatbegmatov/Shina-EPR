@@ -1,9 +1,15 @@
 spring:
+  config:
+    # Lokal sirlar repoga tushmasin: shu papkadagi gitignore'langan `.env` fayli
+    # (`DB_PASSWORD=...` qatori) bo'lsa o'qiladi. Ilgari haqiqiy DB paroli shu yerda
+    # ochiq turardi va git tarixida qoldi — uni DB'da almashtiring.
+    import: optional:file:./.env[.properties]
   datasource:
     # localhost - Windows/IntelliJ uchun, 172.17.0.1 - WSL uchun
     url: jdbc:postgresql://${DB_HOST:localhost}:5432/shina_epr_db
-    username: shina_epr_user
-    password: f3300955#F123456
+    username: ${DB_USERNAME:shina_epr_user}
+    # Haqiqiy parol .env yoki DB_PASSWORD env'da; bu faqat yangi klon uchun default.
+    password: ${DB_PASSWORD:shina_epr_dev}
     driver-class-name: org.postgresql.Driver
 
   jpa:
