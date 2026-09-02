@@ -10,10 +10,18 @@ concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
 
+# Default: faqat o'qish. Yozish huquqi kerak bo'lgan job'lar o'zida so'raydi.
+# Ilgari bu blok faqat build-and-push'da bor edi, qolganlari repo default'ini
+# (ko'pincha read-write) meros olardi.
+permissions:
+  contents: read
+
 env:
   REGISTRY: ghcr.io
   IMAGE_PREFIX: ghcr.io/shavkatbegmatov/shina-epr
 
+# Action'lar tegga emas, COMMIT SHA'ga bog'langan (Dependabot yangilab turadi):
+# ko'chma teg (v4) egasi tomonidan qayta yozilishi mumkin, SHA — yo'q.
 jobs:
   # ── CI: Frontend lint + test + build ──
   frontend-ci:
@@ -23,14 +31,19 @@ jobs:
       run:
         working-directory: shina-magazin-front
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
         with:
           node-version: 20
           cache: npm
           cache-dependency-path: shina-magazin-front/package-lock.json
       - run: npm ci
       - run: npm run lint
+      # Frontend PermissionCode xaritasi backend enum bilan mos ekanini tekshiradi
+      - run: npm run check:permissions
+      # Faqat PROD bog'liqliklaridagi high/critical zaifliklar CI'ni to'xtatadi
+      # (dev-only advisory'lar deploy'ni bloklamasin)
+      - run: npm audit --omit=dev --audit-level=high
       - run: npm test
       - run: npm run build
 
@@ -42,16 +55,26 @@ jobs:
       run:
         working-directory: shina-magazin-api
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-java@v4
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+      - uses: actions/setup-java@cf277c60eb25467037889841efdb72551f06f6c3 # v4
         with:
           distribution: temurin
           java-version: 17
           cache: maven
       # Testlar CI'da ISHLASHI shart: xavfsizlik qorovul testlari (avtorizatsiya
       # qamrovi, JWT kalit validatsiyasi, Click imzo tekshiruvi) faqat shu yerda
-      # regressiyani ushlay oladi. Testlar tashqi DB talab qilmaydi — H2 in-memory.
+      # regressiyani ushlay oladi. Ko'pchilik testlar H2 in-memory'da;
+      # PostgresMigrationTest esa Testcontainers bilan HAQIQIY Postgres'da
+      # migratsiyalarni qo'llaydi (runner'da Docker bor).
       - run: chmod +x mvnw && ./mvnw clean test -q
+      # Qamrov hisoboti (JaCoCo) — Actions artefakti sifatida 14 kun saqlanadi
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        if: always()
+        with:
+          name: backend-coverage
+          path: shina-magazin-api/target/site/jacoco
+          retention-days: 14
+          if-no-files-found: ignore
 
   # ── CD: Build Docker images + push to GHCR ──
   build-and-push:
@@ -63,18 +86,18 @@ jobs:
       contents: read
       packages: write
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
 
-      - uses: docker/login-action@v3
+      - uses: docker/login-action@c94ce9fb468520275223c153574b00df6fe4bcc9 # v3
         with:
           registry: ${{ env.REGISTRY }}
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
-      - uses: docker/setup-buildx-action@v3
+      - uses: docker/setup-buildx-action@8d2750c68a42422c14e847fe6c8ac0403b4cbd6f # v3
 
       - name: Build & push backend
-        uses: docker/build-push-action@v6
+        uses: docker/build-push-action@10e90e3645eae34f1e60eeb005ba3a3d33f178e8 # v6
         with:
           context: ./shina-magazin-api
           push: true
@@ -85,7 +108,7 @@ jobs:
           cache-to: type=gha,mode=max,scope=backend
 
       - name: Build & push frontend
-        uses: docker/build-push-action@v6
+        uses: docker/build-push-action@10e90e3645eae34f1e60eeb005ba3a3d33f178e8 # v6
         with:
           context: ./shina-magazin-front
           push: true
@@ -97,6 +120,34 @@ jobs:
             ${{ env.IMAGE_PREFIX }}-front:${{ github.sha }}
           cache-from: type=gha,scope=frontend
           cache-to: type=gha,mode=max,scope=frontend
+
+  # ── Image zaiflik skaneri (hisobot rejimi) ──
+  # Deploy'ni TO'XTATMAYDI (exit-code 0): base image'lardagi yangi CVE'lar har
+  # hafta paydo bo'ladi va tuzatilmaganlari (ignore-unfixed) deploy'ni bloklashi
+  # ma'nosiz. Natija job logida; jiddiy topilma bo'lsa Dependabot/base image yangilanadi.
+  image-scan:
+    name: Image scan (Trivy)
+    runs-on: ubuntu-latest
+    needs: [build-and-push]
+    if: github.event_name == 'push' && github.ref == 'refs/heads/master'
+    permissions:
+      contents: read
+      packages: read
+    strategy:
+      fail-fast: false
+      matrix:
+        image: [api, front]
+    steps:
+      - uses: aquasecurity/trivy-action@57a97c7e7821a5776cebc9bb87c984fa69cba8f1 # 0.35.0
+        env:
+          TRIVY_USERNAME: ${{ github.actor }}
+          TRIVY_PASSWORD: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          image-ref: ${{ env.IMAGE_PREFIX }}-${{ matrix.image }}:${{ github.sha }}
+          severity: CRITICAL,HIGH
+          ignore-unfixed: true
+          exit-code: "0"
+          format: table
 
   # ── CD: Trigger Coolify deploy ──
   # Coolify'da BITTA Compose resurs (infra/coolify/docker-compose.yml) turadi —
@@ -115,13 +166,14 @@ jobs:
     runs-on: ubuntu-latest
     needs: [build-and-push]
     # COOLIFY_* secretlar + DEPLOY_ENABLED=true repo Variable qo'yilgach ishlaydi.
-    # Aks holda SKIP bo'ladi (CI yashil qoladi, deploy job qizil bermaydi).
+    # Aks holda SKIP bo'ladi (CI yashil qoladi) — buni pastdagi deploy-skipped job'i
+    # KO'RINADIGAN ogohlantirish bilan belgilaydi.
     if: github.event_name == 'push' && github.ref == 'refs/heads/master' && vars.DEPLOY_ENABLED == 'true'
     # Qayta urinishlar tufayli eng yomon holatda uzoq davom etishi mumkin —
     # nazoratdan chiqqan job daqiqalarni yeb qo'ymasin.
     timeout-minutes: 45
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
       - name: Deploy stack (trigger + kuzatish + qayta urinish)
         env:
           COOLIFY_WEBHOOK_URL: ${{ secrets.COOLIFY_WEBHOOK_URL }}
@@ -132,3 +184,38 @@ jobs:
         run: |
           chmod +x .github/scripts/coolify-deploy.sh
           .github/scripts/coolify-deploy.sh
+
+  # DEPLOY_ENABLED yo'q/o'chiq bo'lsa deploy JIMGINA skip bo'lardi — aynan "prodga
+  # chiqmagani sezilmadi" holatining yana bir yo'li. Endi run sahifasida ogohlantirish.
+  deploy-skipped:
+    name: Deploy skipped (DEPLOY_ENABLED)
+    runs-on: ubuntu-latest
+    needs: [build-and-push]
+    if: github.event_name == 'push' && github.ref == 'refs/heads/master' && vars.DEPLOY_ENABLED != 'true'
+    steps:
+      - run: |
+          echo "::warning title=Deploy o'tkazib yuborildi::Repo Variable DEPLOY_ENABLED='true' emas — image'lar push qilindi, lekin Coolify deploy chaqirilmadi. Bu push PRODGA CHIQMADI."
+
+  # ── Muvaffaqiyatsizlik xabari ──
+  # Qizil CI deploy'ni skip qiladi va hech narsa o'chmaydi — 2026 avgustda yetti
+  # commit ikki kun shu tarzda prodga chiqmay qolgan. Endi master'dagi har qanday
+  # yiqilish Telegram'ga boradi (repo Secrets: TELEGRAM_BOT_TOKEN, TELEGRAM_ALERT_CHAT_ID;
+  # bo'lmasa bu job jimgina o'tadi).
+  notify-failure:
+    name: Notify on failure
+    runs-on: ubuntu-latest
+    needs: [frontend-ci, backend-ci, build-and-push, deploy]
+    if: always() && github.event_name == 'push' && contains(needs.*.result, 'failure')
+    steps:
+      - name: Telegram
+        if: env.TELEGRAM_BOT_TOKEN != '' && env.TELEGRAM_ALERT_CHAT_ID != ''
+        env:
+          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+          TELEGRAM_ALERT_CHAT_ID: ${{ secrets.TELEGRAM_ALERT_CHAT_ID }}
+          RESULTS: ${{ toJSON(needs) }}
+        run: |
+          failed=$(echo "$RESULTS" | jq -r 'to_entries | map(select(.value.result == "failure") | .key) | join(", ")')
+          text="🔴 CI yiqildi (${GITHUB_REPOSITORY}@${GITHUB_REF_NAME}): ${failed}%0A${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY}/actions/runs/${GITHUB_RUN_ID}%0ADeploy SKIP bo'ldi — prod eski holatda."
+          curl -s --max-time 15 "https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendMessage" \
+            --data-urlencode "chat_id=${TELEGRAM_ALERT_CHAT_ID}" \
+            --data-urlencode "text=${text}" > /dev/null || true

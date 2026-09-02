@@ -25,7 +25,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
         with:
           fetch-depth: 0
 
@@ -77,10 +77,40 @@ jobs:
           PY
 
       - name: Create GitHub Release
-        uses: softprops/action-gh-release@v2
+        uses: softprops/action-gh-release@3bb12739c298aeb8a4eeaf626c5b8d85266b0e65 # v2
         with:
           name: ${{ github.ref_name }}
           body_path: release-notes.md
           prerelease: ${{ steps.notes.outputs.prerelease }}
           make_latest: ${{ steps.notes.outputs.make_latest }}
           fail_on_unmatched_files: false
+
+  # Reliz tegi image'larga ham qo'yiladi: ilgari "reliz" faqat matn edi — GHCR'da
+  # unga mos o'zgarmas image bo'lmagani uchun vX.Y.Z ni deploy qilib bo'lmasdi.
+  # CI har commit'ni `:<sha>` bilan push qilgan; shu manifestga vX.Y.Z tegi qo'shiladi
+  # (qayta build yo'q). Rollback: Coolify env IMAGE_TAG=vX.Y.Z.
+  retag-images:
+    name: Tag images with release version
+    runs-on: ubuntu-latest
+    needs: release
+    permissions:
+      contents: read
+      packages: write
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          fetch-depth: 0
+      - uses: docker/login-action@c94ce9fb468520275223c153574b00df6fe4bcc9 # v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+      - name: Retag api + front
+        run: |
+          # Annotatsiyali teg uchun github.sha teg obyektini ko'rsatishi mumkin — commit'ga tushiramiz
+          sha=$(git rev-parse "${GITHUB_REF_NAME}^{commit}")
+          for img in api front; do
+            docker buildx imagetools create \
+              -t "ghcr.io/shavkatbegmatov/shina-epr-${img}:${GITHUB_REF_NAME}" \
+              "ghcr.io/shavkatbegmatov/shina-epr-${img}:${sha}"
+          done

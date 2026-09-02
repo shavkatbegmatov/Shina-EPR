@@ -1,0 +1,54 @@
+name: Uptime
+
+# Prod tirikligini muntazam tekshiradi va tushib qolsa Telegram'ga yozadi.
+#
+# Ilgari yagona sog'liq signali deploy skriptidagi bir martalik tekshiruv edi:
+# deploy'lar orasida prod tushsa hech kim bilmasdi. Bu workflow tashqi xizmatsiz,
+# GitHub'ning o'zida ishlaydi (cron ~15 daqiqada; GitHub kechiktirishi mumkin).
+#
+# Xabar uchun repo Secrets: TELEGRAM_BOT_TOKEN va TELEGRAM_ALERT_CHAT_ID.
+# Ular bo'lmasa tekshiruv baribir ishlaydi (natija Actions'da ko'rinadi), xabar ketmaydi.
+
+on:
+  schedule:
+    - cron: "*/15 * * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: uptime
+  cancel-in-progress: true
+
+jobs:
+  check:
+    name: Prod health
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    env:
+      SITE_URL: ${{ vars.VITE_SITE_URL || 'https://protektor.uz' }}
+    steps:
+      - name: Check storefront and API health
+        id: probe
+        run: |
+          set +e
+          fail=0
+          for path in "/" "/api/actuator/health" "/api/v1/settings/public"; do
+            code=$(curl -s -o /dev/null -w '%{http_code}' --max-time 20 "${SITE_URL}${path}")
+            echo "${path} -> ${code}"
+            if [ "$code" != "200" ]; then fail=1; fi
+          done
+          echo "fail=$fail" >> "$GITHUB_OUTPUT"
+          exit $fail
+
+      - name: Notify Telegram
+        if: failure() && env.TELEGRAM_BOT_TOKEN != '' && env.TELEGRAM_ALERT_CHAT_ID != ''
+        env:
+          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+          TELEGRAM_ALERT_CHAT_ID: ${{ secrets.TELEGRAM_ALERT_CHAT_ID }}
+        run: |
+          text="🔴 Protektor prod javob bermayapti: ${SITE_URL}%0AActions: ${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY}/actions/runs/${GITHUB_RUN_ID}"
+          curl -s --max-time 15 "https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendMessage" \
+            --data-urlencode "chat_id=${TELEGRAM_ALERT_CHAT_ID}" \
+            --data-urlencode "text=${text}" > /dev/null || true

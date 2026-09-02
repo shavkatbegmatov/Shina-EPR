@@ -1,0 +1,55 @@
+# Bog'liqliklarni avtomatik yangilash PR'lari.
+#
+# Ilgari hech qanday zaiflik kuzatuvi yo'q edi: npm audit 26 zaiflik (2 critical)
+# ko'rsatgan, xlsx esa npm'da tashlab ketilgan versiyada qolgan — buni hech kim
+# ko'rmasdi. Dependabot har hafta PR ochadi; CI (lint/test/build) ularni tekshiradi.
+version: 2
+updates:
+  - package-ecosystem: npm
+    directory: /shina-magazin-front
+    schedule:
+      interval: weekly
+      day: monday
+      time: "06:00"
+      timezone: Asia/Tashkent
+    open-pull-requests-limit: 5
+    groups:
+      # Minor/patch yangilanishlar bitta PR'da — 40 ta alohida PR shovqin bo'lardi
+      npm-minor-patch:
+        update-types: ["minor", "patch"]
+    ignore:
+      # Major yangilanishlar qo'lda (React 19, DaisyUI 5, lucide 1.x — API o'zgaradi)
+      - dependency-name: "*"
+        update-types: ["version-update:semver-major"]
+
+  - package-ecosystem: maven
+    directory: /shina-magazin-api
+    schedule:
+      interval: weekly
+      day: monday
+      time: "06:00"
+      timezone: Asia/Tashkent
+    open-pull-requests-limit: 5
+    groups:
+      maven-minor-patch:
+        update-types: ["minor", "patch"]
+    ignore:
+      - dependency-name: "*"
+        update-types: ["version-update:semver-major"]
+
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: weekly
+      day: monday
+      time: "06:00"
+      timezone: Asia/Tashkent
+
+  - package-ecosystem: docker
+    directory: /shina-magazin-api
+    schedule:
+      interval: weekly
+  - package-ecosystem: docker
+    directory: /shina-magazin-front
+    schedule:
+      interval: weekly
