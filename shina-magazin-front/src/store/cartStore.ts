@@ -1,4 +1,5 @@
 import { create } from 'zustand';
+import { persist } from 'zustand/middleware';
 import type { CartItem, Customer, Product } from '../types';
 
 interface CartState {
@@ -38,7 +39,14 @@ const subtotalOf = (items: CartItem[]) =>
 const clampDiscount = (discount: number, items: CartItem[]) =>
   Math.min(discount, Math.max(0, subtotalOf(items)));
 
-export const useCartStore = create<CartState>((set, get) => ({
+/**
+ * POS savati localStorage'da SAQLANADI: ilgari sahifa yangilansa (yoki planshet brauzeri
+ * xotira tufayli tabni qayta yuklasa) mijoz oldida yig'ilgan savat yo'qolardi.
+ * Vitrina savati allaqachon persist edi — POS'niki esa yo'q.
+ */
+export const useCartStore = create<CartState>()(
+  persist(
+    (set, get) => ({
   items: [],
   customer: null,
   discount: 0,
@@ -133,4 +141,15 @@ export const useCartStore = create<CartState>((set, get) => ({
   getItemCount: () => {
     return get().items.reduce((sum, item) => sum + item.quantity, 0);
   },
-}));
+    }),
+    {
+      name: 'pos-cart',
+      partialize: (state) => ({
+        items: state.items,
+        customer: state.customer,
+        discount: state.discount,
+        discountPercent: state.discountPercent,
+      }),
+    }
+  )
+);
