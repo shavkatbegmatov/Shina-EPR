@@ -46,7 +46,9 @@
       "prev": "Oldingi sahifa",
       "next": "Keyingi sahifa",
       "last": "Oxirgi sahifa"
-    }
+    },
+    "sessionExpired": "Sessiyangiz tugadi. Qayta kiring.",
+    "noPermission": "Sizda bu amalni bajarish uchun ruxsat yo'q"
   },
   "auth": {
     "login": "Kirish",

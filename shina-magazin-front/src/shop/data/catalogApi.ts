@@ -1,4 +1,4 @@
-import api from '../../api/axios';
+import api from './publicAxios';
 import type { ApiResponse, CatalogFacets, PagedResponse, Product, Season } from '../../types';
 
 /**

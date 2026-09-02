@@ -8,6 +8,7 @@ import { PhoneInput } from '../../components/ui/PhoneInput';
 import { portalAuthApi } from '../../portal/api/portalAuth.api';
 import { usePortalAuthStore } from '../../portal/store/portalAuthStore';
 import { useTelegramRegisterUrl } from '../data/usePublicSettings';
+import { safeRedirect } from '../utils/safeRedirect';
 import { Button } from '@/ui';
 import type { CustomerLoginRequest } from '../../portal/types/portal.types';
 
@@ -20,7 +21,8 @@ export function ShopLoginPage() {
   const { t, i18n } = useTranslation();
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
-  const redirect = searchParams.get('redirect') || '/buyurtmalarim';
+  // Faqat ilova ichidagi yo'l — `//evil.example` kabi tashqi manzil rad etiladi
+  const redirect = safeRedirect(searchParams.get('redirect'), '/buyurtmalarim');
   const { isAuthenticated, setAuth } = usePortalAuthStore();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);

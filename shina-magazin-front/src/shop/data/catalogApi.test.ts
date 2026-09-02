@@ -1,10 +1,10 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
-vi.mock('../../api/axios', () => ({
+vi.mock('./publicAxios', () => ({
   default: { get: vi.fn() },
 }));
 
-import api from '../../api/axios';
+import api from './publicAxios';
 import { catalogApi } from './catalogApi';
 
 /**
