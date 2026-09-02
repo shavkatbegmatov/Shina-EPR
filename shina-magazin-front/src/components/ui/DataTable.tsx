@@ -132,8 +132,8 @@ export function DataTable<T>({
   onRetry,
   skeletonRows = 5,
   emptyIcon,
-  emptyTitle = "Ma'lumotlar topilmadi",
-  emptyDescription = "Filtrlarni o'zgartirib ko'ring",
+  emptyTitle,
+  emptyDescription,
   onRowClick,
   rowClassName,
   highlightId,
@@ -143,6 +143,18 @@ export function DataTable<T>({
   containerClassName,
 }: DataTableProps<T>) {
   const { t } = useTranslation();
+  const emptyTitleText = emptyTitle ?? t('common.noData');
+  const emptyDescriptionText = emptyDescription ?? t('common.tryChangingFilters');
+
+  /** Enter/Space bilan qatorni "bosish" — klaviatura foydalanuvchilari uchun */
+  const rowKeyHandler = onRowClick
+    ? (item: T) => (event: React.KeyboardEvent) => {
+        if (event.key === 'Enter' || event.key === ' ') {
+          event.preventDefault();
+          onRowClick(item);
+        }
+      }
+    : undefined;
 
   // Internal sort state (for client-side sorting)
   const [internalSortConfig, setInternalSortConfig] = useState<SortConfig>({
@@ -329,8 +341,8 @@ export function DataTable<T>({
         <div className="flex flex-col items-center justify-center gap-2 p-10 text-center text-base-content/50">
           {emptyIcon && <div className="mb-2">{emptyIcon}</div>}
           <div>
-            <p className="text-base font-medium">{emptyTitle}</p>
-            <p className="text-sm">{emptyDescription}</p>
+            <p className="text-base font-medium">{emptyTitleText}</p>
+            <p className="text-sm">{emptyDescriptionText}</p>
           </div>
         </div>
       </div>
@@ -344,23 +356,48 @@ export function DataTable<T>({
         <table className="table table-zebra w-full">
           <thead className="sticky -top-6 z-20 bg-base-100">
             <tr className="shadow-[0_1px_3px_-1px_rgba(0,0,0,0.1)]">
-              {columns.map((column) => (
-                <th
-                  key={column.key}
-                  className={clsx(
-                    column.sortable !== false && 'cursor-pointer select-none transition-colors hover:bg-base-200/50',
-                    sortConfig.key === column.key && 'bg-base-200/30',
-                    '!bg-base-100 border-b border-base-200',
-                    column.headerClassName
-                  )}
-                  onClick={() => column.sortable !== false && handleSort(column.key)}
-                >
-                  <div className="flex items-center gap-1">
-                    <span>{column.header}</span>
-                    {column.sortable !== false && renderSortIcon(column.key)}
-                  </div>
-                </th>
-              ))}
+              {columns.map((column) => {
+                const sortable = column.sortable !== false;
+                const isSorted = sortConfig.key === column.key && !!sortConfig.direction;
+                // aria-sort: screen reader saralash holatini bilsin
+                const ariaSort = !sortable
+                  ? undefined
+                  : isSorted
+                    ? sortConfig.direction === 'asc'
+                      ? 'ascending'
+                      : 'descending'
+                    : 'none';
+
+                return (
+                  <th
+                    key={column.key}
+                    aria-sort={ariaSort}
+                    className={clsx(
+                      sortable && 'select-none transition-colors hover:bg-base-200/50',
+                      sortConfig.key === column.key && 'bg-base-200/30',
+                      '!bg-base-100 border-b border-base-200',
+                      column.headerClassName
+                    )}
+                  >
+                    {sortable ? (
+                      // Haqiqiy tugma: Tab bilan yetib boriladi, Enter/Space bilan saralanadi
+                      // (ilgari onClick to'g'ridan-to'g'ri <th> da edi — faqat sichqoncha bilan)
+                      <button
+                        type="button"
+                        className="flex w-full items-center gap-1 text-left font-inherit"
+                        onClick={() => handleSort(column.key)}
+                      >
+                        <span>{column.header}</span>
+                        {renderSortIcon(column.key)}
+                      </button>
+                    ) : (
+                      <div className="flex items-center gap-1">
+                        <span>{column.header}</span>
+                      </div>
+                    )}
+                  </th>
+                );
+              })}
             </tr>
           </thead>
           <tbody>
@@ -374,11 +411,14 @@ export function DataTable<T>({
                 data-highlight-id={itemId}
                 className={clsx(
                   'transition',
-                  onRowClick && 'cursor-pointer hover:bg-base-200/50',
+                  onRowClick && 'cursor-pointer hover:bg-base-200/50 focus-visible:outline focus-visible:outline-2 focus-visible:outline-primary',
                   rowClassName?.(item),
                   isHighlighted && 'animate-highlight-row'
                 )}
                 onClick={() => onRowClick?.(item)}
+                // Bosiladigan qator klaviaturadan ham ochilsin
+                tabIndex={onRowClick ? 0 : undefined}
+                onKeyDown={rowKeyHandler?.(item)}
               >
                 {columns.map((column) => (
                   <td key={column.key} className={column.className}>
@@ -407,6 +447,9 @@ export function DataTable<T>({
                 data-highlight-id={itemId}
                 className={clsx(isHighlighted && 'animate-highlight-row rounded-xl')}
                 onClick={() => onRowClick?.(item)}
+                role={onRowClick ? 'button' : undefined}
+                tabIndex={onRowClick ? 0 : undefined}
+                onKeyDown={rowKeyHandler?.(item)}
               >
                 {renderMobileCard(item, index)}
               </div>
@@ -425,19 +468,19 @@ export function DataTable<T>({
                 <span className="font-medium text-base-content">{startItem}-{endItem}</span>
                 {' / '}
                 <span className="font-medium text-base-content">{totalElements.toLocaleString()}</span>
-                {' '}ta
+                {' '}{t('common.pagination.items')}
               </div>
             )}
 
             {onPageSizeChange && (
               <div className="flex items-center gap-2">
-                <span className="text-base-content/50 text-xs hidden sm:inline">Ko'rsatish:</span>
+                <span className="text-base-content/50 text-xs hidden sm:inline">{t('common.pagination.show')}</span>
                 <Select
                   value={pageSize}
                   onChange={(val) => onPageSizeChange(Number(val))}
                   options={pageSizeOptions.map((size) => ({
                     value: size,
-                    label: `${size} ta`,
+                    label: t('common.pagination.perPage', { size }),
                   }))}
                   className="w-24"
                 />
@@ -445,20 +488,24 @@ export function DataTable<T>({
             )}
           </div>
 
-          {/* Right side - Page navigation */}
+          {/* Right side - Page navigation (nav + aria-label: ikonka tugmalar nomsiz edi) */}
           {totalPages > 1 && (
-            <div className="flex items-center gap-1">
+            <nav className="flex items-center gap-1" aria-label={t('common.pagination.next')}>
               <button
+                type="button"
                 className={clsx('btn btn-ghost btn-sm btn-square', currentPage === 0 && 'btn-disabled opacity-40')}
                 onClick={() => onPageChange(0)}
                 disabled={currentPage === 0}
+                aria-label={t('common.pagination.first')}
               >
                 <ChevronsLeft className="h-4 w-4" />
               </button>
               <button
+                type="button"
                 className={clsx('btn btn-ghost btn-sm btn-square', currentPage === 0 && 'btn-disabled opacity-40')}
                 onClick={() => onPageChange(currentPage - 1)}
                 disabled={currentPage === 0}
+                aria-label={t('common.pagination.prev')}
               >
                 <ChevronLeft className="h-4 w-4" />
               </button>
@@ -466,15 +513,18 @@ export function DataTable<T>({
               <div className="flex items-center gap-0.5 mx-1">
                 {visiblePages.map((page, idx) =>
                   page === 'ellipsis' ? (
-                    <span key={`ellipsis-${idx}`} className="px-2 text-base-content/40">•••</span>
+                    <span key={`ellipsis-${idx}`} className="px-2 text-base-content/40" aria-hidden="true">•••</span>
                   ) : (
                     <button
                       key={page}
+                      type="button"
                       className={clsx(
                         'btn btn-sm min-w-[2.25rem]',
                         currentPage === page ? 'btn-primary' : 'btn-ghost hover:bg-base-200'
                       )}
                       onClick={() => onPageChange(page)}
+                      aria-label={t('common.pagination.page', { page: page + 1 })}
+                      aria-current={currentPage === page ? 'page' : undefined}
                     >
                       {page + 1}
                     </button>
@@ -483,20 +533,24 @@ export function DataTable<T>({
               </div>
 
               <button
+                type="button"
                 className={clsx('btn btn-ghost btn-sm btn-square', currentPage >= totalPages - 1 && 'btn-disabled opacity-40')}
                 onClick={() => onPageChange(currentPage + 1)}
                 disabled={currentPage >= totalPages - 1}
+                aria-label={t('common.pagination.next')}
               >
                 <ChevronRight className="h-4 w-4" />
               </button>
               <button
+                type="button"
                 className={clsx('btn btn-ghost btn-sm btn-square', currentPage >= totalPages - 1 && 'btn-disabled opacity-40')}
                 onClick={() => onPageChange(totalPages - 1)}
                 disabled={currentPage >= totalPages - 1}
+                aria-label={t('common.pagination.last')}
               >
                 <ChevronsRight className="h-4 w-4" />
               </button>
-            </div>
+            </nav>
           )}
         </div>
       )}

@@ -45,10 +45,15 @@
       "first": "Birinchi sahifa",
       "prev": "Oldingi sahifa",
       "next": "Keyingi sahifa",
-      "last": "Oxirgi sahifa"
+      "last": "Oxirgi sahifa",
+      "items": "ta",
+      "show": "Ko'rsatish:",
+      "perPage": "{{size}} ta",
+      "page": "{{page}}-sahifa"
     },
     "sessionExpired": "Sessiyangiz tugadi. Qayta kiring.",
-    "noPermission": "Sizda bu amalni bajarish uchun ruxsat yo'q"
+    "noPermission": "Sizda bu amalni bajarish uchun ruxsat yo'q",
+    "tryChangingFilters": "Filtrlarni o'zgartirib ko'ring"
   },
   "auth": {
     "login": "Kirish",
@@ -68,7 +73,9 @@
     "purchases": "Xaridlar",
     "debts": "Qarzlar",
     "notifications": "Bildirishnomalar",
-    "profile": "Profil"
+    "profile": "Profil",
+    "purchaseDetail": "Xarid tafsilotlari",
+    "shopOrders": "Do'kon buyurtmalari"
   },
   "dashboard": {
     "title": "Bosh sahifa",
@@ -2150,6 +2157,18 @@
       "adminWarning": "Administrator roli tizimga TO‘LIQ kirish beradi — barcha modullar, sozlamalar va moliyaviy ma’lumotlar. Ishonchingiz komil bo‘lsagina tanlang.",
       "positionLabel": "Lavozim (ixtiyoriy)",
       "positionPlaceholder": "Bo‘sh qoldirilsa rol nomidan olinadi"
+    },
+    "titles": {
+      "login": "Kirish",
+      "register": "Ro'yxatdan o'tish",
+      "changePassword": "Parolni o'zgartirish",
+      "productDetail": "Mahsulot tafsiloti",
+      "saleDetail": "Sotuv tafsiloti",
+      "customerDetail": "Mijoz tafsiloti",
+      "supplierDetail": "Ta'minotchi tafsiloti",
+      "purchaseDetail": "Xarid tafsiloti",
+      "employeeDetail": "Xodim tafsiloti",
+      "profile": "Profil"
     }
   },
   "shop": {

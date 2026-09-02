@@ -1,7 +1,71 @@
-import { ReactNode, useEffect, useRef } from 'react';
+import { ReactNode, RefObject, useEffect, useId, useRef } from 'react';
 import { createPortal } from 'react-dom';
 import { X } from 'lucide-react';
 import clsx from 'clsx';
+import { useTranslation } from 'react-i18next';
+
+/**
+ * Eski (legacy) modal — 20 ga yaqin ERP sahifasi shundan foydalanadi.
+ * Yangi kod uchun `@/ui` dagi Modal (headlessui Dialog) afzal; bu fayl esa
+ * o'sha sahifalarni ko'chirmasdan turib ham accessible bo'lsin deb tuzatildi:
+ * role=dialog + aria-modal + aria-labelledby, HAQIQIY focus-trap (Tab aylanishi),
+ * yopilganda fokusni ochgan elementga qaytarish.
+ */
+
+const FOCUSABLE_SELECTOR =
+  'a[href], button:not([disabled]), input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])';
+
+/**
+ * Dialog fokus boshqaruvi: ochilganda birinchi fokuslanadigan elementga o'tadi,
+ * Tab/Shift+Tab dialog ichida aylanadi, yopilganda fokus avvalgi joyiga qaytadi.
+ * Ilgari "focus trap" deb faqat konteynerga .focus() chaqirilardi — Tab bosilganda
+ * fokus orqadagi sahifaga chiqib ketardi.
+ */
+function useDialogFocus(ref: RefObject<HTMLDivElement | null>, isOpen: boolean) {
+  useEffect(() => {
+    if (!isOpen) return;
+    const node = ref.current;
+    if (!node) return;
+    const previouslyFocused = document.activeElement as HTMLElement | null;
+
+    const focusables = () =>
+      Array.from(node.querySelectorAll<HTMLElement>(FOCUSABLE_SELECTOR)).filter(
+        (el) => el.getAttribute('aria-hidden') !== 'true'
+      );
+
+    // Birinchi element (odatda yopish tugmasi yoki birinchi input); bo'lmasa konteyner
+    const first = focusables()[0];
+    (first ?? node).focus();
+
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (event.key !== 'Tab') return;
+      const items = focusables();
+      if (items.length === 0) {
+        event.preventDefault();
+        node.focus();
+        return;
+      }
+      const firstEl = items[0];
+      const lastEl = items[items.length - 1];
+      const active = document.activeElement;
+      if (event.shiftKey && (active === firstEl || active === node)) {
+        event.preventDefault();
+        lastEl.focus();
+      } else if (!event.shiftKey && active === lastEl) {
+        event.preventDefault();
+        firstEl.focus();
+      }
+    };
+
+    node.addEventListener('keydown', onKeyDown);
+    return () => {
+      node.removeEventListener('keydown', onKeyDown);
+      if (previouslyFocused && typeof previouslyFocused.focus === 'function' && document.contains(previouslyFocused)) {
+        previouslyFocused.focus();
+      }
+    };
+  }, [ref, isOpen]);
+}
 
 // =============================================================================
 // ModalPortal - Simple portal wrapper for existing modal content
@@ -13,6 +77,8 @@ interface ModalPortalProps {
 }
 
 export function ModalPortal({ isOpen, onClose, children }: ModalPortalProps) {
+  const panelRef = useRef<HTMLDivElement>(null);
+
   // Handle escape key and body overflow
   useEffect(() => {
     const handleEscape = (e: KeyboardEvent) => {
@@ -31,6 +97,8 @@ export function ModalPortal({ isOpen, onClose, children }: ModalPortalProps) {
       document.body.style.overflow = '';
     };
   }, [isOpen, onClose]);
+
+  useDialogFocus(panelRef, isOpen);
 
   if (!isOpen) return null;
 
@@ -61,7 +129,14 @@ export function ModalPortal({ isOpen, onClose, children }: ModalPortalProps) {
         }}
       />
       {/* Modal content wrapper */}
-      <div className="relative z-10" onClick={(e) => e.stopPropagation()}>
+      <div
+        ref={panelRef}
+        role="dialog"
+        aria-modal="true"
+        tabIndex={-1}
+        className="relative z-10 outline-none"
+        onClick={(e) => e.stopPropagation()}
+      >
         {children}
       </div>
     </div>
@@ -105,7 +180,10 @@ export function Modal({
   showCloseButton = true,
   closeOnBackdrop = true,
 }: ModalProps) {
+  const { t } = useTranslation();
   const modalRef = useRef<HTMLDivElement>(null);
+  const titleId = useId();
+  const subtitleId = useId();
 
   // Handle escape key
   useEffect(() => {
@@ -126,12 +204,7 @@ export function Modal({
     };
   }, [isOpen, onClose]);
 
-  // Focus trap - focus modal when opened
-  useEffect(() => {
-    if (isOpen && modalRef.current) {
-      modalRef.current.focus();
-    }
-  }, [isOpen]);
+  useDialogFocus(modalRef, isOpen);
 
   if (!isOpen) return null;
 
@@ -159,9 +232,13 @@ export function Modal({
       {/* Modal content */}
       <div
         ref={modalRef}
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby={title ? titleId : undefined}
+        aria-describedby={subtitle ? subtitleId : undefined}
         tabIndex={-1}
         className={clsx(
-          'relative w-full bg-base-100 rounded-2xl shadow-2xl animate-fade-up',
+          'relative w-full bg-base-100 rounded-2xl shadow-2xl animate-fade-up outline-none',
           'max-h-[90vh] overflow-y-auto',
           maxWidthClasses[maxWidth]
         )}
@@ -172,15 +249,16 @@ export function Modal({
           <div className="sticky top-0 z-10 flex items-start justify-between gap-4 border-b border-base-200 bg-base-100 p-4 sm:p-6">
             {title && (
               <div>
-                <h3 className="text-xl font-semibold">{title}</h3>
-                {subtitle && <p className="mt-1 text-sm text-base-content/60">{subtitle}</p>}
+                <h3 id={titleId} className="text-xl font-semibold">{title}</h3>
+                {subtitle && <p id={subtitleId} className="mt-1 text-sm text-base-content/60">{subtitle}</p>}
               </div>
             )}
             {showCloseButton && (
               <button
+                type="button"
                 className="btn btn-ghost btn-sm btn-square shrink-0"
                 onClick={onClose}
-                aria-label="Yopish"
+                aria-label={t('common.close')}
               >
                 <X className="h-4 w-4" />
               </button>

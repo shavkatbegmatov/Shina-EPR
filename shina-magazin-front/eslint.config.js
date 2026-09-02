@@ -2,7 +2,22 @@ import js from '@eslint/js';
 import globals from 'globals';
 import reactHooks from 'eslint-plugin-react-hooks';
 import reactRefresh from 'eslint-plugin-react-refresh';
+import jsxA11y from 'eslint-plugin-jsx-a11y';
 import tseslint from 'typescript-eslint';
+
+/**
+ * jsx-a11y "recommended" qoidalari — hozircha WARN darajasida.
+ *
+ * Mavjud kod bazasida (DataTable klaviaturasiz, ikonka tugmalar aria-label'siz)
+ * ko'p topilma bor; ularni bir zumda error qilish CI'ni (va u bilan deploy'ni)
+ * to'xtatib qo'yardi. Warn ko'rinadi, PR'da tuzatiladi, keyin error'ga o'tkaziladi.
+ */
+const a11yAsWarnings = Object.fromEntries(
+  Object.entries(jsxA11y.flatConfigs.recommended.rules).map(([rule, level]) => [
+    rule,
+    Array.isArray(level) ? ['warn', ...level.slice(1)] : 'warn',
+  ])
+);
 
 export default tseslint.config(
   {
@@ -19,9 +34,11 @@ export default tseslint.config(
     plugins: {
       'react-hooks': reactHooks,
       'react-refresh': reactRefresh,
+      'jsx-a11y': jsxA11y,
     },
     rules: {
       ...reactHooks.configs.recommended.rules,
+      ...a11yAsWarnings,
       'react-refresh/only-export-components': [
         'warn',
         { allowConstantExport: true },
