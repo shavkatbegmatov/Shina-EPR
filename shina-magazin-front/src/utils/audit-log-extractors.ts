@@ -1,6 +1,7 @@
 import type { AuditLogGroup, AuditOperationType, AuditLogGroupDetail, GroupDetailItem } from '../types';
 import { format } from 'date-fns';
 import { uz } from 'date-fns/locale';
+import { formatCurrency as formatMoney } from '../config/constants';
 
 /**
  * Format currency value in Uzbek som
@@ -9,7 +10,7 @@ function formatCurrency(value: unknown): string {
   if (value === null || value === undefined) return '-';
   const num = typeof value === 'number' ? value : parseFloat(String(value));
   if (isNaN(num)) return String(value);
-  return new Intl.NumberFormat('uz-UZ').format(num) + " so'm";
+  return formatMoney(num); // yagona format — config/constants
 }
 
 /**

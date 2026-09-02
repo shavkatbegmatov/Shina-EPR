@@ -103,20 +103,6 @@ export interface PortalNotification {
   metadata?: string;
 }
 
-// API Response Types
-export interface ApiResponse<T> {
-  success: boolean;
-  message?: string;
-  data: T;
-  timestamp: string;
-}
-
-export interface PagedResponse<T> {
-  content: T[];
-  page: number;
-  size: number;
-  totalElements: number;
-  totalPages: number;
-  last: boolean;
-  first: boolean;
-}
+// API Response Types — backend konvertining YAGONA ta'rifi src/types da;
+// ilgari bu yerda nusxasi turardi va ikkalasi jimgina ajralib ketishi mumkin edi.
+export type { ApiResponse, PagedResponse } from '../../types';

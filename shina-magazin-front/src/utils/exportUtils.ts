@@ -3,9 +3,9 @@ import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
 import type { SalesReport, WarehouseReport, DebtsReport } from '../types';
 
-const formatCurrency = (amount: number): string => {
-  return new Intl.NumberFormat('uz-UZ').format(amount) + " so'm";
-};
+// Yagona formatlash — config/constants (ilgari uchta nusxa bor edi va format
+// o'zgarsa bir-biridan ajralib ketardi)
+import { formatCurrency } from '../config/constants';
 
 const formatDate = (dateStr: string): string => {
   if (!dateStr) return '—';
