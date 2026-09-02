@@ -4,20 +4,38 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
+import org.springframework.transaction.support.TransactionTemplate;
 import uz.shinamagazin.api.entity.Debt;
+import uz.shinamagazin.api.enums.StaffNotificationType;
 import uz.shinamagazin.api.repository.DebtRepository;
+import uz.shinamagazin.api.repository.StaffNotificationRepository;
+import uz.shinamagazin.api.service.SchedulerLockService;
 import uz.shinamagazin.api.service.StaffNotificationService;
 import uz.shinamagazin.api.service.TelegramNotifier;
 
 import java.math.BigDecimal;
+import java.time.Duration;
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.time.temporal.ChronoUnit;
 import java.util.Comparator;
 import java.util.List;
 import java.util.function.Function;
 
 /**
- * Qarz muddati yaqinlashganda avtomatik eslatma yuboradi
+ * Qarz muddati yaqinlashganda avtomatik eslatma yuboradi.
+ *
+ * <p>Uch narsa ataylab shunday qilingan:
+ * <ul>
+ *   <li><b>Tranzaksiya.</b> Scheduler ipida open-in-view yo'q: {@code debt.getCustomer()}
+ *       tranzaksiyadan tashqarida LazyInitializationException berardi va butun job
+ *       yiqilardi. DB ishi {@link TransactionTemplate} ichida, Telegram HTTP chaqiruvi
+ *       esa undan TASHQARIDA (ulanishni HTTP kutishi bilan band qilmaslik uchun).</li>
+ *   <li><b>Idempotentlik.</b> Bir qarz uchun kuniga bittadan ortiq bildirishnoma yozilmaydi —
+ *       qayta ishga tushirish yoki ikkinchi nusxa eslatmalarni ikkilantirmaydi.</li>
+ *   <li><b>Qulf.</b> {@link SchedulerLockService}: ikki instansiya bir vaqtda ishga tushsa,
+ *       faqat bittasi bajaradi.</li>
+ * </ul>
  */
 @Component
 @RequiredArgsConstructor
@@ -26,10 +44,15 @@ public class DebtReminderScheduler {
 
     /** Telegram xulosasida ko'rsatiladigan mijozlar soni. */
     private static final int DIGEST_LIMIT = 10;
+    private static final Duration LOCK_TTL = Duration.ofMinutes(30);
+    private static final String REF_TYPE = "DEBT";
 
     private final DebtRepository debtRepository;
     private final StaffNotificationService notificationService;
+    private final StaffNotificationRepository notificationRepository;
     private final TelegramNotifier telegramNotifier;
+    private final SchedulerLockService lockService;
+    private final TransactionTemplate transactionTemplate;
 
     /**
      * Har kuni ertalab soat 9:00 da ishga tushadi
@@ -37,37 +60,45 @@ public class DebtReminderScheduler {
      */
     @Scheduled(cron = "0 0 9 * * *")
     public void sendDebtReminders() {
-        log.info("Starting debt reminder check...");
+        lockService.runExclusively("debt-reminders", LOCK_TTL, this::runDebtReminders);
+    }
 
+    void runDebtReminders() {
+        log.info("Starting debt reminder check...");
         LocalDate today = LocalDate.now();
         LocalDate endDate = today.plusDays(3);
+        LocalDateTime since = today.atStartOfDay();
 
-        List<Debt> upcomingDebts = debtRepository.findDebtsWithUpcomingDueDate(today, endDate);
+        String digest = transactionTemplate.execute(status -> {
+            List<Debt> upcomingDebts = debtRepository.findDebtsWithUpcomingDueDate(today, endDate);
+            int sent = 0;
+            int skipped = 0;
 
-        log.info("Found {} debts with upcoming due dates", upcomingDebts.size());
-
-        for (Debt debt : upcomingDebts) {
-            try {
-                long daysLeft = ChronoUnit.DAYS.between(today, debt.getDueDate());
-                String formattedAmount = String.format("%,.0f", debt.getRemainingAmount());
-
-                notificationService.notifyDebtReminder(
-                        debt.getCustomer().getFullName(),
-                        formattedAmount,
-                        (int) daysLeft,
-                        debt.getId()
-                );
-
-                log.info("Sent reminder for debt ID: {}, customer: {}, days left: {}",
-                        debt.getId(), debt.getCustomer().getFullName(), daysLeft);
-            } catch (Exception e) {
-                log.error("Failed to send reminder for debt ID: {}", debt.getId(), e);
+            for (Debt debt : upcomingDebts) {
+                if (alreadyNotifiedToday(debt, since)) {
+                    skipped++;
+                    continue;
+                }
+                try {
+                    long daysLeft = ChronoUnit.DAYS.between(today, debt.getDueDate());
+                    notificationService.notifyDebtReminder(
+                            debt.getCustomer().getFullName(),
+                            formatAmount(debt.getRemainingAmount()),
+                            (int) daysLeft,
+                            debt.getId());
+                    sent++;
+                } catch (Exception e) {
+                    log.error("Failed to send reminder for debt ID: {}", debt.getId(), e);
+                }
             }
-        }
 
-        telegramNotifier.send(digest("🔔 <b>Qarz muddati yaqinlashdi</b>", upcomingDebts,
-                d -> "%d kun qoldi".formatted(ChronoUnit.DAYS.between(today, d.getDueDate()))));
+            log.info("Debt reminders: {} found, {} sent, {} already notified today",
+                    upcomingDebts.size(), sent, skipped);
+            return digest("🔔 <b>Qarz muddati yaqinlashdi</b>", upcomingDebts,
+                    d -> "%d kun qoldi".formatted(ChronoUnit.DAYS.between(today, d.getDueDate())));
+        });
 
+        telegramNotifier.send(digest);
         log.info("Debt reminder check completed");
     }
 
@@ -76,38 +107,56 @@ public class DebtReminderScheduler {
      */
     @Scheduled(cron = "0 30 9 * * *")
     public void sendOverdueDebtWarnings() {
+        lockService.runExclusively("overdue-debt-warnings", LOCK_TTL, this::runOverdueWarnings);
+    }
+
+    void runOverdueWarnings() {
         log.info("Starting overdue debt check...");
-
         LocalDate today = LocalDate.now();
-        List<Debt> overdueDebts = debtRepository.findOverdueDebts(today);
+        LocalDateTime since = today.atStartOfDay();
 
-        log.info("Found {} overdue debts", overdueDebts.size());
+        String digest = transactionTemplate.execute(status -> {
+            List<Debt> overdueDebts = debtRepository.findOverdueDebts(today);
+            int sent = 0;
+            int skipped = 0;
 
-        for (Debt debt : overdueDebts) {
-            try {
-                long daysOverdue = ChronoUnit.DAYS.between(debt.getDueDate(), today);
-                String formattedAmount = String.format("%,.0f", debt.getRemainingAmount());
-
-                notificationService.createGlobalNotification(
-                        "Muddati o'tgan qarz!",
-                        String.format("%s ning qarzi %s so'm. Muddati %d kun oldin o'tgan!",
-                                debt.getCustomer().getFullName(), formattedAmount, daysOverdue),
-                        uz.shinamagazin.api.enums.StaffNotificationType.WARNING,
-                        "DEBT",
-                        debt.getId()
-                );
-
-                log.info("Sent overdue warning for debt ID: {}, customer: {}, days overdue: {}",
-                        debt.getId(), debt.getCustomer().getFullName(), daysOverdue);
-            } catch (Exception e) {
-                log.error("Failed to send overdue warning for debt ID: {}", debt.getId(), e);
+            for (Debt debt : overdueDebts) {
+                if (alreadyNotifiedToday(debt, since)) {
+                    skipped++;
+                    continue;
+                }
+                try {
+                    long daysOverdue = ChronoUnit.DAYS.between(debt.getDueDate(), today);
+                    notificationService.createGlobalNotification(
+                            "Muddati o'tgan qarz!",
+                            String.format("%s ning qarzi %s so'm. Muddati %d kun oldin o'tgan!",
+                                    debt.getCustomer().getFullName(), formatAmount(debt.getRemainingAmount()), daysOverdue),
+                            StaffNotificationType.WARNING,
+                            REF_TYPE,
+                            debt.getId());
+                    sent++;
+                } catch (Exception e) {
+                    log.error("Failed to send overdue warning for debt ID: {}", debt.getId(), e);
+                }
             }
-        }
 
-        telegramNotifier.send(digest("⚠️ <b>Muddati o'tgan qarzlar</b>", overdueDebts,
-                d -> "%d kun".formatted(ChronoUnit.DAYS.between(d.getDueDate(), today))));
+            log.info("Overdue debts: {} found, {} sent, {} already notified today",
+                    overdueDebts.size(), sent, skipped);
+            return digest("⚠️ <b>Muddati o'tgan qarzlar</b>", overdueDebts,
+                    d -> "%d kun".formatted(ChronoUnit.DAYS.between(d.getDueDate(), today)));
+        });
 
+        telegramNotifier.send(digest);
         log.info("Overdue debt check completed");
+    }
+
+    private boolean alreadyNotifiedToday(Debt debt, LocalDateTime since) {
+        return notificationRepository.existsByReferenceTypeAndReferenceIdAndCreatedAtGreaterThanEqual(
+                REF_TYPE, debt.getId(), since);
+    }
+
+    private static String formatAmount(BigDecimal amount) {
+        return String.format("%,.0f", amount);
     }
 
     /**
@@ -151,7 +200,7 @@ public class DebtReminderScheduler {
 
     /**
      * Eski bildirishnomalarni tozalash (30 kundan eski)
-     * Har kuni tunda soat 2:00 da ishga tushadi
+     * Har kuni tunda soat 2:00 da ishga tushadi. Idempotent — qulf shart emas.
      */
     @Scheduled(cron = "0 0 2 * * *")
     public void cleanupOldNotifications() {

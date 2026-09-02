@@ -10,10 +10,18 @@ import org.springframework.stereotype.Repository;
 import uz.shinamagazin.api.entity.StaffNotification;
 import uz.shinamagazin.api.enums.StaffNotificationType;
 
+import java.time.LocalDateTime;
 import java.util.List;
 
 @Repository
 public interface StaffNotificationRepository extends JpaRepository<StaffNotification, Long> {
+
+    /**
+     * Shu obyekt (masalan DEBT/42) uchun ko'rsatilgan vaqtdan beri bildirishnoma
+     * yaratilganmi — kunlik eslatmalar idempotent bo'lishi uchun.
+     */
+    boolean existsByReferenceTypeAndReferenceIdAndCreatedAtGreaterThanEqual(
+            String referenceType, Long referenceId, LocalDateTime since);
 
     /**
      * Foydalanuvchi uchun bildirishnomalar (user_id = ? OR user_id IS NULL)

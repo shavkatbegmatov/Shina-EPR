@@ -53,6 +53,9 @@ public interface DebtRepository extends JpaRepository<Debt, Long> {
     /**
      * Muddati yaqinlashgan qarzlar (3 kun ichida)
      */
+    // Scheduler ipida open-in-view yo'q: customer shu yerda yuklanmasa, eslatma
+    // matnini yig'ishda LazyInitializationException bo'lardi (findOverdueDebts kabi).
+    @EntityGraph(attributePaths = "customer")
     @Query("SELECT d FROM Debt d WHERE d.status = 'ACTIVE' AND d.dueDate BETWEEN :today AND :endDate")
     List<Debt> findDebtsWithUpcomingDueDate(@Param("today") LocalDate today, @Param("endDate") LocalDate endDate);
 }
