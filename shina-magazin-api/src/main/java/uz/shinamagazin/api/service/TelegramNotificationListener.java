@@ -1,5 +1,6 @@
 package uz.shinamagazin.api.service;
 
+import uz.shinamagazin.api.util.TelegramText;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.scheduling.annotation.Async;
@@ -68,7 +69,6 @@ public class TelegramNotificationListener {
 
     /** HTML parse_mode ishlatilgani uchun mijoz nomi kabi matnlar qochiriladi. */
     static String escape(String text) {
-        if (text == null) return "";
-        return text.replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;");
+        return TelegramText.escapeHtml(text);
     }
 }

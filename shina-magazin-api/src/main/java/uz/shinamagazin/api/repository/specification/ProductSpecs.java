@@ -1,4 +1,4 @@
-package uz.shinamagazin.api.repository.spec;
+package uz.shinamagazin.api.repository.specification;
 
 import jakarta.persistence.criteria.Join;
 import jakarta.persistence.criteria.JoinType;

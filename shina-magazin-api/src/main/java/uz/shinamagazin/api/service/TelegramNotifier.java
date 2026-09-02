@@ -1,5 +1,6 @@
 package uz.shinamagazin.api.service;
 
+import uz.shinamagazin.api.util.TelegramText;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.MediaType;
@@ -31,9 +32,6 @@ import java.util.Map;
 @Service
 @Slf4j
 public class TelegramNotifier {
-
-    /** Telegram xabar chegarasi 4096 belgi. */
-    private static final int MAX_MESSAGE_LENGTH = 4000;
 
     private final String botToken;
     private final String apiBase;
@@ -140,17 +138,10 @@ public class TelegramNotifier {
                 .contentType(MediaType.APPLICATION_JSON)
                 .body(Map.of(
                         "chat_id", chatId,
-                        "text", truncate(text),
+                        "text", TelegramText.truncate(text),
                         "parse_mode", "HTML",
                         "disable_web_page_preview", true))
                 .retrieve()
                 .toBodilessEntity();
-    }
-
-    /** Chegaradan uzun xabarni Telegram butunlay rad etadi — kesib yuboramiz. */
-    private static String truncate(String text) {
-        return text.length() <= MAX_MESSAGE_LENGTH
-                ? text
-                : text.substring(0, MAX_MESSAGE_LENGTH) + "…";
     }
 }

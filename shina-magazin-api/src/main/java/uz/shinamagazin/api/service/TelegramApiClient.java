@@ -1,5 +1,6 @@
 package uz.shinamagazin.api.service;
 
+import uz.shinamagazin.api.util.TelegramText;
 import com.fasterxml.jackson.databind.JsonNode;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.MediaType;
@@ -29,9 +30,6 @@ import java.util.Map;
 @Component
 @Slf4j
 public class TelegramApiClient {
-
-    /** Telegram xabar chegarasi 4096 belgi. */
-    private static final int MAX_MESSAGE_LENGTH = 4000;
 
     private final TelegramProperties props;
 
@@ -82,7 +80,7 @@ public class TelegramApiClient {
 
         Map<String, Object> body = new HashMap<>();
         body.put("chat_id", chatId);
-        body.put("text", truncate(text));
+        body.put("text", TelegramText.truncate(text));
         body.put("parse_mode", "HTML");
         body.put("disable_web_page_preview", true);
         if (replyMarkup != null) {
@@ -230,11 +228,5 @@ public class TelegramApiClient {
             return message;
         }
         return message.replace(token, "***");
-    }
-
-    private static String truncate(String text) {
-        return text.length() <= MAX_MESSAGE_LENGTH
-                ? text
-                : text.substring(0, MAX_MESSAGE_LENGTH) + "…";
     }
 }

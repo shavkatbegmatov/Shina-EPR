@@ -12,6 +12,7 @@ import uz.shinamagazin.api.repository.StaffNotificationRepository;
 import uz.shinamagazin.api.service.SchedulerLockService;
 import uz.shinamagazin.api.service.StaffNotificationService;
 import uz.shinamagazin.api.service.TelegramNotifier;
+import uz.shinamagazin.api.util.TelegramText;
 
 import java.math.BigDecimal;
 import java.time.Duration;
@@ -195,7 +196,7 @@ public class DebtReminderScheduler {
     }
 
     private static String escape(String text) {
-        return text == null ? "" : text.replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;");
+        return TelegramText.escapeHtml(text);
     }
 
     /**

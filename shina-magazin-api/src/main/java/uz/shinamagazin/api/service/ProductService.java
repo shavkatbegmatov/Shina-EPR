@@ -28,7 +28,7 @@ import uz.shinamagazin.api.repository.CategoryRepository;
 import uz.shinamagazin.api.repository.ProductAttributeValueRepository;
 import uz.shinamagazin.api.repository.ProductRepository;
 import uz.shinamagazin.api.repository.UserRepository;
-import uz.shinamagazin.api.repository.spec.ProductSpecs;
+import uz.shinamagazin.api.repository.specification.ProductSpecs;
 import uz.shinamagazin.api.security.CustomUserDetails;
 
 import java.util.ArrayList;

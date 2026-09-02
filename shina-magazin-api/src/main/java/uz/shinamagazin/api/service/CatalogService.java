@@ -16,7 +16,7 @@ import uz.shinamagazin.api.enums.Season;
 import uz.shinamagazin.api.exception.ResourceNotFoundException;
 import uz.shinamagazin.api.repository.ProductAttributeValueRepository;
 import uz.shinamagazin.api.repository.ProductRepository;
-import uz.shinamagazin.api.repository.spec.ProductSpecs;
+import uz.shinamagazin.api.repository.specification.ProductSpecs;
 import uz.shinamagazin.api.util.TireSizeQuery;
 
 import java.math.BigDecimal;

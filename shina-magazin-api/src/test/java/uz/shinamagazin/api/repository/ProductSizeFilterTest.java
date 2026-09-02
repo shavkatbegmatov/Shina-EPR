@@ -9,7 +9,7 @@ import org.springframework.boot.test.autoconfigure.orm.jpa.DataJpaTest;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.jpa.domain.Specification;
 import uz.shinamagazin.api.entity.Product;
-import uz.shinamagazin.api.repository.spec.ProductSpecs;
+import uz.shinamagazin.api.repository.specification.ProductSpecs;
 import uz.shinamagazin.api.util.TireSizeQuery;
 
 import java.math.BigDecimal;
