@@ -1,6 +1,8 @@
 package uz.shinamagazin.api.repository;
 
+import jakarta.persistence.LockModeType;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Lock;
 import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
@@ -17,6 +19,18 @@ public interface SessionRepository extends JpaRepository<Session, Long> {
     Optional<Session> findByTokenHash(String tokenHash);
 
     Optional<Session> findByRefreshTokenHash(String refreshTokenHash);
+
+    /**
+     * Refresh uchun sessiya qatorini QULFLAB o'qiydi ({@code SELECT ... FOR UPDATE}).
+     *
+     * <p>Bir xil tokenli ikki parallel refresh bir vaqtda o'qib, ikkalasi ham rotatsiya
+     * qilib ketmasin: ikkinchisi qulf bo'shaguncha kutadi, hash allaqachon almashgani
+     * uchun qatorni topmaydi va reuse-detection yo'liga tushadi. Chaqiruvchi tranzaksiya
+     * ichida bo'lishi shart (AuthService.refreshToken).
+     */
+    @Lock(LockModeType.PESSIMISTIC_WRITE)
+    @Query("SELECT s FROM Session s WHERE s.refreshTokenHash = :hash")
+    Optional<Session> findByRefreshTokenHashForUpdate(@Param("hash") String hash);
 
     /** Rotatsiyadan chiqqan eski refresh hash — qayta ishlatishni aniqlash uchun. */
     Optional<Session> findByPreviousRefreshTokenHash(String previousRefreshTokenHash);

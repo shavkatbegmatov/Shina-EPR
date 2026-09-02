@@ -10,6 +10,7 @@ import org.springframework.security.authentication.UsernamePasswordAuthenticatio
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.server.ResponseStatusException;
 import uz.shinamagazin.api.dto.request.LoginRequest;
 import uz.shinamagazin.api.dto.response.JwtResponse;
@@ -142,6 +143,18 @@ public class AuthService {
         }
     }
 
+    /**
+     * BITTA tranzaksiya: sessiya qatori {@code FOR UPDATE} bilan o'qiladi va rotatsiya
+     * shu qulf ostida yoziladi. Ilgari o'qish va yozish ikki alohida tranzaksiya edi —
+     * bir xil refresh token bilan kelgan ikki parallel so'rov ikkalasi ham tirik sessiyani
+     * ko'rib, ikkalasi ham rotatsiya qilib ketardi; o'g'irlangan tokenni aniqlash
+     * ({@code revokeIfRefreshTokenReused}) hech qachon ishlamasdi.
+     *
+     * <p>{@code noRollbackFor}: rad etish istisnolari (401) tranzaksiyani QAYTARMASLIGI
+     * kerak — reuse-detection va mutlaq muddat tugashi sessiyani yopib qo'yadi, bu yozuv
+     * istisno bilan birga saqlanib qolishi shart.
+     */
+    @Transactional(noRollbackFor = {ResponseStatusException.class, AccountDisabledException.class})
     public JwtResponse refreshToken(String refreshToken, String ipAddress, String userAgent) {
         if (!tokenProvider.validateToken(refreshToken)) {
             throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Refresh token yaroqsiz");

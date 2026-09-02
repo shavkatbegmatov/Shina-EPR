@@ -138,10 +138,10 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
                     return;
                 }
 
-                // Update last activity for staff sessions
+                // Update last activity for staff sessions (5 daqiqada bir DB'ga yoziladi)
                 if (!isCustomerToken) {
                     try {
-                        sessionService.updateLastActivity(jwt);
+                        sessionService.touchActivity(jwt);
                     } catch (Exception e) {
                         log.warn("Failed to update session activity", e);
                     }

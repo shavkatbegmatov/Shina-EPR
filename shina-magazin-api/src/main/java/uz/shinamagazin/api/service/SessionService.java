@@ -2,10 +2,12 @@ package uz.shinamagazin.api.service;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Lazy;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.transaction.support.TransactionTemplate;
 import uz.shinamagazin.api.dto.websocket.SessionUpdateMessage;
 import uz.shinamagazin.api.entity.Session;
 import uz.shinamagazin.api.entity.User;
@@ -19,6 +21,7 @@ import java.security.NoSuchAlgorithmException;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
+import java.util.concurrent.ConcurrentHashMap;
 
 @Service
 @Slf4j
@@ -31,6 +34,20 @@ public class SessionService {
     /** Sessiya oilasining umri — tozalash aynan shu bo'yicha ketadi. */
     @org.springframework.beans.factory.annotation.Value("${jwt.refresh-expiration}")
     private long refreshExpiration;
+
+    /** lastActivityAt DB'ga qancha tez-tez yoziladi (qarang {@link #touchActivity}). */
+    private static final long ACTIVITY_TOUCH_INTERVAL_MS = 5 * 60_000;
+    private static final int ACTIVITY_CACHE_MAX_KEYS = 50_000;
+    /** tokenHash -> oxirgi DB yozuvi (epoch ms). Faqat shu instansiya uchun. */
+    private final ConcurrentHashMap<String, Long> lastActivityTouch = new ConcurrentHashMap<>();
+
+    /**
+     * {@link #touchActivity} uchun: keshni tekshirgandan KEYINGINA tranzaksiya ochish
+     * (aks holda har so'rov uchun bekorga connection olinardi). Ixtiyoriy — testlarda
+     * servis qo'lda yaratilganda null bo'ladi.
+     */
+    @Autowired(required = false)
+    private TransactionTemplate transactionTemplate;
 
     // Constructor with @Lazy to break circular dependency
     public SessionService(
@@ -168,11 +185,15 @@ public class SessionService {
     }
 
     /**
-     * Refresh token bo'yicha TIRIK sessiyani topadi.
+     * Refresh token bo'yicha TIRIK sessiyani topadi — qatorni qulflab.
+     *
+     * <p>readOnly EMAS: {@code FOR UPDATE} qulfi rotatsiya yozilguncha ushlab turiladi
+     * (chaqiruvchi tranzaksiyasiga qo'shiladi), shunda parallel refresh poygasi
+     * reuse-detection'ni chetlab o'ta olmaydi.
      */
-    @Transactional(readOnly = true)
+    @Transactional
     public Optional<Session> findActiveSessionByRefreshToken(String refreshToken) {
-        return sessionRepository.findByRefreshTokenHash(hashToken(refreshToken))
+        return sessionRepository.findByRefreshTokenHashForUpdate(hashToken(refreshToken))
                 .filter(Session::getIsActive);
     }
 
@@ -229,12 +250,32 @@ public class SessionService {
     }
 
     /**
-     * Update last activity time for session
+     * Sessiya faolligini belgilaydi — lekin har so'rovda emas.
+     *
+     * <p>Ilgari HAR autentifikatsiyalangan so'rov sessions jadvaliga UPDATE yozardi
+     * (o'qish + tekshiruv + yozuv — uch DB muloqoti). Issiq jadvalda bu qator qulflari
+     * va WAL yuki. "Oxirgi faollik" ko'rsatkichi uchun 5 daqiqalik aniqlik yetarli:
+     * shu oraliqda takroriy chaqiruvlar DB'ga bormaydi.
      */
-    @Transactional
-    public void updateLastActivity(String token) {
+    public void touchActivity(String token) {
         String tokenHash = hashToken(token);
-        sessionRepository.updateLastActivity(tokenHash, LocalDateTime.now());
+        long now = System.currentTimeMillis();
+        Long previous = lastActivityTouch.get(tokenHash);
+        if (previous != null && now - previous < ACTIVITY_TOUCH_INTERVAL_MS) {
+            return;
+        }
+        if (lastActivityTouch.size() >= ACTIVITY_CACHE_MAX_KEYS) {
+            lastActivityTouch.clear(); // eng yomon holatda bitta ortiqcha UPDATE
+        }
+        lastActivityTouch.put(tokenHash, now);
+
+        LocalDateTime timestamp = LocalDateTime.now();
+        if (transactionTemplate != null) {
+            transactionTemplate.executeWithoutResult(
+                    status -> sessionRepository.updateLastActivity(tokenHash, timestamp));
+        } else {
+            sessionRepository.updateLastActivity(tokenHash, timestamp);
+        }
     }
 
     /**
