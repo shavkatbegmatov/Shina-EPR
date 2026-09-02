@@ -54,9 +54,7 @@ public class ShopOrderService {
     private final CustomerRepository customerRepository;
     private final StaffNotificationService staffNotificationService;
     private final OrderNotificationService orderNotificationService;
-
-    private static final BigDecimal DELIVERY_FEE = new BigDecimal("30000");
-    private static final BigDecimal FREE_DELIVERY_THRESHOLD = new BigDecimal("1000000");
+    private final SettingsService settingsService;
 
     @Transactional
     public ShopOrderResponse createOrder(CreateShopOrderRequest req, Long customerId) {
@@ -271,9 +269,16 @@ public class ShopOrderService {
         return stale.size();
     }
 
+    /**
+     * Yetkazib berish narxi Sozlamalardan (ilgari kodda qattiq yozilgan edi — o'zgartirish
+     * uchun deploy kerak bo'lardi). Olib ketish bepul; chegaradan oshgan savat ham bepul.
+     */
     private BigDecimal calcDeliveryFee(ShopDeliveryMethod method, BigDecimal subtotal) {
         if (method == ShopDeliveryMethod.PICKUP) return BigDecimal.ZERO;
-        return subtotal.compareTo(FREE_DELIVERY_THRESHOLD) >= 0 ? BigDecimal.ZERO : DELIVERY_FEE;
+        BigDecimal threshold = BigDecimal.valueOf(settingsService.getFreeDeliveryThreshold());
+        return subtotal.compareTo(threshold) >= 0
+                ? BigDecimal.ZERO
+                : BigDecimal.valueOf(settingsService.getDeliveryFee());
     }
 
     private static final SecureRandom RANDOM = new SecureRandom();

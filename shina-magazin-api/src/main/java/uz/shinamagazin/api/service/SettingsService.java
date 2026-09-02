@@ -49,6 +49,14 @@ public class SettingsService {
     public static final String TELEGRAM_REGISTRATION_ENABLED_KEY = "TELEGRAM_REGISTRATION_ENABLED";
     public static final String TELEGRAM_BOT_USERNAME_KEY = "TELEGRAM_BOT_USERNAME";
 
+    // Vitrina yetkazib berish narxi. Ilgari ShopOrderService'da qattiq yozilgan edi
+    // (30 000 / 1 000 000) — o'zgartirish uchun deploy kerak bo'lardi, holbuki
+    // app_settings jadvali va bu servis aynan shunday sozlamalar uchun bor.
+    public static final String SHOP_DELIVERY_FEE_KEY = "SHOP_DELIVERY_FEE";
+    public static final long DEFAULT_SHOP_DELIVERY_FEE = 30_000L;
+    public static final String SHOP_FREE_DELIVERY_THRESHOLD_KEY = "SHOP_FREE_DELIVERY_THRESHOLD";
+    public static final long DEFAULT_SHOP_FREE_DELIVERY_THRESHOLD = 1_000_000L;
+
     private final AppSettingRepository appSettingRepository;
 
     /**
@@ -77,7 +85,33 @@ public class SettingsService {
                 .telegramConfigured(telegramBotToken != null && !telegramBotToken.isBlank())
                 .telegramRegistrationEnabled(isTelegramRegistrationEnabled())
                 .telegramBotUsername(getTelegramBotUsername())
+                .deliveryFee(getDeliveryFee())
+                .freeDeliveryThreshold(getFreeDeliveryThreshold())
                 .build();
+    }
+
+    /** Vitrina yetkazib berish narxi (so'm). */
+    public long getDeliveryFee() {
+        return getLong(SHOP_DELIVERY_FEE_KEY, DEFAULT_SHOP_DELIVERY_FEE);
+    }
+
+    /** Shu summadan boshlab yetkazib berish bepul (so'm). */
+    public long getFreeDeliveryThreshold() {
+        return getLong(SHOP_FREE_DELIVERY_THRESHOLD_KEY, DEFAULT_SHOP_FREE_DELIVERY_THRESHOLD);
+    }
+
+    private long getLong(String key, long defaultValue) {
+        return appSettingRepository.findBySettingKey(key)
+                .map(AppSetting::getSettingValue)
+                .map(value -> {
+                    try {
+                        long parsed = Long.parseLong(value.trim());
+                        return parsed >= 0 ? parsed : defaultValue;
+                    } catch (NumberFormatException e) {
+                        return defaultValue;
+                    }
+                })
+                .orElse(defaultValue);
     }
 
     /**
@@ -95,6 +129,8 @@ public class SettingsService {
                 // ko'rsatishning ma'nosi yo'q, u faqat 404'ga olib borardi.
                 .telegramRegistrationEnabled(isTelegramRegistrationEnabled() && !botUsername.isBlank())
                 .telegramBotUsername(botUsername)
+                .deliveryFee(getDeliveryFee())
+                .freeDeliveryThreshold(getFreeDeliveryThreshold())
                 .build();
     }
 
@@ -157,6 +193,16 @@ public class SettingsService {
             saveText(TELEGRAM_BOT_USERNAME_KEY,
                     normalizeBotUsername(request.getTelegramBotUsername()),
                     "Bot username (@ belgisisiz) — t.me havolasi uchun");
+        }
+
+        // Vitrina yetkazib berish — null bo'lsa tegilmaydi
+        if (request.getDeliveryFee() != null) {
+            saveText(SHOP_DELIVERY_FEE_KEY, String.valueOf(request.getDeliveryFee()),
+                    "Vitrina yetkazib berish narxi (so'm)");
+        }
+        if (request.getFreeDeliveryThreshold() != null) {
+            saveText(SHOP_FREE_DELIVERY_THRESHOLD_KEY, String.valueOf(request.getFreeDeliveryThreshold()),
+                    "Shu summadan boshlab yetkazib berish bepul (so'm)");
         }
 
         return getSettings();

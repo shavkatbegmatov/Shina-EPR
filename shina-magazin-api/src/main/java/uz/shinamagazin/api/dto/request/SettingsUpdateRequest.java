@@ -62,4 +62,14 @@ public class SettingsUpdateRequest {
     @Pattern(regexp = "^$|^@?[A-Za-z0-9_]{4,32}$|^(https?://)?t\\.me/@?[A-Za-z0-9_]{4,32}$",
             message = "Bot username formati: shina_bot yoki @shina_bot")
     private String telegramBotUsername;
+
+    // ─── Vitrina yetkazib berish (so'm). null = tegilmaydi ───
+
+    @Min(value = 0, message = "Yetkazib berish narxi manfiy bo'lishi mumkin emas")
+    @Max(value = 100_000_000, message = "Yetkazib berish narxi juda katta")
+    private Long deliveryFee;
+
+    @Min(value = 0, message = "Bepul yetkazib berish chegarasi manfiy bo'lishi mumkin emas")
+    @Max(value = 10_000_000_000L, message = "Bepul yetkazib berish chegarasi juda katta")
+    private Long freeDeliveryThreshold;
 }

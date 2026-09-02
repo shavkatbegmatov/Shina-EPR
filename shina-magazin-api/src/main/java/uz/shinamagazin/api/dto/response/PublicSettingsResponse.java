@@ -23,4 +23,10 @@ public class PublicSettingsResponse {
 
     /** Bot username ({@code @} belgisisiz) — {@code t.me/<username>} havolasi uchun. */
     private String telegramBotUsername;
+
+    /** Yetkazib berish narxi (so'm) — checkout oldindan ko'rsatadi; yakuniy hisob serverda. */
+    private Long deliveryFee;
+
+    /** Shu summadan boshlab yetkazib berish bepul (so'm). */
+    private Long freeDeliveryThreshold;
 }

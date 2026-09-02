@@ -64,4 +64,12 @@ public class SettingsResponse {
     /** Bot username, {@code @} belgisisiz. Maxfiy emas — tokendan farqli. */
     @ExportColumn(header = "Telegram: bot username", order = 12)
     private String telegramBotUsername;
+
+    // ─── Vitrina yetkazib berish (so'm) ───
+
+    @ExportColumn(header = "Yetkazib berish narxi", order = 13, type = ColumnType.NUMBER)
+    private Long deliveryFee;
+
+    @ExportColumn(header = "Bepul yetkazib berish chegarasi", order = 14, type = ColumnType.NUMBER)
+    private Long freeDeliveryThreshold;
 }

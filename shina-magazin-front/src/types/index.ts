@@ -277,11 +277,17 @@ export interface AppSettings extends ReceiptSettings, TelegramSettings {
   imageFallback?: string; // 'SVG' | 'PHOTO' — storefront rasmsiz mahsulot ko'rinishi
   /** Serverda bot tokeni o'rnatilganmi (faqat o'qish uchun). */
   telegramConfigured?: boolean;
+  /** Vitrina yetkazib berish narxi (so'm). */
+  deliveryFee?: number;
+  /** Shu summadan boshlab yetkazib berish bepul (so'm). */
+  freeDeliveryThreshold?: number;
 }
 
 export interface SettingsUpdateRequest extends ReceiptSettings, TelegramSettings {
   debtDueDays: number;
   imageFallback?: string; // 'SVG' | 'PHOTO'
+  deliveryFee?: number;
+  freeDeliveryThreshold?: number;
 }
 
 /**
@@ -293,6 +299,10 @@ export interface PublicSettings {
   /** Sozlama yoqilgan VA bot username kiritilgan bo'lsagina true. */
   telegramRegistrationEnabled?: boolean;
   telegramBotUsername?: string;
+  /** Yetkazib berish narxi (so'm) — checkout oldindan ko'rsatadi; yakuniy hisob serverda. */
+  deliveryFee?: number;
+  /** Shu summadan boshlab yetkazib berish bepul (so'm). */
+  freeDeliveryThreshold?: number;
 }
 
 export interface DemoDataStatus {

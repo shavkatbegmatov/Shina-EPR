@@ -908,7 +908,13 @@
         "botUsername": "Bot username",
         "botUsernameHint": "@ belgisiz yozing (masalan protektor_bot). Do‘kon sahifasidagi «Telegram orqali ro‘yxatdan o‘tish» tugmasi shu nomdan havola yasaydi.",
         "modeHint": "Bot javob berishi uchun serverda TELEGRAM_MODE=polling (dev) yoki webhook (prod) bo‘lishi kerak."
-      }
+      },
+      "deliveryTitle": "Vitrina: yetkazib berish",
+      "deliverySubtitle": "Onlayn do'kon buyurtmalari uchun yetkazib berish narxi. Olib ketish doim bepul.",
+      "deliveryFeeLabel": "Yetkazib berish narxi (so'm)",
+      "deliveryFeeHint": "Savat summasi chegaradan kichik bo'lsa qo'shiladi. 0 — yetkazib berish bepul.",
+      "freeDeliveryThresholdLabel": "Bepul yetkazib berish chegarasi (so'm)",
+      "freeDeliveryThresholdHint": "Savat shu summadan boshlab bepul yetkaziladi."
     },
     "employees": {
       "title": "Xodimlar",

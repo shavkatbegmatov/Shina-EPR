@@ -908,7 +908,13 @@
         "botUsername": "Username бота",
         "botUsernameHint": "Укажите без символа @ (например protektor_bot). Кнопка «Регистрация через Telegram» на витрине формирует ссылку из этого имени.",
         "modeHint": "Чтобы бот отвечал, на сервере должно быть TELEGRAM_MODE=polling (dev) или webhook (prod)."
-      }
+      },
+      "deliveryTitle": "Витрина: доставка",
+      "deliverySubtitle": "Стоимость доставки для заказов интернет-магазина. Самовывоз всегда бесплатный.",
+      "deliveryFeeLabel": "Стоимость доставки (сум)",
+      "deliveryFeeHint": "Добавляется, если сумма корзины меньше порога. 0 — доставка бесплатная.",
+      "freeDeliveryThresholdLabel": "Порог бесплатной доставки (сум)",
+      "freeDeliveryThresholdHint": "Начиная с этой суммы корзина доставляется бесплатно."
     },
     "employees": {
       "title": "Сотрудники",

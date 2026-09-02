@@ -12,6 +12,7 @@ import { ProductImage } from '../components/ProductImage';
 import { catalogApi } from '../data/catalogApi';
 import { ordersApi } from '../data/ordersApi';
 import { usePortalAuthStore } from '../../portal/store/portalAuthStore';
+import { usePublicSettings } from '../data/usePublicSettings';
 import { PhoneInput } from '../../components/ui/PhoneInput';
 
 const STEPS = ['contact', 'delivery', 'payment', 'review'] as const;
@@ -53,7 +54,14 @@ export function CheckoutPage() {
 
   const set = (k: keyof CheckoutForm, v: string) => setForm((f) => ({ ...f, [k]: v }));
 
-  const deliveryFee = calcDeliveryFee(form.deliveryMethod, subtotal);
+  // Narx va bepul chegarasi Sozlamalardan; javob kelmasa store'dagi zaxira qiymatlar
+  const publicSettings = usePublicSettings();
+  const deliveryFee = calcDeliveryFee(
+    form.deliveryMethod,
+    subtotal,
+    publicSettings?.deliveryFee ?? undefined,
+    publicSettings?.freeDeliveryThreshold ?? undefined
+  );
   const total = subtotal + deliveryFee;
 
   // Savat localStorage'da muddatsiz yashaydi va narx nusxasini ham saqlaydi,

@@ -37,11 +37,20 @@ export const useOrderStore = create<OrderState>()(
   )
 );
 
-/** Yetkazib berish narxi: 1 000 000 so'mdan oshsa bepul, aks holda 30 000. Olib ketish — bepul. */
+/**
+ * Yetkazib berish narxi. Haqiqiy qiymatlar Sozlamalardan (`/v1/settings/public`) keladi;
+ * quyidagilar faqat backend javob bermaganda ishlatiladigan zaxira. Yakuniy summa
+ * baribir SERVERDA hisoblanadi — bu faqat checkout'dagi oldindan ko'rsatish.
+ */
 export const DELIVERY_FEE = 30000;
 export const FREE_DELIVERY_THRESHOLD = 1000000;
 
-export function calcDeliveryFee(method: DeliveryMethod, subtotal: number): number {
+export function calcDeliveryFee(
+  method: DeliveryMethod,
+  subtotal: number,
+  fee: number = DELIVERY_FEE,
+  freeThreshold: number = FREE_DELIVERY_THRESHOLD
+): number {
   if (method === 'pickup') return 0;
-  return subtotal >= FREE_DELIVERY_THRESHOLD ? 0 : DELIVERY_FEE;
+  return subtotal >= freeThreshold ? 0 : fee;
 }

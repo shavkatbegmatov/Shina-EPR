@@ -83,6 +83,9 @@ export function SettingsPage() {
   // Debt settings
   const [debtDueDays, setDebtDueDays] = useState(DEFAULT_DEBT_DUE_DAYS);
   const [imageFallback, setImageFallback] = useState<'SVG' | 'PHOTO'>('SVG');
+  // Vitrina yetkazib berish — ilgari backend kodida qattiq yozilgan edi
+  const [deliveryFee, setDeliveryFee] = useState(30000);
+  const [freeDeliveryThreshold, setFreeDeliveryThreshold] = useState(1000000);
   const [settingsSaving, setSettingsSaving] = useState(false);
 
   // Chek sarlavhasi — kassa qog'ozida chiqadigan do'kon ma'lumotlari
@@ -159,6 +162,8 @@ export function SettingsPage() {
 
     setDebtDueDays(data.debtDueDays);
     setImageFallback(data.imageFallback === 'PHOTO' ? 'PHOTO' : 'SVG');
+    setDeliveryFee(data.deliveryFee ?? 30000);
+    setFreeDeliveryThreshold(data.freeDeliveryThreshold ?? 1000000);
     setReceipt({
       receiptShopName: data.receiptShopName ?? '',
       receiptShopPhone: data.receiptShopPhone ?? '',
@@ -331,6 +336,8 @@ export function SettingsPage() {
       const data = await settingsApi.update({
         debtDueDays,
         imageFallback,
+        deliveryFee,
+        freeDeliveryThreshold,
         ...receipt,
         telegramEnabled,
         telegramChatId: telegramChatId.trim(),
@@ -340,6 +347,8 @@ export function SettingsPage() {
       });
       setDebtDueDays(data.debtDueDays);
       setImageFallback(data.imageFallback === 'PHOTO' ? 'PHOTO' : 'SVG');
+      setDeliveryFee(data.deliveryFee ?? deliveryFee);
+      setFreeDeliveryThreshold(data.freeDeliveryThreshold ?? freeDeliveryThreshold);
       // Server username'ni tozalaydi (@ va t.me/ olib tashlanadi) — maydonda
       // aynan SAQLANGAN qiymat ko'rinsin, aks holda foydalanuvchi yozgani
       // qolib, havola boshqacha yasalayotgandek tuyulardi.
@@ -375,6 +384,16 @@ export function SettingsPage() {
       setTelegramTesting(false);
     }
   };
+
+  /** So'mdagi sozlama: faqat manfiy bo'lmagan butun son qabul qilinadi. */
+  const handleMoneyChange =
+    (setter: (value: number) => void) =>
+    (value: number | string) => {
+      const parsed = typeof value === 'string' ? Number(value) : value;
+      if (Number.isFinite(parsed) && parsed >= 0) {
+        setter(Math.round(parsed));
+      }
+    };
 
   const handleDebtDueDaysChange = (value: number | string) => {
     if (typeof value === 'string') {
@@ -1280,6 +1299,33 @@ export function SettingsPage() {
                 <p className="mt-2 text-xs text-base-content/60">
                   {t('erp.settings.debtDueDaysHint')}
                 </p>
+
+                <h3 className="mt-8 text-base font-semibold">{t('erp.settings.deliveryTitle')}</h3>
+                <p className="mb-4 text-sm text-base-content/60">
+                  {t('erp.settings.deliverySubtitle')}
+                </p>
+                <NumberInput
+                  label={t('erp.settings.deliveryFeeLabel')}
+                  value={deliveryFee}
+                  onChange={handleMoneyChange(setDeliveryFee)}
+                  min={0}
+                  allowEmpty={false}
+                />
+                <p className="mt-2 text-xs text-base-content/60">
+                  {t('erp.settings.deliveryFeeHint')}
+                </p>
+                <div className="mt-4">
+                  <NumberInput
+                    label={t('erp.settings.freeDeliveryThresholdLabel')}
+                    value={freeDeliveryThreshold}
+                    onChange={handleMoneyChange(setFreeDeliveryThreshold)}
+                    min={0}
+                    allowEmpty={false}
+                  />
+                  <p className="mt-2 text-xs text-base-content/60">
+                    {t('erp.settings.freeDeliveryThresholdHint')}
+                  </p>
+                </div>
               </div>
             )}
           </div>

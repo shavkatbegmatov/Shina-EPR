@@ -35,6 +35,7 @@ class ShopOrderServiceTest {
     @Mock private CustomerRepository customerRepository;
     @Mock private StaffNotificationService staffNotificationService;
     @Mock private OrderNotificationService orderNotificationService;
+    @Mock private SettingsService settingsService;
 
     @InjectMocks private ShopOrderService service;
 
