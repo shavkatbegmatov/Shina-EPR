@@ -1,3 +1,4 @@
+import { switchLanguage } from '@/i18n';
 import { useState, useRef, useEffect } from 'react';
 import {
   Menu,
@@ -91,6 +92,9 @@ const formatTimeAgo = (dateString: string) => {
 };
 
 type RouteHandle = {
+  /** i18n kaliti (erp.nav.* / erp.titles.*) — sarlavha joriy tilda ko'rsatiladi */
+  titleKey?: string;
+  /** eski tayyor matn (faqat titleKey bo'lmasa) */
   title?: string;
 };
 
@@ -156,9 +160,14 @@ export function Header() {
 
   const activeMatch = [...matches]
     .reverse()
-    .find((match) => (match.handle as RouteHandle | undefined)?.title);
-  const title =
-    (activeMatch?.handle as RouteHandle | undefined)?.title || 'Dashboard';
+    .find((match) => {
+      const handle = match.handle as RouteHandle | undefined;
+      return handle?.titleKey || handle?.title;
+    });
+  const activeHandle = activeMatch?.handle as RouteHandle | undefined;
+  const title = activeHandle?.titleKey
+    ? t(activeHandle.titleKey)
+    : activeHandle?.title || t('erp.nav.dashboard');
 
   const userInitial =
     user?.fullName?.charAt(0)?.toUpperCase() ||
@@ -265,7 +274,7 @@ export function Header() {
             variant="ghost"
             size="sm"
             className="hidden gap-1 sm:flex"
-            onClick={() => i18n.changeLanguage(i18n.language === 'uz' ? 'ru' : 'uz')}
+            onClick={() => void switchLanguage(i18n.language === 'uz' ? 'ru' : 'uz')}
             title="Til / Язык"
           >
             <Languages className="h-4 w-4" />

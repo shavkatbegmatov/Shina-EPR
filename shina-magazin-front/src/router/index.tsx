@@ -81,19 +81,19 @@ export const router = createBrowserRouter([
     path: '/admin/login',
     element: <LoginPage />,
     errorElement: <RouteErrorElement />,
-    handle: { title: 'Kirish' },
+    handle: { titleKey: 'erp.titles.login' },
   },
   {
     path: '/admin/register',
     element: <RegisterPage />,
     errorElement: <RouteErrorElement />,
-    handle: { title: "Ro'yxatdan o'tish" },
+    handle: { titleKey: 'erp.titles.register' },
   },
   {
     path: '/admin/change-password',
     element: <ChangePasswordPage />,
     errorElement: <RouteErrorElement />,
-    handle: { title: "Parolni o'zgartirish" },
+    handle: { titleKey: 'erp.titles.changePassword' },
   },
   {
     path: '/admin',
@@ -109,7 +109,7 @@ export const router = createBrowserRouter([
             </LazyRoute>
           </ProtectedRoute>
         ),
-        handle: { title: 'Dashboard' },
+        handle: { titleKey: 'erp.nav.dashboard' },
       },
       {
         path: 'products',
@@ -120,7 +120,7 @@ export const router = createBrowserRouter([
             </LazyRoute>
           </ProtectedRoute>
         ),
-        handle: { title: 'Mahsulotlar' },
+        handle: { titleKey: 'erp.nav.products' },
       },
       {
         path: 'products/:id',
@@ -131,7 +131,7 @@ export const router = createBrowserRouter([
             </LazyRoute>
           </ProtectedRoute>
         ),
-        handle: { title: 'Mahsulot tafsiloti' },
+        handle: { titleKey: 'erp.titles.productDetail' },
       },
       {
         path: 'categories',
@@ -142,7 +142,7 @@ export const router = createBrowserRouter([
             </LazyRoute>
           </ProtectedRoute>
         ),
-        handle: { title: 'Kategoriyalar' },
+        handle: { titleKey: 'erp.nav.categories' },
       },
       {
         path: 'attributes',
@@ -153,7 +153,7 @@ export const router = createBrowserRouter([
             </LazyRoute>
           </ProtectedRoute>
         ),
-        handle: { title: 'Xususiyatlar' },
+        handle: { titleKey: 'erp.nav.attributes' },
       },
       {
         path: 'brands',
@@ -164,7 +164,7 @@ export const router = createBrowserRouter([
             </LazyRoute>
           </ProtectedRoute>
         ),
-        handle: { title: 'Brendlar' },
+        handle: { titleKey: 'erp.nav.brands' },
       },
       {
         path: 'pos',
@@ -175,7 +175,7 @@ export const router = createBrowserRouter([
             </LazyRoute>
           </ProtectedRoute>
         ),
-        handle: { title: 'Kassa (POS)' },
+        handle: { titleKey: 'erp.nav.pos' },
       },
       {
         path: 'shifts',
@@ -186,7 +186,7 @@ export const router = createBrowserRouter([
             </LazyRoute>
           </ProtectedRoute>
         ),
-        handle: { title: 'Smenalar' },
+        handle: { titleKey: 'erp.nav.shifts' },
       },
       {
         path: 'expenses',
@@ -197,7 +197,7 @@ export const router = createBrowserRouter([
             </LazyRoute>
           </ProtectedRoute>
         ),
-        handle: { title: 'Xarajatlar' },
+        handle: { titleKey: 'erp.nav.expenses' },
       },
       {
         path: 'sales',
@@ -208,7 +208,7 @@ export const router = createBrowserRouter([
             </LazyRoute>
           </ProtectedRoute>
         ),
-        handle: { title: 'Sotuvlar' },
+        handle: { titleKey: 'erp.nav.sales' },
       },
       {
         path: 'sales/:id',
@@ -219,7 +219,7 @@ export const router = createBrowserRouter([
             </LazyRoute>
           </ProtectedRoute>
         ),
-        handle: { title: 'Sotuv tafsiloti' },
+        handle: { titleKey: 'erp.titles.saleDetail' },
       },
       {
         path: 'shop-orders',
@@ -230,7 +230,7 @@ export const router = createBrowserRouter([
             </LazyRoute>
           </ProtectedRoute>
         ),
-        handle: { title: "Do'kon buyurtmalari" },
+        handle: { titleKey: 'erp.nav.shopOrders' },
       },
       {
         path: 'customers',
@@ -241,7 +241,7 @@ export const router = createBrowserRouter([
             </LazyRoute>
           </ProtectedRoute>
         ),
-        handle: { title: 'Mijozlar' },
+        handle: { titleKey: 'erp.nav.customers' },
       },
       {
         path: 'customers/:id',
@@ -252,7 +252,7 @@ export const router = createBrowserRouter([
             </LazyRoute>
           </ProtectedRoute>
         ),
-        handle: { title: 'Mijoz tafsiloti' },
+        handle: { titleKey: 'erp.titles.customerDetail' },
       },
       {
         path: 'debts',
@@ -263,7 +263,7 @@ export const router = createBrowserRouter([
             </LazyRoute>
           </ProtectedRoute>
         ),
-        handle: { title: 'Qarzlar' },
+        handle: { titleKey: 'erp.nav.debts' },
       },
       {
         path: 'warehouse',
@@ -274,7 +274,7 @@ export const router = createBrowserRouter([
             </LazyRoute>
           </ProtectedRoute>
         ),
-        handle: { title: 'Ombor' },
+        handle: { titleKey: 'erp.nav.warehouse' },
       },
       {
         path: 'suppliers',
@@ -285,7 +285,7 @@ export const router = createBrowserRouter([
             </LazyRoute>
           </ProtectedRoute>
         ),
-        handle: { title: "Ta'minotchilar" },
+        handle: { titleKey: 'erp.nav.suppliers' },
       },
       {
         path: 'suppliers/:id',
@@ -296,7 +296,7 @@ export const router = createBrowserRouter([
             </LazyRoute>
           </ProtectedRoute>
         ),
-        handle: { title: "Ta'minotchi tafsiloti" },
+        handle: { titleKey: 'erp.titles.supplierDetail' },
       },
       {
         path: 'purchases',
@@ -307,7 +307,7 @@ export const router = createBrowserRouter([
             </LazyRoute>
           </ProtectedRoute>
         ),
-        handle: { title: 'Xaridlar' },
+        handle: { titleKey: 'erp.nav.purchases' },
       },
       {
         path: 'purchases/:id',
@@ -318,7 +318,7 @@ export const router = createBrowserRouter([
             </LazyRoute>
           </ProtectedRoute>
         ),
-        handle: { title: 'Xarid tafsiloti' },
+        handle: { titleKey: 'erp.titles.purchaseDetail' },
       },
       {
         path: 'reports',
@@ -335,7 +335,7 @@ export const router = createBrowserRouter([
             </LazyRoute>
           </ProtectedRoute>
         ),
-        handle: { title: 'Hisobotlar' },
+        handle: { titleKey: 'erp.nav.reports' },
       },
       {
         path: 'settings',
@@ -346,7 +346,7 @@ export const router = createBrowserRouter([
             </LazyRoute>
           </ProtectedRoute>
         ),
-        handle: { title: 'Sozlamalar' },
+        handle: { titleKey: 'erp.nav.settings' },
       },
       {
         path: 'employees',
@@ -357,7 +357,7 @@ export const router = createBrowserRouter([
             </LazyRoute>
           </ProtectedRoute>
         ),
-        handle: { title: 'Xodimlar' },
+        handle: { titleKey: 'erp.nav.employees' },
       },
       {
         path: 'employees/:id',
@@ -368,7 +368,7 @@ export const router = createBrowserRouter([
             </LazyRoute>
           </ProtectedRoute>
         ),
-        handle: { title: 'Xodim tafsiloti' },
+        handle: { titleKey: 'erp.titles.employeeDetail' },
       },
       {
         path: 'staff-requests',
@@ -379,7 +379,7 @@ export const router = createBrowserRouter([
             </LazyRoute>
           </ProtectedRoute>
         ),
-        handle: { title: 'Xodimlik arizalari' },
+        handle: { titleKey: 'erp.nav.staffRequests' },
       },
       {
         path: 'roles',
@@ -390,7 +390,7 @@ export const router = createBrowserRouter([
             </LazyRoute>
           </ProtectedRoute>
         ),
-        handle: { title: 'Rollar' },
+        handle: { titleKey: 'erp.nav.roles' },
       },
       {
         path: 'notifications',
@@ -401,7 +401,7 @@ export const router = createBrowserRouter([
             </LazyRoute>
           </ProtectedRoute>
         ),
-        handle: { title: 'Bildirishnomalar' },
+        handle: { titleKey: 'erp.nav.notifications' },
       },
       {
         path: 'audit-logs',
@@ -412,7 +412,7 @@ export const router = createBrowserRouter([
             </LazyRoute>
           </ProtectedRoute>
         ),
-        handle: { title: 'Audit Loglar' },
+        handle: { titleKey: 'erp.nav.auditLogs' },
       },
       {
         path: 'profile',
@@ -422,7 +422,7 @@ export const router = createBrowserRouter([
             <ProfilePage />
           </LazyRoute>
         ),
-        handle: { title: 'Profil' },
+        handle: { titleKey: 'erp.titles.profile' },
       },
       {
         path: '*',
@@ -447,7 +447,7 @@ export const router = createBrowserRouter([
             <PortalDashboardPage />
           </LazyRoute>
         ),
-        handle: { title: 'Bosh sahifa' },
+        handle: { titleKey: 'nav.home' },
       },
       {
         path: 'xaridlar',
@@ -456,7 +456,7 @@ export const router = createBrowserRouter([
             <PortalPurchasesPage />
           </LazyRoute>
         ),
-        handle: { title: 'Xaridlar' },
+        handle: { titleKey: 'nav.purchases' },
       },
       {
         path: 'xaridlar/:id',
@@ -465,7 +465,7 @@ export const router = createBrowserRouter([
             <PortalPurchaseDetailPage />
           </LazyRoute>
         ),
-        handle: { title: 'Xarid tafsilotlari' },
+        handle: { titleKey: 'nav.purchaseDetail' },
       },
       {
         path: 'qarzlar',
@@ -474,7 +474,7 @@ export const router = createBrowserRouter([
             <PortalDebtsPage />
           </LazyRoute>
         ),
-        handle: { title: 'Qarzlar' },
+        handle: { titleKey: 'nav.debts' },
       },
       {
         path: 'bildirishnomalar',
@@ -483,7 +483,7 @@ export const router = createBrowserRouter([
             <PortalNotificationsPage />
           </LazyRoute>
         ),
-        handle: { title: 'Bildirishnomalar' },
+        handle: { titleKey: 'nav.notifications' },
       },
       {
         path: 'profil',
@@ -492,7 +492,7 @@ export const router = createBrowserRouter([
             <PortalProfilePage />
           </LazyRoute>
         ),
-        handle: { title: 'Profil' },
+        handle: { titleKey: 'nav.profile' },
       },
       {
         path: 'buyurtmalar',
@@ -501,7 +501,7 @@ export const router = createBrowserRouter([
             <PortalShopOrdersPage />
           </LazyRoute>
         ),
-        handle: { title: "Do'kon buyurtmalari" },
+        handle: { titleKey: 'nav.shopOrders' },
       },
     ],
   },
