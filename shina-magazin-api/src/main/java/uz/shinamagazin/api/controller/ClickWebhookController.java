@@ -6,6 +6,7 @@ import org.springframework.http.MediaType;
 import org.springframework.web.bind.annotation.*;
 import uz.shinamagazin.api.config.PaymentProperties;
 import uz.shinamagazin.api.entity.ShopOrder;
+import uz.shinamagazin.api.enums.ShopOrderStatus;
 import uz.shinamagazin.api.enums.ShopPaymentStatus;
 import uz.shinamagazin.api.service.ShopPaymentService;
 
@@ -43,6 +44,7 @@ public class ClickWebhookController {
     private static final int ERR_AMOUNT = -2;
     private static final int ERR_ORDER_NOT_FOUND = -5;
     private static final int ERR_ALREADY_PAID = -4;
+    private static final int ERR_CANCELLED = -9;
 
     @PostMapping(value = "/prepare", consumes = MediaType.APPLICATION_FORM_URLENCODED_VALUE)
     public Map<String, Object> prepare(@RequestParam Map<String, String> p) {
@@ -56,6 +58,8 @@ public class ClickWebhookController {
         }
         ShopOrder order = findOrder(p.get("merchant_trans_id"));
         if (order == null) return error(res, ERR_ORDER_NOT_FOUND, "Order not found");
+        // Bekor qilingan (zaxirasi bo'shatilgan) buyurtmani to'lab bo'lmaydi.
+        if (order.getStatus() == ShopOrderStatus.CANCELLED) return error(res, ERR_CANCELLED, "Order cancelled");
         if (!amountMatches(order, p.get("amount"))) return error(res, ERR_AMOUNT, "Incorrect amount");
         if (order.getPaymentStatus() == ShopPaymentStatus.PAID) return error(res, ERR_ALREADY_PAID, "Already paid");
 
@@ -76,6 +80,10 @@ public class ClickWebhookController {
         }
         ShopOrder order = findOrder(p.get("merchant_trans_id"));
         if (order == null) return error(res, ERR_ORDER_NOT_FOUND, "Order not found");
+        if (order.getStatus() == ShopOrderStatus.CANCELLED
+                && order.getPaymentStatus() != ShopPaymentStatus.PAID) {
+            return error(res, ERR_CANCELLED, "Order cancelled");
+        }
 
         // error<0 yoki action!=1 -> bekor. Summa mosligidan qat'i nazar yozib qo'yamiz.
         int clickError = parseInt(p.get("error"));

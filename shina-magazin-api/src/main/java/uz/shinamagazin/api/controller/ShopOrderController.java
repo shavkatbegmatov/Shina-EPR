@@ -64,10 +64,19 @@ public class ShopOrderController {
         return ClientIp.of(req);
     }
 
+    /** Tasdiq sahifasi 4 s da bir poll qiladi (15/daq) — 60/daq oddiy foydalanishga yetadi. */
+    private static final int STATUS_MAX_PER_MINUTE = 60;
+
     @GetMapping("/{orderNo}/status")
     @Operation(summary = "Get order status (public)",
             description = "Buyurtma holati — ommaviy, shaxsiy ma'lumotsiz (tasdiq sahifasi uchun)")
-    public ResponseEntity<ApiResponse<ShopOrderStatusResponse>> getOrderStatus(@PathVariable String orderNo) {
+    public ResponseEntity<ApiResponse<ShopOrderStatusResponse>> getOrderStatus(
+            @PathVariable String orderNo, HttpServletRequest httpRequest) {
+        // Ommaviy endpoint: raqamlarni ketma-ket sinab chiqishga (enumeration) qarshi chegara.
+        if (!rateLimiter.allow("order-status:" + clientIp(httpRequest), STATUS_MAX_PER_MINUTE, 60_000)) {
+            throw new ResponseStatusException(HttpStatus.TOO_MANY_REQUESTS,
+                    "Juda ko'p so'rov yuborildi. Birozdan keyin urinib ko'ring.");
+        }
         return ResponseEntity.ok(ApiResponse.success(shopOrderService.getStatusByOrderNo(orderNo)));
     }
 

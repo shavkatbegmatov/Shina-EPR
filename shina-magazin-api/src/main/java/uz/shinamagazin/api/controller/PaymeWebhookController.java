@@ -6,6 +6,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import uz.shinamagazin.api.config.PaymentProperties;
 import uz.shinamagazin.api.entity.ShopOrder;
+import uz.shinamagazin.api.enums.ShopOrderStatus;
 import uz.shinamagazin.api.enums.ShopPaymentStatus;
 import uz.shinamagazin.api.service.ShopPaymentService;
 
@@ -77,6 +78,9 @@ public class PaymeWebhookController {
     private Map<String, Object> checkPerform(Object id, Map<String, Object> params) {
         ShopOrder order = orderFromParams(params);
         if (order == null) return rpcError(id, ERR_ORDER, "Order not found");
+        // Bekor qilingan (masalan, muddati o'tib zaxirasi bo'shatilgan) buyurtmani
+        // to'lab bo'lmaydi — aks holda to'langan-u, zaxirasi yo'q buyurtma paydo bo'lardi.
+        if (order.getStatus() == ShopOrderStatus.CANCELLED) return rpcError(id, ERR_ORDER, "Order cancelled");
         if (!amountMatches(order, params)) return rpcError(id, ERR_AMOUNT, "Incorrect amount");
         return rpcResult(id, Map.of("allow", true));
     }
@@ -84,6 +88,7 @@ public class PaymeWebhookController {
     private Map<String, Object> createTransaction(Object id, Map<String, Object> params) {
         ShopOrder order = orderFromParams(params);
         if (order == null) return rpcError(id, ERR_ORDER, "Order not found");
+        if (order.getStatus() == ShopOrderStatus.CANCELLED) return rpcError(id, ERR_ORDER, "Order cancelled");
         if (!amountMatches(order, params)) return rpcError(id, ERR_AMOUNT, "Incorrect amount");
         if (order.getPaymentStatus() == ShopPaymentStatus.PAID) return rpcError(id, ERR_CANT_PERFORM, "Already paid");
 

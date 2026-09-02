@@ -17,6 +17,7 @@ import uz.shinamagazin.api.entity.ShopOrder;
 import uz.shinamagazin.api.entity.ShopOrderItem;
 import uz.shinamagazin.api.enums.ShopDeliveryMethod;
 import uz.shinamagazin.api.enums.ShopOrderStatus;
+import uz.shinamagazin.api.enums.ShopPaymentStatus;
 import uz.shinamagazin.api.exception.BadRequestException;
 import uz.shinamagazin.api.exception.ResourceNotFoundException;
 import uz.shinamagazin.api.repository.CustomerRepository;
@@ -27,6 +28,9 @@ import uz.shinamagazin.api.service.notify.OrderNotificationService;
 import uz.shinamagazin.api.util.PhoneNumberUtils;
 
 import java.math.BigDecimal;
+import java.security.SecureRandom;
+import java.time.LocalDateTime;
+import java.util.List;
 
 /**
  * Storefront buyurtma xizmati (guest checkout).
@@ -34,9 +38,11 @@ import java.math.BigDecimal;
  * MUHIM: narx SERVERDA hisoblanadi — mijoz yuborgan narxga ishonilmaydi
  * (faqat productId + quantity olinadi, narx mahsulotning joriy sellingPrice'i).
  *
- * ⏳ Stok rezervatsiyasi/yetishmasligi tekshiruvi bu versiyada YO'Q — buyurtma
- * shunchaki qayd etiladi (operator qo'lda tasdiqlaydi). Konkurent stok boshqaruvi
- * keyingi bosqichda (to'lov gateway bilan birga).
+ * Zaxira buyurtma yaratilganda REZERV qilinadi (kamaytiriladi); {@code Product}
+ * dagi {@code @Version} konkurent buyurtmalarda oversell'ni to'sadi. Bekor qilishda
+ * zaxira qaytariladi. Onlayn to'lovi boshlanib tugallanmagan buyurtmalar
+ * {@link #expireUnpaidOnlineOrders} orqali (scheduler) avtomatik bekor qilinadi —
+ * aks holda tashlab ketilgan savat zaxirani abadiy band qilib turardi.
  */
 @Service
 @RequiredArgsConstructor
@@ -241,17 +247,58 @@ public class ShopOrderService {
         });
     }
 
+    /**
+     * Onlayn to'lovi boshlanib tugallanmagan eskirgan buyurtmalarni bekor qiladi va
+     * zaxirani qaytaradi (scheduler chaqiradi).
+     *
+     * <p>Faqat {@code NEW} + ({@code FAILED} yoki provayder tranzaksiyasi YO'Q
+     * {@code PROCESSING}) buyurtmalar: Payme {@code CreateTransaction} qilgan buyurtmani
+     * Payme o'zi yakunlaydi yoki bekor qiladi, unga tegilmaydi. Naqd (yetkazishda to'lov)
+     * buyurtmalar {@code PENDING} bo'lib qoladi — ularni operator boshqaradi.
+     *
+     * @return bekor qilingan buyurtmalar soni
+     */
+    @Transactional
+    public int expireUnpaidOnlineOrders(LocalDateTime cutoff) {
+        List<ShopOrder> stale = orderRepository.findExpiredUnpaidOnlineOrders(cutoff);
+        for (ShopOrder order : stale) {
+            restoreReservedStock(order);
+            order.setStatus(ShopOrderStatus.CANCELLED);
+            order.setPaymentStatus(ShopPaymentStatus.CANCELLED);
+            orderRepository.save(order);
+            log.info("Shop order {} expired: online payment not completed since {}", order.getOrderNo(), cutoff);
+        }
+        return stale.size();
+    }
+
     private BigDecimal calcDeliveryFee(ShopDeliveryMethod method, BigDecimal subtotal) {
         if (method == ShopDeliveryMethod.PICKUP) return BigDecimal.ZERO;
         return subtotal.compareTo(FREE_DELIVERY_THRESHOLD) >= 0 ? BigDecimal.ZERO : DELIVERY_FEE;
     }
 
+    private static final SecureRandom RANDOM = new SecureRandom();
+    /** Chalkash belgilarsiz alifbo (0/O, 1/I yo'q) — telefonda aytib berish oson. */
+    private static final String ORDER_NO_ALPHABET = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
+    private static final int ORDER_NO_LENGTH = 8;
+
+    /**
+     * Tasodifiy, taxminlab bo'lmaydigan buyurtma raqami.
+     *
+     * <p>Ilgari {@code currentTimeMillis} (base36) ishlatilardi — raqamlar ketma-ket va
+     * taxminlanadigan edi. Ommaviy {@code GET /orders/{no}/status} va
+     * {@code POST /orders/{no}/pay} endpointlari orqali begona buyurtmalarning holatini
+     * ko'rish va ularni to'lovga yo'naltirish mumkin bo'lardi. 8 belgi × 32 = 2^40 variant.
+     */
     private String generateOrderNo() {
-        String base = Long.toString(System.currentTimeMillis(), 36).toUpperCase();
-        String no = "PR-" + base;
-        while (orderRepository.existsByOrderNo(no)) {
-            no = "PR-" + base + "-" + (int) (Math.random() * 9000 + 1000);
+        while (true) {
+            StringBuilder sb = new StringBuilder("PR-");
+            for (int i = 0; i < ORDER_NO_LENGTH; i++) {
+                sb.append(ORDER_NO_ALPHABET.charAt(RANDOM.nextInt(ORDER_NO_ALPHABET.length())));
+            }
+            String no = sb.toString();
+            if (!orderRepository.existsByOrderNo(no)) {
+                return no;
+            }
         }
-        return no;
     }
 }
