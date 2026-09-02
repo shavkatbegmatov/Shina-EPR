@@ -20,6 +20,12 @@ import java.util.stream.Collectors;
 
 /**
  * AOP Aspect for checking permissions on methods annotated with @RequiresPermission
+ *
+ * <p>Pointcut metod darajasidagi ({@code @annotation}) HAM sinf darajasidagi
+ * ({@code @within}) annotatsiyani qamraydi. Ilgari faqat {@code @annotation} bor edi:
+ * annotatsiya {@code TYPE} target'ini e'lon qilgani va pastda sinf darajasidagi
+ * fallback yozilgani bilan, sinfga qo'yilgan annotatsiya uchun advice UMUMAN
+ * ishga tushmasdi — kontroller himoyalangandek ko'rinib, aslida ochiq qolardi.
  */
 @Aspect
 @Component
@@ -29,7 +35,8 @@ public class PermissionAspect {
 
     private final PermissionService permissionService;
 
-    @Before("@annotation(uz.shinamagazin.api.security.RequiresPermission)")
+    @Before("@annotation(uz.shinamagazin.api.security.RequiresPermission)"
+            + " || @within(uz.shinamagazin.api.security.RequiresPermission)")
     public void checkPermission(JoinPoint joinPoint) {
         // Get current authentication
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
