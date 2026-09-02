@@ -119,6 +119,15 @@ public class AuditEntityListener {
     }
 
     /**
+     * Statik bog'liqliklar ulanganmi. JPA listener Spring bean emas — ular {@code @Autowired}
+     * metod orqali keyinroq beriladi. {@code @DataJpaTest} kabi slice'larda umuman berilmaydi;
+     * ilgari bu har bir yozuvda NPE va ERROR log bilan tugardi (audit baribir yozilmasdi).
+     */
+    private static boolean isWired() {
+        return auditLogService != null && sensitiveDataMasker != null;
+    }
+
+    /**
      * Generates a cache key for an entity.
      */
     private String getCacheKey(Class<?> entityClass, Long entityId) {
@@ -134,6 +143,10 @@ public class AuditEntityListener {
     @PostPersist
     public void onPostPersist(Object entity) {
         if (!(entity instanceof Auditable auditable)) {
+            return;
+        }
+        if (!isWired()) {
+            log.debug("Audit listener hali ulanmagan — CREATE {} o'tkazib yuborildi", auditable.getEntityName());
             return;
         }
 
@@ -176,6 +189,10 @@ public class AuditEntityListener {
     @PreUpdate
     public void onPreUpdate(Object entity) {
         if (!(entity instanceof Auditable auditable)) {
+            return;
+        }
+        if (!isWired()) {
+            log.debug("Audit listener hali ulanmagan — UPDATE {} o'tkazib yuborildi", auditable.getEntityName());
             return;
         }
 
@@ -237,6 +254,10 @@ public class AuditEntityListener {
     @PreRemove
     public void onPreRemove(Object entity) {
         if (!(entity instanceof Auditable auditable)) {
+            return;
+        }
+        if (!isWired()) {
+            log.debug("Audit listener hali ulanmagan — DELETE {} o'tkazib yuborildi", auditable.getEntityName());
             return;
         }
 

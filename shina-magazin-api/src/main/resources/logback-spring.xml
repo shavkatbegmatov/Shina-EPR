@@ -1,0 +1,37 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  Log formati: har qatorda so'rovning correlation ID'si (MDC) bor.
+
+  Ilgari logback sozlamasi umuman yo'q edi (faqat darajalar application.yml'da):
+  bitta so'rovga tegishli qatorlarni bir-biriga bog'lab bo'lmasdi, audit jurnalidagi
+  correlation_id esa ilova logiga chiqmasdi. Endi AuditCorrelationInterceptor har
+  so'rov uchun MDC'ga "cid" yozadi (mutatsiyalarda audit correlation UUID, o'qishlarda
+  qisqa request id), AsyncConfig uni async oqimlarga ham ko'chiradi.
+
+  Prod: Coolify `docker logs` orqali o'qiladi — oddiy matn, rang yo'q.
+-->
+<configuration>
+    <include resource="org/springframework/boot/logging/logback/defaults.xml"/>
+
+    <springProfile name="!prod">
+        <appender name="CONSOLE" class="ch.qos.logback.core.ConsoleAppender">
+            <encoder>
+                <pattern>%clr(%d{yyyy-MM-dd'T'HH:mm:ss.SSSXXX}){faint} %clr(%5p) %clr([%X{cid:-}]){magenta} %clr(---){faint} %clr([%15.15t]){faint} %clr(%-40.40logger{39}){cyan} %clr(:){faint} %m%n%wEx</pattern>
+                <charset>UTF-8</charset>
+            </encoder>
+        </appender>
+    </springProfile>
+
+    <springProfile name="prod">
+        <appender name="CONSOLE" class="ch.qos.logback.core.ConsoleAppender">
+            <encoder>
+                <pattern>%d{yyyy-MM-dd'T'HH:mm:ss.SSSXXX} %5p [%X{cid:-}] --- [%15.15t] %-40.40logger{39} : %m%n%wEx</pattern>
+                <charset>UTF-8</charset>
+            </encoder>
+        </appender>
+    </springProfile>
+
+    <root level="INFO">
+        <appender-ref ref="CONSOLE"/>
+    </root>
+</configuration>
