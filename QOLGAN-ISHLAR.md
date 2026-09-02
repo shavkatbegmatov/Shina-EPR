@@ -14,21 +14,41 @@ loyiha jiddiy o'zgardi — bu bo'lim uni ustidan yozadi, quyisi tarix sifatida q
 |---|---|
 | **Prod** | 🟢 Jonli: `https://protektor.uz` (Coolify). `master`'ga push → CI → GHCR image → deploy avtomatik. Batafsil: `DEPLOY.md` |
 | **Marshrutlar** | Do'kon `/` · ERP `/admin` · Mijoz kabineti `/hisob` (B2 bajarilgan, `/magazin` va `/kabinet` **endi yo'q**) |
-| **Mantiqiy audit** | Uch bosqich, 54 tasdiqlangan xato tuzatildi, ochiq qolgani yo'q → **`AUDIT.md`** |
-| **Migratsiyalar** | V41 gacha (V39 to'lov–smena bog'i, V40 fantom qarz tozalash, V41 refresh rotatsiyasi) |
-| **Testlar** | Frontend 341 (67 fayl), backend 54 test klassi — ikkalasi ham CI'da har push'da ishlaydi |
-| **Git hook'lar** | `.githooks/` — klonda bir marta: `git config core.hooksPath .githooks` (qarang `AGENTS.md`) |
+| **Mantiqiy audit** | Uch bosqich, 45 tasdiqlangan xato tuzatildi, ochiq qolgani yo'q → **`AUDIT.md`** |
+| **Migratsiyalar** | V43 gacha (V41 refresh rotatsiyasi, V42 scheduler qulflari, V43 to'lov vaqt chizig'i) |
+| **Testlar** | Frontend 344, backend 390 (shu jumladan haqiqiy Postgres'da migratsiya testi) — ikkalasi ham CI'da har push'da ishlaydi |
+| **Git hook'lar** | `.githooks/` — `npm install` avtomatik yoqadi (`prepare`); qo'lda: `git config core.hooksPath .githooks` |
 
 **Hujjatlar taqsimoti:** joriy qoidalar va buyruqlar → `AGENTS.md` · deploy va env →
 `DEPLOY.md` · audit topilmalari → `AUDIT.md` · kassirlarga eslatma →
 `KASSIRLAR-UCHUN.md` / `ДЛЯ-КАССИРОВ.md` · **bu fayl** → iyun rejasining tarixi va
 hali ochiq qolgan ishlar.
 
-### Hali ochiq (tekshirildi 17.08.2026)
+### Hali ochiq (tekshirildi 03.09.2026)
 - **Jonli to'lov** — Payme/Click default'da `enabled: false`. Kreditsial + webhook
-  ro'yxatdan o'tkazish kerak (2-bo'lim). Kod tayyor, sandbox'da sinalmagan.
+  ro'yxatdan o'tkazish kerak (2-bo'lim). Kod tayyor (Payme idempotentlik va bekor qilish
+  vaqt chizig'i V43 bilan), sandbox'da sinalmagan.
 - **Jonli SMS** — `LogSmsSender` hamon stub; provayder implementatsiyasi kerak (5-bo'lim).
-- **To'liq per-sahifa prerender** — yengil SEO qilingan, per-mahsulot og:image qolgan (8-bo'lim, B3).
+- **Per-mahsulot og:image** — crawler'lar uchun nginx `/mahsulot/{id}` ni backend SEO
+  endpointiga yo'naltiradi (`ShopSeoController`); to'liq prerender qilinmagan.
+- **Texnik qarz (03.09.2026 auditidan qolganlar)** — `SettingsPage` (1600 qator) tab'larga
+  bo'linmagan; ERP sahifalarida qo'lda `saving` flag'lar (`useMutation` o'rniga);
+  mijoz kabineti (`src/portal`) React Query'siz; ro'yxat endpointlarining bir qismi
+  sahifalanmagan (`getActiveDebts`, `getTodaySales`...); `ReportService` agregatsiyani
+  JVM'da qiladi; eksport butun faylni xotirada yig'adi; tokenlar localStorage'da
+  (httpOnly cookie'ga o'tish backend o'zgarishini talab qiladi); jsx-a11y qoidalari
+  hozircha `warn`; prettier konfiguratsiyasi bor, lekin butun baza formatlanmagan.
+
+### 03.09.2026 da bajarilgan (texnik audit bo'yicha)
+Xavfsizlik va jonli xatolar (context-path'li `mustChangePassword`, WebSocket origin,
+prodda ochiq OpenAPI, 1 MB upload chegarasi, yuklangan fayl kengaytmasi, refresh token
+URL'da, parallel refresh poygasi, taxminlanadigan buyurtma raqamlari, abadiy band zaxira,
+CSP/HSTS sarlavhalari), scheduler qulflari va idempotentlik, dependency tozalash,
+Testcontainers migratsiya testi, JaCoCo, frontend bundle (1.9 MB → 0.95 MB), single-flight
+refresh mijoz klientlarida, POS savati persist, DataTable/Modal a11y, i18n teshiklari,
+npm zaifliklari, CI (pinned action'lar, audit, Trivy, Telegram xabar, uptime), Docker
+(root'siz backend, layered jar, limitlar, healthcheck'lar), kunlik DB backup sidecar,
+rollback (`IMAGE_TAG`), README. Batafsil: `git log --since=2026-09-03` va `CHANGELOG.md`.
 
 ---
 
@@ -185,7 +205,7 @@ npm run dev        # http://localhost:5183  (/ = do'kon, /admin = ERP, /hisob = 
 > **Boshlashdan oldin (yangi mashinada):**
 > 1. `git pull` (eng so'nggi `master`).
 > 2. `cd shina-magazin-front && npm install` (yangi paketlar bo'lishi mumkin).
-> 3. Baseline: `npm run build` + `npm test` (kutilgan: **91/91** yashil); backend `mvnw compile` (JDK 21).
+> 3. Baseline: `npm run build` + `npm test` (kutilgan: **91/91** yashil); backend `mvnw compile` (JDK 17, `pom.xml` `java.version`).
 > 4. So'ng quyidagi tartib: **B2 → B4/C5 → B3**.
 
 ### B2 — Routing: do'kon ildizga (`/`), ERP `/admin`ga  ✅ BAJARILDI (26.06.2026)

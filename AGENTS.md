@@ -19,12 +19,14 @@ Backend (run in `shina-magazin-api/`) — use the checked-in wrapper, not a syst
 - `./mvnw test` to run JUnit/Spring tests.
 - `./mvnw package` to build the jar.
 
-Git hooks — **run once per clone**, from the repo root:
-- `git config core.hooksPath .githooks`
+Git hooks — enabled automatically by `npm install` in `shina-magazin-front/` (the `prepare` script sets `core.hooksPath`); manual fallback from the repo root: `git config core.hooksPath .githooks`.
 - `pre-commit` lints only the staged frontend files (backend/docs commits are untouched).
-- `pre-push` runs the full `eslint .`, byte-for-byte what CI runs, and stays silent unless it fails.
-- Both block on ESLint **errors** only; warnings pass, matching CI. Bypass with `--no-verify`.
-- Why this matters: a lint error makes CI red, and a red CI **skips** `build-and-push` and `deploy`. Nothing turns off — the last good image just keeps serving, so pushed work silently never reaches production. That went unnoticed for seven commits in August 2026.
+- `commit-msg` enforces Conventional Commits (`type(scope): subject`; types: feat fix docs style refactor perf test build ci chore revert security).
+- `pre-push` runs the full `eslint .` and the frontend test suite (`vitest run`), the same commands CI runs, and stays silent unless something fails. `SKIP_TESTS=1 git push` skips the tests once.
+- Lint blocks on ESLint **errors** only; warnings pass, matching CI (jsx-a11y rules are warnings for now). Bypass with `--no-verify`.
+- Why this matters: a lint or test failure makes CI red, and a red CI **skips** `build-and-push` and `deploy`. Nothing turns off — the last good image just keeps serving, so pushed work silently never reaches production. That went unnoticed for seven commits in August 2026. CI now posts to Telegram on failure and warns when deploy is skipped (see `DEPLOY.md`).
+
+Other frontend scripts: `npm run typecheck`, `npm run test:coverage`, `npm run analyze` (bundle map in `dist/stats.html`), `npm run check:permissions` (frontend `PermissionCode` vs backend enum — CI runs it too), `npm run format` (Prettier; config exists, the codebase has **not** been bulk-formatted yet, so format only files you touch).
 
 ## Coding Style & Naming Conventions
 - Indentation: TypeScript/TSX uses 2 spaces; Java uses 4 spaces.
@@ -52,6 +54,9 @@ Git hooks — **run once per clone**, from the repo root:
 - PRs should describe affected areas (frontend/API), include screenshots for UI changes, and call out any DB migration or config updates.
 
 ## Configuration & Security Notes
-- API defaults: `server.port=8183`, context path `/api`, PostgreSQL dev DB in `application-dev.yml`.
+- API defaults: `server.port=8183`, context path `/api`, PostgreSQL dev DB in `application-dev.yml`. The dev DB password is **not** in the repo: put `DB_PASSWORD=...` into `shina-magazin-api/.env` (gitignored, read via `spring.config.import`) or export it as an environment variable. The password that used to live in `application-dev.yml` is still in git history — rotate it on the local DB.
+- Backend request paths inside filters must strip the context path (`JwtAuthenticationFilter.pathWithinApp`): `getRequestURI()` returns `/api/v1/...` in prod but `/v1/...` in tests.
+- `/actuator/**` is `denyAll` except `/actuator/health`; springdoc is disabled in the `prod` profile. Do not loosen either without a reason.
+- Scheduled jobs that write data run through `SchedulerLockService.runExclusively` (table `scheduler_locks`) and must be idempotent per run.
 - `JWT_SECRET` is **required in every environment** — `application.yml` has `jwt.secret: ${JWT_SECRET}` with no fallback, so the app refuses to start without it. This is deliberate: a working base64 key used to sit in the repo, and anyone who read it could forge tokens. Do not reintroduce a default. Generate one with `openssl rand -base64 32`; rotating it invalidates every active session.
 - Deployment, required env vars and the post-deploy checklist live in `DEPLOY.md`.

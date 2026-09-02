@@ -117,11 +117,56 @@ PAT olish: GitHub → Settings → Developer settings → Personal access tokens
 > tugmasi shundan keyin paydo bo'ladi. Sozlama va username ikkalasi ham bo'lmasa tugma
 > ko'rsatilmaydi (ishlamaydigan havola bermaslik uchun).
 
-> Volume'lar compose'da: `postgres_data` (DB) va `uploads_data` (`/data/uploads` — mahsulot
-> rasmlari). Coolify UI'da `postgres_data` uchun scheduled backup yoqish tavsiya etiladi.
+> Volume'lar compose'da: `postgres_data` (DB), `uploads_data` (`/data/uploads` — mahsulot
+> rasmlari) va `backups_data` (kunlik `pg_dump`). Coolify UI'da `postgres_data` uchun
+> scheduled backup ham yoqilsa — ikki mustaqil nusxa bo'ladi.
 >
 > **Muqobil (Coolify'siz oddiy VPS):** repo ildizidagi `docker-compose.yml` (port 80 ochadi):
 > `docker compose pull && docker compose up -d`. Lokal to'liq test: `docker compose -f docker-compose.dev.yml up`.
+
+### Backup va tiklash
+`db-backup` sidecar'i har kuni 03:00 (Toshkent) da `pg_dump | gzip` ni `backups_data`
+volume'iga yozadi va `BACKUP_KEEP_DAYS` (default 14) kundan eskisini o'chiradi. Ilgari backup
+faqat "Coolify UI'da yoqish tavsiya etiladi" degan eslatma edi — repodan bor-yo'qligini bilib
+bo'lmasdi, Flyway migratsiyalari esa qaytarilmas.
+
+```bash
+# Nusxalar ro'yxati (Coolify → Terminal, yoki serverda)
+docker compose exec db-backup ls -lh /backups
+# Serverga ko'chirib olish
+docker compose cp db-backup:/backups/shina_epr_db_2026-09-03_0300.sql.gz ./
+# TIKLASH (ehtiyot: mavjud ma'lumot ustidan yoziladi; avval backend'ni to'xtating)
+docker compose stop backend
+gunzip -c shina_epr_db_2026-09-03_0300.sql.gz | docker compose exec -T db psql -U shina_epr_user -d shina_epr_db
+docker compose start backend
+```
+
+### Orqaga qaytarish (rollback)
+CI har commit'ni `:<sha>` bilan, `release.yml` esa `vX.Y.Z` tegi bilan GHCR'ga push qiladi.
+Compose fayllari `IMAGE_TAG` env'ini o'qiydi (default `latest`):
+
+1. Coolify → resurs → Environment Variables → `IMAGE_TAG=<sha yoki vX.Y.Z>` → Redeploy.
+2. Muammo bartaraf etilgach `IMAGE_TAG`ni o'chiring (yoki `latest` qiling) → Redeploy.
+
+Migratsiya bilan kelgan versiyadan orqaga qaytishda sxema eski koddan yangi bo'lib qoladi
+(`ddl-auto=validate` yangi ustunlarga indamaydi, lekin o'chirilgan/qayta nomlangan ustun bo'lsa
+ishga tushmaydi) — bunday holatda backup'dan tiklash kerak.
+
+### CI xabarnomalari va uptime
+Repo **Secrets** ga `TELEGRAM_BOT_TOKEN` va `TELEGRAM_ALERT_CHAT_ID` qo'yilsa:
+- `ci.yml` — master'da lint/test/build/deploy yiqilsa Telegram'ga yozadi (deploy SKIP bo'lgani
+  ko'rinadi — 2026 avgustdagi "yetti commit prodga chiqmadi" holati takrorlanmasin);
+- `uptime.yml` — har 15 daqiqada `/`, `/api/actuator/health`, `/api/v1/settings/public` ni
+  tekshiradi, tushsa xabar beradi.
+`DEPLOY_ENABLED` o'rnatilmagan bo'lsa run sahifasida ogohlantirish (warning annotation) chiqadi.
+
+### Ixtiyoriy env'lar
+| ENV | Default | Izoh |
+|---|---|---|
+| `IMAGE_TAG` | `latest` | Rollback uchun (yuqorida) |
+| `BACKEND_MEMORY_LIMIT` | `1024M` | Backend konteyner limiti; JVM heap 75% oladi |
+| `BACKUP_KEEP_DAYS` | `14` | Backup nusxalarini saqlash muddati |
+| `JWT_ACCESS_EXPIRATION_MS` | `1800000` (30 daqiqa) | Access token muddati; refresh 7 kun |
 
 ## 4. Avtomatik deploy oqimi
 `master`'ga push → CI: frontend (lint/test/build) + backend (compile) → image build/push (ghcr,
@@ -132,9 +177,9 @@ Relizlar: `git tag vX.Y.Z && git push origin vX.Y.Z` → `release.yml` GitHub Re
 (CHANGELOG.md'dan).
 
 ## Deploy'dan OLDIN — ma'lumotga tegadigan migratsiya bo'lsa
-- [ ] `postgres_data` backup'i mavjudligini tasdiqlang (Coolify → scheduled backup). Flyway
-      migratsiyalari **avtomatik va qaytarilmas** ishlaydi; ba'zilari mavjud qatorlarni o'zgartiradi
-      (masalan `V40` fantom qarzlarni yopadi), ya'ni orqaga qaytarish faqat backup orqali.
+- [ ] Yangi backup oling: `docker compose exec db-backup sh -c 'pg_dump | gzip > /backups/manual_$(date +%F_%H%M).sql.gz'`
+      (kunlik nusxa 03:00 da; Flyway migratsiyalari **avtomatik va qaytarilmas** ishlaydi;
+      ba'zilari mavjud qatorlarni o'zgartiradi, masalan `V40` fantom qarzlarni yopadi).
 - [ ] Yangi migratsiyalarni ko'ring:
       `git diff --name-only <oxirgi-deploy-sha>..HEAD -- shina-magazin-api/src/main/resources/db/migration`
 
@@ -151,6 +196,10 @@ Relizlar: `git tag vX.Y.Z && git push origin vX.Y.Z` → `release.yml` GitHub Re
 - [ ] **Xavfsizlik:** logdagi `XAVFSIZLIK: 'admin' akkaunti ...` qatorini toping → shu parol bilan
       kiring → darhol almashtiring. `admin123` bilan kirish ishlamasligini tasdiqlang.
 - [ ] `https://<domen>`: do'kon `/`, ERP `/admin`, kabinet `/hisob`, login `/kirish`.
+- [ ] `https://<domen>/api/api-docs` **401/404** qaytarsin (prodda OpenAPI o'chiq), `curl -I` da
+      `Content-Security-Policy` va `Strict-Transport-Security` sarlavhalari bo'lsin.
+- [ ] ERP'da real-time bildirishnoma keladi (WebSocket origin = `CORS_ALLOWED_ORIGINS`).
+- [ ] 1 MB dan katta mahsulot rasmi yuklanadi (nginx `client_max_body_size 8m`).
 - [ ] ERP'da rasm yuklash → storefront'da ko'rinadi (`uploads_data` volume ishlayapti).
 - [ ] Telegram'da `<domen>` ulashish → OG karta (`VITE_SITE_URL`).
 - [ ] (Jonli to'lov) Payme/Click sandbox → webhook → `paymentStatus=PAID`.

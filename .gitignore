@@ -47,3 +47,9 @@ shina-magazin-api/.env
 # Frontend lokal env (Vite). Namuna: shina-magazin-front/.env.example
 shina-magazin-front/.env
 shina-magazin-front/.env.local
+
+# Kompilyatsiya natijalari src ichiga tushib qolmasin (ExportColumn.class tarixda bor edi)
+*.class
+# Har bir modulning o'z IDE papkasi
+shina-magazin-api/.idea/
+shina-magazin-front/.idea/
