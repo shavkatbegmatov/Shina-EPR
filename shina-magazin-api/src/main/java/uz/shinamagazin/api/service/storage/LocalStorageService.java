@@ -8,6 +8,7 @@ import uz.shinamagazin.api.config.StorageProperties;
 import uz.shinamagazin.api.exception.BadRequestException;
 
 import java.io.IOException;
+import java.io.InputStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -40,9 +41,19 @@ public class LocalStorageService implements StorageService {
             throw new BadRequestException("Ruxsat etilmagan fayl turi: " + contentType);
         }
 
+        // Haqiqiy tur faqat baytlardan: mijoz bergan Content-Type va fayl nomiga ishonilmaydi.
+        String detected = ImageSignature.detect(readHead(file));
+        if (detected == null || !props.getAllowedContentTypes().contains(detected)) {
+            throw new BadRequestException("Fayl rasm emas yoki qo'llab-quvvatlanmaydigan format");
+        }
+        if (!detected.equals(contentType)) {
+            log.warn("Yuklangan fayl turi e'lon qilinganidan farq qiladi: {} deb yuborildi, aslida {}",
+                    contentType, detected);
+        }
+
         String prefix = (keyPrefix == null || keyPrefix.isBlank())
                 ? "" : keyPrefix.replaceAll("[^a-zA-Z0-9_-]", "") + "/";
-        String filename = prefix + UUID.randomUUID() + resolveExtension(file.getOriginalFilename(), contentType);
+        String filename = prefix + UUID.randomUUID() + ImageSignature.extensionFor(detected);
 
         try {
             Path base = Paths.get(props.getDir()).toAbsolutePath().normalize();
@@ -81,19 +92,12 @@ public class LocalStorageService implements StorageService {
         }
     }
 
-    private String resolveExtension(String originalName, String contentType) {
-        if (originalName != null && originalName.contains(".")) {
-            String ext = originalName.substring(originalName.lastIndexOf('.')).toLowerCase();
-            if (ext.matches("\\.[a-z0-9]{1,5}")) return ext;
+    private static byte[] readHead(MultipartFile file) {
+        try (InputStream in = file.getInputStream()) {
+            return in.readNBytes(ImageSignature.HEADER_LENGTH);
+        } catch (IOException e) {
+            throw new BadRequestException("Faylni o'qib bo'lmadi");
         }
-        return switch (contentType) {
-            case "image/jpeg" -> ".jpg";
-            case "image/png" -> ".png";
-            case "image/webp" -> ".webp";
-            case "image/gif" -> ".gif";
-            case "image/avif" -> ".avif";
-            default -> ".bin";
-        };
     }
 
     private String joinUrl(String baseUrl, String filename) {
