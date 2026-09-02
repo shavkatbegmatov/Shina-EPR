@@ -84,8 +84,12 @@ management:
 # Generatsiya: openssl rand -base64 32
 jwt:
   secret: ${JWT_SECRET}
-  expiration: 86400000 # 24 hours in milliseconds
-  refresh-expiration: 604800000 # 7 days
+  # Access token 30 daqiqa (ilgari 24 soat). Har so'rov baribir sessions jadvalidan
+  # tekshiriladi, ya'ni qisqa muddat hech narsani sekinlashtirmaydi — lekin sizib
+  # ketgan tokenning yashash oynasini 48 barobar qisqartiradi. Frontend'ning uchala
+  # klienti single-flight refresh qiladi, foydalanuvchi buni sezmaydi.
+  expiration: ${JWT_ACCESS_EXPIRATION_MS:1800000}
+  refresh-expiration: ${JWT_REFRESH_EXPIRATION_MS:604800000} # 7 days
 
 # Ilova xavfsizlik sozlamalari
 app:
