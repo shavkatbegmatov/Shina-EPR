@@ -1,3 +1,4 @@
+import { switchLanguage } from '@/i18n';
 import { useTranslation } from 'react-i18next';
 import { ArrowLeft, Globe, Sun, Moon } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
@@ -19,7 +20,7 @@ export default function PortalHeader({
   showLanguage = true,
   showTheme = true,
 }: PortalHeaderProps) {
-  const { t, i18n } = useTranslation();
+  const { t } = useTranslation();
   const navigate = useNavigate();
   const { language, setLanguage } = usePortalAuthStore();
   const { mode: theme, setMode: setTheme } = useThemeStore();
@@ -29,12 +30,12 @@ export default function PortalHeader({
     try {
       await portalApiClient.updateLanguage(newLang);
       setLanguage(newLang);
-      i18n.changeLanguage(newLang);
+      void switchLanguage(newLang);
     } catch (error) {
       console.error('Failed to update language', error);
       // Still update locally
       setLanguage(newLang);
-      i18n.changeLanguage(newLang);
+      void switchLanguage(newLang);
     }
   };
 

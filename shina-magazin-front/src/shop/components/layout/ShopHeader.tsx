@@ -1,3 +1,4 @@
+import { switchLanguage } from '@/i18n';
 import { useState } from 'react';
 import { Link, NavLink, useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
@@ -35,7 +36,7 @@ export function ShopHeader({ onOpenCart }: ShopHeaderProps) {
 
   const isDark = mode === 'dark' || (mode === 'system' && window.matchMedia('(prefers-color-scheme: dark)').matches);
   const toggleTheme = () => setMode(isDark ? 'light' : 'dark');
-  const toggleLang = () => i18n.changeLanguage(i18n.language === 'uz' ? 'ru' : 'uz');
+  const toggleLang = () => void switchLanguage(i18n.language === 'uz' ? 'ru' : 'uz');
 
   const navLinkClass = ({ isActive }: { isActive: boolean }) =>
     cn('text-sm font-medium transition-colors hover:text-primary', isActive ? 'text-primary' : 'text-base-content/70');

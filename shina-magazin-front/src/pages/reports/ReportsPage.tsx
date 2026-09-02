@@ -39,14 +39,6 @@ import {
   getDateMonthsAgo,
   getDateYearsAgo,
 } from '../../config/constants';
-import {
-  exportReportToExcel,
-  exportReportToPDF,
-  exportWarehouseReportToExcel,
-  exportWarehouseReportToPDF,
-  exportDebtsReportToExcel,
-  exportDebtsReportToPDF,
-} from '../../utils/exportUtils';
 import { DateRangePicker, type DateRangePreset, type DateRange } from '../../components/common/DateRangePicker';
 import type { SalesReport, WarehouseReport, DebtsReport, ProfitLossReport } from '../../types';
 import { PermissionCode, usePermission } from '../../hooks/usePermission';
@@ -185,25 +177,29 @@ export function ReportsPage() {
     }
   };
 
-  const handleExportExcel = () => {
+  // xlsx + jsPDF (~600 KB) faqat eksport bosilganda yuklanadi — ilgari statik import
+  // ularni har bir tashrifchining (vitrina mehmoni ham) boshlang'ich bundle'iga qo'shardi.
+  const handleExportExcel = async () => {
     const { start, end } = getDateRangeValues(dateRangePreset);
+    const exporters = await import('../../utils/exportUtils');
     if (activeTab === 'sales' && salesReport) {
-      exportReportToExcel(salesReport, start, end);
+      exporters.exportReportToExcel(salesReport, start, end);
     } else if (activeTab === 'warehouse' && warehouseReport) {
-      exportWarehouseReportToExcel(warehouseReport, start, end);
+      exporters.exportWarehouseReportToExcel(warehouseReport, start, end);
     } else if (activeTab === 'debts' && debtsReport) {
-      exportDebtsReportToExcel(debtsReport, start, end);
+      exporters.exportDebtsReportToExcel(debtsReport, start, end);
     }
   };
 
-  const handleExportPDF = () => {
+  const handleExportPDF = async () => {
     const { start, end } = getDateRangeValues(dateRangePreset);
+    const exporters = await import('../../utils/exportUtils');
     if (activeTab === 'sales' && salesReport) {
-      exportReportToPDF(salesReport, start, end);
+      exporters.exportReportToPDF(salesReport, start, end);
     } else if (activeTab === 'warehouse' && warehouseReport) {
-      exportWarehouseReportToPDF(warehouseReport, start, end);
+      exporters.exportWarehouseReportToPDF(warehouseReport, start, end);
     } else if (activeTab === 'debts' && debtsReport) {
-      exportDebtsReportToPDF(debtsReport, start, end);
+      exporters.exportDebtsReportToPDF(debtsReport, start, end);
     }
   };
 

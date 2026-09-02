@@ -3,9 +3,72 @@ import type { ProxyOptions } from 'vite'
 import react from '@vitejs/plugin-react-swc'
 import type { IncomingMessage, ClientRequest } from 'node:http'
 import { fileURLToPath, URL } from 'node:url'
+import { visualizer } from 'rollup-plugin-visualizer'
 
-export default defineConfig({
-  plugins: [react()],
+/**
+ * Dev proxy loglari faqat so'ralganda: `VITE_PROXY_LOG=1 npm run dev`.
+ * Ilgari har bir API so'rovi uchun ikki qator chiqib, haqiqiy xatolarni ko'mib yuborardi.
+ */
+const proxyLogging = (label: string) => (proxy: Parameters<NonNullable<ProxyOptions['configure']>>[0]) => {
+  proxy.on('error', (err: Error) => {
+    console.log(`${label} proxy error:`, err.message)
+  })
+  if (!process.env.VITE_PROXY_LOG) return
+  proxy.on('proxyReq', (_proxyReq: ClientRequest, req: IncomingMessage) => {
+    console.log(`${label} ->`, req.method, req.url ?? '')
+  })
+  proxy.on('proxyRes', (proxyRes: IncomingMessage, req: IncomingMessage) => {
+    console.log(`${label} <-`, proxyRes.statusCode ?? 0, req.url ?? '')
+  })
+}
+
+/**
+ * Vendor chunk'lar — FUNKSIYA shaklida.
+ *
+ * <p>Obyekt shakli (`{ 'vendor-export': ['jspdf', ...] }`) Rollup'ni Vite'ning
+ * `__vite__preload` yordamchisini vendor chunk ichiga joylashga majbur qilardi;
+ * natijada entry o'sha chunk'ni STATIK import qilar va har bir tashrifchi (vitrina
+ * mehmoni ham) faqat Hisobotlar sahifasi ishlatadigan 618 KB jsPDF/xlsx kodini
+ * yuklab olardi. Funksiya shaklida yordamchi entry'da qoladi, jsPDF esa uni
+ * import qiladigan lazy sahifa bilan birga keladi.
+ */
+function vendorChunk(id: string): string | undefined {
+  const path = id.replace(/\\/g, '/')
+  // Vite'ning dynamic-import preload yordamchisi (virtual modul). Chunk'i aniq
+  // ko'rsatilmasa Rollup uni jsPDF (o'zi ham dynamic import ishlatadi) bilan bir
+  // chunk'ga qo'shib, entry'ni o'sha 700 KB chunk'ni statik import qilishga majbur qilardi.
+  if (path.includes('vite/preload-helper') || path.includes('vite/modulepreload-polyfill')) {
+    return 'vendor-react'
+  }
+  if (!path.includes('/node_modules/')) return undefined
+  const from = (names: string[]) =>
+    names.some((name) => path.includes(`/node_modules/${name}/`))
+
+  if (from(['react', 'react-dom', 'react-router', 'react-router-dom', '@remix-run/router', 'scheduler'])) {
+    return 'vendor-react'
+  }
+  if (from(['recharts', 'victory-vendor', 'internmap', 'delaunator', 'robust-predicates']) || /\/node_modules\/d3-[a-z-]+\//.test(path)) {
+    return 'vendor-charts'
+  }
+  if (from(['jspdf', 'jspdf-autotable', 'xlsx'])) return 'vendor-export'
+  if (from(['sockjs-client', '@stomp/stompjs'])) return 'vendor-websocket'
+  if (from(['date-fns'])) return 'vendor-date'
+  if (from(['react-hook-form'])) return 'vendor-form'
+  if (from(['zustand', 'axios', '@tanstack/react-query', '@tanstack/query-core'])) return 'vendor-state'
+  if (from(['lucide-react', 'clsx', 'tailwind-merge', 'class-variance-authority', '@headlessui/react', 'react-hot-toast'])) {
+    return 'vendor-ui'
+  }
+  return undefined
+}
+
+export default defineConfig(({ mode }) => ({
+  plugins: [
+    react(),
+    // `npm run analyze` -> dist/stats.html (chunk tarkibi, gzip o'lchamlari).
+    // Aynan shu ko'rinish bo'lmagani uchun 618 KB eksport chunk'i entry'ga
+    // yopishib qolgani sezilmagan edi.
+    ...(mode === 'analyze' ? [visualizer({ filename: 'dist/stats.html', gzipSize: true, brotliSize: true })] : []),
+  ],
   // @/* -> src/* (tsconfig paths bilan mos)
   resolve: {
     alias: {
@@ -57,24 +120,28 @@ export default defineConfig({
      * <p>Bu qiymat sog'lom testni sekinlashtirmaydi — u faqat YUQORI chegara.
      */
     testTimeout: 15_000,
+    coverage: {
+      provider: 'v8',
+      reporter: ['text-summary', 'html'],
+      include: ['src/**/*.{ts,tsx}'],
+      exclude: ['src/**/*.test.{ts,tsx}', 'src/test/**', 'src/devtools/**', 'src/types/**'],
+    },
   },
   define: {
     global: 'globalThis',
   },
 
+  esbuild: {
+    // Prod build'da console.* va debugger olib tashlanadi: 130+ chaqiruv prodga
+    // chiqardi, ba'zilari sessiya/API javoblarini to'liq dump qilardi.
+    // Dev va test rejimida saqlanadi.
+    drop: mode === 'production' ? ['console', 'debugger'] : [],
+  },
+
   build: {
     rollupOptions: {
       output: {
-        manualChunks: {
-          'vendor-react': ['react', 'react-dom', 'react-router-dom'],
-          'vendor-state': ['zustand', 'axios'],
-          'vendor-ui': ['lucide-react', 'clsx'],
-          'vendor-charts': ['recharts'],
-          'vendor-date': ['date-fns'],
-          'vendor-form': ['react-hook-form'],
-          'vendor-export': ['jspdf', 'jspdf-autotable', 'html2canvas'],
-          'vendor-websocket': ['sockjs-client', '@stomp/stompjs'],
-        },
+        manualChunks: vendorChunk,
       },
     },
   },
@@ -92,19 +159,7 @@ export default defineConfig({
         changeOrigin: true,
         secure: false,
         ws: false,
-        configure: (proxy) => {
-          proxy.on('error', (err: Error) => {
-            console.log('Proxy error:', err.message)
-          })
-
-          proxy.on('proxyReq', (_proxyReq: ClientRequest, req: IncomingMessage) => {
-            console.log("Backendga so'rov ketdi:", req.method, req.url ?? '')
-          })
-
-          proxy.on('proxyRes', (proxyRes: IncomingMessage, req: IncomingMessage) => {
-            console.log('Backenddan javob keldi:', proxyRes.statusCode ?? 0, req.url ?? '')
-          })
-        },
+        configure: proxyLogging('API'),
       } satisfies ProxyOptions,
 
       // 2) WS/SockJS proxy (faqat WS): /api/v1/ws -> /v1/ws
@@ -114,20 +169,8 @@ export default defineConfig({
         secure: false,
         ws: true,
         rewrite: (path) => path.replace(/^\/api/, ''),
-        configure: (proxy) => {
-          proxy.on('error', (err: Error) => {
-            console.log('WS Proxy error:', err.message)
-          })
-
-          proxy.on('proxyReq', (_proxyReq: ClientRequest, req: IncomingMessage) => {
-            console.log('WS so‘rov:', req.method, req.url ?? '')
-          })
-
-          proxy.on('proxyRes', (proxyRes: IncomingMessage, req: IncomingMessage) => {
-            console.log('WS javob:', proxyRes.statusCode ?? 0, req.url ?? '')
-          })
-        },
+        configure: proxyLogging('WS'),
       } satisfies ProxyOptions,
     },
   },
-})
+}))

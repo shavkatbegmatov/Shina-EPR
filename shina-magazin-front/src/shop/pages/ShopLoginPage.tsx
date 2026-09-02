@@ -1,3 +1,4 @@
+import { switchLanguage } from '@/i18n';
 import { useState } from 'react';
 import { useForm, Controller } from 'react-hook-form';
 import { useTranslation } from 'react-i18next';
@@ -43,7 +44,7 @@ export function ShopLoginPage() {
     try {
       const response = await portalAuthApi.login(data);
       setAuth(response.customer, response.accessToken, response.refreshToken);
-      i18n.changeLanguage(response.customer.preferredLanguage || i18n.language);
+      void switchLanguage(response.customer.preferredLanguage || i18n.language);
       toast.success(t('auth.welcome'));
       navigate(redirect, { replace: true });
     } catch (err: unknown) {

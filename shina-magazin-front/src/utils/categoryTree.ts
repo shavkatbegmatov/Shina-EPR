@@ -1,4 +1,23 @@
-import { icons, Folder, type LucideIcon } from 'lucide-react';
+import {
+  Bike,
+  Car,
+  CarFront,
+  CircleDot,
+  Disc,
+  Folder,
+  Gauge,
+  Layers,
+  Package,
+  Settings,
+  ShoppingBag,
+  Snowflake,
+  Sun,
+  Tag,
+  Truck,
+  Wrench,
+  Zap,
+  type LucideIcon,
+} from 'lucide-react';
 import type { Category, CategoryTemplate } from '../types';
 
 export interface FlatCategory {
@@ -69,14 +88,35 @@ export function getEffectiveTemplate(
   return result === NOT_FOUND ? undefined : result;
 }
 
+/**
+ * Kategoriya ikonkalari — FAQAT tanlagichdagi to'plam (CATEGORY_ICON_CHOICES).
+ *
+ * Ilgari lucide'ning `icons` obyekti (butun to'plam, 1500+ ikonka) import qilinardi:
+ * tree-shaking ishlamay, vendor-ui chunk'i 360 KB bo'lib ketgan edi. DB'da
+ * kebab-case nom saqlanadi; ro'yxatda yo'q nom Folder'ga tushadi.
+ */
+const CATEGORY_ICONS: Record<string, LucideIcon> = {
+  'circle-dot': CircleDot,
+  disc: Disc,
+  car: Car,
+  'car-front': CarFront,
+  truck: Truck,
+  bike: Bike,
+  gauge: Gauge,
+  zap: Zap,
+  wrench: Wrench,
+  settings: Settings,
+  package: Package,
+  tag: Tag,
+  layers: Layers,
+  'shopping-bag': ShoppingBag,
+  snowflake: Snowflake,
+  sun: Sun,
+};
+
 /** DB'da saqlanadigan kebab-case lucide ikonka nomini komponentga aylantiradi. */
 export function getCategoryIcon(name?: string): LucideIcon {
-  if (!name) return Folder;
-  const pascal = name
-    .split('-')
-    .map((part) => part.charAt(0).toUpperCase() + part.slice(1))
-    .join('');
-  return (icons as Record<string, LucideIcon>)[pascal] ?? Folder;
+  return (name && CATEGORY_ICONS[name]) || Folder;
 }
 
 /** Kategoriya ikonka tanlagichi uchun tavsiya etilgan to'plam (kebab-case). */

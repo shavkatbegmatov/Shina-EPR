@@ -59,3 +59,13 @@ if (!Element.prototype.scrollIntoView) {
 afterEach(() => {
   cleanup();
 });
+
+/**
+ * 'ru' bundle'i ilovada lazy yuklanadi (src/i18n/index.ts). Testlar tilni
+ * sinxron almashtira olishi uchun bu yerda statik qo'shib qo'yiladi.
+ */
+import i18n from '../i18n';
+import ru from '../i18n/locales/ru.json';
+if (!i18n.hasResourceBundle('ru', 'translation')) {
+  i18n.addResourceBundle('ru', 'translation', ru, true, true);
+}

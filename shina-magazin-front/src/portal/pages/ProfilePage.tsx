@@ -1,3 +1,4 @@
+import { switchLanguage } from '@/i18n';
 import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { User, Phone, MapPin, Building, Calendar, Globe, LogOut, Sun, Moon, Monitor } from 'lucide-react';
@@ -13,7 +14,7 @@ import { format } from 'date-fns';
 import { Button } from '@/ui';
 
 export default function PortalProfilePage() {
-  const { t, i18n } = useTranslation();
+  const { t } = useTranslation();
   const navigate = useNavigate();
   const { logout, language, setLanguage } = usePortalAuthStore();
   const { mode: theme, setMode: setTheme } = useThemeStore();
@@ -31,7 +32,7 @@ export default function PortalProfilePage() {
     try {
       await portalApiClient.updateLanguage(lang);
       setLanguage(lang);
-      i18n.changeLanguage(lang);
+      void switchLanguage(lang);
       toast.success(t('profile.language') + ': ' + (lang === 'uz' ? "O'zbekcha" : 'Русский'));
     } catch (error) {
       console.error('Failed to update language', error);
