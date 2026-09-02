@@ -30,9 +30,30 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
     @Override
     protected boolean shouldNotFilter(HttpServletRequest request) {
-        String path = request.getRequestURI();
         // WebSocket endpoint'larni filtrlashdan o'tkazib yuborish
-        return path.startsWith("/v1/ws");
+        return pathWithinApp(request).startsWith("/v1/ws");
+    }
+
+    /**
+     * Context-path'siz yo'l ({@code /v1/...}).
+     *
+     * <p>{@code getRequestURI()} context-path'ni ham qaytaradi: prod'da
+     * {@code server.servlet.context-path=/api} bo'lgani uchun u {@code /api/v1/auth/change-password}
+     * bo'ladi. Ilgari shu qiymat {@code /v1/auth/change-password} bilan solishtirilardi va hech
+     * qachon mos kelmasdi — vaqtinchalik parol olgan xodim parolni almashtirish endpointidan ham
+     * 403 olib, tizimdan butunlay qulflanib qolardi. Testlar buni ko'rmasdi, chunki
+     * {@code MockHttpServletRequest} da context-path bo'sh.
+     */
+    static String pathWithinApp(HttpServletRequest request) {
+        String uri = request.getRequestURI();
+        if (uri == null) {
+            return "";
+        }
+        String contextPath = request.getContextPath();
+        if (contextPath != null && !contextPath.isEmpty() && uri.startsWith(contextPath)) {
+            return uri.substring(contextPath.length());
+        }
+        return uri;
     }
 
     @Override
@@ -138,7 +159,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
      * o'zini tanishtira olishi, parolni almashtira olishi va chiqa olishi kerak.
      */
     private boolean isAllowedWhilePasswordChangePending(HttpServletRequest request) {
-        String path = request.getRequestURI();
+        String path = pathWithinApp(request);
         return path.equals("/v1/auth/change-password")
                 || path.equals("/v1/auth/me")
                 || path.equals("/v1/auth/logout")

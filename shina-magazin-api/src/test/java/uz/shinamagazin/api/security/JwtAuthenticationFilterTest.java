@@ -57,9 +57,15 @@ class JwtAuthenticationFilterTest {
         runFilter("/v1/sales");
     }
 
+    /**
+     * So'rov prod'dagi kabi context-path ({@code /api}) bilan quriladi: {@code getRequestURI()}
+     * {@code /api/v1/...} qaytaradi. Ilgari test bo'sh context-path bilan yurardi va filtrdagi
+     * {@code /v1/...} taqqoslash xatosini ko'rmasdi.
+     */
     private MockHttpServletResponse runFilter(String path) throws Exception {
         MockHttpServletRequest request = new MockHttpServletRequest();
-        request.setRequestURI(path);
+        request.setContextPath("/api");
+        request.setRequestURI("/api" + path);
         request.addHeader("Authorization", "Bearer token-123");
         MockHttpServletResponse response = new MockHttpServletResponse();
         filter.doFilter(request, response, new MockFilterChain());
@@ -130,6 +136,36 @@ class JwtAuthenticationFilterTest {
 
         SecurityContextHolder.clearContext();
         assertThat(runFilter("/v1/auth/logout").getStatus()).isEqualTo(200);
+    }
+
+    @Test
+    @DisplayName("Context-path'siz so'rovda ham (dev/test) ruxsat etilgan yo'llar ishlaydi")
+    void passwordChangeReachableWithoutContextPath() throws Exception {
+        User staff = staff(true);
+        staff.setMustChangePassword(true);
+        when(staffService.loadUserByUsername("kassir")).thenReturn(new CustomUserDetails(staff));
+
+        MockHttpServletRequest request = new MockHttpServletRequest();
+        request.setRequestURI("/v1/auth/change-password");
+        request.addHeader("Authorization", "Bearer token-123");
+        MockHttpServletResponse response = new MockHttpServletResponse();
+        filter.doFilter(request, response, new MockFilterChain());
+
+        assertThat(response.getStatus()).isEqualTo(200);
+        assertThat(SecurityContextHolder.getContext().getAuthentication()).isNotNull();
+    }
+
+    @Test
+    @DisplayName("WebSocket handshake yo'li context-path bilan ham filtrdan o'tkazib yuboriladi")
+    void webSocketPathSkipsFilterWithContextPath() throws Exception {
+        when(staffService.loadUserByUsername("kassir"))
+                .thenReturn(new CustomUserDetails(staff(true)));
+
+        runFilter("/v1/ws/info");
+
+        assertThat(SecurityContextHolder.getContext().getAuthentication())
+                .as("/v1/ws/** JWT filtridan o'tmaydi — token STOMP interceptor'da tekshiriladi")
+                .isNull();
     }
 
     @Test
