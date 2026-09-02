@@ -1,6 +1,7 @@
 package uz.shinamagazin.api.config;
 
 import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.messaging.simp.config.ChannelRegistration;
 import org.springframework.messaging.simp.config.MessageBrokerRegistry;
@@ -9,12 +10,23 @@ import org.springframework.web.socket.config.annotation.StompEndpointRegistry;
 import org.springframework.web.socket.config.annotation.WebSocketMessageBrokerConfigurer;
 import uz.shinamagazin.api.security.JwtChannelInterceptor;
 
+import java.util.List;
+
 @Configuration
 @EnableWebSocketMessageBroker
 @RequiredArgsConstructor
 public class WebSocketConfig implements WebSocketMessageBrokerConfigurer {
 
     private final JwtChannelInterceptor jwtChannelInterceptor;
+
+    /**
+     * HTTP CORS bilan bir xil ro'yxat ({@code cors.allowed-origins}, prod'da
+     * {@code CORS_ALLOWED_ORIGINS}). Ilgari bu yerda faqat dev hostlar qattiq yozilgan edi:
+     * brauzer WebSocket handshake'ga doim {@code Origin} yuboradi, prod domeni ro'yxatda
+     * bo'lmagani uchun handshake 403 olardi va SockJS xhr-streaming'ga tushib qolardi.
+     */
+    @Value("${cors.allowed-origins}")
+    private List<String> allowedOrigins;
 
     @Override
     public void configureMessageBroker(MessageBrokerRegistry registry) {
@@ -30,12 +42,7 @@ public class WebSocketConfig implements WebSocketMessageBrokerConfigurer {
     public void registerStompEndpoints(StompEndpointRegistry registry) {
         // WebSocket endpoint
         registry.addEndpoint("/v1/ws")
-                .setAllowedOrigins(
-                        "http://localhost:5183",
-                        "http://localhost:3000",
-                        "http://127.0.0.1:5183",
-                        "http://192.168.1.33:5183"
-                )
+                .setAllowedOrigins(allowedOrigins.toArray(new String[0]))
                 .withSockJS();
     }
 
