@@ -20,13 +20,6 @@ spring:
   # Demo ma'lumotlar Flyway orqali avtomatik yuklanmaydi. Ular Sozlamalar
   # sahifasidagi boshqariladigan seed/cleanup endpointlari orqali yaratiladi.
 
-  # Vault va Cloud tekshiruvlarini dev muhitda o'chirish
-  cloud:
-    vault:
-      enabled: false
-    compatibility-verifier:
-      enabled: false
-
 # DEV-ONLY imzo kaliti — lokal ishlab chiqish uchun, JWT_SECRET o'rnatilmagan bo'lsa.
 # Prod'da bu fayl YUKLANMAYDI (profil `prod`), u yerda JWT_SECRET majburiy.
 # Bu kalit repoda ochiq — hech qachon prod'da ishlatilmasin.

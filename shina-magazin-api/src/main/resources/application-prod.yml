@@ -37,13 +37,6 @@ spring:
     hibernate:
       ddl-auto: validate
 
-  # Vault va Cloud tekshiruvlarini o'chirish (Coolify env ishlatiladi, tashqi Vault yo'q)
-  cloud:
-    vault:
-      enabled: false
-    compatibility-verifier:
-      enabled: false
-
 # Production logging — faqat muhim loglar
 logging:
   level:
