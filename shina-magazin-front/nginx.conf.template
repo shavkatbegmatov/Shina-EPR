@@ -12,12 +12,27 @@ map $http_x_forwarded_proto $fwd_proto {
     ""      $scheme;
 }
 
+# WebSocket: mijoz Upgrade so'ragandagina "upgrade", aks holda oddiy HTTP ulanish.
+# Ilgari butun /api/ uchun so'zsiz "Connection: upgrade" yuborilardi.
+map $http_upgrade $connection_upgrade {
+    default upgrade;
+    ""      close;
+}
+
 server {
     listen 80;
     server_name _;
 
     root /usr/share/nginx/html;
     index index.html;
+
+    # Xavfsizlik sarlavhalari (CSP, HSTS, nosniff, frame...). Snippet add_header'li
+    # location'larda qayta include qilinadi — nginx'da add_header meros bo'lmaydi.
+    include /etc/nginx/snippets/security-headers.conf;
+
+    # Backend multipart chegarasi 6 MB (application.yml). nginx defaulti 1 MB edi —
+    # 1 MB dan katta mahsulot rasmi backendga yetmasdan 413 bilan qaytardi.
+    client_max_body_size 8m;
 
     # www -> apex 301 (SEO kanonik manzil). Har qanday www.<domen> uchun umumiy ishlaydi.
     if ($host ~* ^www\.(.+)$) {
@@ -38,39 +53,61 @@ server {
     gzip on;
     gzip_vary on;
     gzip_min_length 1024;
-    gzip_types text/plain text/css application/json application/javascript text/xml application/xml text/javascript image/svg+xml;
+    gzip_types text/plain text/css application/json application/javascript text/xml application/xml text/javascript image/svg+xml application/manifest+json;
 
     # Statik asset'lar — uzoq cache (vite hashlangan nom beradi)
-    location ~* \.(js|css|png|jpg|jpeg|gif|ico|svg|woff|woff2|ttf|eot)$ {
+    location ~* \.(js|css|png|jpg|jpeg|gif|webp|avif|ico|svg|woff|woff2|ttf|eot)$ {
         expires 1y;
         add_header Cache-Control "public, immutable";
+        include /etc/nginx/snippets/security-headers.conf;
     }
 
     # SPA entrypoint deploydan keyin eski chunk nomlarini ushlab qolmasin.
     # Hashlangan /assets fayllari yuqorida uzoq cache'da qoladi, faqat HTML yangilanadi.
+    # (`expires -1` ataylab yo'q: u o'zi ham Cache-Control qo'shib, sarlavha ikki marta chiqardi.)
     location ~* \.html$ {
-        expires -1;
         add_header Cache-Control "no-cache, no-store, must-revalidate";
+        include /etc/nginx/snippets/security-headers.conf;
+    }
+
+    # WebSocket / SockJS (STOMP — real-time bildirishnomalar). Uzoq umrli ulanish,
+    # shuning uchun katta timeout FAQAT shu yo'lga; qolgan REST 2 daqiqada uziladi.
+    location /api/v1/ws/ {
+        proxy_pass http://$backend_host:$backend_port$request_uri;
+        proxy_http_version 1.1;
+        proxy_set_header Upgrade $http_upgrade;
+        proxy_set_header Connection $connection_upgrade;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $fwd_proto;
+        proxy_buffering off;
+        proxy_connect_timeout 5s;
+        proxy_send_timeout 3600s;
+        proxy_read_timeout 3600s;
     }
 
     # API + yuklangan rasmlar (/api/uploads/...) -> backend (same-origin proxy)
     location /api/ {
         proxy_pass http://$backend_host:$backend_port$request_uri;
         proxy_http_version 1.1;
-        proxy_set_header Upgrade $http_upgrade;
-        proxy_set_header Connection "upgrade";
+        proxy_set_header Connection "";
         proxy_set_header Host $host;
         proxy_set_header X-Real-IP $remote_addr;
         proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
         proxy_set_header X-Forwarded-Proto $fwd_proto;
-        # WebSocket (STOMP/SockJS — real-time bildirishnomalar)
-        proxy_read_timeout 86400;
+        # Eksport/import (Excel, PDF) uzoqroq olishi mumkin — 2 daqiqa; ilgari 24 soat edi
+        # va osilib qolgan REST so'rov worker ulanishini bir kun ushlab turardi.
+        proxy_connect_timeout 5s;
+        proxy_send_timeout 120s;
+        proxy_read_timeout 120s;
         # Backend mavjud bo'lmasa 502/503/504 (crash o'rniga)
         proxy_next_upstream error timeout http_502 http_503 http_504;
     }
 
     location = /manifest.webmanifest {
         add_header Content-Type "application/manifest+json";
+        include /etc/nginx/snippets/security-headers.conf;
     }
 
     # Mahsulot sahifasi: link-preview bot bo'lsa backend server-meta (og:image = mahsulot

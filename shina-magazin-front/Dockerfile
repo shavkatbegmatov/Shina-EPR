@@ -18,6 +18,8 @@ FROM nginx:alpine
 # Template startupda envsubst bilan /etc/nginx/conf.d/default.conf ga aylanadi
 # (rasmiy image mexanizmi) — backend host/port'ni env orqali moslash mumkin.
 COPY nginx.conf.template /etc/nginx/templates/default.conf.template
+# Xavfsizlik sarlavhalari snippet'i (template ichida bir necha joyda include qilinadi)
+COPY nginx-security-headers.conf /etc/nginx/snippets/security-headers.conf
 ENV BACKEND_HOST=shina-magazin-api \
     BACKEND_PORT=8183
 COPY --from=build /app/dist /usr/share/nginx/html
