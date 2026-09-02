@@ -17,6 +17,7 @@ import uz.shinamagazin.api.security.ClientIp;
 import uz.shinamagazin.api.security.SimpleRateLimiter;
 import uz.shinamagazin.api.dto.request.ChangePasswordRequest;
 import uz.shinamagazin.api.dto.request.LoginRequest;
+import uz.shinamagazin.api.dto.request.RefreshTokenRequest;
 import uz.shinamagazin.api.dto.response.ApiResponse;
 import uz.shinamagazin.api.dto.response.JwtResponse;
 import uz.shinamagazin.api.dto.response.UserResponse;
@@ -84,18 +85,43 @@ public class AuthController {
         }
     }
 
+    /**
+     * Refresh throttle (IP bo'yicha, faqat MUVAFFAQIYATSIZ urinishlar).
+     *
+     * <p>Endpoint ommaviy: yopilgan sessiyaning yoki o'g'irlangan tokenlarning
+     * "tirikligini" sinab ko'rish ham shu yerdan o'tadi. Login'da chegara bor edi,
+     * bu yerda esa yo'q — cheksiz urinish mumkin edi.
+     */
+    private static final int REFRESH_MAX_FAILURES_PER_IP = 30;
+    private static final long REFRESH_WINDOW_MS = 15 * 60_000;
+
     @PostMapping("/refresh-token")
-    @Operation(summary = "Refresh Token", description = "Token yangilash")
+    @Operation(summary = "Refresh Token",
+            description = "Token yangilash — refresh token JSON body'da: {\"refreshToken\": \"...\"}")
     public ResponseEntity<ApiResponse<JwtResponse>> refreshToken(
-            @RequestParam String refreshToken,
+            @RequestBody(required = false) RefreshTokenRequest body,
+            @RequestParam(required = false) String refreshToken,
             HttpServletRequest httpRequest) {
-        // IP/User-Agent yangi sessiya yozuvi uchun — refresh endi login kabi
-        // sessiya ochadi, aks holda filtr yangi tokenni rad etardi.
-        JwtResponse response = authService.refreshToken(
-                refreshToken,
-                getClientIpAddress(httpRequest),
-                httpRequest.getHeader("User-Agent"));
-        return ResponseEntity.ok(ApiResponse.success(response));
+        String token = RefreshTokenRequest.resolve(body, refreshToken);
+        String ipAddress = getClientIpAddress(httpRequest);
+        String throttleKey = "refresh:" + ipAddress;
+
+        if (rateLimiter.isBlocked(throttleKey, REFRESH_MAX_FAILURES_PER_IP, REFRESH_WINDOW_MS)) {
+            throw new ResponseStatusException(HttpStatus.TOO_MANY_REQUESTS,
+                    "Juda ko'p urinish. Birozdan keyin qayta urinib ko'ring.");
+        }
+
+        try {
+            // IP/User-Agent yangi sessiya yozuvi uchun — refresh endi login kabi
+            // sessiya ochadi, aks holda filtr yangi tokenni rad etardi.
+            JwtResponse response = authService.refreshToken(
+                    token, ipAddress, httpRequest.getHeader("User-Agent"));
+            rateLimiter.reset(throttleKey);
+            return ResponseEntity.ok(ApiResponse.success(response));
+        } catch (ResponseStatusException | AccountDisabledException e) {
+            rateLimiter.recordFailure(throttleKey, REFRESH_WINDOW_MS);
+            throw e;
+        }
     }
 
     @GetMapping("/me")

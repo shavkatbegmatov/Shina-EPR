@@ -10,6 +10,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.server.ResponseStatusException;
 import uz.shinamagazin.api.dto.request.CustomerLoginRequest;
+import uz.shinamagazin.api.dto.request.RefreshTokenRequest;
 import uz.shinamagazin.api.dto.response.ApiResponse;
 import uz.shinamagazin.api.dto.response.CustomerAuthResponse;
 import uz.shinamagazin.api.exception.BadRequestException;
@@ -64,11 +65,28 @@ public class CustomerAuthController {
     }
 
     @PostMapping("/refresh-token")
-    @Operation(summary = "Token yangilash", description = "Refresh token orqali yangi access token olish")
+    @Operation(summary = "Token yangilash",
+            description = "Refresh token orqali yangi access token olish — token JSON body'da")
     public ResponseEntity<ApiResponse<CustomerAuthResponse>> refreshToken(
-            @RequestParam String refreshToken) {
-        CustomerAuthResponse response = customerAuthService.refreshToken(refreshToken);
-        return ResponseEntity.ok(ApiResponse.success(response));
+            @RequestBody(required = false) RefreshTokenRequest body,
+            @RequestParam(required = false) String refreshToken,
+            HttpServletRequest httpRequest) {
+        String token = RefreshTokenRequest.resolve(body, refreshToken);
+        String throttleKey = "customer-refresh:" + ClientIp.of(httpRequest);
+
+        if (rateLimiter.isBlocked(throttleKey, LOGIN_MAX_FAILURES_PER_IP, LOGIN_WINDOW_MS)) {
+            throw new ResponseStatusException(HttpStatus.TOO_MANY_REQUESTS,
+                    "Juda ko'p urinish. Birozdan keyin qayta urinib ko'ring.");
+        }
+
+        try {
+            CustomerAuthResponse response = customerAuthService.refreshToken(token);
+            rateLimiter.reset(throttleKey);
+            return ResponseEntity.ok(ApiResponse.success(response));
+        } catch (BadRequestException e) {
+            rateLimiter.recordFailure(throttleKey, LOGIN_WINDOW_MS);
+            throw e;
+        }
     }
 
     @PostMapping("/logout")
