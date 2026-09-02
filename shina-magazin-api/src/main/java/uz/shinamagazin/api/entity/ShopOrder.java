@@ -73,6 +73,18 @@ public class ShopOrder extends BaseEntity {
     @Column(name = "paid_at")
     private LocalDateTime paidAt;
 
+    /** Provayder tranzaksiyasi yaratilgan vaqt (Payme CreateTransaction; takrorda o'zgarmaydi). */
+    @Column(name = "payment_created_at")
+    private LocalDateTime paymentCreatedAt;
+
+    /** Provayder tranzaksiyani bekor qilgan vaqt (Payme CancelTransaction / Click error). */
+    @Column(name = "payment_cancelled_at")
+    private LocalDateTime paymentCancelledAt;
+
+    /** Bekor qilish sababi — Payme kodi (1..10). */
+    @Column(name = "payment_cancel_reason")
+    private Integer paymentCancelReason;
+
     // Narxlar (serverda hisoblangan)
     @Column(nullable = false, precision = 15, scale = 2)
     private BigDecimal subtotal;

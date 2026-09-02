@@ -91,6 +91,11 @@ public class ShopPaymentService {
     public ShopOrder markPaid(String orderNo, String providerTxId) {
         ShopOrder order = orderRepository.findByOrderNo(orderNo)
                 .orElseThrow(() -> new ResourceNotFoundException("Buyurtma", "orderNo", orderNo));
+        // Idempotent: provayder qayta urinsa paid_at o'zgarmasin (Payme perform_time barqaror bo'lishi shart)
+        if (order.getPaymentStatus() == ShopPaymentStatus.PAID
+                && providerTxId != null && providerTxId.equals(order.getProviderTransactionId())) {
+            return order;
+        }
         order.setPaymentStatus(ShopPaymentStatus.PAID);
         order.setProviderTransactionId(providerTxId);
         order.setPaidAt(LocalDateTime.now());
@@ -106,9 +111,53 @@ public class ShopPaymentService {
         orderRepository.findByOrderNo(orderNo).ifPresent(order -> {
             if (order.getPaymentStatus() != ShopPaymentStatus.PAID) {
                 order.setPaymentStatus(ShopPaymentStatus.FAILED);
+                if (order.getPaymentCancelledAt() == null) {
+                    order.setPaymentCancelledAt(LocalDateTime.now());
+                }
                 orderRepository.save(order);
             }
         });
+    }
+
+    /**
+     * Provayder tranzaksiyasini buyurtmaga bog'laydi (Payme CreateTransaction).
+     * Takroriy chaqiruvda vaqt o'zgarmaydi — Payme bir xil {@code create_time} kutadi.
+     */
+    @Transactional
+    public ShopOrder attachProviderTransaction(String orderNo, String providerTxId) {
+        ShopOrder order = orderRepository.findByOrderNo(orderNo)
+                .orElseThrow(() -> new ResourceNotFoundException("Buyurtma", "orderNo", orderNo));
+        if (!providerTxId.equals(order.getProviderTransactionId()) || order.getPaymentCreatedAt() == null) {
+            order.setProviderTransactionId(providerTxId);
+            order.setPaymentCreatedAt(LocalDateTime.now());
+        }
+        if (order.getPaymentStatus() == ShopPaymentStatus.PENDING) {
+            order.setPaymentStatus(ShopPaymentStatus.PROCESSING);
+        }
+        return orderRepository.save(order);
+    }
+
+    /**
+     * Provayder bekor qildi (Payme CancelTransaction). To'langan buyurtma uchun bu
+     * QAYTARISH ({@code REFUNDED}, Payme state -2), to'lanmagan uchun {@code FAILED}
+     * (state -1). Bekor vaqti va sababi saqlanadi — CheckTransaction ularni qaytaradi.
+     * Takroriy chaqiruv holatni o'zgartirmaydi.
+     */
+    @Transactional
+    public ShopOrder cancelByProvider(String orderNo, Integer reason) {
+        ShopOrder order = orderRepository.findByOrderNo(orderNo)
+                .orElseThrow(() -> new ResourceNotFoundException("Buyurtma", "orderNo", orderNo));
+        if (order.getPaymentCancelledAt() != null) {
+            return order; // allaqachon bekor qilingan — idempotent
+        }
+        order.setPaymentCancelledAt(LocalDateTime.now());
+        order.setPaymentCancelReason(reason);
+        order.setPaymentStatus(order.getPaymentStatus() == ShopPaymentStatus.PAID
+                ? ShopPaymentStatus.REFUNDED
+                : ShopPaymentStatus.FAILED);
+        log.info("Shop order {} payment cancelled by provider (reason={}, status={})",
+                orderNo, reason, order.getPaymentStatus());
+        return orderRepository.save(order);
     }
 
     @Transactional(readOnly = true)

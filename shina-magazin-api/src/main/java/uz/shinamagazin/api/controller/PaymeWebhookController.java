@@ -85,6 +85,11 @@ public class PaymeWebhookController {
         return rpcResult(id, Map.of("allow", true));
     }
 
+    /**
+     * Idempotent: Payme bir xil {@code id} bilan qayta chaqirsa o'sha {@code create_time}
+     * qaytadi. Boshqa {@code id} bilan kelsa (buyurtmada allaqachon faol tranzaksiya bor)
+     * rad etiladi — bitta buyurtmaga ikkita tranzaksiya ochib bo'lmaydi.
+     */
     private Map<String, Object> createTransaction(Object id, Map<String, Object> params) {
         ShopOrder order = orderFromParams(params);
         if (order == null) return rpcError(id, ERR_ORDER, "Order not found");
@@ -93,39 +98,48 @@ public class PaymeWebhookController {
         if (order.getPaymentStatus() == ShopPaymentStatus.PAID) return rpcError(id, ERR_CANT_PERFORM, "Already paid");
 
         String paymeTxId = String.valueOf(params.get("id"));
-        order.setProviderTransactionId(paymeTxId);
-        if (order.getPaymentStatus() == ShopPaymentStatus.PENDING) {
-            order.setPaymentStatus(ShopPaymentStatus.PROCESSING);
+        if (order.getProviderTransactionId() != null
+                && !paymeTxId.equals(order.getProviderTransactionId())
+                && order.getPaymentStatus() == ShopPaymentStatus.PROCESSING) {
+            return rpcError(id, ERR_CANT_PERFORM, "Another transaction is in progress for this order");
         }
-        paymentService.save(order);
+
+        ShopOrder attached = paymentService.attachProviderTransaction(order.getOrderNo(), paymeTxId);
         Map<String, Object> res = new HashMap<>();
-        res.put("create_time", epochMs(order));
-        res.put("transaction", order.getOrderNo());
+        res.put("create_time", epochMs(attached.getPaymentCreatedAt(), epochMs(attached)));
+        res.put("transaction", attached.getOrderNo());
         res.put("state", 1);
         return rpcResult(id, res);
     }
 
+    /** Idempotent: allaqachon to'langan bo'lsa saqlangan {@code perform_time} qaytadi. */
     private Map<String, Object> performTransaction(Object id, Map<String, Object> params) {
         ShopOrder order = orderByPaymeTx(params);
         if (order == null) return rpcError(id, ERR_TX_NOT_FOUND, "Transaction not found");
+        if (order.getPaymentCancelledAt() != null) return rpcError(id, ERR_CANT_PERFORM, "Transaction cancelled");
+        if (order.getStatus() == ShopOrderStatus.CANCELLED) return rpcError(id, ERR_CANT_PERFORM, "Order cancelled");
+
         ShopOrder paid = paymentService.markPaid(order.getOrderNo(), String.valueOf(params.get("id")));
         Map<String, Object> res = new HashMap<>();
-        res.put("perform_time", paid.getPaidAt() != null
-                ? paid.getPaidAt().atZone(ZoneId.systemDefault()).toInstant().toEpochMilli()
-                : System.currentTimeMillis());
+        res.put("perform_time", epochMs(paid.getPaidAt(), System.currentTimeMillis()));
         res.put("transaction", paid.getOrderNo());
         res.put("state", 2);
         return rpcResult(id, res);
     }
 
+    /**
+     * Bekor qilish vaqti va sababi saqlanadi (takror chaqiruvda o'zgarmaydi).
+     * To'lovdan keyingi bekor — qaytarish (state -2), oldingisi — state -1.
+     */
     private Map<String, Object> cancelTransaction(Object id, Map<String, Object> params) {
         ShopOrder order = orderByPaymeTx(params);
         if (order == null) return rpcError(id, ERR_TX_NOT_FOUND, "Transaction not found");
-        paymentService.markFailed(order.getOrderNo());
+        Integer reason = parseReason(params.get("reason"));
+        ShopOrder cancelled = paymentService.cancelByProvider(order.getOrderNo(), reason);
         Map<String, Object> res = new HashMap<>();
-        res.put("cancel_time", System.currentTimeMillis());
-        res.put("transaction", order.getOrderNo());
-        res.put("state", order.getPaymentStatus() == ShopPaymentStatus.PAID ? -2 : -1);
+        res.put("cancel_time", epochMs(cancelled.getPaymentCancelledAt(), System.currentTimeMillis()));
+        res.put("transaction", cancelled.getOrderNo());
+        res.put("state", cancelled.getPaymentStatus() == ShopPaymentStatus.REFUNDED ? -2 : -1);
         return rpcResult(id, res);
     }
 
@@ -134,19 +148,31 @@ public class PaymeWebhookController {
         if (order == null) return rpcError(id, ERR_TX_NOT_FOUND, "Transaction not found");
         int state = switch (order.getPaymentStatus()) {
             case PAID -> 2;
-            case PROCESSING -> 1;
+            case PROCESSING, PENDING -> 1;
             case CANCELLED, REFUNDED -> -2;
-            default -> -1;
+            case FAILED -> -1;
         };
         Map<String, Object> res = new HashMap<>();
-        res.put("create_time", epochMs(order));
-        res.put("perform_time", order.getPaidAt() != null
-                ? order.getPaidAt().atZone(ZoneId.systemDefault()).toInstant().toEpochMilli() : 0);
-        res.put("cancel_time", 0);
+        res.put("create_time", epochMs(order.getPaymentCreatedAt(), epochMs(order)));
+        res.put("perform_time", epochMs(order.getPaidAt(), 0L));
+        res.put("cancel_time", epochMs(order.getPaymentCancelledAt(), 0L));
         res.put("transaction", order.getOrderNo());
         res.put("state", state);
-        res.put("reason", null);
+        res.put("reason", order.getPaymentCancelReason());
         return rpcResult(id, res);
+    }
+
+    private static Integer parseReason(Object raw) {
+        if (raw == null) return null;
+        try {
+            return Integer.valueOf(String.valueOf(raw));
+        } catch (NumberFormatException e) {
+            return null;
+        }
+    }
+
+    private static long epochMs(java.time.LocalDateTime time, long fallback) {
+        return time != null ? time.atZone(ZoneId.systemDefault()).toInstant().toEpochMilli() : fallback;
     }
 
     // --- helpers ---
