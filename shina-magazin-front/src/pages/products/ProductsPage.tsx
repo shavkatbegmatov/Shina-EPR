@@ -81,12 +81,13 @@ export function ProductsPage() {
   }, [brandFilter, categoryFilter, search, seasonFilter]);
 
   // Shinaga tegishli bo'lmagan kategoriya tanlanganda mavsum filtri eskiradi
+  // Invariant: shina bo'lmagan kontekstda mavsum filtri bo'lmaydi — bog'liqliklar
+  // to'liq, shuning uchun kontekst ham, filtr ham o'zgarganda tekshiriladi.
   useEffect(() => {
     if (!isTireContext && seasonFilter) {
       setSeasonFilter('');
     }
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [isTireContext]);
+  }, [isTireContext, seasonFilter]);
 
   // Daraxt bo'yicha indentli variantlar (filtr va forma selectlari uchun)
   const categoryOptions = useMemo(

@@ -140,8 +140,9 @@ export function Header() {
     return () => {
       disconnectWebSocket();
     };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []); // Empty deps - only run once on mount
+    // Zustand store funksiyalari barqaror (identity o'zgarmaydi) — effekt amalda
+    // bir marta ishlaydi, lekin bog'liqliklar aniq yozilgan: stale-closure xavfi yo'q.
+  }, [fetchNotifications, connectWebSocket, disconnectWebSocket]);
 
   // Close dropdowns when clicking outside
   useEffect(() => {
