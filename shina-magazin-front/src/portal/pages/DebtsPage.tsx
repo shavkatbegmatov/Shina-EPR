@@ -1,50 +1,27 @@
-import { useEffect, useState, useCallback } from 'react';
 import { useTranslation } from 'react-i18next';
-import { useOutletContext } from 'react-router-dom';
+import { useQuery } from '@tanstack/react-query';
 import { CreditCard, AlertTriangle, CheckCircle, Clock } from 'lucide-react';
-import { portalApiClient } from '../api/portal.api';
-import PortalHeader from '../components/layout/PortalHeader';
-import type { PortalDebt } from '../types/portal.types';
 import { format } from 'date-fns';
+import { portalApiClient } from '../api/portal.api';
+import { portalKeys, PORTAL_STALE_TIME } from '../api/portalQueryKeys';
+import PortalHeader from '../components/layout/PortalHeader';
+import { PortalError, PortalLoading } from '../components/PortalState';
+import { getApiErrorMessage } from '../../utils/apiError';
 import { formatNumber as formatMoney } from '../../config/constants';
-
-interface OutletContextType {
-  newNotificationTrigger: number;
-}
 
 export default function PortalDebtsPage() {
   const { t } = useTranslation();
-  const { newNotificationTrigger } = useOutletContext<OutletContextType>();
-  const [debts, setDebts] = useState<PortalDebt[]>([]);
-  const [totalDebt, setTotalDebt] = useState(0);
-  const [loading, setLoading] = useState(true);
 
-  const fetchData = useCallback(async (showLoading = true) => {
-    try {
-      if (showLoading) setLoading(true);
-      const [debtsData, total] = await Promise.all([
-        portalApiClient.getDebts(),
-        portalApiClient.getTotalDebt(),
-      ]);
-      setDebts(debtsData);
-      setTotalDebt(total);
-    } catch (error) {
-      console.error('Failed to fetch debts', error);
-    } finally {
-      setLoading(false);
-    }
-  }, []);
-
-  useEffect(() => {
-    fetchData();
-  }, [fetchData]);
-
-  // WebSocket orqali yangi notification kelganda qarzlarni yangilash
-  useEffect(() => {
-    if (newNotificationTrigger > 0) {
-      fetchData(false); // loading ko'rsatmasdan yangilash
-    }
-  }, [newNotificationTrigger, fetchData]);
+  const debtsQuery = useQuery({
+    queryKey: portalKeys.debts(),
+    queryFn: () => portalApiClient.getDebts(),
+    staleTime: PORTAL_STALE_TIME,
+  });
+  const totalQuery = useQuery({
+    queryKey: portalKeys.totalDebt(),
+    queryFn: () => portalApiClient.getTotalDebt(),
+    staleTime: PORTAL_STALE_TIME,
+  });
 
   const getStatusIcon = (status: string, overdue: boolean) => {
     if (status === 'PAID') {
@@ -68,17 +45,32 @@ export default function PortalDebtsPage() {
     return t('debts.active');
   };
 
-  if (loading) {
+  if (debtsQuery.isPending || totalQuery.isPending) {
     return (
       <div className="flex flex-col">
         <PortalHeader title={t('debts.title')} />
-        <div className="flex items-center justify-center h-64">
-          <span className="loading loading-spinner loading-lg text-primary"></span>
-        </div>
+        <PortalLoading />
       </div>
     );
   }
 
+  if (debtsQuery.isError || totalQuery.isError) {
+    return (
+      <div className="flex flex-col">
+        <PortalHeader title={t('debts.title')} />
+        <PortalError
+          message={getApiErrorMessage(debtsQuery.error ?? totalQuery.error)}
+          onRetry={() => {
+            void debtsQuery.refetch();
+            void totalQuery.refetch();
+          }}
+        />
+      </div>
+    );
+  }
+
+  const debts = debtsQuery.data;
+  const totalDebt = totalQuery.data;
   const activeDebts = debts.filter((d) => d.status === 'ACTIVE');
   const paidDebts = debts.filter((d) => d.status === 'PAID');
 

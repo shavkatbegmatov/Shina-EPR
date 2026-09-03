@@ -1,61 +1,59 @@
-import { useEffect, useState, useCallback } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Link, useOutletContext } from 'react-router-dom';
+import { Link } from 'react-router-dom';
+import { useQuery } from '@tanstack/react-query';
 import { Wallet, AlertTriangle, ShoppingBag, ChevronRight, ArrowLeft } from 'lucide-react';
+import { format } from 'date-fns';
 import { usePortalAuthStore } from '../store/portalAuthStore';
 import { portalApiClient } from '../api/portal.api';
+import { portalKeys, PORTAL_STALE_TIME } from '../api/portalQueryKeys';
 import PortalHeader from '../components/layout/PortalHeader';
-import type { CustomerDashboardStats, PortalSale } from '../types/portal.types';
-import { format } from 'date-fns';
+import { PortalError, PortalLoading } from '../components/PortalState';
+import { getApiErrorMessage } from '../../utils/apiError';
 import { formatNumber as formatMoney } from '../../config/constants';
 import { buttonVariants } from '@/ui';
-
-interface OutletContextType {
-  newNotificationTrigger: number;
-}
 
 export default function PortalDashboardPage() {
   const { t } = useTranslation();
   const { customer } = usePortalAuthStore();
-  const { newNotificationTrigger } = useOutletContext<OutletContextType>();
-  const [stats, setStats] = useState<CustomerDashboardStats | null>(null);
-  const [recentPurchases, setRecentPurchases] = useState<PortalSale[]>([]);
-  const [loading, setLoading] = useState(true);
 
-  const fetchData = useCallback(async (showLoading = true) => {
-    try {
-      if (showLoading) setLoading(true);
-      const [dashboardStats, purchasesData] = await Promise.all([
-        portalApiClient.getDashboard(),
-        portalApiClient.getPurchases(0, 3),
-      ]);
-      setStats(dashboardStats);
-      setRecentPurchases(purchasesData.content);
-    } catch (error) {
-      console.error('Failed to fetch dashboard data', error);
-    } finally {
-      setLoading(false);
-    }
-  }, []);
+  const statsQuery = useQuery({
+    queryKey: portalKeys.dashboard(),
+    queryFn: () => portalApiClient.getDashboard(),
+    staleTime: PORTAL_STALE_TIME,
+  });
+  const recentQuery = useQuery({
+    queryKey: portalKeys.recentPurchases(),
+    queryFn: () => portalApiClient.getPurchases(0, 3),
+    staleTime: PORTAL_STALE_TIME,
+  });
 
-  useEffect(() => {
-    fetchData();
-  }, [fetchData]);
-
-  // WebSocket orqali yangi notification kelganda ma'lumotlarni yangilash
-  useEffect(() => {
-    if (newNotificationTrigger > 0) {
-      fetchData(false);
-    }
-  }, [newNotificationTrigger, fetchData]);
-
-  if (loading) {
+  if (statsQuery.isPending || recentQuery.isPending) {
     return (
-      <div className="flex items-center justify-center h-screen">
-        <span className="loading loading-spinner loading-lg text-primary"></span>
+      <div className="flex flex-col">
+        <PortalHeader title={t('dashboard.title')} />
+        <PortalLoading />
       </div>
     );
   }
+
+  if (statsQuery.isError || recentQuery.isError) {
+    const error = statsQuery.error ?? recentQuery.error;
+    return (
+      <div className="flex flex-col">
+        <PortalHeader title={t('dashboard.title')} />
+        <PortalError
+          message={getApiErrorMessage(error)}
+          onRetry={() => {
+            void statsQuery.refetch();
+            void recentQuery.refetch();
+          }}
+        />
+      </div>
+    );
+  }
+
+  const stats = statsQuery.data;
+  const recentPurchases = recentQuery.data.content;
 
   return (
     <div className="flex flex-col">
@@ -83,8 +81,8 @@ export default function PortalDashboardPage() {
                 <Wallet size={16} />
                 {t('dashboard.balance')}
               </div>
-              <p className={`text-xl font-bold ${stats && stats.balance < 0 ? 'text-error' : 'text-success'}`}>
-                {formatMoney(stats?.balance || 0)} {t('common.sum')}
+              <p className={`text-xl font-bold ${stats.balance < 0 ? 'text-error' : 'text-success'}`}>
+                {formatMoney(stats.balance || 0)} {t('common.sum')}
               </p>
             </div>
           </div>
@@ -96,8 +94,8 @@ export default function PortalDashboardPage() {
                 <AlertTriangle size={16} />
                 {t('dashboard.totalDebt')}
               </div>
-              <p className={`text-xl font-bold ${stats?.hasDebt ? 'text-error' : 'text-success'}`}>
-                {formatMoney(stats?.totalDebt || 0)} {t('common.sum')}
+              <p className={`text-xl font-bold ${stats.hasDebt ? 'text-error' : 'text-success'}`}>
+                {formatMoney(stats.totalDebt || 0)} {t('common.sum')}
               </p>
             </div>
           </div>
@@ -110,9 +108,9 @@ export default function PortalDashboardPage() {
                   <ShoppingBag size={16} />
                   {t('dashboard.totalPurchases')}
                 </div>
-                <p className="text-xl font-bold">{stats?.totalPurchases || 0}</p>
+                <p className="text-xl font-bold">{stats.totalPurchases || 0}</p>
               </div>
-              {stats?.hasDebt && (
+              {stats.hasDebt && (
                 <Link to="/hisob/qarzlar" className={buttonVariants({ variant: "danger", size: "sm" })}>
                   {t('dashboard.hasDebt')}
                 </Link>

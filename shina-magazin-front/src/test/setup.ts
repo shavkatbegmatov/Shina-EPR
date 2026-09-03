@@ -69,3 +69,22 @@ import ru from '../i18n/locales/ru.json';
 if (!i18n.hasResourceBundle('ru', 'translation')) {
   i18n.addResourceBundle('ru', 'translation', ru, true, true);
 }
+
+/**
+ * `window.matchMedia` — jsdom da yo'q.
+ *
+ * <p>Tema aniqlash (system light/dark) uni chaqiradi; ilgari har bir test
+ * o'zi stub qilardi. Bu yerda bir marta: `matches` doim false (light).
+ */
+if (typeof window !== 'undefined' && typeof window.matchMedia !== 'function') {
+  window.matchMedia = (query: string): MediaQueryList => ({
+    matches: false,
+    media: query,
+    onchange: null,
+    addListener: () => {},
+    removeListener: () => {},
+    addEventListener: () => {},
+    removeEventListener: () => {},
+    dispatchEvent: () => false,
+  });
+}

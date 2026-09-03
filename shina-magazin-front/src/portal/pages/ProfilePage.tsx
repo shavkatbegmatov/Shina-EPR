@@ -1,43 +1,46 @@
 import { switchLanguage } from '@/i18n';
-import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { User, Phone, MapPin, Building, Calendar, Globe, LogOut, Sun, Moon, Monitor } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { User, Phone, MapPin, Building, Calendar, Globe, LogOut, Sun, Moon, Monitor } from 'lucide-react';
 import toast from 'react-hot-toast';
+import { format } from 'date-fns';
 import { portalApiClient } from '../api/portal.api';
+import { portalKeys } from '../api/portalQueryKeys';
 import { portalAuthApi } from '../api/portalAuth.api';
 import { usePortalAuthStore } from '../store/portalAuthStore';
 import { useThemeStore, type ThemeMode } from '../../shared/theme/themeStore';
 import PortalHeader from '../components/layout/PortalHeader';
-import type { CustomerPortalProfile } from '../types/portal.types';
-import { format } from 'date-fns';
+import { PortalError, PortalLoading } from '../components/PortalState';
+import { getApiErrorMessage } from '../../utils/apiError';
 import { Button } from '@/ui';
+
+const MINUTE = 60 * 1000;
 
 export default function PortalProfilePage() {
   const { t } = useTranslation();
   const navigate = useNavigate();
+  const queryClient = useQueryClient();
   const { logout, language, setLanguage } = usePortalAuthStore();
   const { mode: theme, setMode: setTheme } = useThemeStore();
-  const [profile, setProfile] = useState<CustomerPortalProfile | null>(null);
-  const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
-    portalApiClient.getProfile()
-      .then(setProfile)
-      .catch(console.error)
-      .finally(() => setLoading(false));
-  }, []);
+  const profileQuery = useQuery({
+    queryKey: portalKeys.profile(),
+    queryFn: () => portalApiClient.getProfile(),
+    staleTime: 10 * MINUTE, // profil kamdan-kam o'zgaradi
+  });
 
-  const handleLanguageChange = async (lang: string) => {
-    try {
-      await portalApiClient.updateLanguage(lang);
+  const languageMutation = useMutation({
+    mutationFn: (lang: string) => portalApiClient.updateLanguage(lang),
+    onSuccess: (_profile, lang) => {
       setLanguage(lang);
       void switchLanguage(lang);
+      void queryClient.invalidateQueries({ queryKey: portalKeys.profile() });
       toast.success(t('profile.language') + ': ' + (lang === 'uz' ? "O'zbekcha" : 'Русский'));
-    } catch (error) {
-      console.error('Failed to update language', error);
-    }
-  };
+    },
+    // Ilgari xato faqat console'ga yozilardi — foydalanuvchi tugma bosib hech narsa ko'rmasdi
+    onError: (error) => toast.error(getApiErrorMessage(error)),
+  });
 
   const handleThemeChange = (newTheme: ThemeMode) => {
     setTheme(newTheme);
@@ -51,20 +54,30 @@ export default function PortalProfilePage() {
       // Ignore
     }
     logout();
+    queryClient.removeQueries({ queryKey: portalKeys.all });
     navigate('/');
     toast.success(t('auth.logout'));
   };
 
-  if (loading) {
+  if (profileQuery.isPending) {
     return (
       <div className="flex flex-col">
         <PortalHeader title={t('profile.title')} showLanguage={false} />
-        <div className="flex items-center justify-center h-64">
-          <span className="loading loading-spinner loading-lg text-primary"></span>
-        </div>
+        <PortalLoading />
       </div>
     );
   }
+
+  if (profileQuery.isError) {
+    return (
+      <div className="flex flex-col">
+        <PortalHeader title={t('profile.title')} showLanguage={false} />
+        <PortalError message={getApiErrorMessage(profileQuery.error)} onRetry={() => void profileQuery.refetch()} />
+      </div>
+    );
+  }
+
+  const profile = profileQuery.data;
 
   return (
     <div className="flex flex-col">
@@ -76,11 +89,11 @@ export default function PortalProfilePage() {
           <div className="card-body p-4 items-center text-center">
             <div className="avatar placeholder mb-2">
               <div className="bg-primary-content text-primary rounded-full w-16">
-                <span className="text-2xl">{profile?.fullName?.charAt(0) || 'M'}</span>
+                <span className="text-2xl">{profile.fullName?.charAt(0) || 'M'}</span>
               </div>
             </div>
-            <h2 className="text-xl font-bold">{profile?.fullName}</h2>
-            <p className="opacity-80">{profile?.phone}</p>
+            <h2 className="text-xl font-bold">{profile.fullName}</h2>
+            <p className="opacity-80">{profile.phone}</p>
           </div>
         </div>
 
@@ -96,11 +109,11 @@ export default function PortalProfilePage() {
                 <Phone className="text-base-content/40" size={18} />
                 <div>
                   <p className="text-xs text-base-content/60">{t('profile.phone')}</p>
-                  <p className="font-medium">{profile?.phone}</p>
+                  <p className="font-medium">{profile.phone}</p>
                 </div>
               </div>
 
-              {profile?.phone2 && (
+              {profile.phone2 && (
                 <div className="flex items-center gap-3">
                   <Phone className="text-base-content/40" size={18} />
                   <div>
@@ -110,7 +123,7 @@ export default function PortalProfilePage() {
                 </div>
               )}
 
-              {profile?.address && (
+              {profile.address && (
                 <div className="flex items-center gap-3">
                   <MapPin className="text-base-content/40" size={18} />
                   <div>
@@ -120,7 +133,7 @@ export default function PortalProfilePage() {
                 </div>
               )}
 
-              {profile?.companyName && (
+              {profile.companyName && (
                 <div className="flex items-center gap-3">
                   <Building className="text-base-content/40" size={18} />
                   <div>
@@ -135,7 +148,7 @@ export default function PortalProfilePage() {
                 <div>
                   <p className="text-xs text-base-content/60">{t('profile.memberSince')}</p>
                   <p className="font-medium">
-                    {profile?.createdAt ? format(new Date(profile.createdAt), 'dd.MM.yyyy') : '-'}
+                    {profile.createdAt ? format(new Date(profile.createdAt), 'dd.MM.yyyy') : '-'}
                   </p>
                 </div>
               </div>
@@ -155,7 +168,8 @@ export default function PortalProfilePage() {
                 size="sm"
                 variant={language === 'uz' ? 'primary' : 'ghost'}
                 className="flex-1"
-                onClick={() => handleLanguageChange('uz')}
+                disabled={languageMutation.isPending}
+                onClick={() => languageMutation.mutate('uz')}
               >
                 O'zbekcha
               </Button>
@@ -163,7 +177,8 @@ export default function PortalProfilePage() {
                 size="sm"
                 variant={language === 'ru' ? 'primary' : 'ghost'}
                 className="flex-1"
-                onClick={() => handleLanguageChange('ru')}
+                disabled={languageMutation.isPending}
+                onClick={() => languageMutation.mutate('ru')}
               >
                 Русский
               </Button>

@@ -1,48 +1,54 @@
-import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useParams } from 'react-router-dom';
+import { useQuery } from '@tanstack/react-query';
 import { Package } from 'lucide-react';
-import { portalApiClient } from '../api/portal.api';
-import PortalHeader from '../components/layout/PortalHeader';
-import type { PortalSale } from '../types/portal.types';
 import { format } from 'date-fns';
+import { portalApiClient } from '../api/portal.api';
+import { portalKeys, PORTAL_STALE_TIME } from '../api/portalQueryKeys';
+import PortalHeader from '../components/layout/PortalHeader';
+import { PortalError, PortalLoading } from '../components/PortalState';
+import { getApiErrorMessage } from '../../utils/apiError';
 import { formatNumber as formatMoney } from '../../config/constants';
+
+const PAYMENT_BADGE: Record<string, string> = {
+  PAID: 'badge-success',
+  PARTIAL: 'badge-warning',
+  UNPAID: 'badge-error',
+};
 
 export default function PortalPurchaseDetailPage() {
   const { t } = useTranslation();
   const { id } = useParams<{ id: string }>();
-  const [purchase, setPurchase] = useState<PortalSale | null>(null);
-  const [loading, setLoading] = useState(true);
+  const purchaseId = id ? Number.parseInt(id, 10) : NaN;
+  const hasId = Number.isFinite(purchaseId);
 
-  useEffect(() => {
-    if (id) {
-      portalApiClient.getPurchaseDetails(parseInt(id))
-        .then(setPurchase)
-        .catch(console.error)
-        .finally(() => setLoading(false));
-    }
-  }, [id]);
+  const query = useQuery({
+    queryKey: portalKeys.purchase(purchaseId),
+    queryFn: () => portalApiClient.getPurchaseDetails(purchaseId),
+    enabled: hasId,
+    staleTime: PORTAL_STALE_TIME,
+  });
 
-  const getPaymentBadge = (status: string) => {
-    const styles = {
-      PAID: 'badge-success',
-      PARTIAL: 'badge-warning',
-      UNPAID: 'badge-error',
-    };
-    return styles[status as keyof typeof styles] || 'badge-ghost';
-  };
-
-  if (loading) {
+  // `enabled: false` bo'lsa so'rov abadiy isPending — id yo'q holatni alohida tekshiramiz
+  if (hasId && query.isPending) {
     return (
       <div className="flex flex-col">
         <PortalHeader title={t('purchases.title')} showBack />
-        <div className="flex items-center justify-center h-64">
-          <span className="loading loading-spinner loading-lg text-primary"></span>
-        </div>
+        <PortalLoading />
       </div>
     );
   }
 
+  if (hasId && query.isError) {
+    return (
+      <div className="flex flex-col">
+        <PortalHeader title={t('purchases.title')} showBack />
+        <PortalError message={getApiErrorMessage(query.error)} onRetry={() => void query.refetch()} />
+      </div>
+    );
+  }
+
+  const purchase = hasId ? query.data : undefined;
   if (!purchase) {
     return (
       <div className="flex flex-col">
@@ -69,7 +75,7 @@ export default function PortalPurchaseDetailPage() {
                   {format(new Date(purchase.saleDate), 'dd.MM.yyyy HH:mm')}
                 </p>
               </div>
-              <span className={`badge ${getPaymentBadge(purchase.paymentStatus)}`}>
+              <span className={`badge ${PAYMENT_BADGE[purchase.paymentStatus] ?? 'badge-ghost'}`}>
                 {t(`payment.${purchase.paymentStatus.toLowerCase()}`)}
               </span>
             </div>
