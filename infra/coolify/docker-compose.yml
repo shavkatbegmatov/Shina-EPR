@@ -146,10 +146,19 @@ services:
       BACKEND_HOST: backend
       BACKEND_PORT: 8183
     depends_on:
-      # Backend HEALTHY bo'lguncha kutadi — ilgari nginx backend'dan oldin ko'tarilib,
-      # har deploy'da ~60 s davomida 502 berardi.
+      # `service_started`, ATAYLAB `service_healthy` EMAS.
+      #
+      # Ilgari bu yerda `service_healthy` turardi (maqsad: nginx backend'dan
+      # oldin ko'tarilib, deploy paytida ~60 s 502 bermasin). Oqibati og'irroq
+      # bo'ldi: 03.09.2026 da backend sog'lom bo'lmadi va frontend UMUMAN
+      # ishga tushmadi — Coolify proksisi "no available server" (503) berdi,
+      # ya'ni backend muammosi butun vitrinani yiqitdi.
+      #
+      # Endi vitrina backend'dan mustaqil ko'tariladi: API yiqilsa sahifalar
+      # o'z xato holatlarini ko'rsatadi, bosh sahifa va ERP login ochiladi.
+      # Deploy paytidagi qisqa 502 bundan kichikroq zarar.
       backend:
-        condition: service_healthy
+        condition: service_started
     healthcheck:
       test: ["CMD-SHELL", "wget -qO- http://localhost:80/ >/dev/null || exit 1"]
       interval: 15s
