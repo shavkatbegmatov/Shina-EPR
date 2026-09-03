@@ -75,6 +75,17 @@ jobs:
           path: shina-magazin-api/target/site/jacoco
           retention-days: 14
           if-no-files-found: ignore
+      # Yiqilganda surefire hisobotlari (qaysi test, qaysi assert, stack trace).
+      # Job logini faqat repo admini ko'ra oladi va `-q` rejimida u qisqa; artefakt
+      # esa run sahifasidan yuklab olinadi — 03.09.2026 da beqaror yiqilishning
+      # sababini aynan shu bo'lmagani uchun aniqlab bo'lmadi.
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        if: failure()
+        with:
+          name: backend-surefire-reports
+          path: shina-magazin-api/target/surefire-reports
+          retention-days: 14
+          if-no-files-found: ignore
 
   # ── CD: Build Docker images + push to GHCR ──
   build-and-push:

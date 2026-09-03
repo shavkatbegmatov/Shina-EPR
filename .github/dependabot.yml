@@ -44,12 +44,33 @@ updates:
       day: monday
       time: "06:00"
       timezone: Asia/Tashkent
+    groups:
+      # Birinchi ishga tushishda 8 ta alohida PR ochildi (checkout, setup-java,
+      # upload-artifact, docker/*...) — har biri o'z CI run'i bilan. Bitta PR yetarli.
+      github-actions:
+        patterns: ["*"]
 
+  # Docker: Dockerfile'lardagi bazaviy image'lar (node 20, temurin 17, maven+temurin 17)
+  # ATAYLAB shu major'da — backend Java 17 target, frontend Node 20 LTS. Major taklifi
+  # (node 26, temurin 25/26) tekshirilmagan yangilanishdir; faqat minor/patch (xavfsizlik
+  # tuzatishlari) PR bo'ladi.
   - package-ecosystem: docker
     directory: /shina-magazin-api
     schedule:
       interval: weekly
+      day: monday
+      time: "06:00"
+      timezone: Asia/Tashkent
+    ignore:
+      - dependency-name: "*"
+        update-types: ["version-update:semver-major"]
   - package-ecosystem: docker
     directory: /shina-magazin-front
     schedule:
       interval: weekly
+      day: monday
+      time: "06:00"
+      timezone: Asia/Tashkent
+    ignore:
+      - dependency-name: "*"
+        update-types: ["version-update:semver-major"]
