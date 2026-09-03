@@ -25,7 +25,7 @@ describe('ProductImage', () => {
 
   it('fallback=photo — shina fotosi + "rasm mavjud emas" yorlig\'i', () => {
     const { container } = renderImg(<ProductImage alt="Shina" fallback="photo" />);
-    expect(container.querySelector('img[src="/no-image-tire.png"]')).toBeInTheDocument();
+    expect(container.querySelector('img[src="/no-image-tire.webp"]')).toBeInTheDocument();
     expect(screen.getByText('Rasm mavjud emas')).toBeInTheDocument();
   });
 });

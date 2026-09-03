@@ -5,9 +5,27 @@
   "start_url": "/",
   "display": "standalone",
   "background_color": "#f7f8fc",
-  "theme_color": "#2451e6",
+  "theme_color": "#0f766e",
   "lang": "uz",
   "icons": [
+    {
+      "src": "/icons/icon-192.png",
+      "type": "image/png",
+      "sizes": "192x192",
+      "purpose": "any"
+    },
+    {
+      "src": "/icons/icon-512.png",
+      "type": "image/png",
+      "sizes": "512x512",
+      "purpose": "any"
+    },
+    {
+      "src": "/icons/icon-512.png",
+      "type": "image/png",
+      "sizes": "512x512",
+      "purpose": "maskable"
+    },
     {
       "src": "/favicon.svg",
       "type": "image/svg+xml",

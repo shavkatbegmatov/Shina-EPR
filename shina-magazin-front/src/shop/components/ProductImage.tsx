@@ -15,7 +15,8 @@ interface ProductImageProps {
 }
 
 /** Rasmsiz mahsulot uchun lokal shina fotosi (public/) — offline ham ishlaydi. */
-const NO_IMAGE_PHOTO = '/no-image-tire.png';
+// WebP (72 KB) — eski PNG 495 KB edi va katalog to'rida bir vaqtda o'nlab marta yuklanardi
+const NO_IMAGE_PHOTO = '/no-image-tire.webp';
 
 /**
  * Mahsulot rasmi. Rasm bo'lsa uni ko'rsatadi; aks holda adminkada tanlangan
