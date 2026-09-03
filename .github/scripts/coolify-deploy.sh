@@ -46,10 +46,48 @@ curl_api() {
   curl -fsS --max-time 30 -H "Authorization: Bearer $API_TOKEN" "$@"
 }
 
+# Oxirgi aniq xato sababi — job oxirida ANNOTATSIYA bo'lib chiqadi. Actions
+# logini faqat repo a'zosi ocha oladi, annotatsiya esa run sahifasida ko'rinadi:
+# "exit code 1" o'rniga "HTTP 401" yoki "ulanib bo'lmadi" deb aytish kerak.
+# `trigger_deploy` buyruq-almashtirish ichida (subshell) chaqiriladi, ya'ni
+# undagi o'zgaruvchi asosiy jarayonga YETIB KELMAYDI — sabab fayl orqali
+# uzatiladi.
+LAST_ERROR=""
+ERR_FILE="$(mktemp)"
+trap 'rm -f "$ERR_FILE"' EXIT
+
+fail_annotation() {
+  local why="$1"
+  # DIQQAT: apostrof ${x:-...} ichida bash parserini buzadi — matn oldindan tayyorlanadi.
+  [[ -n "$why" ]] || why="sabab aniqlanmadi"
+  printf '::error title=Coolify deploy::%s\n' "$why"
+}
+
 # Deploy'ni boshlaydi. Muvaffaqiyatda deployment_uuid'ni chiqaradi (bo'lmasa bo'sh).
 trigger_deploy() {
-  local body
-  if ! body="$(curl_api --max-time 60 "$WEBHOOK_URL")"; then
+  local body code tmp errtmp curlerr
+  tmp="$(mktemp)"
+  errtmp="$(mktemp)"
+  # `-f` ATAYLAB ishlatilmaydi: u xato javob tanasini yutadi, holbuki Coolify
+  # sababni aynan o'sha yerda aytadi ("Unauthenticated", "Resource not found").
+  code="$(curl -sS --max-time 60 -o "$tmp" -w '%{http_code}' \
+      -H "Authorization: Bearer $API_TOKEN" "$WEBHOOK_URL" 2>"$errtmp")" || true
+  # Ulanish umuman bo'lmasa curl `000` yozadi; boshqa har qanday shakl ham
+  # shu holatga tenglashtiriladi (aks holda xabar "HTTP 000000" bo'lib chiqardi).
+  [[ "$code" =~ ^[0-9]{3}$ ]] || code="000"
+  body="$(head -c 300 "$tmp" | tr '\n' ' ')"
+  curlerr="$(head -c 200 "$errtmp" | tr '\n' ' ')"
+  rm -f "$tmp" "$errtmp"
+  [[ -n "$body" ]] || body="javob bosh"
+
+  if [[ "$code" != 2* ]]; then
+    if [[ "$code" == "000" ]]; then
+      LAST_ERROR="Coolify serveriga ulanib bo'lmadi: $curlerr"
+    else
+      LAST_ERROR="Webhook HTTP $code — $body"
+    fi
+    printf '%s' "$LAST_ERROR" > "$ERR_FILE"
+    log "  trigger: $LAST_ERROR"
     return 1
   fi
   # Coolify javobi: {"deployments":[{"deployment_uuid":"...", ...}]}
@@ -121,9 +159,11 @@ for (( attempt = 1; attempt <= MAX_ATTEMPTS; attempt++ )); do
   log "Deploy urinishi $attempt/$MAX_ATTEMPTS"
 
   if ! uuid="$(trigger_deploy)"; then
+    LAST_ERROR="$(cat "$ERR_FILE" 2>/dev/null)"
     log "  trigger so'rovi yiqildi"
     (( attempt < MAX_ATTEMPTS )) && { sleep 10; continue; }
     log "TUGADI: Coolify'ga ulanib bo'lmadi"
+    fail_annotation "$LAST_ERROR"
     exit 1
   fi
 
@@ -138,6 +178,7 @@ for (( attempt = 1; attempt <= MAX_ATTEMPTS; attempt++ )); do
     fi
     (( attempt < MAX_ATTEMPTS )) && { log "  qayta urinamiz"; continue; }
     log "TUGADI: prod ko'tarilmadi"
+    fail_annotation "Deploy chaqirildi, lekin $HEALTH_URL 200 bermadi"
     exit 1
   fi
 
@@ -167,4 +208,5 @@ for (( attempt = 1; attempt <= MAX_ATTEMPTS; attempt++ )); do
 done
 
 log "TUGADI: $MAX_ATTEMPTS urinishdan keyin ham deploy o'tmadi"
+fail_annotation "$LAST_ERROR"
 exit 1
