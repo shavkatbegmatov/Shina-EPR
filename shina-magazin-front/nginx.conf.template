@@ -34,6 +34,14 @@ server {
     # 1 MB dan katta mahsulot rasmi backendga yetmasdan 413 bilan qaytardi.
     client_max_body_size 8m;
 
+    # Katalog uchun avtomatik "slash qo'shish" redirecti NISBIY bo'lsin.
+    # Prerender qilingan sahifalar katalog bo'lib yotadi (`/katalog/index.html`),
+    # shuning uchun `/katalog` so'ralganda nginx 301 beradi. Absolyut redirectda
+    # u o'z listenerini ko'radi va `http://...` yozadi — TLS proksi ortida bu
+    # foydalanuvchini shifrlanmagan sxemaga bir sakrash qilishga majburlaydi.
+    # Nisbiy `Location: /katalog/` sxemani saqlaydi.
+    absolute_redirect off;
+
     # www -> apex 301 (SEO kanonik manzil). Har qanday www.<domen> uchun umumiy ishlaydi.
     if ($host ~* ^www\.(.+)$) {
         return 301 https://$1$request_uri;
