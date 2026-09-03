@@ -8,7 +8,7 @@ import { fileURLToPath } from 'node:url';
 import { dirname, resolve } from 'node:path';
 
 const here = dirname(fileURLToPath(import.meta.url));
-const frontFile = resolve(here, '../src/hooks/usePermission.ts');
+const frontFile = resolve(here, '../src/config/permissions.ts');
 const backFile = resolve(
   here,
   '../../shina-magazin-api/src/main/java/uz/shinamagazin/api/enums/PermissionCode.java'
@@ -21,7 +21,7 @@ const back = readFileSync(backFile, 'utf8');
 const start = front.indexOf('export const PermissionCode = {');
 const end = front.indexOf('} as const;', start);
 if (start < 0 || end < 0) {
-  console.error('usePermission.ts ichida PermissionCode bloki topilmadi');
+  console.error('config/permissions.ts ichida PermissionCode bloki topilmadi');
   process.exit(2);
 }
 const frontBlock = front.slice(start, end);
