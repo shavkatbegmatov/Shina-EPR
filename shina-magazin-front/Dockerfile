@@ -1,5 +1,5 @@
 # ========== BUILD STAGE ==========
-FROM node:20-alpine AS build
+FROM node:26-alpine AS build
 WORKDIR /app
 
 # Dependency'lar (cache qatlami uchun)
