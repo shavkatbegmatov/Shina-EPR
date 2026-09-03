@@ -2,8 +2,15 @@
 FROM node:20-alpine AS build
 WORKDIR /app
 
-# Dependency'lar (cache qatlami uchun)
+# Dependency'lar (cache qatlami uchun).
+#
+# `scripts/` ham shu yerda kerak: `npm ci` `prepare` skriptini ishga tushiradi
+# (`node scripts/setup-hooks.mjs`), fayl bo'lmasa esa npm butun o'rnatishni
+# yiqitadi. Skriptning o'zi Docker'da jimgina chiqadi (`.git` yo'q), lekin
+# unga yetib borish uchun avval nusxalanishi shart. Papka kichik — kesh
+# qatlami amalda buzilmaydi.
 COPY package.json package-lock.json ./
+COPY scripts ./scripts
 RUN npm ci
 
 # Source + build. OG/Twitter va sitemap ABSOLYUT URL uchun VITE_SITE_URL build-arg
