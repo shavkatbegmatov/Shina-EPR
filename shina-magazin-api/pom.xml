@@ -186,6 +186,28 @@
                     </annotationProcessorPaths>
                 </configuration>
             </plugin>
+            <!--
+                Test sinflari TARTIBI barcha muhitda bir xil bo'lsin.
+
+                Surefire standarti `filesystem` — katalogni o'qish tartibi. Windows
+                va bind-mount'da u alifbo tartibida chiqadi, CI runner'ining ext4
+                fayl tizimida esa nom hash'iga qarab, ya'ni AMALDA TASODIFIY va har
+                runner'da boshqacha. 03.09.2026 da aynan shu tufayli bitta commit
+                CI'da goh o'tdi, goh yiqildi (ProfitLossReportTest), lokalda esa
+                — Linux konteynerida ham — har safar yashil edi.
+
+                `alphabetical` tartib lokal va CI'ni tenglashtiradi: yiqilgan
+                natijani qayta ko'rsatish mumkin bo'ladi. Bu testlar orasidagi
+                holat sizishini YO'QOTMAYDI, faqat uni barqaror qiladi — sizish
+                alohida tekshiriladi (QOLGAN-ISHLAR.md).
+            -->
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-surefire-plugin</artifactId>
+                <configuration>
+                    <runOrder>alphabetical</runOrder>
+                </configuration>
+            </plugin>
             <!-- Test qamrovi hisoboti: target/site/jacoco/index.html (mvnw test bilan birga) -->
             <plugin>
                 <groupId>org.jacoco</groupId>
