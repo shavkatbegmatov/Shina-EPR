@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { keepPreviousData, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
 import { Plus, Minus, Trash2, ShoppingCart, User, X, Users, ArrowRight, Phone, Check, Printer } from 'lucide-react';
@@ -55,6 +55,8 @@ export function POSPage() {
 
   const cart = useCartStore();
   const queryClient = useQueryClient();
+  /** F2 yorlig'i uchun: mahsulot qidiruvi maydoni */
+  const searchInputRef = useRef<HTMLInputElement>(null);
 
   // Har bosilgan harfda so'rov yubormaslik uchun kechiktiriladi: "michelin"
   // yozish 8 ta so'rov qilardi. Zaxira so'rovlari ataylab keshlanmaydi,
@@ -273,6 +275,32 @@ export function POSPage() {
   };
 
   const total = cart.getTotal();
+
+  /**
+   * Klaviatura yorliqlari — kassir sichqonchasiz ishlay olishi uchun (ilgari bitta
+   * ham yo'q edi): F2 — mahsulot qidiruviga fokus, F9 — to'lovga o'tish (savat bo'sh
+   * bo'lmasa va modal ochiq bo'lmasa). Esc modalni yopadi (ModalPortal o'zi qiladi).
+   */
+  useEffect(() => {
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (event.key === 'F2') {
+        event.preventDefault();
+        searchInputRef.current?.focus();
+        searchInputRef.current?.select();
+      } else if (
+        event.key === 'F9' &&
+        !showPayment &&
+        !showCustomerModal &&
+        cart.items.length > 0
+      ) {
+        event.preventDefault();
+        setPaidAmount(total);
+        setShowPayment(true);
+      }
+    };
+    window.addEventListener('keydown', onKeyDown);
+    return () => window.removeEventListener('keydown', onKeyDown);
+  }, [showPayment, showCustomerModal, cart.items.length, total]);
   const subtotal = cart.getSubtotal();
   const discountAmount = cart.getDiscountAmount();
   const itemCount = cart.getItemCount();
@@ -316,9 +344,10 @@ export function POSPage() {
               value={search}
               onValueChange={setSearch}
               label={t('erp.pos.productSearchLabel')}
-              placeholder={t('erp.pos.productSearchPlaceholder')}
+              placeholder={`${t('erp.pos.productSearchPlaceholder')} (F2)`}
               hideLabel
               className="w-full md:max-w-sm"
+              inputRef={searchInputRef}
             />
           </div>
         </div>
@@ -579,6 +608,7 @@ export function POSPage() {
             }}
           >
             {t('erp.pos.proceedToPayment')}
+            <kbd className="kbd kbd-xs ml-2 hidden md:inline-flex" aria-hidden="true">F9</kbd>
           </Button>
         </div>
       </aside>
