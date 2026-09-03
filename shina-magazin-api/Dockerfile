@@ -15,7 +15,7 @@ RUN mvn clean package -DskipTests -B
 RUN java -Djarmode=tools -jar target/shina_magazin_api.jar extract --layers --launcher --destination extracted
 
 # ========== RUN STAGE ==========
-FROM eclipse-temurin:17-jre-alpine
+FROM eclipse-temurin:25-jre-alpine
 WORKDIR /app
 
 # Timezone + su-exec (root'dan `app` foydalanuvchisiga tushish uchun)
