@@ -33,11 +33,15 @@ hali ochiq qolgan ishlar.
   endpointiga yo'naltiradi (`ShopSeoController`); to'liq prerender qilinmagan.
 - **Texnik qarz (03.09.2026 auditidan qolganlar)** — `SettingsPage` (1600 qator) tab'larga
   bo'linmagan; ERP sahifalarida qo'lda `saving` flag'lar (`useMutation` o'rniga);
-  mijoz kabineti (`src/portal`) React Query'siz; ro'yxat endpointlarining bir qismi
-  sahifalanmagan (`getActiveDebts`, `getTodaySales`...); `ReportService` agregatsiyani
-  JVM'da qiladi; eksport butun faylni xotirada yig'adi; tokenlar localStorage'da
-  (httpOnly cookie'ga o'tish backend o'zgarishini talab qiladi); jsx-a11y qoidalari
-  hozircha `warn`; prettier konfiguratsiyasi bor, lekin butun baza formatlanmagan.
+  `AuditLogService` (1200 qator) UA parser va formatlashni ham o'z ichiga oladi;
+  ro'yxat endpointlarining bir qismi sahifalanmagan (`getActiveDebts`, `getTodaySales`...);
+  zaxira o'zgartirish mantig'i oltita servisda takrorlanadi (yagona `StockService` yo'q);
+  `ReportService` agregatsiyani JVM'da qiladi; eksport butun faylni xotirada yig'adi;
+  ikkita WebSocket klienti (ERP va kabinet) alohida; tokenlar localStorage'da
+  (httpOnly cookie'ga o'tish backend o'zgarishini talab qiladi); service worker yo'q
+  (PWA faqat o'rnatiladigan darajada); jsx-a11y qoidalari hozircha `warn`; prettier
+  konfiguratsiyasi bor, lekin butun baza formatlanmagan; rate limiter in-memory
+  (bir instansiya uchun); SMS provayderi stub.
 
 ### 03.09.2026 da bajarilgan (texnik audit bo'yicha)
 Xavfsizlik va jonli xatolar (context-path'li `mustChangePassword`, WebSocket origin,
