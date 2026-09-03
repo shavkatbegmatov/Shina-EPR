@@ -25,6 +25,15 @@ loyiha jiddiy o'zgardi — bu bo'lim uni ustidan yozadi, quyisi tarix sifatida q
 hali ochiq qolgan ishlar.
 
 ### Hali ochiq (tekshirildi 03.09.2026)
+- **Compose yaxshilanishlari qaytarib olindi** — 03.09.2026 da `infra/coolify/docker-compose.yml`
+  ga kunlik `db-backup` sidecar'i, `deploy.resources.limits`, `restart: unless-stopped`,
+  `${IMAGE_TAG:-latest}` va frontend'ning `service_healthy` sharti qo'shilgan edi. Coolify
+  bunday compose bilan deploy'ni 15–30 soniyada yiqitdi va **prod 20 daqiqaga tushdi**
+  (503, "no available server"). Fayl avgustdagi ishlaydigan holatiga qaytarildi.
+  Qaysi element sabab bo'lganini aniqlash uchun Coolify deploy logi kerak; keyin ular
+  **bittalab** qaytariladi, har biridan keyin deploy natijasi kuzatiladi.
+  Frontend'ni backend sog'ligiga bog'lash esa umuman qaytarilmasin: aynan o'sha
+  backend nosozligini butun saytning tushishiga aylantirgan.
 - **Jonli to'lov** — Payme/Click default'da `enabled: false`. Kreditsial + webhook
   ro'yxatdan o'tkazish kerak (2-bo'lim). Kod tayyor (Payme idempotentlik va bekor qilish
   vaqt chizig'i V43 bilan), sandbox'da sinalmagan.
