@@ -70,7 +70,12 @@ trigger_deploy() {
   errtmp="$(mktemp)"
   # `-f` ATAYLAB ishlatilmaydi: u xato javob tanasini yutadi, holbuki Coolify
   # sababni aynan o'sha yerda aytadi ("Unauthenticated", "Resource not found").
-  code="$(curl -sS --max-time 60 -o "$tmp" -w '%{http_code}' \
+  #
+  # METOD: POST. Coolify deploy endpointi ilgari GET'ni ham qabul qilardi, endi
+  # esa `405 {"message":"This endpoint has changed to a POST request."}` qaytaradi
+  # — 03.09.2026 da deploy aynan shu sababdan yiqilgan. `-d ''` bo'sh tana bilan
+  # POST qiladi (Content-Length: 0).
+  code="$(curl -sS --max-time 60 -X POST -d '' -o "$tmp" -w '%{http_code}' \
       -H "Authorization: Bearer $API_TOKEN" "$WEBHOOK_URL" 2>"$errtmp")" || true
   # Ulanish umuman bo'lmasa curl `000` yozadi; boshqa har qanday shakl ham
   # shu holatga tenglashtiriladi (aks holda xabar "HTTP 000000" bo'lib chiqardi).
@@ -160,6 +165,9 @@ for (( attempt = 1; attempt <= MAX_ATTEMPTS; attempt++ )); do
 
   if ! uuid="$(trigger_deploy)"; then
     LAST_ERROR="$(cat "$ERR_FILE" 2>/dev/null)"
+    # Webhook o'zi javob bergan bo'lsa-yu funksiya yiqilgan bo'lsa, sabab
+    # javobni ajratishda (masalan `jq` yo'q) — buni ham aytib qo'yamiz.
+    [[ -n "$LAST_ERROR" ]] || LAST_ERROR="Webhook javobini ajratib bo'lmadi (jq bormi?)"
     log "  trigger so'rovi yiqildi"
     (( attempt < MAX_ATTEMPTS )) && { sleep 10; continue; }
     log "TUGADI: Coolify'ga ulanib bo'lmadi"

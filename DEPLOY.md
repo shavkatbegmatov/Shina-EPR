@@ -25,6 +25,13 @@ Repo → **Settings → Secrets and variables → Actions**:
 | `COOLIFY_WEBHOOK_URL` | Coolify **Compose resurs** deploy webhook URL |
 | `COOLIFY_API_TOKEN` | Coolify API token (Bearer) |
 
+> ⚠️ Deploy endpointi **POST** talab qiladi. Coolify uni GET'dan POST'ga o'zgartirgan
+> (`405 {"message":"This endpoint has changed to a POST request."}`), shuning uchun
+> qo'lda sinaganda ham `-X POST` bering:
+> ```
+> curl -X POST -d '' -H "Authorization: Bearer $COOLIFY_API_TOKEN" "$COOLIFY_WEBHOOK_URL"
+> ```
+
 **Variables:**
 | Variable | Qiymat |
 |---|---|
