@@ -61,12 +61,34 @@ jobs:
           distribution: temurin
           java-version: 17
           cache: maven
+      # Testcontainers Docker Hub'dan `postgres:16-alpine` tortadi. Hub anonim
+      # pull'ni IP bo'yicha cheklaydi (6 soatda 100), GitHub runner'lari esa IP
+      # pulini BO'LISHADI — 03.09.2026 da Dependabot 11 ta PR ochib, o'nlab run
+      # bir vaqtda shu image'ni tortdi va backend testi ketma-ket yiqildi.
+      # Oldindan, 3 marta urinib tortamiz: cheklovga tushsak, sabab TEST emasligi
+      # shu qadamda ko'rinadi (annotatsiya), maven bosqichi esa kesh'dan ishlaydi.
+      - name: Postgres image (Testcontainers uchun)
+        run: |
+          for i in 1 2 3; do
+            if docker pull --quiet postgres:16-alpine; then exit 0; fi
+            echo "::warning title=Docker pull urinishi $i yiqildi::postgres:16-alpine tortilmadi, 20 s dan keyin qayta urinamiz."
+            sleep 20
+          done
+          echo "::error title=Docker Hub image tortilmadi::postgres:16-alpine 3 urinishda ham kelmadi (ehtimol Hub pull limiti). Testlar emas, muhit yiqildi."
+          exit 1
       # Testlar CI'da ISHLASHI shart: xavfsizlik qorovul testlari (avtorizatsiya
       # qamrovi, JWT kalit validatsiyasi, Click imzo tekshiruvi) faqat shu yerda
       # regressiyani ushlay oladi. Ko'pchilik testlar H2 in-memory'da;
       # PostgresMigrationTest esa Testcontainers bilan HAQIQIY Postgres'da
       # migratsiyalarni qo'llaydi (runner'da Docker bor).
-      - run: chmod +x mvnw && ./mvnw clean test -q
+      #
+      # RYUK (Testcontainers'ning tozalovchi konteyneri) o'chirilgan: u Hub'dan
+      # YANA bitta image tortadi, runner esa har run'da yangi va o'zi yo'q bo'ladi
+      # — tozalash uchun ryuk kerak emas, pull limitiga esa bosim ikki barobar.
+      - name: Backend testlari
+        env:
+          TESTCONTAINERS_RYUK_DISABLED: "true"
+        run: chmod +x mvnw && ./mvnw clean test -q
       # Qamrov hisoboti (JaCoCo) — Actions artefakti sifatida 14 kun saqlanadi
       - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
         if: always()
@@ -86,6 +108,30 @@ jobs:
           path: shina-magazin-api/target/surefire-reports
           retention-days: 14
           if-no-files-found: ignore
+      # Yiqilgan testni ANNOTATSIYA va job xulosasiga chiqaramiz. Job logini ham,
+      # artefaktni ham faqat repo a'zosi ocha oladi; annotatsiya esa run sahifasida
+      # darhol ko'rinadi va Checks API orqali ham o'qiladi — 03.09.2026 da sabab
+      # aynan shu yetishmagani uchun ikki push davomida noma'lum qoldi.
+      - name: Yiqilgan testlar xulosasi
+        if: failure()
+        run: |
+          shopt -s nullglob
+          found=0
+          for f in target/surefire-reports/*.txt; do
+            grep -qE "FAILURE!|ERROR!" "$f" || continue
+            found=1
+            name=$(basename "$f" .txt)
+            body=$(sed -n '1,40p' "$f" | sed 's/%/%25/g' | awk '{printf "%s%%0A", $0}' | cut -c1-3000)
+            echo "::error title=Test yiqildi: $name::$body"
+            { echo "### $name"; echo '```'; sed -n '1,60p' "$f"; echo '```'; } >> "$GITHUB_STEP_SUMMARY"
+          done
+          for d in target/surefire-reports/*.dumpstream; do
+            found=1
+            echo "::error title=Fork crash: $(basename "$d")::$(sed -n '1,20p' "$d" | sed 's/%/%25/g' | awk '{printf "%s%%0A", $0}' | cut -c1-2000)"
+          done
+          if [ "$found" = "0" ]; then
+            echo "::error title=Yiqilgan test topilmadi::surefire-reports bo'sh yoki yo'q — kompilyatsiya xatosi yoki muhit muammosi bo'lishi mumkin."
+          fi
 
   # ── CD: Build Docker images + push to GHCR ──
   build-and-push:
