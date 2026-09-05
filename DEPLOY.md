@@ -78,8 +78,13 @@ PAT olish: GitHub → Settings → Developer settings → Personal access tokens
 | `TELEGRAM_WEBHOOK_SECRET` | `openssl rand -hex 32` | `TELEGRAM_MODE=webhook` bo'lsa **majburiy** |
 | `SHOP_PUBLIC_BASE_URL` | `https://<domen>` | bot xabaridagi "kabinetga kirish" havolasi |
 
-4. **Domen** (Coolify UI'da): `frontend` servisiga `https://<domen>` (port 80) — SSL avtomatik
+4. **Domen** (Coolify UI'da): `frontend` servisiga `https://<domen>` — SSL avtomatik
    (Traefik + Let's Encrypt). Backend'ga domen ULANMAYDI.
+   ⚠️ Traefik qaysi konteyner portiga ulanishini compose'dagi `expose: ["80"]` aytadi.
+   U bo'lmasa Coolify standart `3000` ni oladi va sayt konteynerlar sog'lom bo'lsa ham
+   502 beradi (06.09.2026, Coolify 4.3.17 yangilanishidan keyin ~2,5 soat). Domenni
+   `https://<domen>:80` ko'rinishida yozish ham ishlaydi, lekin compose'dagi e'lon
+   UI'dan mustaqil.
 5. **Auto Deploy'ni O'CHIRING** (resurs sozlamalarida) — deploy'ni GitHub Actions webhook
    boshqaradi (image tayyor bo'lgandan keyin). **Deploy webhook** URL'ini oling → GitHub secret
    `COOLIFY_WEBHOOK_URL`; API token → `COOLIFY_API_TOKEN`.

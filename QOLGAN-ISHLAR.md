@@ -34,15 +34,14 @@ hali ochiq qolgan ishlar.
   **bittalab** qaytariladi, har biridan keyin deploy natijasi kuzatiladi.
   Frontend'ni backend sog'ligiga bog'lash esa umuman qaytarilmasin: aynan o'sha
   backend nosozligini butun saytning tushishiga aylantirgan.
-- **06.09.2026 uzilishi — server tomonida qo'lda tiklash kerak.** Deploy o'rtasida bekor
-  qilingan run'dan keyin Coolify stack'i yarim holatda qoldi: keyingi deploy'lar "finished",
-  frontend ko'tariladi, backend esa yo'q (nginx 502). Ikkala backend image (bump'li va
-  qaytarilgan) lokalda toza Postgres bilan ishga tushadi — ya'ni image emas, server.
-  Tekshirish (Coolify → Terminal yoki SSH): `docker ps -a` (backend `Restarting`/`Exited`
-  yoki nomi band?), `docker logs --tail 200 <backend>`, `df -h` (image'lar diskni
-  to'ldirgan bo'lishi mumkin — `docker image prune -a`), `free -m`, db konteyneri
-  `healthy`mi. Keyin Coolify'da qo'lda **Redeploy**. Tiklangach `jjwt` bump'ini
-  (`git revert 30420c9`) qayta qo'llash mumkin — u sabab bo'lmagan.
+- **06.09.2026 uzilishi — yopildi (sabab: Coolify proksi porti).** Coolify 4.3.17 dan
+  keyingi birinchi deploy'da Traefik frontend'ga `3000` portga urgan (nginx 80 da); compose'da
+  `expose: ["80"]` bilan tuzatildi, CHANGELOG'da batafsil. Qolgan ish: **maven bump'ini
+  qayta qo'llash** (`jjwt` 0.13.0, springdoc 2.9.0, openpdf 1.4.2, wrapper 3.9.16) —
+  `git revert 30420c9`; u uzilishga aloqasiz ekani isbotlangan, `JwtTokenProvider` endi
+  sirdagi bo'shliqqa ham chidamli. Bittalab, prod kuzatilgan holda. Serverda xotira tor
+  (`free -m`: 7,9 GB dan 6,8 GB band, swap to'la) — backend limitini qaytarishda buni
+  hisobga olish.
 - **Jonli to'lov** — Payme/Click default'da `enabled: false`. Kreditsial + webhook
   ro'yxatdan o'tkazish kerak (2-bo'lim). Kod tayyor (Payme idempotentlik va bekor qilish
   vaqt chizig'i V43 bilan), sandbox'da sinalmagan.
