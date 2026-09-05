@@ -6,9 +6,17 @@ on:
   pull_request:
     branches: [master]
 
+# Bir vaqtda bitta run: keyingi push oldingisini KUTADI (navbatda faqat eng
+# oxirgisi qoladi). Ishlab turgan run faqat pull request uchun bekor qilinadi.
+#
+# Ilgari `cancel-in-progress: true` hamma uchun edi. 06.09.2026 da bir push'dan
+# keyin darhol uchta merge qilindi — birinchi run DEPLOY O'RTASIDA bekor qilindi,
+# Coolify stack'i yarim holatda qoldi va keyingi deploy'lar "finished" bo'lsa ham
+# backend ko'tarilmadi (prod ~1 soat 502). Master'da yarim qolgan deploy'dan
+# ko'ra bir necha daqiqa kutish arzon.
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
-  cancel-in-progress: true
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 
 # Default: faqat o'qish. Yozish huquqi kerak bo'lgan job'lar o'zida so'raydi.
 # Ilgari bu blok faqat build-and-push'da bor edi, qolganlari repo default'ini
