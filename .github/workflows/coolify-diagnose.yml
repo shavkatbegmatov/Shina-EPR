@@ -70,7 +70,7 @@ jobs:
           # Env o'zgaruvchilari — FAQAT nomi va qiymat uzunligi (qiymat hech qachon
           # chiqarilmaydi). Majburiy sir yo'qolgan yoki bo'sh qolganini shu ko'rsatadi.
           show "Env kalitlari (qiymatsiz)" "/api/v1/applications/$UUID/envs" \
-            '(.data // .) | if type=="array" then .[] | "\(.key)  len=\((.value // "") | length)  build=\(.is_build_time // false)" else . end'
+            'if type=="array" then . else (.data // []) end | .[] | "\(.key)  len=\((.value // "") | length)  runtime=\(.is_runtime // true)"'
 
           # Oxirgi deploy'lar va ularning Coolify logi (docker compose chiqishi shu yerda).
           # Javob shakli versiyaga qarab massiv yoki {data:[...]} — ikkalasi qabul qilinadi;
@@ -85,9 +85,11 @@ jobs:
             printf '%s' "$list" | jq -r '.[:6][] | "\(.created_at // "")  \(.status // "")  \(.deployment_uuid // .uuid // "")  \(.commit // "" | .[0:7])"'
           fi
           echo "::endgroup::"
-          for d in $(printf '%s' "$list" | jq -r '.[:3][] | (.deployment_uuid // .uuid // empty)' 2>/dev/null); do
-            show "Deploy logi $d" "/api/v1/deployments/$d" \
-              '.logs | (try (fromjson | .[] | "[\(.type // "")] \(.command // "")\n\(.output // "")") catch .)'
+          for d in $(printf '%s' "$list" | jq -r '.[:2][] | (.deployment_uuid // .uuid // empty)' 2>/dev/null); do
+            # `.logs` ba'zi versiyalarda null — u holda obyektning kalitlari va holat
+            # maydonlari ko'rsatiladi: log qayerda ekanini shu aytadi.
+            show "Deploy $d" "/api/v1/deployments/$d" \
+              'if (.logs // null) == null then {keys: keys, status, commit, created_at, finished_at, is_webhook, server_name} else (.logs | (try (fromjson | .[] | "[\(.type // "")] \(.command // "")\n\(.output // "")") catch .)) end'
           done
 
           # Konteyner loglari. Coolify bu endpointda compose'ning ASOSIY konteynerini
