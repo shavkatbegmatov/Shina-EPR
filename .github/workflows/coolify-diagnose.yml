@@ -1,0 +1,82 @@
+name: Coolify diagnose
+
+# Prod tushganda Coolify tomonidagi holatni FAQAT O'QIB chiqaradi: resurs
+# holati, oxirgi deploy'larning Coolify logi (docker compose chiqishi bilan)
+# va konteyner loglari. Hech narsani o'zgartirmaydi.
+#
+# Nega kerak: 06.09.2026 da deploy Coolify'da "finished" bo'lsa-yu backend
+# ko'tarilmadi (nginx 502, ~1 soat). GitHub Actions faqat webhook javobini
+# ko'radi; sabab esa Coolify'ning o'z logida — u faqat panelda ochiladi.
+# Bu workflow o'sha logni Actions'ga (repo a'zolariga) olib keladi, ya'ni
+# panelga kira olmasdan ham diagnostika qilish mumkin.
+#
+# Secret'lar ci.yml dagi bilan bir xil: COOLIFY_WEBHOOK_URL (undan bazaviy
+# manzil va resurs uuid'i ajratiladi) va COOLIFY_API_TOKEN. Token Actions
+# tomonidan avtomatik maskalanadi.
+on:
+  workflow_dispatch:
+    inputs:
+      lines:
+        description: "Konteyner logidan nechta qator"
+        default: "200"
+
+permissions:
+  contents: read
+
+jobs:
+  diagnose:
+    name: Coolify holati va loglar
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    env:
+      COOLIFY_WEBHOOK_URL: ${{ secrets.COOLIFY_WEBHOOK_URL }}
+      COOLIFY_API_TOKEN: ${{ secrets.COOLIFY_API_TOKEN }}
+      LINES: ${{ github.event.inputs.lines || '200' }}
+    steps:
+      - name: Diagnostika
+        run: |
+          set -uo pipefail
+          if [ -z "${COOLIFY_WEBHOOK_URL:-}" ] || [ -z "${COOLIFY_API_TOKEN:-}" ]; then
+            echo "::error::COOLIFY_WEBHOOK_URL yoki COOLIFY_API_TOKEN secret'i yo'q"
+            exit 1
+          fi
+          BASE=$(printf '%s' "$COOLIFY_WEBHOOK_URL" | sed -E 's#^(https?://[^/]+).*#\1#')
+          UUID=$(printf '%s' "$COOLIFY_WEBHOOK_URL" | sed -nE 's#.*[?&]uuid=([^&]+).*#\1#p')
+          echo "resurs uuid: ${UUID:-<ajratilmadi>}"
+
+          api() { curl -sS --max-time 30 -w '\n%{http_code}' -H "Authorization: Bearer $COOLIFY_API_TOKEN" "$BASE$1"; }
+          show() {  # show <sarlavha> <yo'l> [jq-filtr]
+            local title="$1" path="$2" filter="${3:-.}"
+            local out code body
+            out=$(api "$path") || true
+            code=$(printf '%s' "$out" | tail -n1)
+            body=$(printf '%s' "$out" | sed '$d')
+            echo "::group::$title ($path -> HTTP $code)"
+            if [ "$code" = "200" ]; then
+              printf '%s' "$body" | jq -r "$filter" 2>/dev/null || printf '%s\n' "$body" | head -c 20000
+            else
+              printf '%s\n' "$body" | head -c 2000
+            fi
+            echo
+            echo "::endgroup::"
+          }
+
+          # Compose resurs Coolify'da "application" (git + docker compose) bo'lishi
+          # mumkin; eski/boshqa sozlamada "service". Ikkalasini ham so'raymiz —
+          # 200 bergani haqiqiy tur.
+          show "Application" "/api/v1/applications/$UUID" '{name, status, fqdn, build_pack, git_branch, git_commit_sha, updated_at}'
+          show "Service" "/api/v1/services/$UUID" '{name, status, updated_at}'
+
+          # Oxirgi deploy'lar va ularning Coolify logi (docker compose chiqishi shu yerda)
+          out=$(api "/api/v1/deployments/applications/$UUID") || true
+          code=$(printf '%s' "$out" | tail -n1); body=$(printf '%s' "$out" | sed '$d')
+          echo "deploy ro'yxati -> HTTP $code"
+          if [ "$code" = "200" ]; then
+            printf '%s' "$body" | jq -r '.[:5][] | "\(.created_at)  \(.status)  \(.deployment_uuid)  \(.commit // "")"' 2>/dev/null || true
+            for d in $(printf '%s' "$body" | jq -r '.[:2][].deployment_uuid' 2>/dev/null); do
+              show "Deploy logi $d" "/api/v1/deployments/$d" '.logs | (try (fromjson | .[] | "[\(.type // "")] \(.command // "")\n\(.output // "")") catch .)'
+            done
+          fi
+
+          # Konteyner loglari (application uchun mavjud endpoint)
+          show "Konteyner loglari (oxirgi $LINES qator)" "/api/v1/applications/$UUID/logs?lines=$LINES" '.logs // .'
