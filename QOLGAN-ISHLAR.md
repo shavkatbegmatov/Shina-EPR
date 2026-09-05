@@ -51,7 +51,10 @@ hali ochiq qolgan ishlar.
   (PWA faqat o'rnatiladigan darajada); jsx-a11y qoidalari hozircha `warn`; prettier
   konfiguratsiyasi bor, lekin butun baza formatlanmagan; **backend testlari sinf
   tartibiga bog'liq** (tartib `alphabetical`ga qadab qo'yilgan, aks holda CI'da
-  `ProfitLossReportTest` goh yiqiladi — sizayotgan holat topilmagan); rate limiter in-memory
+  `ProfitLossReportTest` goh yiqiladi; sizayotgan holat hali topilmagan — lokalda
+  Windows va Linux'da, tasodifiy va teskari tartibda 10+ marta takrorlanmadi.
+  Kechalik `flaky-scan.yml` uni tasodifiy tartibda qidiradi va topilsa Telegram'ga
+  yozadi; qidirish uchun `./mvnw test -Dsurefire.runOrder=random`); rate limiter in-memory
   (bir instansiya uchun); SMS provayderi stub.
 
 ### 03.09.2026 da bajarilgan (texnik audit bo'yicha)

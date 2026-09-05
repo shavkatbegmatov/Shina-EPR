@@ -1,0 +1,121 @@
+name: Flaky scan
+
+# Backend testlarini TASODIFIY tartibda ishga tushiradi.
+#
+# Nega kerak: 03.09.2026 da bitta commit CI'da goh o'tib, goh yiqilardi
+# (`ProfitLossReportTest`), lokalda esa hech qachon takrorlanmasdi. Sabab
+# sinflar tartibi edi — Surefire standart `filesystem` tartibida ishlaydi va
+# CI runner'ining ext4 fayl tizimida u nom hash'iga qarab, ya'ni amalda
+# tasodifiy chiqadi. Tartib `alphabetical`ga qadab qo'yildi, lekin bu
+# TESTLAR ORASIDAGI HOLAT SIZISHINI yo'qotmaydi — faqat uni yashiradi.
+#
+# Bu workflow o'sha sizishni ko'rinadigan qiladi: kechasi bir necha marta
+# tasodifiy tartibda yuguradi, yiqilsa qaysi test ekanini annotatsiya qilib
+# aytadi va hisobotlarni artefaktga qo'yadi. Deploy'ga TEGMAYDI — asosiy
+# quvur (ci.yml) baribir qadalgan tartibda ishlaydi, ya'ni bu skanning
+# yiqilishi relizni to'smaydi.
+on:
+  schedule:
+    # Har kuni 02:40 UTC (Toshkentda 07:40) — kunlik ish boshlanishidan oldin
+    - cron: "40 2 * * *"
+  workflow_dispatch:
+    inputs:
+      iterations:
+        description: "Necha marta yugurilsin"
+        default: "3"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: flaky-scan
+  cancel-in-progress: true
+
+jobs:
+  random-order:
+    name: Backend (tasodifiy tartib)
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    defaults:
+      run:
+        working-directory: shina-magazin-api
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/setup-java@dd06d9cba3e5552c54d9f8ea23572deb30010f7c # v6.0.0
+        with:
+          distribution: temurin
+          java-version: 17
+          cache: maven
+
+      # Testcontainers image'i — ci.yml dagi kabi oldindan, cheklovga tushsak
+      # sabab test emasligi ko'rinsin.
+      - name: Postgres image (Testcontainers uchun)
+        run: |
+          for i in 1 2 3; do
+            if docker pull --quiet postgres:16-alpine; then exit 0; fi
+            echo "::warning title=Docker pull urinishi $i yiqildi::postgres:16-alpine tortilmadi."
+            sleep 20
+          done
+          echo "::error title=Docker Hub image tortilmadi::Muhit muammosi, test emas."
+          exit 1
+
+      - name: Tasodifiy tartibda yugurish
+        env:
+          TESTCONTAINERS_RYUK_DISABLED: "true"
+          ITERATIONS: ${{ github.event.inputs.iterations || '3' }}
+        run: |
+          chmod +x mvnw
+          failed=0
+          for i in $(seq 1 "$ITERATIONS"); do
+            echo "::group::Iteratsiya $i/$ITERATIONS"
+            # `-Dsurefire.runOrder` pom'dagi `${surefire.runOrder}` xususiyatini
+            # almashtiradi (to'g'ridan-to'g'ri yozilgan qiymat buni bekor qilardi).
+            if ./mvnw clean test -q -Djacoco.skip=true -Dsurefire.runOrder=random; then
+              echo "iteratsiya $i: o'tdi"
+            else
+              echo "iteratsiya $i: YIQILDI"
+              failed=$i
+              echo "::endgroup::"
+              break
+            fi
+            echo "::endgroup::"
+          done
+          echo "FAILED_ITERATION=$failed" >> "$GITHUB_ENV"
+          [ "$failed" = "0" ]
+
+      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        if: failure()
+        with:
+          name: flaky-surefire-reports
+          path: shina-magazin-api/target/surefire-reports
+          retention-days: 14
+          if-no-files-found: ignore
+
+      # Sizish topildi — qaysi test va qaysi tartibda ekanini aytamiz.
+      - name: Yiqilgan testlar xulosasi
+        if: failure()
+        run: |
+          shopt -s nullglob
+          found=0
+          for f in target/surefire-reports/*.txt; do
+            grep -qE "FAILURE!|ERROR!" "$f" || continue
+            found=1
+            name=$(basename "$f" .txt)
+            body=$(sed -n '1,40p' "$f" | sed 's/%/%25/g' | awk '{printf "%s%%0A", $0}' | cut -c1-3000)
+            echo "::error title=Tasodifiy tartibda yiqildi: $name::$body"
+            { echo "### $name"; echo '```'; sed -n '1,60p' "$f"; echo '```'; } >> "$GITHUB_STEP_SUMMARY"
+          done
+          if [ "$found" = "0" ]; then
+            echo "::error title=Hisobot yo'q::surefire-reports bo'sh — muhit yoki kompilyatsiya muammosi."
+          fi
+
+      - name: Notify Telegram
+        if: failure() && env.TELEGRAM_BOT_TOKEN != '' && env.TELEGRAM_ALERT_CHAT_ID != ''
+        env:
+          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+          TELEGRAM_ALERT_CHAT_ID: ${{ secrets.TELEGRAM_ALERT_CHAT_ID }}
+        run: |
+          text="🟡 Backend testlari TASODIFIY tartibda yiqildi (sinflar orasida holat sizishi).%0AReliz to'silmaydi — asosiy quvur qadalgan tartibda ishlaydi.%0AActions: ${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY}/actions/runs/${GITHUB_RUN_ID}"
+          curl -s --max-time 15 "https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendMessage" \
+            --data-urlencode "chat_id=${TELEGRAM_ALERT_CHAT_ID}" \
+            --data-urlencode "text=${text}" > /dev/null || true
