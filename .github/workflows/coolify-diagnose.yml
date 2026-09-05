@@ -67,16 +67,30 @@ jobs:
           show "Application" "/api/v1/applications/$UUID" '{name, status, fqdn, build_pack, git_branch, git_commit_sha, updated_at}'
           show "Service" "/api/v1/services/$UUID" '{name, status, updated_at}'
 
-          # Oxirgi deploy'lar va ularning Coolify logi (docker compose chiqishi shu yerda)
+          # Env o'zgaruvchilari — FAQAT nomi va qiymat uzunligi (qiymat hech qachon
+          # chiqarilmaydi). Majburiy sir yo'qolgan yoki bo'sh qolganini shu ko'rsatadi.
+          show "Env kalitlari (qiymatsiz)" "/api/v1/applications/$UUID/envs" \
+            '(.data // .) | if type=="array" then .[] | "\(.key)  len=\((.value // "") | length)  build=\(.is_build_time // false)" else . end'
+
+          # Oxirgi deploy'lar va ularning Coolify logi (docker compose chiqishi shu yerda).
+          # Javob shakli versiyaga qarab massiv yoki {data:[...]} — ikkalasi qabul qilinadi;
+          # ajratib bo'lmasa xom javobning boshi ko'rsatiladi.
           out=$(api "/api/v1/deployments/applications/$UUID") || true
           code=$(printf '%s' "$out" | tail -n1); body=$(printf '%s' "$out" | sed '$d')
-          echo "deploy ro'yxati -> HTTP $code"
-          if [ "$code" = "200" ]; then
-            printf '%s' "$body" | jq -r '.[:5][] | "\(.created_at)  \(.status)  \(.deployment_uuid)  \(.commit // "")"' 2>/dev/null || true
-            for d in $(printf '%s' "$body" | jq -r '.[:2][].deployment_uuid' 2>/dev/null); do
-              show "Deploy logi $d" "/api/v1/deployments/$d" '.logs | (try (fromjson | .[] | "[\(.type // "")] \(.command // "")\n\(.output // "")") catch .)'
-            done
+          echo "::group::Deploy ro'yxati (HTTP $code)"
+          list=$(printf '%s' "$body" | jq -c '(.data // .deployments // .) | if type=="array" then . else [] end' 2>/dev/null || echo '[]')
+          if [ "$(printf '%s' "$list" | jq 'length')" = "0" ]; then
+            echo "ro'yxat ajratilmadi — xom javob boshi:"; printf '%s\n' "$body" | head -c 1500; echo
+          else
+            printf '%s' "$list" | jq -r '.[:6][] | "\(.created_at // "")  \(.status // "")  \(.deployment_uuid // .uuid // "")  \(.commit // "" | .[0:7])"'
           fi
+          echo "::endgroup::"
+          for d in $(printf '%s' "$list" | jq -r '.[:3][] | (.deployment_uuid // .uuid // empty)' 2>/dev/null); do
+            show "Deploy logi $d" "/api/v1/deployments/$d" \
+              '.logs | (try (fromjson | .[] | "[\(.type // "")] \(.command // "")\n\(.output // "")") catch .)'
+          done
 
-          # Konteyner loglari (application uchun mavjud endpoint)
+          # Konteyner loglari. Coolify bu endpointda compose'ning ASOSIY konteynerini
+          # (bizda frontend nginx) qaytaradi; backend logi deploy logidagi
+          # healthcheck kutish qatorlarida va serverda `docker logs` da ko'rinadi.
           show "Konteyner loglari (oxirgi $LINES qator)" "/api/v1/applications/$UUID/logs?lines=$LINES" '.logs // .'
