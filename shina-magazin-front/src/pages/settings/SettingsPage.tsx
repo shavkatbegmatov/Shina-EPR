@@ -1050,7 +1050,7 @@ export function SettingsPage() {
                       <tr>
                         <th>{t('erp.settings.colName')}</th>
                         <th>{t('erp.settings.colCountry')}</th>
-                        <th></th>
+                        <th><span className="sr-only">{t('common.actions')}</span></th>
                       </tr>
                     </thead>
                     <tbody>
@@ -1169,7 +1169,7 @@ export function SettingsPage() {
                         <th>{t('erp.settings.colName')}</th>
                         <th>{t('erp.settings.colDescription')}</th>
                         <th>{t('erp.settings.colParentCategory')}</th>
-                        <th></th>
+                        <th><span className="sr-only">{t('common.actions')}</span></th>
                       </tr>
                     </thead>
                     <tbody>

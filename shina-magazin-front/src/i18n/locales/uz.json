@@ -26,6 +26,7 @@
     "close": "Yopish",
     "search": "Qidirish",
     "actions": "Amallar",
+    "expand": "Kengaytirish",
     "yes": "Ha",
     "no": "Yo'q",
     "view": "Ko'rish",
@@ -2452,7 +2453,8 @@
       "emptyHint": "Kartadagi tarozi tugmasi bilan mahsulot qo'shing.",
       "clear": "Tozalash",
       "priceRow": "Narx",
-      "stockRow": "Holat"
+      "stockRow": "Holat",
+      "characteristic": "Xususiyat"
     }
   }
 }

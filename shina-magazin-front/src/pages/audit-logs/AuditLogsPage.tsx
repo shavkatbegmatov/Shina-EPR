@@ -332,14 +332,14 @@ export function AuditLogsPage() {
                   <table className="table w-full">
                     <thead className="bg-base-200">
                       <tr>
-                        <th className="w-12"></th>
+                        <th className="w-12"><span className="sr-only">{t('common.expand')}</span></th>
                         <th className="text-left max-w-[280px]">{t('erp.auditLogs.colOperation')}</th>
                         <th className="text-left">{t('erp.auditLogs.colEntities')}</th>
                         <th className="text-left">{t('erp.auditLogs.colLogs')}</th>
                         <th className="text-left">{t('erp.auditLogs.colTime')}</th>
                         <th className="text-left">{t('erp.auditLogs.colUser')}</th>
                         <th className="text-left">{t('erp.auditLogs.colIpAddress')}</th>
-                        <th className="text-right w-28"></th>
+                        <th className="text-right w-28"><span className="sr-only">{t('common.actions')}</span></th>
                       </tr>
                     </thead>
                     <tbody>
@@ -380,14 +380,14 @@ export function AuditLogsPage() {
                   <table className="table w-full">
                     <thead className="bg-base-200">
                       <tr>
-                        <th className="w-12"></th>
+                        <th className="w-12"><span className="sr-only">{t('common.expand')}</span></th>
                         <th className="text-left">{t('erp.auditLogs.colId')}</th>
                         <th className="text-left">{t('erp.auditLogs.colEntity')}</th>
                         <th className="text-left">{t('erp.auditLogs.colAction')}</th>
                         <th className="text-left">{t('erp.auditLogs.colTime')}</th>
                         <th className="text-left">{t('erp.auditLogs.colUser')}</th>
                         <th className="text-left">{t('erp.auditLogs.colIpAddress')}</th>
-                        <th className="text-left w-28"></th>
+                        <th className="text-left w-28"><span className="sr-only">{t('common.actions')}</span></th>
                       </tr>
                     </thead>
                     <tbody>

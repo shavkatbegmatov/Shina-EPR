@@ -356,6 +356,7 @@ export function POSPage() {
           <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 xl:grid-cols-4">
             {products.map((product) => (
               <button
+                aria-label={product.name}
                 key={product.id}
                 className={clsx(
                   'surface-panel group flex h-full flex-col justify-between rounded-xl p-3 text-left transition hover:-translate-y-0.5 hover:shadow-[var(--shadow-soft)]',

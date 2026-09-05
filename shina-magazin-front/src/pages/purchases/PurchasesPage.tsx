@@ -758,7 +758,7 @@ export function PurchasesPage() {
                           <th className="w-28">{t('erp.purchases.colQuantity')}</th>
                           <th className="w-36">{t('erp.purchases.colPrice')}</th>
                           <th className="w-32 text-right">{t('common.amount')}</th>
-                          <th className="w-12"></th>
+                          <th className="w-12"><span className="sr-only">{t('common.actions')}</span></th>
                         </tr>
                       </thead>
                       <tbody>

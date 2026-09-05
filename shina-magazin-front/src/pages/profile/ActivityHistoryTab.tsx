@@ -226,7 +226,7 @@ export function ActivityHistoryTab() {
               <table className="table w-full table-sm">
                 <thead className="bg-base-200">
                   <tr>
-                    <th className="w-12"></th>
+                    <th className="w-12"><span className="sr-only">{t('common.expand')}</span></th>
                     <th className="text-left">ID</th>
                     <th className="text-left">{t('erp.activityHistory.colEntity')}</th>
                     <th className="text-left">{t('erp.activityHistory.colAction')}</th>

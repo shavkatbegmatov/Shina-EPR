@@ -19,6 +19,9 @@
     <properties>
         <!-- Java 17 ga o'zgartirildi (Java 23 o'rnatilmagan) -->
         <java.version>17</java.version>
+        <!-- Testlar tartibi: standart alifbo (lokal va CI bir xil); sizishni qidirishda
+             `-Dsurefire.runOrder=random` bilan almashtiriladi. -->
+        <surefire.runOrder>alphabetical</surefire.runOrder>
         <maven.compiler.source>17</maven.compiler.source>
         <maven.compiler.target>17</maven.compiler.target>
     </properties>
@@ -205,7 +208,10 @@
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-surefire-plugin</artifactId>
                 <configuration>
-                    <runOrder>alphabetical</runOrder>
+                    <!-- Xususiyat orqali: `-Dsurefire.runOrder=random` bilan sizishni qidirish
+                         mumkin. To'g'ridan-to'g'ri yozilgan qiymat `-D` ni BEKOR QILARDI, ya'ni
+                         tasodifiy tartib so'ralganda ham alifbo tartibi ishlardi. -->
+                    <runOrder>${surefire.runOrder}</runOrder>
                 </configuration>
             </plugin>
             <!-- Test qamrovi hisoboti: target/site/jacoco/index.html (mvnw test bilan birga) -->

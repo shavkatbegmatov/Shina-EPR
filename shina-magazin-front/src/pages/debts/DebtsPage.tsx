@@ -696,6 +696,8 @@ export function DebtsPage() {
                         className="surface-soft rounded-xl overflow-hidden"
                       >
                         <button
+                          aria-label={customer.customerName}
+                          aria-expanded={expandedCustomer === customer.customerId}
                           onClick={() => setExpandedCustomer(
                             expandedCustomer === customer.customerId ? null : customer.customerId
                           )}

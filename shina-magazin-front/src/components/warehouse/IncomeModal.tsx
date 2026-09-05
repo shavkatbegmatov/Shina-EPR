@@ -235,6 +235,7 @@ export function IncomeModal({ isOpen, onClose, onSuccess }: IncomeModalProps) {
         ) : searchResults.length > 0 ? (
           searchResults.map((product) => (
             <button
+              aria-label={product.name}
               key={product.id}
               type="button"
               className="w-full text-left px-4 py-3 hover:bg-base-200 transition-colors border-b border-base-200 last:border-b-0"

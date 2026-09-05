@@ -202,6 +202,7 @@ export function ProductSearchCombobox({
         <div className="max-h-72 overflow-y-auto py-1">
           {products.map((product, index) => (
             <button
+              aria-label={product.name}
               key={product.id}
               role="option"
               aria-selected={index === activeIndex}

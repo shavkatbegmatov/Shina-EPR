@@ -451,7 +451,7 @@ export function AuditLogGroupRow({ group }: AuditLogGroupRowProps) {
                       <th className="text-left py-2">{t('erp.auditGroup.colObject')}</th>
                       <th className="text-left py-2">{t('erp.auditGroup.colAction')}</th>
                       <th className="text-left py-2">ID</th>
-                      <th className="text-right py-2 w-28"></th>
+                      <th className="text-right py-2 w-28"><span className="sr-only">{t('common.actions')}</span></th>
                     </tr>
                   </thead>
                   <tbody>

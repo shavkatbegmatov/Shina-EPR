@@ -43,6 +43,12 @@ export default tseslint.config(
         'warn',
         { allowConstantExport: true },
       ],
+      // ESKIRGAN qoida, plugin o'zi `label-has-associated-control` foydasiga
+      // bekor qilgan. U label'dan `htmlFor` VA ichiga joylashtirishni BIR VAQTDA
+      // talab qiladi — React'dagi odatiy `htmlFor` + `id` juftligi ham
+      // ogohlantirish olardi. 205 topilmaning 115 tasi shundan edi, ya'ni haqiqiy
+      // muammolarni ko'mib tashlardi. O'rnini bosuvchi qoida pastda yoqiq turibdi.
+      'jsx-a11y/label-has-for': 'off',
     },
   },
   {

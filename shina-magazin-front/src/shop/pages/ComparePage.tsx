@@ -115,7 +115,7 @@ export function ComparePage() {
         <table className="w-full min-w-[640px] border-collapse bg-base-100">
           <thead>
             <tr>
-              <th className="w-32 bg-base-100 p-3" />
+              <th className="w-32 bg-base-100 p-3"><span className="sr-only">{t('shop.compare.characteristic')}</span></th>
               {items.map((p) => (
                 <th key={p.id} className="border-l border-base-200 p-3 align-top font-normal">
                   <div className="relative">
