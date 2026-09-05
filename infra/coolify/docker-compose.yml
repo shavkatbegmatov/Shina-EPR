@@ -81,6 +81,12 @@ services:
   frontend:
     image: ghcr.io/shavkatbegmatov/shina-epr-front:latest
     pull_policy: always
+    # Traefik (Coolify proksisi) qaysi portga ulanishini ANIQ aytamiz. Bu yozilmasa
+    # Coolify o'z standartini oladi (ports_exposes=3000) va proksi nginx'ning 80-porti
+    # o'rniga 3000 ga uradi: konteynerlar sog'lom, sayt esa 502. 06.09.2026 da Coolify
+    # 4.3.17 yangilanishidan keyingi birinchi deploy'da aynan shu bo'ldi (~2 soat).
+    expose:
+      - "80"
     environment:
       # nginx /api ni shu servisga proxy qiladi (Docker DNS)
       BACKEND_HOST: backend
