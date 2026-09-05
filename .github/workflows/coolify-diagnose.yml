@@ -67,6 +67,16 @@ jobs:
           show "Application" "/api/v1/applications/$UUID" '{name, status, fqdn, build_pack, git_branch, git_commit_sha, updated_at}'
           show "Service" "/api/v1/services/$UUID" '{name, status, updated_at}'
 
+          # Tarmoq va proksi: Coolify compose'ni o'zi to'ldiradi (networks, traefik
+          # label'lari). Traefik 502 bersa-yu konteyner "Up" bo'lsa — sabab shu
+          # generatsiyada. Qiymatlar `${VAR}` ko'rinishida, sirlar chiqmaydi.
+          show "Tarmoq sozlamalari" "/api/v1/applications/$UUID" \
+            '{connect_to_docker_network: (.connect_to_docker_network // .settings.connect_to_docker_network // "?"), docker_compose_domains, docker_compose_location, ports_exposes, custom_docker_run_options, is_container_label_readonly_enabled, is_container_label_escape_enabled}'
+          show "Coolify generatsiya qilgan compose" "/api/v1/applications/$UUID" \
+            '.docker_compose // "(docker_compose maydoni mavjud emas)"'
+          show "Custom labels (base64 dekodlanadi)" "/api/v1/applications/$UUID" \
+            '(.custom_labels // "") | if . == "" then "(mavjud emas)" else (try @base64d catch .) end'
+
           # Env o'zgaruvchilari — FAQAT nomi va qiymat uzunligi (qiymat hech qachon
           # chiqarilmaydi). Majburiy sir yo'qolgan yoki bo'sh qolganini shu ko'rsatadi.
           show "Env kalitlari (qiymatsiz)" "/api/v1/applications/$UUID/envs" \
