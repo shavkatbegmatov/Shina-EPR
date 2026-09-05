@@ -30,6 +30,7 @@ public class JwtTokenProvider {
 
     /** HS256 uchun minimal kalit uzunligi (RFC 7518: kalit hash chiqishidan kichik bo'lmasin). */
     private static final int MIN_KEY_BYTES = 32;
+    private static final java.util.regex.Pattern WHITESPACE = java.util.regex.Pattern.compile("\\s+");
 
     /**
      * Repo tarixida ochiq qolgan, shuning uchun ISHONCHSIZ deb hisoblanadigan kalitlar.
@@ -46,7 +47,16 @@ public class JwtTokenProvider {
             throw new IllegalStateException(
                     "JWT_SECRET o'rnatilmagan. Generatsiya: openssl rand -base64 32");
         }
-        if (COMPROMISED_SECRETS.contains(jwtSecret.trim())) {
+        // Bo'shliq va satr belgilaridan tozalaymiz. `openssl rand -base64 64` natijani
+        // 64 ustunda BO'LIB chiqaradi; env maydoniga nusxalanganda ichida satr belgisi
+        // qoladi. jjwt dekoderi (0.12.6 ham, 0.13.0 ham — 06.09.2026 da ikkalasi
+        // image sifatida tekshirildi) ICHKI satr belgisini "Illegal base64 character"
+        // bilan rad etadi, oxiridagi CR/LF ni esa o'tkazadi. Kalit MAZMUNI uchun
+        // bo'shliqning ma'nosi yo'q, shuning uchun uni olib tashlash xavfsiz;
+        // qisqa yoki noto'g'ri kalit baribir quyida rad etiladi.
+        String secret = WHITESPACE.matcher(jwtSecret).replaceAll("");
+
+        if (COMPROMISED_SECRETS.contains(secret)) {
             throw new IllegalStateException(
                     "JWT_SECRET repo tarixida ochiq qolgan eski default kalitga teng — "
                             + "u bilan token soxtalashtirish mumkin. Yangi kalit generatsiya qiling: "
@@ -55,7 +65,7 @@ public class JwtTokenProvider {
 
         byte[] keyBytes;
         try {
-            keyBytes = Decoders.BASE64.decode(jwtSecret);
+            keyBytes = Decoders.BASE64.decode(secret);
         } catch (RuntimeException e) {
             // jjwt DecodingException'i IllegalArgumentException'dan meros olmaydi
             throw new IllegalStateException(

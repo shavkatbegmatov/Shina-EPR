@@ -59,6 +59,30 @@ class JwtTokenProviderSecretValidationTest {
         assertThrows(IllegalStateException.class, () -> initWith("bu base64 emas!!! ***"));
     }
 
+    // `openssl rand -base64 64` natijani 64 ustunda bo'lib chiqaradi; env maydoniga
+    // nusxalanganda ichida satr belgisi qoladi. jjwt dekoderi (0.12.6 ham, 0.13.0
+    // ham) ichki satr belgisini rad etadi — ilova umuman ishga tushmasdi.
+    // Bo'shliq kalit mazmuniga ta'sir qilmaydi, qabul qilinsin.
+    @Test
+    void acceptsSecretWrappedAcrossLinesLikeOpensslOutput() {
+        String wrapped = VALID.substring(0, 20) + "\n" + VALID.substring(20);
+        assertDoesNotThrow(() -> initWith(wrapped));
+    }
+
+    @Test
+    void acceptsSecretWithTrailingCrLfFromCopyPaste() {
+        assertDoesNotThrow(() -> initWith(VALID + "\r\n"));
+        assertDoesNotThrow(() -> initWith("  " + VALID + " \n"));
+    }
+
+    // Tozalash sizib ketgan kalitni "yangi" qilib ko'rsatmasin.
+    @Test
+    void stillRejectsLeakedDefaultSecretWhenPaddedWithWhitespace() {
+        assertThrows(IllegalStateException.class, () -> initWith(COMPROMISED + "\n"));
+        assertThrows(IllegalStateException.class,
+                () -> initWith(COMPROMISED.substring(0, 10) + "\n" + COMPROMISED.substring(10)));
+    }
+
     private static void initWith(String secret) {
         JwtTokenProvider provider = new JwtTokenProvider();
         ReflectionTestUtils.setField(provider, "jwtSecret", secret);

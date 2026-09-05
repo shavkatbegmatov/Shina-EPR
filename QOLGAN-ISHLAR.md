@@ -34,6 +34,15 @@ hali ochiq qolgan ishlar.
   **bittalab** qaytariladi, har biridan keyin deploy natijasi kuzatiladi.
   Frontend'ni backend sog'ligiga bog'lash esa umuman qaytarilmasin: aynan o'sha
   backend nosozligini butun saytning tushishiga aylantirgan.
+- **06.09.2026 uzilishi — server tomonida qo'lda tiklash kerak.** Deploy o'rtasida bekor
+  qilingan run'dan keyin Coolify stack'i yarim holatda qoldi: keyingi deploy'lar "finished",
+  frontend ko'tariladi, backend esa yo'q (nginx 502). Ikkala backend image (bump'li va
+  qaytarilgan) lokalda toza Postgres bilan ishga tushadi — ya'ni image emas, server.
+  Tekshirish (Coolify → Terminal yoki SSH): `docker ps -a` (backend `Restarting`/`Exited`
+  yoki nomi band?), `docker logs --tail 200 <backend>`, `df -h` (image'lar diskni
+  to'ldirgan bo'lishi mumkin — `docker image prune -a`), `free -m`, db konteyneri
+  `healthy`mi. Keyin Coolify'da qo'lda **Redeploy**. Tiklangach `jjwt` bump'ini
+  (`git revert 30420c9`) qayta qo'llash mumkin — u sabab bo'lmagan.
 - **Jonli to'lov** — Payme/Click default'da `enabled: false`. Kreditsial + webhook
   ro'yxatdan o'tkazish kerak (2-bo'lim). Kod tayyor (Payme idempotentlik va bekor qilish
   vaqt chizig'i V43 bilan), sandbox'da sinalmagan.

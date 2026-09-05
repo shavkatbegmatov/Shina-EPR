@@ -25,6 +25,11 @@ Repo → **Settings → Secrets and variables → Actions**:
 | `COOLIFY_WEBHOOK_URL` | Coolify **Compose resurs** deploy webhook URL |
 | `COOLIFY_API_TOKEN` | Coolify API token (Bearer) |
 
+> ℹ️ `JWT_SECRET` qiymatidagi bo'shliq va satr belgilari (masalan `openssl rand -base64 64`
+> ning 64 ustunli bo'linishi) ilova tomonidan olib tashlanadi — aks holda jjwt dekoderi
+> ichki satr belgisini rad etib, backend umuman ishga tushmaydi. Baribir sirni
+> **bir qatorda** saqlang: `openssl rand -base64 32` bo'linmasdan chiqadi.
+
 > ⚠️ Deploy endpointi **POST** talab qiladi. Coolify uni GET'dan POST'ga o'zgartirgan
 > (`405 {"message":"This endpoint has changed to a POST request."}`), shuning uchun
 > qo'lda sinaganda ham `-X POST` bering:
