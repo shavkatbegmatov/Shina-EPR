@@ -127,18 +127,23 @@ jobs:
           case "$ST" in running*) echo "::error::Yangi service ISHLAYAPTI — eski baza bilan bir vaqtda bo'lmasligi kerak. Avval UI'da Stop qiling."; exit 1;; esac
 
           echo "1) compose"
-          WANT=$(wc -c < "$COMPOSE_FILE")
-          api PATCH "/api/v1/services/$NEW" "$(jq -n --arg c "$(base64 -w0 "$COMPOSE_FILE")" '{docker_compose_raw:$c}')"
-          echo "   PATCH (base64) -> HTTP $CODE: $(short 160)"
+          # Service GET'i docker_compose_raw ni qaytarmaydi (probe: len=0), shuning uchun
+          # tekshiruv PATCH javobi va sub-app ro'yxati bo'yicha: compose to'g'ri
+          # o'qilsa backend/frontend/db o'z joyida qoladi.
+          api PATCH "/api/v1/services/$NEW" "$(jq -n --rawfile c "$COMPOSE_FILE" '{docker_compose_raw:$c}')"
+          echo "   PATCH (xom matn) -> HTTP $CODE: $(short 200)"
           [ "$CODE" = "403" ] && { echo "::error::Yozish huquqi yo'q — COOLIFY_WRITE_TOKEN (write) kerak"; exit 1; }
-          api GET "/api/v1/services/$NEW"; STORED=$(printf '%s' "$BODY" | jq -r '(.docker_compose_raw // "")|length')
-          if [ "$STORED" != "$WANT" ]; then
-            api PATCH "/api/v1/services/$NEW" "$(jq -n --rawfile c "$COMPOSE_FILE" '{docker_compose_raw:$c}')"
-            echo "   PATCH (xom matn) -> HTTP $CODE: $(short 160)"
-            api GET "/api/v1/services/$NEW"; STORED=$(printf '%s' "$BODY" | jq -r '(.docker_compose_raw // "")|length')
+          if ! ok; then
+            api PATCH "/api/v1/services/$NEW" "$(jq -n --arg c "$(base64 -w0 "$COMPOSE_FILE")" '{docker_compose_raw:$c}')"
+            echo "   PATCH (base64) -> HTTP $CODE: $(short 200)"
+            ok || { echo "::error::compose yuborilmadi"; exit 1; }
           fi
-          echo "   saqlangan uzunlik=$STORED, fayl=$WANT"
-          [ "$STORED" = "$WANT" ] || { echo "::error::compose Coolify'da noto'g'ri saqlandi"; exit 1; }
+          api GET "/api/v1/services/$NEW"
+          echo "   sub-app'lar: $(printf '%s' "$BODY" | jq -r '[(.applications // [])[].name, (.databases // [])[].name] | join(", ")')"
+          for s in backend frontend db; do
+            printf '%s' "$BODY" | jq -e --arg s "$s" '([(.applications // [])[].name, (.databases // [])[].name] | index($s)) != null' >/dev/null \
+              || { echo "::error::compose yuborilgach $s servisi yo'qoldi — compose noto'g'ri o'qildi"; exit 1; }
+          done
 
           echo "2) env'lar"
           api GET "/api/v1/applications/$OLD/envs"
@@ -185,9 +190,24 @@ jobs:
           api POST "/api/v1/applications/$OLD/stop"; echo "   HTTP $CODE: $(short 120)"; ok || { echo "::error::eski app to'xtatilmadi"; exit 1; }
           sleep 25
           if [ -z "$FQDN" ]; then
-            echo "::warning title=Domen yangi service'da yo'q::Endi UI'da yangi service → frontend → Domains: $DOMAINS ni saqlang (eski app'dan olindi, endi rad etilmaydi), so'ng Deploy bosing. Bu workflow 12 daqiqa sog'liqni kuzatadi."
-          else
-            echo "3) yangi service deploy"
+            echo "3) yangi service frontend'iga domen (API)"
+            api GET "/api/v1/services/$NEW"
+            FRONT=$(printf '%s' "$BODY" | jq -r '(.applications // []) | map(select(.name=="frontend")) | .[0].uuid // empty')
+            [ -n "$FRONT" ] || { echo "::error::frontend sub-app topilmadi — rollback qiling"; exit 1; }
+            for field in fqdn domains; do
+              api PATCH "/api/v1/services/$NEW/applications/$FRONT" "$(jq -n --arg d "$DOMAINS" --arg f "$field" '{($f): $d}')"
+              echo "   PATCH {$field} -> HTTP $CODE: $(short 160)"
+              api GET "/api/v1/services/$NEW"
+              FQDN=$(printf '%s' "$BODY" | jq -r '(.applications // []) | map(select(.name=="frontend")) | .[0].fqdn // ""')
+              [ -n "$FQDN" ] && break
+            done
+            echo "   frontend fqdn: ${FQDN:-(qoyilmadi)}"
+            if [ -z "$FQDN" ]; then
+              echo "::warning title=Domen API orqali qo'yilmadi::UI'da yangi service → frontend → Domains: $DOMAINS ni saqlang va Deploy bosing (eski app'dan olingan, rad etilmaydi). Bu workflow 12 daqiqa sog'liqni kuzatadi."
+            fi
+          fi
+          if [ -n "$FQDN" ]; then
+            echo "4) yangi service deploy"
             api POST "/api/v1/deploy?uuid=$NEW"; echo "   HTTP $CODE: $(short 200)"; ok || { echo "::error::deploy boshlanmadi — rollback qiling"; exit 1; }
           fi
           for i in $(seq 1 48); do
