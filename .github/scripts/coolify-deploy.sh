@@ -31,6 +31,12 @@ MAX_ATTEMPTS="${MAX_ATTEMPTS:-3}"
 POLL_INTERVAL="${POLL_INTERVAL:-15}"
 DEPLOY_TIMEOUT="${DEPLOY_TIMEOUT:-900}"
 HEALTH_TIMEOUT="${HEALTH_TIMEOUT:-300}"
+# Raw-compose resurs uchun: deploy'dan OLDIN repodagi compose faylni Coolify'ga
+# yuboradi (PATCH docker_compose_raw). Shunda server repozitoriyni klon qilmaydi —
+# compose manbasi baribir git (bu fayl), Coolify esa faqat nusxasini saqlaydi.
+# Git'dan o'qiydigan resursda o'chiq qoladi (default false).
+SYNC_COMPOSE="${SYNC_COMPOSE:-false}"
+COMPOSE_FILE="${COMPOSE_FILE:-infra/coolify/docker-compose.yml}"
 
 # Jurnal STDERR'ga: `trigger_deploy` o'z natijasini (deployment_uuid) stdout
 # orqali qaytaradi, shuning uchun stdout toza qolishi SHART. Aks holda
@@ -159,6 +165,37 @@ check_health() {
   log "  sog'liq tekshiruvi ${HEALTH_TIMEOUT}s ichida 200 bermadi"
   return 1
 }
+
+# Compose faylni Coolify'ga yuborish (faqat SYNC_COMPOSE=true). Yuborilmasa deploy
+# ESKI compose bilan ketardi, shuning uchun xato bo'lsa deploy boshlanmaydi.
+sync_compose() {
+  local uuid code tmp body
+  uuid=$(printf '%s' "$WEBHOOK_URL" | sed -nE 's#.*[?&]uuid=([^&]+).*#\1#p')
+  if [[ -z "$uuid" ]]; then
+    fail_annotation "COOLIFY_WEBHOOK_URL dan resurs uuid ajratilmadi — compose yuborilmadi"
+    exit 1
+  fi
+  if [[ ! -f "$COMPOSE_FILE" ]]; then
+    fail_annotation "Compose fayl topilmadi: $COMPOSE_FILE"
+    exit 1
+  fi
+  tmp="$(mktemp)"
+  code=$(jq -Rs '{docker_compose_raw: .}' "$COMPOSE_FILE" \
+    | curl -sS --max-time 60 -X PATCH -o "$tmp" -w '%{http_code}' \
+        -H "Authorization: Bearer $API_TOKEN" -H "Content-Type: application/json" \
+        --data-binary @- "$(api_base)/api/v1/applications/$uuid") || code="000"
+  body="$(head -c 300 "$tmp" | tr '\n' ' ')"
+  rm -f "$tmp"
+  if [[ "$code" != 2* ]]; then
+    fail_annotation "Compose Coolify'ga yuborilmadi: HTTP $code — ${body:-javob bosh}"
+    exit 1
+  fi
+  log "compose Coolify'ga yuborildi ($COMPOSE_FILE, HTTP $code)"
+}
+
+if [[ "$SYNC_COMPOSE" == "true" ]]; then
+  sync_compose
+fi
 
 for (( attempt = 1; attempt <= MAX_ATTEMPTS; attempt++ )); do
   log "Deploy urinishi $attempt/$MAX_ATTEMPTS"

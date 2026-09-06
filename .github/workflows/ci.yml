@@ -246,6 +246,9 @@ jobs:
           # Coolify "finished" desa-yu konteyner ko'tarilmasa, buni faqat
           # mustaqil sog'liq tekshiruvi ushlaydi.
           HEALTH_URL: ${{ vars.VITE_SITE_URL || 'https://protektor.uz' }}/api/v1/settings/public
+          # Raw-compose resursda `true`: compose repodan Coolify'ga yuboriladi, server
+          # repozitoriyni klon qilmaydi. Repo Variable COOLIFY_SYNC_COMPOSE bilan yoqiladi.
+          SYNC_COMPOSE: ${{ vars.COOLIFY_SYNC_COMPOSE || 'false' }}
         run: |
           chmod +x .github/scripts/coolify-deploy.sh
           .github/scripts/coolify-deploy.sh
