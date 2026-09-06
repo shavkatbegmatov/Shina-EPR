@@ -72,6 +72,10 @@ jobs:
           # generatsiyada. Qiymatlar `${VAR}` ko'rinishida, sirlar chiqmaydi.
           show "Tarmoq sozlamalari" "/api/v1/applications/$UUID" \
             '{connect_to_docker_network: (.connect_to_docker_network // .settings.connect_to_docker_network // "?"), docker_compose_domains, docker_compose_location, ports_exposes, custom_docker_run_options, is_container_label_readonly_enabled, is_container_label_escape_enabled}'
+          # Manba: Coolify har deploy'da repozitoriyni klon qiladimi (git) yoki compose
+          # o'zida saqlanadimi (raw). Serverga tushadigan yukni baholash uchun.
+          show "Manba (git yoki raw compose)" "/api/v1/applications/$UUID" \
+            '{git_repository, git_branch, git_commit_sha, docker_compose_location, is_raw_compose_deployment_enabled: (.is_raw_compose_deployment_enabled // .settings.is_raw_compose_deployment_enabled // "?"), docker_compose_raw_len: ((.docker_compose_raw // "") | length), docker_compose_len: ((.docker_compose // "") | length), source_id, private_key_id}'
           show "Coolify generatsiya qilgan compose" "/api/v1/applications/$UUID" \
             '.docker_compose // "(docker_compose maydoni mavjud emas)"'
           show "Custom labels (base64 dekodlanadi)" "/api/v1/applications/$UUID" \
