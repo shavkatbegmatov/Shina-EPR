@@ -208,7 +208,8 @@ fi
 # turadi — shuning uchun avval qisqa kutish, keyin holat so'raladi.
 # Resurs service bo'lmasa (GET 404) — 0 qaytaradi, baho sog'liqqa qoladi.
 wait_service_running() {
-  local uuid status deadline=$(( SECONDS + DEPLOY_TIMEOUT ))
+  # Qisqa kutish (2 daqiqa): holat faqat ma'lumot, hal qiluvchi mezon sog'liq.
+  local uuid status deadline=$(( SECONDS + 120 ))
   uuid=$(printf '%s' "$WEBHOOK_URL" | sed -nE 's#.*[?&]uuid=([^&]+).*#\1#p')
   [[ -n "$uuid" ]] || { log "  uuid ajratilmadi — holat kutilmaydi"; return 0; }
   sleep 20
@@ -285,8 +286,13 @@ for (( attempt = 1; attempt <= MAX_ATTEMPTS; attempt++ )); do
     # service'ni "running" deb ko'rsatishini kutamiz, so'ng 200 ketma-ket
     # uch marta bo'lishini talab qilamiz.
     log "  deployment_uuid ajratib olinmadi — service holati va sog'liq bo'yicha baholanadi"
-    if wait_service_running && check_health_stable; then
-      log "TUGADI: service ishga tushdi, prod barqaror javob beryapti"
+    # Coolify holati faqat MA'LUMOT uchun: frontend'da healthcheck yo'q, shuning
+    # uchun service uzoq vaqt `degraded`/`running:unknown` ko'rinishi mumkin va
+    # bu prod sog'lomligini bildirmaydi (07.09.2026, 04:40–05:00: sayt 200 edi,
+    # holat esa degraded turdi). Hal qiluvchi mezon — HEALTH_URL ketma-ket 3x200.
+    wait_service_running || log "  service holati running bo'lmadi — sog'liq hal qiladi"
+    if check_health_stable; then
+      log "TUGADI: prod barqaror javob beryapti"
       exit 0
     fi
     # QAYTA TRIGGER YO'Q: service yo'lida deploy allaqachon Coolify'da ketmoqda;
