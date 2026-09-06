@@ -89,7 +89,7 @@ jobs:
             [ "$f" = "200" ] && [ "$a" = "200" ]
           }
           LIB
-          echo "eski app: $OLD  yangi service: $NEW"
+          echo "eski app: $OLD  yangi service: $NEW  coolify base: $BASE"
 
       - name: probe — faqat o'qish
         if: env.PHASE == 'probe'

@@ -59,21 +59,30 @@ jobs:
             [ "$code" = "200" ] || [ "$code" = "201" ] || [ "$code" = "202" ]
           }
 
+          # Resurs turi: raw compose "Docker Compose Empty" — SERVICE, git'dan o'qiydigan
+          # compose — APPLICATION. API yo'llari boshqacha; uuid bo'yicha aniqlaymiz.
+          if curl -sS --max-time 30 -o /dev/null -w '%{http_code}' -H "Authorization: Bearer $COOLIFY_API_TOKEN" "$BASE/api/v1/services/$UUID" | grep -q '^200$'; then
+            KIND=services
+          else
+            KIND=applications
+          fi
+          echo "resurs turi: $KIND ($UUID)"
+
           case "$ACTION" in
             restart)
-              call POST "/api/v1/applications/$UUID/restart" || { echo "::error::restart so'rovi rad etildi"; exit 1; } ;;
+              call POST "/api/v1/$KIND/$UUID/restart" || { echo "::error::restart so'rovi rad etildi"; exit 1; } ;;
             recreate)
-              call POST "/api/v1/applications/$UUID/stop" || { echo "::error::stop so'rovi rad etildi"; exit 1; }
+              call POST "/api/v1/$KIND/$UUID/stop" || { echo "::error::stop so'rovi rad etildi"; exit 1; }
               echo "konteynerlar to'xtashi uchun 20 s..."; sleep 20
-              call POST "/api/v1/applications/$UUID/start" || { echo "::error::start so'rovi rad etildi"; exit 1; } ;;
+              call POST "/api/v1/$KIND/$UUID/start" || { echo "::error::start so'rovi rad etildi"; exit 1; } ;;
             stop)
               # Resurs almashtirishda: eski resurs to'xtatiladi, volume'lar qoladi.
               # Sog'liq ATAYLAB kutilmaydi — sayt shu paytda javob bermasligi kerak.
-              call POST "/api/v1/applications/$UUID/stop" || { echo "::error::stop so'rovi rad etildi"; exit 1; }
+              call POST "/api/v1/$KIND/$UUID/stop" || { echo "::error::stop so'rovi rad etildi"; exit 1; }
               echo "::notice title=Resurs to'xtatildi::$UUID uchun stop so'rovi qabul qilindi"
               exit 0 ;;
             start)
-              call POST "/api/v1/applications/$UUID/start" || { echo "::error::start so'rovi rad etildi"; exit 1; } ;;
+              call POST "/api/v1/$KIND/$UUID/start" || { echo "::error::start so'rovi rad etildi"; exit 1; } ;;
             *) echo "::error::noma'lum action: $ACTION"; exit 1 ;;
           esac
 
