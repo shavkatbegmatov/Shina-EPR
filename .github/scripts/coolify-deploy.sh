@@ -184,10 +184,12 @@ sync_compose() {
     exit 1
   fi
   tmp="$(mktemp)"
-  code=$(jq -Rs '{docker_compose_raw: .}' "$COMPOSE_FILE" \
+  # Raw compose resurs Coolify'da SERVICE turida; API compose'ni base64 kutadi
+  # (07.09.2026: xom matn 422 "should be base64 encoded", base64 — 200).
+  code=$(jq -n --arg c "$(base64 -w0 "$COMPOSE_FILE")" '{docker_compose_raw: $c}' \
     | curl -sS --max-time 60 -X PATCH -o "$tmp" -w '%{http_code}' \
         -H "Authorization: Bearer $WRITE_TOKEN" -H "Content-Type: application/json" \
-        --data-binary @- "$(api_base)/api/v1/applications/$uuid") || code="000"
+        --data-binary @- "$(api_base)/api/v1/services/$uuid") || code="000"
   body="$(head -c 300 "$tmp" | tr '\n' ' ')"
   rm -f "$tmp"
   if [[ "$code" != 2* ]]; then

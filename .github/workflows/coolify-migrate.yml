@@ -158,8 +158,19 @@ jobs:
           else
             echo "::error title=Env qiymatlari yo'q::Token read:sensitive emas va COOLIFY_MIGRATE_ENVS ham yo'q"; exit 1
           fi
-          api POST "/api/v1/services/$NEW/envs/bulk" "$DATA"; echo "   envs/bulk -> HTTP $CODE: $(short 160)"
-          ok || { echo "::error::env'lar qo'yilmadi"; exit 1; }
+          # Service'da envs/bulk yo'q (404). Kalitlar compose'dan allaqachon yaratilgan —
+          # har biri alohida: avval PATCH (mavjudni yangilash), bo'lmasa POST (yaratish).
+          # Qiymat hech qachon chiqarilmaydi.
+          FAILED=0
+          while IFS= read -r item; do
+            k=$(printf '%s' "$item" | jq -r '.key')
+            api PATCH "/api/v1/services/$NEW/envs" "$item"
+            if ! ok; then
+              api POST "/api/v1/services/$NEW/envs" "$item"
+            fi
+            if ok; then echo "   $k: OK ($CODE)"; else echo "   $k: XATO HTTP $CODE $(short 120)"; FAILED=$((FAILED+1)); fi
+          done < <(printf '%s' "$DATA" | jq -c '.data[]')
+          [ "$FAILED" = "0" ] || { echo "::error::$FAILED ta env qo'yilmadi"; exit 1; }
           api GET "/api/v1/services/$NEW/envs"
           echo "   yangi service kalitlari:"; printf '%s' "$BODY" | jq -r 'if type=="array" then .[] | .key else empty end' | sort -u | tr '\n' ' '; echo
           for k in DB_PASSWORD JWT_SECRET; do
