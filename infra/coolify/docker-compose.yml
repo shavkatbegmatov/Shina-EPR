@@ -94,6 +94,16 @@ services:
     depends_on:
       - backend
 
+# Volume'lar MAVJUD nomlariga qadalgan (`external`): Coolify odatda ularni resurs
+# identifikatori bilan nomlaydi (`<uuid>_postgres-data`), ya'ni resurs qayta
+# yaratilsa yangi bo'sh volume paydo bo'lib, baza va rasmlar "yo'qolardi".
+# Qadab qo'yilgach istalgan resurs (git yoki raw compose) aynan shu ma'lumotga
+# ulanadi; `external` esa compose ularni hech qachon o'chirmasligini ham
+# kafolatlaydi. Nomlar 06.09.2026 da serverdagi `docker volume ls` dan olingan.
 volumes:
   postgres_data:
+    external: true
+    name: mnb0ofon9mrdcxdgrjluiw9o_postgres-data
   uploads_data:
+    external: true
+    name: mnb0ofon9mrdcxdgrjluiw9o_uploads-data
