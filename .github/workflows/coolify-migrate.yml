@@ -22,8 +22,8 @@ on:
       phase:
         description: "Bosqich"
         type: choice
-        options: [create, cutover, rollback]
-        default: create
+        options: [probe, create, cutover, rollback]
+        default: probe
       new_uuid:
         description: "Yangi resurs uuid (cutover/rollback uchun; create chiqarib beradi)"
         default: ""
@@ -71,6 +71,33 @@ jobs:
           echo "OLD=$OLD" >> "$GITHUB_ENV"
           echo "eski resurs: $OLD"
           [ -f "$COMPOSE_FILE" ] || { echo "::error::$COMPOSE_FILE topilmadi"; exit 1; }
+
+      - name: probe — API yo'llarini o'zgartirmasdan tekshirish
+        if: env.PHASE == 'probe'
+        run: |
+          set -uo pipefail
+          req() { # req METHOD PATH [JSON] — kod va javob boshi
+            local m="$1" p="$2" d="${3:-}" out code body
+            if [ -n "$d" ]; then
+              out=$(curl -sS --max-time 30 -X "$m" -H "Authorization: Bearer $COOLIFY_API_TOKEN" -H "Content-Type: application/json" -H "Accept: application/json" --data-binary "$d" -w '\n%{http_code}' "$BASE$p") || out=$'\n000'
+            else
+              out=$(curl -sS --max-time 30 -X "$m" -H "Authorization: Bearer $COOLIFY_API_TOKEN" -H "Accept: application/json" -w '\n%{http_code}' "$BASE$p") || out=$'\n000'
+            fi
+            code=$(printf '%s' "$out" | tail -n1); body=$(printf '%s' "$out" | sed '$d')
+            printf '%-6s %-48s -> %s  %s\n' "$m" "$p" "$code" "$(printf '%s' "$body" | tr '\n' ' ' | head -c 220)"
+          }
+          echo "### Versiya va project"
+          req GET /api/v1/version
+          req GET "/api/v1/projects/$PROJECT_UUID"
+          req GET "/api/v1/projects/$PROJECT_UUID/$ENVIRONMENT_NAME"
+          echo "### Yaratish yo'llari (bo'sh tana — hech narsa yaratilmaydi; 422 = yo'l bor, 404 = yo'q)"
+          for p in /api/v1/applications/dockercompose /api/v1/applications/docker-compose /api/v1/applications/compose /api/v1/applications/dockerimage /api/v1/applications/public /api/v1/services; do
+            req POST "$p" '{}'
+          done
+          echo "### Eski resurs (git) — yangi shaklga o'tkazish uchun kerakli maydonlar"
+          req GET "/api/v1/applications/$OLD" | cut -c1-120
+          curl -sS --max-time 30 -H "Authorization: Bearer $COOLIFY_API_TOKEN" -H "Accept: application/json" "$BASE/api/v1/applications/$OLD" \
+            | jq -r '{build_pack, git_repository, docker_compose_location, docker_compose_raw_len: ((.docker_compose_raw // "")|length), environment_id, destination_id, ports_exposes, docker_compose_domains}'
 
       - name: create — yangi raw compose resurs
         if: env.PHASE == 'create'
