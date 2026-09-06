@@ -52,7 +52,9 @@ jobs:
     timeout-minutes: 30
     env:
       COOLIFY_WEBHOOK_URL: ${{ secrets.COOLIFY_WEBHOOK_URL }}
-      COOLIFY_API_TOKEN: ${{ secrets.COOLIFY_API_TOKEN }}
+      # Yaratish/o'zgartirish uchun YOZISH huquqli token kerak (deploy tokeni faqat
+      # read+deploy — 06.09.2026 probe: 403 "Missing required permissions: write").
+      COOLIFY_API_TOKEN: ${{ secrets.COOLIFY_WRITE_TOKEN || secrets.COOLIFY_API_TOKEN }}
       COOLIFY_MIGRATE_ENVS: ${{ secrets.COOLIFY_MIGRATE_ENVS }}
       PHASE: ${{ github.event.inputs.phase }}
       NEW_UUID: ${{ github.event.inputs.new_uuid }}
@@ -135,7 +137,12 @@ jobs:
                       '{project_uuid:$p, server_uuid:$s, environment_name:$e, name:$n, docker_compose_raw:$c, instant_deploy:false}')
             api POST /api/v1/applications/dockercompose "$PAYLOAD"
             echo "create -> HTTP $CODE: $(printf '%s' "$BODY" | head -c 300)"
-            [ "$CODE" = "201" ] || [ "$CODE" = "200" ] || { echo "::error::resurs yaratilmadi"; exit 1; }
+            case "$CODE" in
+              200|201) ;;
+              403) echo "::error title=Yozish huquqi yo'q::Token faqat read+deploy. Coolify → Keys & Tokens → API tokens: read+write+deploy huquqli yangi token yarating va GitHub secret COOLIFY_WRITE_TOKEN ga qo'ying."; exit 1 ;;
+              404) echo "::error title=Yaratish yo'li yo'q::Bu Coolify versiyasida API orqali compose resurs yaratilmaydi. UI'da: Project shina-epr → production → New Resource → Docker Compose Empty, nomi \"$NEW_NAME\", compose maydoniga $COMPOSE_FILE matnini qo'yib Save (Deploy EMAS). So'ng create bosqichini qayta ishga tushiring — u resursni nomi bo'yicha topib davom etadi."; exit 1 ;;
+              *) echo "::error::resurs yaratilmadi (HTTP $CODE)"; exit 1 ;;
+            esac
             NEW=$(printf '%s' "$BODY" | jq -r '.uuid // empty')
             [ -n "$NEW" ] || { echo "::error::javobda uuid yo'q"; exit 1; }
           fi

@@ -37,6 +37,10 @@ HEALTH_TIMEOUT="${HEALTH_TIMEOUT:-300}"
 # Git'dan o'qiydigan resursda o'chiq qoladi (default false).
 SYNC_COMPOSE="${SYNC_COMPOSE:-false}"
 COMPOSE_FILE="${COMPOSE_FILE:-infra/coolify/docker-compose.yml}"
+# PATCH uchun YOZISH huquqli token kerak; deploy tokeni faqat read+deploy
+# (06.09.2026 probe: 403 "Missing required permissions: write"). Berilmasa
+# deploy tokeni bilan urinadi — u holda 403 aniq annotatsiya bo'lib chiqadi.
+WRITE_TOKEN="${COOLIFY_WRITE_TOKEN:-$API_TOKEN}"
 
 # Jurnal STDERR'ga: `trigger_deploy` o'z natijasini (deployment_uuid) stdout
 # orqali qaytaradi, shuning uchun stdout toza qolishi SHART. Aks holda
@@ -182,7 +186,7 @@ sync_compose() {
   tmp="$(mktemp)"
   code=$(jq -Rs '{docker_compose_raw: .}' "$COMPOSE_FILE" \
     | curl -sS --max-time 60 -X PATCH -o "$tmp" -w '%{http_code}' \
-        -H "Authorization: Bearer $API_TOKEN" -H "Content-Type: application/json" \
+        -H "Authorization: Bearer $WRITE_TOKEN" -H "Content-Type: application/json" \
         --data-binary @- "$(api_base)/api/v1/applications/$uuid") || code="000"
   body="$(head -c 300 "$tmp" | tr '\n' ' ')"
   rm -f "$tmp"

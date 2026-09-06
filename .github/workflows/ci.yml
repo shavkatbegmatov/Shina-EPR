@@ -249,6 +249,8 @@ jobs:
           # Raw-compose resursda `true`: compose repodan Coolify'ga yuboriladi, server
           # repozitoriyni klon qilmaydi. Repo Variable COOLIFY_SYNC_COMPOSE bilan yoqiladi.
           SYNC_COMPOSE: ${{ vars.COOLIFY_SYNC_COMPOSE || 'false' }}
+          # Compose'ni yuborish (PATCH) uchun yozish huquqli token; deploy tokeni yetmaydi.
+          COOLIFY_WRITE_TOKEN: ${{ secrets.COOLIFY_WRITE_TOKEN }}
         run: |
           chmod +x .github/scripts/coolify-deploy.sh
           .github/scripts/coolify-deploy.sh
