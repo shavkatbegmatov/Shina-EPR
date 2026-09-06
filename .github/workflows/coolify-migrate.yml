@@ -166,16 +166,24 @@ jobs:
             echo "::notice::API compose'ni BASE64 sifatida qabul qildi — deploy skriptidagi sync_compose base64 ga o'tkazilishi kerak"
           fi
 
-          # Env'lar
-          if [ -z "${COOLIFY_MIGRATE_ENVS:-}" ]; then
-            echo "::warning title=Env qiymatlari yo'q::COOLIFY_MIGRATE_ENVS secret'i berilmagan — env'lar qo'yilmadi. Eski resurs kalitlari:"
-            api GET "/api/v1/applications/$OLD/envs"
+          # Env'lar: avval eski resursdan (token read:sensitive bo'lsa API qiymatlarni
+          # beradi), bo'lmasa COOLIFY_MIGRATE_ENVS secret'idan. Coolify o'zi yasaydigan
+          # SERVICE_* va eskirgan BACKUP_KEEP_DAYS ko'chirilmaydi. Qiymatlar logga chiqmaydi.
+          api GET "/api/v1/applications/$OLD/envs"
+          FROM_OLD=$(printf '%s' "$BODY" | jq -c 'if type=="array" then [ .[] | select(.is_preview != true) | select(.key | test("^(SERVICE_|BACKUP_KEEP_DAYS$)") | not) | {key, value: (.real_value // .value // ""), is_preview:false, is_build_time:false, is_literal:false} ] | map(select(.value != "")) else [] end' 2>/dev/null || echo '[]')
+          FROM_OLD_N=$(printf '%s' "$FROM_OLD" | jq 'length')
+          if [ "$FROM_OLD_N" -gt 0 ]; then
+            echo "eski resursdan $FROM_OLD_N ta env qiymati o'qildi (token read:sensitive)"
+            DATA=$(printf '%s' "$FROM_OLD" | jq '{data: .}')
+          elif [ -n "${COOLIFY_MIGRATE_ENVS:-}" ]; then
+            DATA=$(printf '%s\n' "$COOLIFY_MIGRATE_ENVS" | tr -d '\r' \
+                   | grep -E '^[A-Za-z_][A-Za-z0-9_]*=' \
+                   | jq -Rn '[inputs | capture("^(?<key>[A-Za-z_][A-Za-z0-9_]*)=(?<value>.*)$") | {key, value, is_preview:false, is_build_time:false, is_literal:false}] | {data: .}')
+          else
+            echo "::warning title=Env qiymatlari yo'q::API qiymat bermadi (token read:sensitive emas) va COOLIFY_MIGRATE_ENVS ham yo'q — env'lar qo'yilmadi. Eski resurs kalitlari:"
             printf '%s' "$BODY" | jq -r 'if type=="array" then .[] | select(.is_preview != true) | .key else empty end' | sort -u
             exit 0
           fi
-          DATA=$(printf '%s\n' "$COOLIFY_MIGRATE_ENVS" | tr -d '\r' \
-                 | grep -E '^[A-Za-z_][A-Za-z0-9_]*=' \
-                 | jq -Rn '[inputs | capture("^(?<key>[A-Za-z_][A-Za-z0-9_]*)=(?<value>.*)$") | {key, value, is_preview:false, is_build_time:false, is_literal:false}] | {data: .}')
           COUNT=$(printf '%s' "$DATA" | jq '.data | length')
           api POST "/api/v1/applications/$NEW/envs/bulk" "$DATA"
           echo "envs/bulk ($COUNT ta) -> HTTP $CODE: $(printf '%s' "$BODY" | head -c 200 | sed -E 's/"value":"[^"]*"/"value":"***"/g')"
