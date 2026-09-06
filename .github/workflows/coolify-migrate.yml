@@ -176,14 +176,17 @@ jobs:
           for k in DB_PASSWORD JWT_SECRET; do
             printf '%s' "$BODY" | jq -e --arg k "$k" 'if type=="array" then any(.[]; .key==$k) else false end' >/dev/null || { echo "::error::majburiy $k yo'q"; exit 1; }
           done
-          echo "3) domen"
+          echo "3) proksi tarmog'i"
+          # Traefik yangi service konteynerlariga yetib borishi uchun service Coolify'ning
+          # umumiy tarmog'iga ulanadi (UI'dagi "Network attachment"). To'xtagan service'da
+          # bu xavfsiz; deploy'da kuchga kiradi.
+          api PATCH "/api/v1/services/$NEW" '{"connect_to_docker_network":true}'
+          echo "   PATCH connect_to_docker_network -> HTTP $CODE: $(short 160)"
           api GET "/api/v1/services/$NEW"
+          echo "   connect_to_docker_network: $(printf '%s' "$BODY" | jq -r '.connect_to_docker_network')"
           FQDN=$(printf '%s' "$BODY" | jq -r '(.applications // []) | map(select(.name=="frontend")) | .[0].fqdn // ""')
-          echo "   frontend fqdn: ${FQDN:-(hali yoq)}"
-          if [ -z "$FQDN" ]; then
-            echo "::warning title=Domen hali yo'q::Cutover'dan oldin UI'da: yangi service → frontend (tishli belgi) → Domains: $DOMAINS. Coolify eski app'da turgan domenni rad etsa — cutover uni avval eski app'dan oladi, keyin qayta urinasiz."
-          fi
-          echo "::notice title=prepare tugadi::Keyingi bosqich: cutover (savdo bo'lmagan vaqtda)"
+          echo "   frontend fqdn: ${FQDN:-(hali yoq — cutover paytida UI orqali qoyiladi)}"
+          echo "::notice title=prepare tugadi::Keyingi bosqich: cutover (savdo bo'lmagan vaqtda). Domen 07.09.2026 sinovida API orqali qo'yilmadi (fqdn/domains ruxsat etilmagan) — cutover uni UI'da qo'yishni so'raydi."
 
       - name: cutover — eskini to'xtatib, yangini ishga tushirish
         if: env.PHASE == 'cutover'
@@ -195,49 +198,39 @@ jobs:
           for k in DB_PASSWORD JWT_SECRET; do
             printf '%s' "$BODY" | jq -e --arg k "$k" 'if type=="array" then any(.[]; .key==$k) else false end' >/dev/null || { echo "::error::yangi service'da $k yo'q — avval prepare"; exit 1; }
           done
-          echo "1) eski app'dan domen olinadi"
-          api PATCH "/api/v1/applications/$OLD" '{"docker_compose_domains":"{}"}'; echo "   HTTP $CODE: $(short 120)"
-          echo "2) eski app to'xtatiladi"
+          # Domen API orqali ko'chmaydi (07.09.2026: applications PATCH 422 "must be an
+          # array", service sub-app PATCH — fqdn/domains "not allowed"). Shuning uchun
+          # domen UI'da qo'yiladi; bu yerda faqat xavfsiz tartib va kuzatuv:
+          # eski app TO'XTATILADI (ikkala Postgres bir volume'ga bir vaqtda ulanmasin),
+          # so'ng UI'da 3 ta amal, keyin sog'liq kuzatiladi.
+          echo "1) eski app to'xtatiladi"
           api POST "/api/v1/applications/$OLD/stop"; echo "   HTTP $CODE: $(short 120)"; ok || { echo "::error::eski app to'xtatilmadi"; exit 1; }
-          sleep 25
-          if [ -z "$FQDN" ]; then
-            echo "3) yangi service frontend'iga domen (API)"
-            api GET "/api/v1/services/$NEW"
-            FRONT=$(printf '%s' "$BODY" | jq -r '(.applications // []) | map(select(.name=="frontend")) | .[0].uuid // empty')
-            [ -n "$FRONT" ] || { echo "::error::frontend sub-app topilmadi — rollback qiling"; exit 1; }
-            for field in fqdn domains; do
-              api PATCH "/api/v1/services/$NEW/applications/$FRONT" "$(jq -n --arg d "$DOMAINS" --arg f "$field" '{($f): $d}')"
-              echo "   PATCH {$field} -> HTTP $CODE: $(short 160)"
-              api GET "/api/v1/services/$NEW"
-              FQDN=$(printf '%s' "$BODY" | jq -r '(.applications // []) | map(select(.name=="frontend")) | .[0].fqdn // ""')
-              [ -n "$FQDN" ] && break
-            done
-            echo "   frontend fqdn: ${FQDN:-(qoyilmadi)}"
-            if [ -z "$FQDN" ]; then
-              echo "::warning title=Domen API orqali qo'yilmadi::UI'da yangi service → frontend → Domains: $DOMAINS ni saqlang va Deploy bosing (eski app'dan olingan, rad etilmaydi). Bu workflow 12 daqiqa sog'liqni kuzatadi."
-            fi
-          fi
           if [ -n "$FQDN" ]; then
-            echo "4) yangi service deploy"
+            echo "2) yangi service'da domen allaqachon bor ($FQDN) — deploy API orqali"
+            sleep 20
             api POST "/api/v1/deploy?uuid=$NEW"; echo "   HTTP $CODE: $(short 200)"; ok || { echo "::error::deploy boshlanmadi — rollback qiling"; exit 1; }
+          else
+            echo "::warning title=Endi UI'da 3 ta amal (sayt shu paytda to'xtagan)::1) eski app (shina--e-p-r) → Domains → frontend domenini bo'shatib Save.  2) yangi service (service-dirpcewd6…) → frontend (tishli belgi) → Domains: $DOMAINS → Save.  3) yangi service → Deploy. Bu workflow 15 daqiqa sog'liqni kuzatadi."
           fi
-          for i in $(seq 1 48); do
+          for i in $(seq 1 60); do
             if health; then
               echo "::notice title=Cutover muvaffaqiyatli::Yangi service $NEW jonli. Endi: GitHub secret COOLIFY_WEBHOOK_URL=$BASE/api/v1/deploy?uuid=$NEW, Variable COOLIFY_SYNC_COMPOSE=true."
               exit 0
             fi
             sleep 15
           done
-          echo "::error title=Cutover tugallanmadi::12 daqiqada 200 kelmadi — rollback bosqichini ishga tushiring"; exit 1
+          echo "::error title=Cutover tugallanmadi::15 daqiqada 200 kelmadi — rollback bosqichini ishga tushiring"; exit 1
 
       - name: rollback — eski app'ga qaytish
         if: env.PHASE == 'rollback'
         run: |
           set -uo pipefail; source "$RUNNER_TEMP/lib.sh"
-          DOMJSON=$(jq -n --arg d "$DOMAINS" '{frontend:{domain:$d}} | tostring')
           echo "1) yangi service to'xtatiladi"; api POST "/api/v1/services/$NEW/stop"; echo "   HTTP $CODE: $(short 120)"
           sleep 20
-          echo "2) domen eski app'ga"; api PATCH "/api/v1/applications/$OLD" "$(jq -n --arg j "$DOMJSON" '{docker_compose_domains:$j}')"; echo "   HTTP $CODE: $(short 120)"
-          echo "3) eski app ishga tushadi"; api POST "/api/v1/applications/$OLD/start"; echo "   HTTP $CODE: $(short 160)"
+          # Domen API orqali qaytarilmaydi (422 "must be an array") — cutover'da UI'da
+          # bo'shatilgan bo'lsa, quyida sog'liq kelmasa aytiladi.
+          echo "2) eski app ishga tushadi"; api POST "/api/v1/applications/$OLD/start"; echo "   HTTP $CODE: $(short 160)"
           for i in $(seq 1 40); do health && { echo "::notice::Rollback muvaffaqiyatli — eski app jonli"; exit 0; }; sleep 15; done
-          echo "::error::Rollback: 10 daqiqada 200 kelmadi"; exit 1
+          api GET "/api/v1/applications/$OLD"
+          echo "eski app domeni: $(printf '%s' "$BODY" | jq -r '.docker_compose_domains // ""')"
+          echo "::error title=Rollback tugallanmadi::10 daqiqada 200 kelmadi. Eski app domeni bo'sh bo'lsa UI'da qaytaring: eski app → Domains → frontend: $DOMAINS → Save → Redeploy."; exit 1
