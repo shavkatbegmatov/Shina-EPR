@@ -81,6 +81,19 @@ jobs:
           show "Custom labels (base64 dekodlanadi)" "/api/v1/applications/$UUID" \
             '(.custom_labels // "") | if . == "" then "(mavjud emas)" else (try @base64d catch .) end'
 
+          # Migratsiya faktlari: API env QIYMATINI beradimi (faqat uzunligi va maydon
+          # nomlari chiqadi, qiymat emas), project/environment/server identifikatorlari.
+          show "Env obyekt maydonlari (birinchi yozuv)" "/api/v1/applications/$UUID/envs" \
+            'if type=="array" then (.[0] // {}) | keys else (.data // []) | (.[0] // {}) | keys end'
+          show "Env qiymat uzunliklari (value / real_value)" "/api/v1/applications/$UUID/envs" \
+            'if type=="array" then . else (.data // []) end | .[] | select(.is_preview != true) | "\(.key)  value_len=\((.value // "") | length)  real_len=\((.real_value // "") | length)"'
+          show "Ilova joylashuvi" "/api/v1/applications/$UUID" \
+            '{environment_id, destination_id, destination_type, project: (.environment.project.name // .project.name // "?"), environment: (.environment.name // "?"), server: (.destination.server.name // "?")}'
+          show "Projects" "/api/v1/projects" \
+            'if type=="array" then .[] | {name, uuid, environments: ((.environments // []) | map(.name))} else . end'
+          show "Servers" "/api/v1/servers" \
+            'if type=="array" then .[] | {name, uuid, ip} else . end'
+
           # Env o'zgaruvchilari — FAQAT nomi va qiymat uzunligi (qiymat hech qachon
           # chiqarilmaydi). Majburiy sir yo'qolgan yoki bo'sh qolganini shu ko'rsatadi.
           show "Env kalitlari (qiymatsiz)" "/api/v1/applications/$UUID/envs" \
