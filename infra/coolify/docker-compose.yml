@@ -11,7 +11,11 @@
 # Traefik) — backend tashqariga ochilmaydi, nginx /api ni ichki tarmoqda proxy qiladi.
 
 services:
-  db:
+  # Nomlar NOYOB (shina-*): Coolify'ning umumiy tarmog'ida boshqa loyihalarda ham
+  # `db`/`backend` nomli servislar bor, Docker DNS nomni ulardan biriga hal qilib
+  # nginx 502 berardi (07.09.2026, raw compose'ga o'tishda). `frontend` nomi
+  # qoladi — domen unga bog'langan.
+  shina-db:
     image: postgres:16-alpine
     environment:
       POSTGRES_DB: ${DB_NAME:-shina_epr_db}
@@ -25,12 +29,12 @@ services:
       timeout: 3s
       retries: 12
 
-  backend:
+  shina-backend:
     image: ghcr.io/shavkatbegmatov/shina-epr-api:latest
     pull_policy: always
     environment:
       # SPRING_PROFILES_ACTIVE=prod Dockerfile ENTRYPOINT'da
-      DB_HOST: db
+      DB_HOST: shina-db
       DB_NAME: ${DB_NAME:-shina_epr_db}
       DB_USERNAME: ${DB_USERNAME:-shina_epr_user}
       DB_PASSWORD: ${DB_PASSWORD:?DB_PASSWORD is required}
@@ -69,7 +73,7 @@ services:
     volumes:
       - uploads_data:/data/uploads
     depends_on:
-      db:
+      shina-db:
         condition: service_healthy
     healthcheck:
       test: ["CMD-SHELL", "wget -qO- http://localhost:8183/api/actuator/health | grep -q UP"]
@@ -89,10 +93,10 @@ services:
       - "80"
     environment:
       # nginx /api ni shu servisga proxy qiladi (Docker DNS)
-      BACKEND_HOST: backend
+      BACKEND_HOST: shina-backend
       BACKEND_PORT: 8183
     depends_on:
-      - backend
+      - shina-backend
 
 # Volume'lar MAVJUD nomlariga qadalgan (`external`): Coolify odatda ularni resurs
 # identifikatori bilan nomlaydi (`<uuid>_postgres-data`), ya'ni resurs qayta

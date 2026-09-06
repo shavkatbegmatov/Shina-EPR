@@ -27,7 +27,7 @@ on:
       phase:
         description: "Bosqich"
         type: choice
-        options: [probe, prepare, cutover, rollback]
+        options: [probe, prepare, redeploy, cutover, rollback]
         default: probe
       new_uuid:
         description: "Yangi SERVICE uuid (Coolify URL'dagi /service/<uuid>)"
@@ -140,9 +140,9 @@ jobs:
           fi
           api GET "/api/v1/services/$NEW"
           echo "   sub-app'lar: $(printf '%s' "$BODY" | jq -r '[(.applications // [])[].name, (.databases // [])[].name] | join(", ")')"
-          for s in backend frontend db; do
+          for s in shina-backend frontend shina-db; do
             printf '%s' "$BODY" | jq -e --arg s "$s" '([(.applications // [])[].name, (.databases // [])[].name] | index($s)) != null' >/dev/null \
-              || { echo "::error::compose yuborilgach $s servisi yo'qoldi — compose noto'g'ri o'qildi"; exit 1; }
+              || { echo "::error::compose yuborilgach $s servisi yo'q — compose noto'g'ri o'qildi"; exit 1; }
           done
 
           echo "2) env'lar"
@@ -187,6 +187,22 @@ jobs:
           FQDN=$(printf '%s' "$BODY" | jq -r '(.applications // []) | map(select(.name=="frontend")) | .[0].fqdn // ""')
           echo "   frontend fqdn: ${FQDN:-(hali yoq — cutover paytida UI orqali qoyiladi)}"
           echo "::notice title=prepare tugadi::Keyingi bosqich: cutover (savdo bo'lmagan vaqtda). Domen 07.09.2026 sinovida API orqali qo'yilmadi (fqdn/domains ruxsat etilmagan) — cutover uni UI'da qo'yishni so'raydi."
+
+      - name: redeploy — yangi service'ni qayta deploy qilish va sog'liqni kutish
+        if: env.PHASE == 'redeploy'
+        run: |
+          set -uo pipefail; source "$RUNNER_TEMP/lib.sh"
+          # prepare'dan keyin (compose yangilangach) yangi service'ni qayta ko'tarish.
+          # Eski app to'xtatilgan bo'lishi SHART — tekshiramiz.
+          api GET "/api/v1/applications/$OLD"
+          OST=$(printf '%s' "$BODY" | jq -r '.status // ""'); echo "eski app holati: $OST"
+          case "$OST" in running*) echo "::error::Eski app ISHLAYAPTI — avval cutover (yoki UI'da Stop)"; exit 1;; esac
+          api POST "/api/v1/deploy?uuid=$NEW"; echo "deploy -> HTTP $CODE: $(short 200)"; ok || { echo "::error::deploy boshlanmadi"; exit 1; }
+          for i in $(seq 1 40); do
+            health && { echo "::notice title=Yangi service jonli::$NEW — vitrina va API 200"; exit 0; }
+            sleep 15
+          done
+          echo "::error title=Sog'liq kelmadi::10 daqiqada 200 bo'lmadi"; exit 1
 
       - name: cutover — eskini to'xtatib, yangini ishga tushirish
         if: env.PHASE == 'cutover'
