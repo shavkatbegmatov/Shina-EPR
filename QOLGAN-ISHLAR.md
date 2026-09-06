@@ -34,6 +34,15 @@ hali ochiq qolgan ishlar.
   **bittalab** qaytariladi, har biridan keyin deploy natijasi kuzatiladi.
   Frontend'ni backend sog'ligiga bog'lash esa umuman qaytarilmasin: aynan o'sha
   backend nosozligini butun saytning tushishiga aylantirgan.
+- **Raw compose Service'ga o'tildi (07.09.2026).** Server endi repozitoriyni klon qilmaydi;
+  compose repodan API orqali yuboriladi (`DEPLOY.md` 3a). Qolgan tozalash: (a) eski
+  Application `mnb0ofon9mrdcxdgrjluiw9o` — bir necha kun kuzatilgach Coolify'da o'chirish
+  (volume'lari `external` bo'lgani uchun qolaveradi; keyin `mnb0…_postgres-data`,
+  `mnb0…_uploads-data`, `mnb0…_backups-data` volume'larini ham qo'lda o'chirish mumkin — yangi
+  service o'z volume'larida ishlaydi); (b) yangi service'da eskirgan `backend`/`db` sub-app
+  yozuvlari (nomlar `shina-*` ga o'zgargan) — UI'da Delete; (c) `coolify-diagnose.yml` hali
+  application yo'llarini so'raydi — service'ga moslash; (d) `COOLIFY_MIGRATE_ENVS` secret'i
+  yaratilmagan, o'chirish shart emas.
 - **06.09.2026 uzilishi — yopildi (sabab: Coolify proksi porti).** Coolify 4.3.17 dan
   keyingi birinchi deploy'da Traefik frontend'ga `3000` portga urgan (nginx 80 da); compose'da
   `expose: ["80"]` bilan tuzatildi, CHANGELOG'da batafsil. Maven bump'i (`jjwt` 0.13.0,
