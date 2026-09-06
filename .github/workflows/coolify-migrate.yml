@@ -124,7 +124,14 @@ jobs:
           set -uo pipefail; source "$RUNNER_TEMP/lib.sh"
           api GET "/api/v1/services/$NEW"; ok || { echo "::error::yangi service topilmadi (HTTP $CODE)"; exit 1; }
           ST=$(printf '%s' "$BODY" | jq -r '.status // ""'); echo "yangi service holati: $ST"
-          case "$ST" in running*) echo "::error::Yangi service ISHLAYAPTI — eski baza bilan bir vaqtda bo'lmasligi kerak. Avval UI'da Stop qiling."; exit 1;; esac
+          # Xavfsizlik: ikkala resurs bir vaqtda bir bazaga ulanmasin. Yangi service
+          # ishlayotgan bo'lsa, faqat eski app TO'XTAGAN holatda davom etamiz (ya'ni
+          # yangi service allaqachon jonli — cutover bo'lib o'tgan).
+          case "$ST" in running*)
+            api GET "/api/v1/applications/$OLD"; OST=$(printf '%s' "$BODY" | jq -r '.status // ""')
+            echo "eski app holati: $OST"
+            case "$OST" in running*) echo "::error::Ikkalasi ham ishlayapti — eski app'ni avval to'xtating (cutover yoki UI'da Stop)"; exit 1;; esac ;;
+          esac
 
           echo "1) compose"
           # Service GET'i docker_compose_raw ni qaytarmaydi (probe: len=0), shuning uchun
