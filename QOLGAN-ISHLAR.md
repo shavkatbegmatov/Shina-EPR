@@ -36,12 +36,11 @@ hali ochiq qolgan ishlar.
   backend nosozligini butun saytning tushishiga aylantirgan.
 - **06.09.2026 uzilishi — yopildi (sabab: Coolify proksi porti).** Coolify 4.3.17 dan
   keyingi birinchi deploy'da Traefik frontend'ga `3000` portga urgan (nginx 80 da); compose'da
-  `expose: ["80"]` bilan tuzatildi, CHANGELOG'da batafsil. Qolgan ish: **maven bump'ini
-  qayta qo'llash** (`jjwt` 0.13.0, springdoc 2.9.0, openpdf 1.4.2, wrapper 3.9.16) —
-  `git revert 30420c9`; u uzilishga aloqasiz ekani isbotlangan, `JwtTokenProvider` endi
-  sirdagi bo'shliqqa ham chidamli. Bittalab, prod kuzatilgan holda. Serverda xotira tor
-  (`free -m`: 7,9 GB dan 6,8 GB band, swap to'la) — backend limitini qaytarishda buni
-  hisobga olish.
+  `expose: ["80"]` bilan tuzatildi, CHANGELOG'da batafsil. Maven bump'i (`jjwt` 0.13.0,
+  springdoc 2.9.0, openpdf 1.4.2, wrapper 3.9.16) qayta qo'llandi va uzilishsiz deploy bo'ldi
+  (`b8fe65c`). Serverda xotira tor (`free -m`: 7,9 GB dan 6,8 GB band, swap to'la, 8 ta
+  limitsiz JVM) — compose limitlarini qaytarishdan oldin `docker stats` bilan o'lchash,
+  uzoq muddatda RAM yoki swap oshirish.
 - **Jonli to'lov** — Payme/Click default'da `enabled: false`. Kreditsial + webhook
   ro'yxatdan o'tkazish kerak (2-bo'lim). Kod tayyor (Payme idempotentlik va bekor qilish
   vaqt chizig'i V43 bilan), sandbox'da sinalmagan.
