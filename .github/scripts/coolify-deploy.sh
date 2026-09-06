@@ -203,6 +203,61 @@ if [[ "$SYNC_COMPOSE" == "true" ]]; then
   sync_compose
 fi
 
+# SERVICE resurs Coolify'da "running" holatiga o'tishini kutadi (deployment_uuid
+# bo'lmaganda). Deploy trigger'dan keyin eski konteynerlar bir necha soniya tirik
+# turadi — shuning uchun avval qisqa kutish, keyin holat so'raladi.
+# Resurs service bo'lmasa (GET 404) — 0 qaytaradi, baho sog'liqqa qoladi.
+wait_service_running() {
+  local uuid status deadline=$(( SECONDS + DEPLOY_TIMEOUT ))
+  uuid=$(printf '%s' "$WEBHOOK_URL" | sed -nE 's#.*[?&]uuid=([^&]+).*#\1#p')
+  [[ -n "$uuid" ]] || { log "  uuid ajratilmadi — holat kutilmaydi"; return 0; }
+  sleep 20
+  while (( SECONDS < deadline )); do
+    status="$(curl_api "$(api_base)/api/v1/services/${uuid}" 2>/dev/null | jq -r '.status // empty' 2>/dev/null)"
+    case "$status" in
+      "")
+        log "  service holati o'qilmadi (application bo'lishi mumkin) — sog'liqqa o'tamiz"
+        return 0 ;;
+      running:healthy)
+        log "  service holati: $status"
+        return 0 ;;
+      running*)
+        # Healthcheck hali tugamagan bo'lishi mumkin — barqaror sog'liq tekshiruvi hal qiladi.
+        log "  service holati: $status"
+        return 0 ;;
+      exited*|degraded*)
+        log "  service holati: $status"
+        return 1 ;;
+      *)
+        log "  service holati: $status — kutilmoqda" ;;
+    esac
+    sleep "$POLL_INTERVAL"
+  done
+  log "  service ${DEPLOY_TIMEOUT}s ichida running bo'lmadi"
+  return 1
+}
+
+# Sog'liq KETMA-KET uch marta 200 bo'lsin — bitta 200 eski konteynerdan kelishi mumkin.
+check_health_stable() {
+  [[ -z "$HEALTH_URL" ]] && { log "  HEALTH_URL berilmagan — o'tkazib yuborildi"; return 0; }
+  local deadline=$(( SECONDS + HEALTH_TIMEOUT )) code streak=0
+  while (( SECONDS < deadline )); do
+    code="$(curl -s -o /dev/null -w '%{http_code}' --max-time 15 "$HEALTH_URL" || true)"
+    if [[ "$code" == "200" ]]; then
+      streak=$(( streak + 1 ))
+      log "  sog'liq: 200 ($streak/3)"
+      (( streak >= 3 )) && return 0
+      sleep 10
+    else
+      streak=0
+      log "  sog'liq: $code — kutilmoqda"
+      sleep "$POLL_INTERVAL"
+    fi
+  done
+  log "  sog'liq ${HEALTH_TIMEOUT}s ichida barqaror 200 bermadi"
+  return 1
+}
+
 for (( attempt = 1; attempt <= MAX_ATTEMPTS; attempt++ )); do
   log "Deploy urinishi $attempt/$MAX_ATTEMPTS"
 
@@ -222,9 +277,15 @@ for (( attempt = 1; attempt <= MAX_ATTEMPTS; attempt++ )); do
     # Javob shakli kutilganidan boshqa. Deploy BOSHLANGAN bo'lishi mumkin,
     # shuning uchun uni yiqilgan deb hisoblamaymiz — prod javob beryaptimi,
     # o'shanga qaraymiz.
-    log "  deployment_uuid ajratib olinmadi — faqat sog'liq bo'yicha baholanadi"
-    if check_health; then
-      log "TUGADI: prod javob beryapti"
+    # SERVICE resursda webhook javobi deployment_uuid bermaydi (faqat
+    # "started, be patient"). Sog'liqni darhol tekshirish ALDAYDI: eski
+    # konteynerlar hali tirik bo'ladi (07.09.2026: skript 1 soniyada "200" dedi,
+    # 502 blip undan keyin keldi). Shuning uchun avval Coolify'ning o'zi
+    # service'ni "running" deb ko'rsatishini kutamiz, so'ng 200 ketma-ket
+    # uch marta bo'lishini talab qilamiz.
+    log "  deployment_uuid ajratib olinmadi — service holati va sog'liq bo'yicha baholanadi"
+    if wait_service_running && check_health_stable; then
+      log "TUGADI: service ishga tushdi, prod barqaror javob beryapti"
       exit 0
     fi
     (( attempt < MAX_ATTEMPTS )) && { log "  qayta urinamiz"; continue; }
