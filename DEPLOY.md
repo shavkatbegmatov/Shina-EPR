@@ -90,6 +90,42 @@ PAT olish: GitHub → Settings → Developer settings → Personal access tokens
    `COOLIFY_WEBHOOK_URL`; API token → `COOLIFY_API_TOKEN`.
 6. GitHub'da `DEPLOY_ENABLED=true` variable qo'ying → keyingi `master` push to'liq avtomatik.
 
+### 3a. Raw compose rejimi — server repozitoriyni klon qilmaydi
+
+Git'dan o'qiydigan resurs har deploy'da repozitoriyni klon qiladi (compose'ni o'qish uchun).
+Bu ortiqcha yuk va mo'rtlik nuqtasi. Raw rejimda compose Coolify'ning o'zida saqlanadi,
+**manba esa baribir repo**: deploy skripti trigger'dan oldin `infra/coolify/docker-compose.yml`
+ni API orqali Coolify'ga yuboradi (`SYNC_COMPOSE=true`). Serverda faqat image tortish va
+konteynerlarni ko'tarish qoladi.
+
+Migratsiya (10–15 daqiqa to'xtash, savdo bo'lmagan vaqtda):
+
+1. **Tayyorgarlik (repo, bajarilgan):** compose'da volume'lar mavjud nomlariga qadalgan
+   (`external: true`, `mnb0ofon9mrdcxdgrjluiw9o_postgres-data`, `..._uploads-data`) — yangi
+   resurs eski ma'lumotga ulanadi. Deploy skripti `SYNC_COMPOSE` ni biladi.
+2. **Yangi resurs (Coolify UI):** o'sha Project → **+ New Resource → Docker Compose Empty**.
+   Compose maydoniga `infra/coolify/docker-compose.yml` ning to'liq matnini qo'ying, **Save**.
+   ⚠️ Hozircha **Deploy bosmang** — eski resurs hali ishlayapti va ikkalasi bir bazaga
+   bir vaqtda ulanmasligi kerak.
+3. **Env'lar:** yangi resursning Environment Variables bo'limiga eski resursdagi qiymatlarni
+   ko'chiring (Coolify qiymatni API'da ko'rsatmaydi — UI'dan nusxalanadi): `DB_PASSWORD`,
+   `JWT_SECRET`, `ADMIN_INITIAL_PASSWORD`, `CORS_ALLOWED_ORIGINS`, `SHOP_PUBLIC_BASE_URL`,
+   `TELEGRAM_BOT_TOKEN`, `TELEGRAM_MODE`, `TELEGRAM_WEBHOOK_URL`, `TELEGRAM_WEBHOOK_SECRET`
+   va yoqilgan bo'lsa `PAYME_*`, `CLICK_*`, `SHOP_*`. `DB_NAME`/`DB_USERNAME` default'da.
+4. **Domen:** yangi resursda `frontend` servisiga `https://protektor.uz,https://www.protektor.uz`.
+   Compose'da `expose: ["80"]` borligi uchun port sozlash shart emas.
+5. **Almashtirish:** eski resursda **Stop** (konteynerlar to'xtaydi, volume'lar qoladi) →
+   yangi resursda **Deploy** → `https://protektor.uz/api/v1/settings/public` 200 va
+   katalogda mahsulotlar ko'rinishini tekshiring (ma'lumot o'sha volume'dan).
+6. **GitHub:** yangi resursning deploy webhook URL'ini `COOLIFY_WEBHOOK_URL` secret'iga
+   qo'ying (uuid o'zgaradi), Variable `COOLIFY_SYNC_COMPOSE=true` qo'shing. Keyingi push
+   compose'ni yuborib, so'ng deploy qiladi.
+7. **Tozalash:** bir necha kun kuzatilgach eski resursni o'chiring (volume'lar `external`
+   bo'lgani uchun o'chmaydi, lekin baribir avval backup oling).
+
+Orqaga qaytish: yangi resurs ko'tarilmasa — uni Stop qilib eski resursda Start; secret
+va Variable o'zgartirilmagan bo'lsa deploy oqimi avvalgidek ishlayveradi.
+
 > **`JWT_SECRET`** — default qiymat YO'Q. O'rnatilmasa Spring ishga tushishda xato beradi
 > (bu ataylab: ilgari repoda ochiq turgan default kalit bilan token soxtalashtirish mumkin edi).
 > Generatsiya: `openssl rand -base64 32`. Kalitni almashtirish barcha joriy sessiyalarni bekor qiladi.
