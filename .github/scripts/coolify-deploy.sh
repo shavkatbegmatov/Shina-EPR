@@ -225,10 +225,11 @@ wait_service_running() {
         # Healthcheck hali tugamagan bo'lishi mumkin — barqaror sog'liq tekshiruvi hal qiladi.
         log "  service holati: $status"
         return 0 ;;
-      exited*|degraded*)
-        log "  service holati: $status"
-        return 1 ;;
       *)
+        # `degraded:unhealthy` va `exited` deploy paytida ODATIY o'tkinchi holat:
+        # backend healthcheck'i 60 s start_period bilan, konteynerlar qayta yaratiladi.
+        # 07.09.2026 da bular yakuniy deb olinib, deploy uch marta qayta trigger
+        # qilingan va ishga tushayotgan konteynerlar qayta-qayta yiqitilgan edi.
         log "  service holati: $status — kutilmoqda" ;;
     esac
     sleep "$POLL_INTERVAL"
@@ -288,9 +289,11 @@ for (( attempt = 1; attempt <= MAX_ATTEMPTS; attempt++ )); do
       log "TUGADI: service ishga tushdi, prod barqaror javob beryapti"
       exit 0
     fi
-    (( attempt < MAX_ATTEMPTS )) && { log "  qayta urinamiz"; continue; }
-    log "TUGADI: prod ko'tarilmadi"
-    fail_annotation "Deploy chaqirildi, lekin $HEALTH_URL 200 bermadi"
+    # QAYTA TRIGGER YO'Q: service yo'lida deploy allaqachon Coolify'da ketmoqda;
+    # yana chaqirish ishga tushayotgan konteynerlarni qayta yiqitadi
+    # (07.09.2026 da aynan shu bo'lgan). Kutish tugagan bo'lsa — bu xato.
+    log "TUGADI: service ${DEPLOY_TIMEOUT}s + ${HEALTH_TIMEOUT}s ichida barqaror bo'lmadi"
+    fail_annotation "Service deploy qilindi, lekin running holati yoki $HEALTH_URL da barqaror 200 kutilgan vaqtda kelmadi"
     exit 1
   fi
 
