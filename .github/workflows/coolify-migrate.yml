@@ -1,0 +1,223 @@
+name: Coolify migrate (raw compose)
+
+# Git'dan o'qiydigan resursdan RAW compose resursiga o'tish — bosqichma-bosqich,
+# har bosqich alohida ishga tushiriladi va natijasi Actions'da ko'rinadi.
+#
+#   create   — yangi "Docker Compose Empty" resurs: compose repodan, env'lar
+#              COOLIFY_MIGRATE_ENVS secret'idan (KEY=value qatorlar). Deploy YO'Q.
+#   cutover  — eski resursdan domen olinadi va u to'xtatiladi, yangi resursga domen
+#              qo'yiladi va deploy qilinadi, sog'liq kuzatiladi (10–15 daqiqa to'xtash).
+#   rollback — teskarisi: yangi to'xtatiladi, domen eskisiga, eski ishga tushadi.
+#
+# Ma'lumot: volume'lar compose'da mavjud nomlariga qadalgan (external), shuning
+# uchun yangi resurs eski bazaga va rasmlarga ulanadi.
+#
+# Sirlar: COOLIFY_WEBHOOK_URL (eski resurs uuid + Coolify manzili), COOLIFY_API_TOKEN,
+# COOLIFY_MIGRATE_ENVS (faqat create uchun; API eski env QIYMATLARINI bermaydi —
+# Coolify 4.3.17 ularni yashiradi — shuning uchun ular secret orqali keladi va
+# hech qachon logga chiqmaydi; migratsiyadan keyin secret o'chiriladi).
+on:
+  workflow_dispatch:
+    inputs:
+      phase:
+        description: "Bosqich"
+        type: choice
+        options: [create, cutover, rollback]
+        default: create
+      new_uuid:
+        description: "Yangi resurs uuid (cutover/rollback uchun; create chiqarib beradi)"
+        default: ""
+      name:
+        description: "Yangi resurs nomi (create)"
+        default: "protektor-raw"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: coolify-migrate
+  cancel-in-progress: false
+
+env:
+  PROJECT_UUID: nf17mh2e89u0oqm0bgai7fjf
+  ENVIRONMENT_NAME: production
+  DOMAINS: "https://protektor.uz,https://www.protektor.uz"
+  COMPOSE_FILE: infra/coolify/docker-compose.yml
+  SITE_URL: ${{ vars.VITE_SITE_URL || 'https://protektor.uz' }}
+
+jobs:
+  migrate:
+    name: ${{ github.event.inputs.phase }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    env:
+      COOLIFY_WEBHOOK_URL: ${{ secrets.COOLIFY_WEBHOOK_URL }}
+      COOLIFY_API_TOKEN: ${{ secrets.COOLIFY_API_TOKEN }}
+      COOLIFY_MIGRATE_ENVS: ${{ secrets.COOLIFY_MIGRATE_ENVS }}
+      PHASE: ${{ github.event.inputs.phase }}
+      NEW_UUID: ${{ github.event.inputs.new_uuid }}
+      NEW_NAME: ${{ github.event.inputs.name || 'protektor-raw' }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - name: Umumiy funksiyalar va tekshiruvlar
+        id: common
+        run: |
+          set -uo pipefail
+          BASE=$(printf '%s' "$COOLIFY_WEBHOOK_URL" | sed -E 's#^(https?://[^/]+).*#\1#')
+          OLD=$(printf '%s' "$COOLIFY_WEBHOOK_URL" | sed -nE 's#.*[?&]uuid=([^&]+).*#\1#p')
+          [ -n "$OLD" ] || { echo "::error::COOLIFY_WEBHOOK_URL dan eski uuid ajratilmadi"; exit 1; }
+          echo "BASE=$BASE" >> "$GITHUB_ENV"
+          echo "OLD=$OLD" >> "$GITHUB_ENV"
+          echo "eski resurs: $OLD"
+          [ -f "$COMPOSE_FILE" ] || { echo "::error::$COMPOSE_FILE topilmadi"; exit 1; }
+
+      - name: create — yangi raw compose resurs
+        if: env.PHASE == 'create'
+        run: |
+          set -uo pipefail
+          api() { # api METHOD PATH [JSON]
+            local m="$1" p="$2" d="${3:-}" out code
+            if [ -n "$d" ]; then
+              out=$(curl -sS --max-time 60 -X "$m" -H "Authorization: Bearer $COOLIFY_API_TOKEN" \
+                    -H "Content-Type: application/json" -H "Accept: application/json" \
+                    --data-binary "$d" -w '\n%{http_code}' "$BASE$p") || out=$'\n000'
+            else
+              out=$(curl -sS --max-time 60 -X "$m" -H "Authorization: Bearer $COOLIFY_API_TOKEN" \
+                    -H "Accept: application/json" -w '\n%{http_code}' "$BASE$p") || out=$'\n000'
+            fi
+            CODE=$(printf '%s' "$out" | tail -n1); BODY=$(printf '%s' "$out" | sed '$d')
+          }
+
+          # Server uuid — bitta server ("localhost")
+          api GET /api/v1/servers
+          SERVER=$(printf '%s' "$BODY" | jq -r 'if type=="array" then (map(select(.name=="localhost")) + .) | .[0].uuid else empty end')
+          [ -n "$SERVER" ] && [ "$SERVER" != "null" ] || { echo "::error::server uuid topilmadi (HTTP $CODE): $(printf '%s' "$BODY" | head -c 300)"; exit 1; }
+          echo "server: $SERVER"
+
+          # Bunday nomli resurs allaqachon bormi? (qayta ishga tushirishga chidamli)
+          api GET /api/v1/applications
+          EXISTING=$(printf '%s' "$BODY" | jq -r --arg n "$NEW_NAME" 'if type=="array" then (map(select(.name==$n)) | .[0].uuid // empty) else empty end')
+          if [ -n "$EXISTING" ]; then
+            echo "::warning::$NEW_NAME allaqachon mavjud: $EXISTING — yaratish o'tkazib yuborildi"
+            NEW="$EXISTING"
+          else
+            # Compose: API base64 kutadi (ApplicationsController base64_decode qiladi)
+            PAYLOAD=$(jq -n --arg p "$PROJECT_UUID" --arg s "$SERVER" --arg e "$ENVIRONMENT_NAME" \
+                            --arg n "$NEW_NAME" --arg c "$(base64 -w0 "$COMPOSE_FILE")" \
+                      '{project_uuid:$p, server_uuid:$s, environment_name:$e, name:$n, docker_compose_raw:$c, instant_deploy:false}')
+            api POST /api/v1/applications/dockercompose "$PAYLOAD"
+            echo "create -> HTTP $CODE: $(printf '%s' "$BODY" | head -c 300)"
+            [ "$CODE" = "201" ] || [ "$CODE" = "200" ] || { echo "::error::resurs yaratilmadi"; exit 1; }
+            NEW=$(printf '%s' "$BODY" | jq -r '.uuid // empty')
+            [ -n "$NEW" ] || { echo "::error::javobda uuid yo'q"; exit 1; }
+          fi
+          echo "NEW=$NEW" >> "$GITHUB_ENV"
+          echo "::notice title=Yangi resurs::uuid=$NEW  (nomi: $NEW_NAME)"
+
+          # Compose to'g'ri saqlanganini tekshirish: uzunlik fayl bilan bir xil bo'lsin.
+          api GET "/api/v1/applications/$NEW"
+          STORED=$(printf '%s' "$BODY" | jq -r '(.docker_compose_raw // "") | length')
+          WANT=$(wc -c < "$COMPOSE_FILE")
+          echo "compose saqlangan uzunlik=$STORED, fayl=$WANT"
+          if [ "$STORED" != "$WANT" ]; then
+            # base64 matn sifatida saqlangan bo'lsa — xom matn bilan PATCH qilamiz
+            api PATCH "/api/v1/applications/$NEW" "$(jq -n --rawfile c "$COMPOSE_FILE" '{docker_compose_raw:$c}')"
+            api GET "/api/v1/applications/$NEW"
+            STORED=$(printf '%s' "$BODY" | jq -r '(.docker_compose_raw // "") | length')
+            echo "PATCH (xom matn) dan keyin uzunlik=$STORED"
+            [ "$STORED" = "$WANT" ] || { echo "::error::compose Coolify'da noto'g'ri saqlandi (uzunlik $STORED, kutilgan $WANT)"; exit 1; }
+            echo "::notice::API compose'ni XOM matn sifatida qabul qiladi (deploy skriptidagi sync shunga mos)"
+          else
+            echo "::notice::API compose'ni BASE64 sifatida qabul qildi — deploy skriptidagi sync_compose base64 ga o'tkazilishi kerak"
+          fi
+
+          # Env'lar
+          if [ -z "${COOLIFY_MIGRATE_ENVS:-}" ]; then
+            echo "::warning title=Env qiymatlari yo'q::COOLIFY_MIGRATE_ENVS secret'i berilmagan — env'lar qo'yilmadi. Eski resurs kalitlari:"
+            api GET "/api/v1/applications/$OLD/envs"
+            printf '%s' "$BODY" | jq -r 'if type=="array" then .[] | select(.is_preview != true) | .key else empty end' | sort -u
+            exit 0
+          fi
+          DATA=$(printf '%s\n' "$COOLIFY_MIGRATE_ENVS" | tr -d '\r' \
+                 | grep -E '^[A-Za-z_][A-Za-z0-9_]*=' \
+                 | jq -Rn '[inputs | capture("^(?<key>[A-Za-z_][A-Za-z0-9_]*)=(?<value>.*)$") | {key, value, is_preview:false, is_build_time:false, is_literal:false}] | {data: .}')
+          COUNT=$(printf '%s' "$DATA" | jq '.data | length')
+          api POST "/api/v1/applications/$NEW/envs/bulk" "$DATA"
+          echo "envs/bulk ($COUNT ta) -> HTTP $CODE: $(printf '%s' "$BODY" | head -c 200 | sed -E 's/"value":"[^"]*"/"value":"***"/g')"
+          [ "$CODE" = "201" ] || [ "$CODE" = "200" ] || { echo "::error::env'lar qo'yilmadi"; exit 1; }
+          api GET "/api/v1/applications/$NEW/envs"
+          echo "yangi resurs kalitlari:"; printf '%s' "$BODY" | jq -r 'if type=="array" then .[] | select(.is_preview != true) | .key else empty end' | sort -u
+          for k in DB_PASSWORD JWT_SECRET; do
+            printf '%s' "$BODY" | jq -e --arg k "$k" 'if type=="array" then any(.[]; .key==$k) else false end' >/dev/null \
+              || { echo "::error::majburiy $k yo'q"; exit 1; }
+          done
+          echo "::notice title=create tugadi::Keyingi bosqich: cutover, new_uuid=$NEW"
+
+      - name: cutover — eskini to'xtatib, yangini ishga tushirish
+        if: env.PHASE == 'cutover'
+        run: |
+          set -uo pipefail
+          [ -n "$NEW_UUID" ] || { echo "::error::new_uuid kerak"; exit 1; }
+          api() { local m="$1" p="$2" d="${3:-}" out
+            if [ -n "$d" ]; then out=$(curl -sS --max-time 60 -X "$m" -H "Authorization: Bearer $COOLIFY_API_TOKEN" -H "Content-Type: application/json" -H "Accept: application/json" --data-binary "$d" -w '\n%{http_code}' "$BASE$p") || out=$'\n000'
+            else out=$(curl -sS --max-time 60 -X "$m" -H "Authorization: Bearer $COOLIFY_API_TOKEN" -H "Accept: application/json" -w '\n%{http_code}' "$BASE$p") || out=$'\n000'; fi
+            CODE=$(printf '%s' "$out" | tail -n1); BODY=$(printf '%s' "$out" | sed '$d'); }
+          ok() { [ "$CODE" = "200" ] || [ "$CODE" = "201" ] || [ "$CODE" = "202" ]; }
+
+          # Old shartlar: yangi resurs bor, majburiy env'lar bor
+          api GET "/api/v1/applications/$NEW_UUID"; ok || { echo "::error::yangi resurs topilmadi (HTTP $CODE)"; exit 1; }
+          api GET "/api/v1/applications/$NEW_UUID/envs"
+          for k in DB_PASSWORD JWT_SECRET; do
+            printf '%s' "$BODY" | jq -e --arg k "$k" 'if type=="array" then any(.[]; .key==$k) else false end' >/dev/null \
+              || { echo "::error::yangi resursda $k yo'q — cutover to'xtatildi"; exit 1; }
+          done
+
+          DOMJSON=$(jq -n --arg d "$DOMAINS" '{frontend:{domain:$d}} | tostring')
+          echo "1) eski resursdan domen olinadi"
+          api PATCH "/api/v1/applications/$OLD" "$(jq -n '{docker_compose_domains: ("{}")}')"; echo "   HTTP $CODE"
+          echo "2) eski resurs to'xtatiladi"
+          api POST "/api/v1/applications/$OLD/stop"; echo "   HTTP $CODE: $(printf '%s' "$BODY" | head -c 120)"; ok || { echo "::error::eski resurs to'xtatilmadi"; exit 1; }
+          sleep 25
+          echo "3) yangi resursga domen"
+          api PATCH "/api/v1/applications/$NEW_UUID" "$(jq -n --arg j "$DOMJSON" '{docker_compose_domains:$j}')"; echo "   HTTP $CODE: $(printf '%s' "$BODY" | head -c 160)"; ok || { echo "::error::domen qo'yilmadi"; exit 1; }
+          echo "4) yangi resurs deploy"
+          api POST "/api/v1/deploy?uuid=$NEW_UUID"; echo "   HTTP $CODE: $(printf '%s' "$BODY" | head -c 200)"; ok || { echo "::error::deploy boshlanmadi"; exit 1; }
+          DEP=$(printf '%s' "$BODY" | jq -r '.deployments[0].deployment_uuid // .deployment_uuid // empty')
+          for i in $(seq 1 60); do
+            [ -n "$DEP" ] && { api GET "/api/v1/deployments/$DEP"; ST=$(printf '%s' "$BODY" | jq -r '.status // ""'); } || ST="?"
+            f=$(curl -s -o /dev/null -w '%{http_code}' --max-time 15 "$SITE_URL/" || true)
+            a=$(curl -s -o /dev/null -w '%{http_code}' --max-time 15 "$SITE_URL/api/actuator/health" || true)
+            echo "$(date -u +%H:%M:%S) deploy=$ST vitrina=$f api=$a"
+            if [ "$a" = "200" ] && [ "$f" = "200" ]; then
+              echo "::notice title=Cutover muvaffaqiyatli::Yangi resurs $NEW_UUID jonli. GitHub secret COOLIFY_WEBHOOK_URL = $BASE/api/v1/deploy?uuid=$NEW_UUID va Variable COOLIFY_SYNC_COMPOSE=true qo'yilishi kerak."
+              echo "WEBHOOK_BASE=$BASE" >> "$GITHUB_ENV"
+              exit 0
+            fi
+            case "$ST" in failed|cancelled-by-user) echo "::error::Coolify deploy $ST"; exit 1;; esac
+            sleep 15
+          done
+          echo "::error title=Cutover tugallanmadi::15 daqiqada 200 kelmadi — rollback bosqichini ishga tushiring (new_uuid=$NEW_UUID)"
+          exit 1
+
+      - name: rollback — eski resursga qaytish
+        if: env.PHASE == 'rollback'
+        run: |
+          set -uo pipefail
+          [ -n "$NEW_UUID" ] || { echo "::error::new_uuid kerak"; exit 1; }
+          api() { local m="$1" p="$2" d="${3:-}" out
+            if [ -n "$d" ]; then out=$(curl -sS --max-time 60 -X "$m" -H "Authorization: Bearer $COOLIFY_API_TOKEN" -H "Content-Type: application/json" -H "Accept: application/json" --data-binary "$d" -w '\n%{http_code}' "$BASE$p") || out=$'\n000'
+            else out=$(curl -sS --max-time 60 -X "$m" -H "Authorization: Bearer $COOLIFY_API_TOKEN" -H "Accept: application/json" -w '\n%{http_code}' "$BASE$p") || out=$'\n000'; fi
+            CODE=$(printf '%s' "$out" | tail -n1); BODY=$(printf '%s' "$out" | sed '$d'); }
+          DOMJSON=$(jq -n --arg d "$DOMAINS" '{frontend:{domain:$d}} | tostring')
+          echo "1) yangi resurs to'xtatiladi"; api POST "/api/v1/applications/$NEW_UUID/stop"; echo "   HTTP $CODE"
+          sleep 20
+          echo "2) yangidan domen olinadi"; api PATCH "/api/v1/applications/$NEW_UUID" "$(jq -n '{docker_compose_domains: ("{}")}')"; echo "   HTTP $CODE"
+          echo "3) eskiga domen"; api PATCH "/api/v1/applications/$OLD" "$(jq -n --arg j "$DOMJSON" '{docker_compose_domains:$j}')"; echo "   HTTP $CODE"
+          echo "4) eski resurs ishga tushadi"; api POST "/api/v1/applications/$OLD/start"; echo "   HTTP $CODE: $(printf '%s' "$BODY" | head -c 160)"
+          for i in $(seq 1 40); do
+            a=$(curl -s -o /dev/null -w '%{http_code}' --max-time 15 "$SITE_URL/api/actuator/health" || true)
+            echo "$(date -u +%H:%M:%S) api=$a"; [ "$a" = "200" ] && { echo "::notice::Rollback muvaffaqiyatli — eski resurs jonli"; exit 0; }
+            sleep 15
+          done
+          echo "::error::Rollback: 10 daqiqada 200 kelmadi"; exit 1
