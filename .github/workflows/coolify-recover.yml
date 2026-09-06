@@ -16,9 +16,9 @@ on:
   workflow_dispatch:
     inputs:
       action:
-        description: "restart — konteynerlarni qayta ishga tushirish; recreate — stop, so'ng start"
+        description: "restart — qayta ishga tushirish; recreate — stop, so'ng start; stop / start — alohida (resurs almashtirishda)"
         type: choice
-        options: [restart, recreate]
+        options: [restart, recreate, stop, start]
         default: restart
       wait_seconds:
         description: "Sog'liqni necha soniya kutish"
@@ -65,6 +65,14 @@ jobs:
             recreate)
               call POST "/api/v1/applications/$UUID/stop" || { echo "::error::stop so'rovi rad etildi"; exit 1; }
               echo "konteynerlar to'xtashi uchun 20 s..."; sleep 20
+              call POST "/api/v1/applications/$UUID/start" || { echo "::error::start so'rovi rad etildi"; exit 1; } ;;
+            stop)
+              # Resurs almashtirishda: eski resurs to'xtatiladi, volume'lar qoladi.
+              # Sog'liq ATAYLAB kutilmaydi — sayt shu paytda javob bermasligi kerak.
+              call POST "/api/v1/applications/$UUID/stop" || { echo "::error::stop so'rovi rad etildi"; exit 1; }
+              echo "::notice title=Resurs to'xtatildi::$UUID uchun stop so'rovi qabul qilindi"
+              exit 0 ;;
+            start)
               call POST "/api/v1/applications/$UUID/start" || { echo "::error::start so'rovi rad etildi"; exit 1; } ;;
             *) echo "::error::noma'lum action: $ACTION"; exit 1 ;;
           esac
