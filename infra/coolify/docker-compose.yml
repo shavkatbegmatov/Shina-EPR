@@ -97,6 +97,17 @@ services:
       BACKEND_PORT: 8183
     depends_on:
       - shina-backend
+    # nginx:alpine'da busybox wget bor. 127.0.0.1 ATAYLAB: `localhost` alpine'da
+    # avval ::1 ga hal bo'ladi, nginx esa faqat IPv4'da tinglaydi — 07.09.2026 da
+    # `localhost` bilan yozilgan healthcheck konteynerni unhealthy qilib, Traefik
+    # uni chiqarib tashladi (sayt 503, ~10 daqiqa, revert bilan tiklandi).
+    # Image ichida tekshirilgan: 127.0.0.1 -> OK, localhost -> connection refused.
+    healthcheck:
+      test: ["CMD-SHELL", "wget -q --spider http://127.0.0.1:80/ || exit 1"]
+      interval: 15s
+      timeout: 5s
+      retries: 6
+      start_period: 10s
 
 # Volume'lar MAVJUD nomlariga qadalgan (`external`): Coolify odatda ularni resurs
 # identifikatori bilan nomlaydi (`<uuid>_postgres-data`), ya'ni resurs qayta
