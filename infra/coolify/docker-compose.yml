@@ -97,6 +97,15 @@ services:
       BACKEND_PORT: 8183
     depends_on:
       - shina-backend
+    # nginx:alpine'da busybox wget bor. Healthcheck'siz Coolify service'ni
+    # "running:unknown" deb ko'rsatadi; bu bilan "healthy" bo'ladi va deploy
+    # skriptining holat kutishi ham ma'noli ishlaydi.
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://localhost:80/ >/dev/null || exit 1"]
+      interval: 15s
+      timeout: 5s
+      retries: 6
+      start_period: 10s
 
 # Volume'lar MAVJUD nomlariga qadalgan (`external`): Coolify odatda ularni resurs
 # identifikatori bilan nomlaydi (`<uuid>_postgres-data`), ya'ni resurs qayta
