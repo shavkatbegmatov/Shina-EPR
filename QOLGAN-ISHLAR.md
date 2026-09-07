@@ -24,6 +24,43 @@ loyiha jiddiy o'zgardi — bu bo'lim uni ustidan yozadi, quyisi tarix sifatida q
 `KASSIRLAR-UCHUN.md` / `ДЛЯ-КАССИРОВ.md` · **bu fayl** → iyun rejasining tarixi va
 hali ochiq qolgan ishlar.
 
+### 🔁 Boshqa mashinada davom ettirish (yozildi 07.09.2026, 05:40)
+
+Claude Code xotirasi mashinaga bog'liq — bu bo'lim noutbukda noldan boshlash uchun yetarli.
+
+**Boshlash:** `git pull` → `cd shina-magazin-front && npm install` (git hook'lar avtomatik) →
+backend `./mvnw -o -B test` (Java 17, Docker bo'lsa Testcontainers ham ishlaydi). Lokal dev uchun
+`shina-magazin-api/.env` (repoda yo'q) — DB parol va `JWT_SECRET`; `AGENTS.md` da tartib.
+Coolify paneli `http://170.168.6.82:8000`, server SSH `root@vps08819`.
+
+**Prod holati (07.09.2026):**
+- Resurs: Coolify **Service** `service-dirpcewd6zrfxmmvbter6abw` (uuid `hi3x8b45gvbqslhrcqh6eggu`),
+  project `shina-epr` / `production`. Raw compose — manba repo (`infra/coolify/docker-compose.yml`),
+  deploy skripti uni har deploy'da API orqali yuboradi. Server hech narsa klon qilmaydi.
+- Eski git'dan o'qiydigan Application `shina--e-p-r:master…` (uuid `mnb0ofon9mrdcxdgrjluiw9o`) —
+  **to'xtatilgan**, domeni olingan, volume'lari joyida (zaxira sifatida turibdi).
+- GitHub: secrets `COOLIFY_WEBHOOK_URL` (yangi service), `COOLIFY_API_TOKEN` (read+deploy),
+  `COOLIFY_WRITE_TOKEN` (read+read:sensitive+write+deploy); variables `DEPLOY_ENABLED=true`,
+  `COOLIFY_SYNC_COMPOSE=true`, `VITE_SITE_URL`.
+- Coolify tokenlari: `github-actions-shina-write`, `github-actions-deploy-shina` kerak; qolganlari
+  boshqa loyihalarniki.
+- Serverda zaxira: `/root/protektor-2026-09-07-0515.sql.gz` (pg_dump, migratsiyadan keyin).
+- Deploy natijasi Actions'da: yiqilsa annotatsiya sababni aytadi. Yordamchi workflow'lar
+  (Actions → Run workflow): `Coolify diagnose` (faqat o'qiydi), `Coolify recover`
+  (restart/recreate/stop/start), `Coolify migrate` (probe/prepare/redeploy/cutover/rollback),
+  `Uptime` (15 daqiqada, Telegram'ga yozadi), `Flaky scan` (kechasi).
+
+**Oxirgi ochiq masala:** frontend healthcheck. `localhost` bilan yozilgani konteynerni unhealthy
+qilib saytni 503 ga tushirgan (alpine'da `localhost` → `::1`, nginx faqat IPv4). Tuzatilgan
+variant (`127.0.0.1`, image ichida tekshirilgan) commit `f864f1a` da — push qilinsa deploy
+bo'ladi; deploy'dan keyin Coolify'da service `running:healthy` bo'lishi va sayt 200 qolishi
+tekshiriladi. Yiqilsa `git revert` va push.
+
+**Tozalash (kunduzi, shoshilinch emas):** eski Application'ni Coolify'da o'chirish (bir necha
+kundan keyin), so'ng uning `mnb0…_postgres-data`, `_uploads-data`, `_backups-data` volume'lari;
+`coolify-diagnose.yml` ni service yo'llariga moslash; compose yaxshilanishlarini (backup sidecar,
+limitlar) bittalab qaytarish — Service turi qoidalari `DEPLOY.md` 3a.
+
 ### Hali ochiq (tekshirildi 03.09.2026)
 - **Compose yaxshilanishlari qaytarib olindi** — 03.09.2026 da `infra/coolify/docker-compose.yml`
   ga kunlik `db-backup` sidecar'i, `deploy.resources.limits`, `restart: unless-stopped`,
