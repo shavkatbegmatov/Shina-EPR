@@ -40,7 +40,9 @@ hali ochiq qolgan ishlar.
   (volume'lari `external` bo'lgani uchun qolaveradi; keyin `mnb0…_postgres-data`,
   `mnb0…_uploads-data`, `mnb0…_backups-data` volume'larini ham qo'lda o'chirish mumkin — yangi
   service o'z volume'larida ishlaydi); (b) yangi service'da eskirgan `backend`/`db` sub-app
-  yozuvlari (nomlar `shina-*` ga o'zgargan) — UI'da Delete; (c) `coolify-diagnose.yml` hali
+  yozuvlari (nomlar `shina-*` ga o'zgargan) — UI'da Delete: ular konteynersiz turgani
+  uchun Coolify service'ni doim `degraded:unhealthy` deb ko'rsatadi (deploy skripti bunga
+  qaramaydi, sog'liqqa qaraydi); (c) `coolify-diagnose.yml` hali
   application yo'llarini so'raydi — service'ga moslash; (d) `COOLIFY_MIGRATE_ENVS` secret'i
   yaratilmagan, o'chirish shart emas.
 - **06.09.2026 uzilishi — yopildi (sabab: Coolify proksi porti).** Coolify 4.3.17 dan
