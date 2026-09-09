@@ -96,32 +96,18 @@ limitlar) bittalab qaytarish — Service turi qoidalari `DEPLOY.md` 3a.
   (`b8fe65c`). Serverda xotira tor (`free -m`: 7,9 GB dan 6,8 GB band, swap to'la, 8 ta
   limitsiz JVM) — compose limitlarini qaytarishdan oldin `docker stats` bilan o'lchash,
   uzoq muddatda RAM yoki swap oshirish.
-- **AVTOMATIK BACKUP YO'Q (yangi, 10.09.2026 da aniqlandi).** Kunlik `db-backup` sidecar'i
-  03.09 da qo'shilib, prod tushganda compose bilan birga qaytarib olingan va tiklanmagan;
-  `DEPLOY.md` esa uni ishlayotgandek tasvirlardi (tuzatildi). Hozir bor narsa: qo'lda olingan
-  DB dump'lari `/root/protektor-*.sql.gz`. **Rasmlar uchun avtomatik nusxa yo'q** — DB dump
-  faqat yo'llarni saqlaydi. Hozircha zarar kichik: 10.09.2026 da `uploads` volume'i BO'SH
-  ekani aniqlandi (arxiv 90 bayt), ya'ni yuklangan rasm yo'q. Lekin birinchi rasm
-  yuklanishi bilan uning yagona nusxasi shu volume'da bo'ladi. Kerak: sidecar'ni qaytarish
-  (Service turi qoidalariga moslab, bittalab — `DEPLOY.md` 3a) yoki Coolify'ning o'z Backups
-  bo'limini yoqish; rasmlar uchun ham muntazam `tar` nusxasi.
-- **Jonli to'lov** — Payme/Click default'da `enabled: false`. Kreditsial + webhook
-  ro'yxatdan o'tkazish kerak (2-bo'lim). Kod tayyor (Payme idempotentlik va bekor qilish
-  vaqt chizig'i V43 bilan), sandbox'da sinalmagan.
-- **Jonli SMS** — `LogSmsSender` hamon stub; provayder implementatsiyasi kerak (5-bo'lim).
-- **Per-mahsulot og:image** — crawler'lar uchun nginx `/mahsulot/{id}` ni backend SEO
-  endpointiga yo'naltiradi (`ShopSeoController`); to'liq prerender qilinmagan.
-- **Texnik qarz (03.09.2026 auditidan qolganlar)** — `SettingsPage` (1600 qator) tab'larga
-  bo'linmagan; ERP sahifalarida qo'lda `saving` flag'lar (`useMutation` o'rniga);
-  `AuditLogService` (1200 qator) UA parser va formatlashni ham o'z ichiga oladi;
-  ro'yxat endpointlarining bir qismi sahifalanmagan (`getActiveDebts`, `getTodaySales`...);
-  zaxira o'zgartirish mantig'i oltita servisda takrorlanadi (yagona `StockService` yo'q);
-  `ReportService` agregatsiyani JVM'da qiladi; eksport butun faylni xotirada yig'adi;
-  ikkita WebSocket klienti (ERP va kabinet) alohida; tokenlar localStorage'da
-  (httpOnly cookie'ga o'tish backend o'zgarishini talab qiladi); service worker yo'q
-  (PWA faqat o'rnatiladigan darajada); jsx-a11y qoidalari hozircha `warn`; prettier
-  konfiguratsiyasi bor, lekin butun baza formatlanmagan; rate limiter in-memory
-  (bir instansiya uchun); SMS provayderi stub.
+- **Avtomatik backup TIKLANDI (10.09.2026).** Kunlik `db-backup` sidecar'i 03.09 da
+  qo'shilib, prod tushganda compose bilan birga qaytarib olingan va bir hafta tiklanmagan;
+  `DEPLOY.md` esa uni ishlayotgandek tasvirlardi (u ham tuzatildi).
+  Endi `shina-backup` sidecar'i har kuni 03:00 Toshkent va har deploy'dan keyin darhol
+  `db_*.sql.gz` + `uploads_*.tar.gz` oladi, `BACKUP_KEEP_DAYS=14`. Rasm arxivi shart:
+  DB dump faqat rasm yo'llarini saqlaydi.
+  CI'da haqiqiy Docker bilan isbotlangan (`compose-check.yml`): dump yasaladi, gzip butun,
+  SQL boshi to'g'ri, `uploads` arxivi bo'sh emas — bu tekshiruv compose o'zgarishlarida
+  qoladi. Coolify'ning o'z jadvalli backup'i bu bazaga tegishli emas (compose ichidagi
+  `shina-db` `/api/v1/databases/` da "not found").
+  Tekshirish: `docker exec $(docker ps -q --filter name=shina-backup-hi3x8b45gvbqslhrcqh6eggu) ls -lh /backups`.
+  Qo'lda olingan eski nusxalar `/root/protektor-*.sql.gz` da qoldi.
 
 ### 03.09.2026 da bajarilgan (texnik audit bo'yicha)
 Xavfsizlik va jonli xatolar (context-path'li `mustChangePassword`, WebSocket origin,

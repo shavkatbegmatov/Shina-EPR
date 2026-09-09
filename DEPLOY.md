@@ -179,26 +179,44 @@ Migratsiyada aniqlangan qoidalar (keyingi safar bilib qo'yish uchun):
 > ko'rsatilmaydi (ishlamaydigan havola bermaslik uchun).
 
 > Volume'lar compose'da: `postgres_data` (DB), `uploads_data` (`/data/uploads` — mahsulot
-> rasmlari) va `backups_data` (kunlik `pg_dump`). Coolify UI'da `postgres_data` uchun
-> scheduled backup ham yoqilsa — ikki mustaqil nusxa bo'ladi.
+> rasmlari) va `backups_data` (`shina-backup` sidecar'i yozadigan kunlik `pg_dump` va
+> rasm arxivi — pastdagi "Backup va tiklash").
 >
 > **Muqobil (Coolify'siz oddiy VPS):** repo ildizidagi `docker-compose.yml` (port 80 ochadi):
 > `docker compose pull && docker compose up -d`. Lokal to'liq test: `docker compose -f docker-compose.dev.yml up`.
 
 ### Backup va tiklash
 
-> ⚠️ **AVTOMATIK BACKUP HOZIRDA YO'Q.** Kunlik `db-backup` sidecar'i 03.09.2026 da
-> compose'ga qo'shilgan, so'ng prod tushganda butun compose bilan birga qaytarib
-> olingan (`0ef2779`) va tiklanmagan. Bu bo'lim ilgari uni ishlayotgandek tasvirlagan
-> edi — deploy oldidan "backup oling" deb kelgan operator xato buyruq olib, o'zini
-> himoyalangan deb o'ylashi mumkin edi. Holat `QOLGAN-ISHLAR.md` da ochiq band.
->
-> Ayniqsa **rasmlar**: `uploads` volume'ining avtomatik nusxasi yo'q (DB dump'i faqat
-> yo'llarni saqlaydi, fayl baytlarini emas). 10.09.2026 holatiga ko'ra bu volume BO'SH
-> (arxiv 90 bayt) — hozircha yo'qotadigan narsa yo'q, lekin birinchi yuklangan rasmdan
-> keyin uning yagona nusxasi shu volume'da bo'ladi.
+**Avtomatik:** compose'dagi `shina-backup` sidecar'i (10.09.2026 da tiklandi).
+Har kuni **22:00 UTC = 03:00 Toshkent**, qo'shimcha ravishda **har deploy'dan keyin
+darhol** bitta nusxa oladi. Ikki fayl yasaladi: `db_<sana>.sql.gz` (`pg_dump`) va
+`uploads_<sana>.tar.gz` (rasmlar) — ikkinchisi shart, chunki DB dump faqat rasm
+YO'LLARINI saqlaydi, fayl baytlarini emas. `BACKUP_KEEP_DAYS` (default 14) dan eski
+nusxalar o'chiriladi. Fayllar `${SVC}_backups-data` volume'ida, konteyner ichida
+`/backups`.
 
-Hozircha backup **qo'lda** olinadi (serverda; `$SVC` — service uuid):
+Ishlayotganini tekshirish (serverda):
+
+```bash
+docker exec $(docker ps -q --filter name=shina-backup-hi3x8b45gvbqslhrcqh6eggu) ls -lh /backups
+```
+
+> Vaqt UTC'da hisoblanadi: alpine'da tzdata yo'q, BusyBox `date -d` esa GNU sintaksisini
+> tushunmaydi — shuning uchun sana arifmetikasi emas, yarim tundan o'tgan soniyalar
+> bo'yicha kutish (`infra/coolify/docker-compose.yml` izohiga qarang).
+>
+> Sidecar'ni o'zgartirsangiz, `compose-check.yml` workflow'i uni CI'da haqiqiy Docker
+> bilan yugurtirib, dump chindan yasalgani va `uploads` arxivi BO'SH emasligini
+> tekshiradi. Ilgari bu sidecar 03.09.2026 da qo'shilib, prod tushganda butun compose
+> bilan qaytarib olingan (`0ef2779`) va bir hafta tiklanmagan — tekshiruv aynan shu
+> sinf xatolarni ushlash uchun.
+>
+> Coolify'ning **o'z** jadvalli backup'i bu bazaga tegishli emas: u mustaqil database
+> resurslari uchun, compose ichidagi `shina-db` esa `/api/v1/databases/<uuid>` da
+> "not found" beradi (10.09.2026 da API'dan tekshirilgan).
+
+**Qo'lda** (migratsiyadan oldin — sidecar nusxasi deploy'dan KEYIN olinadi, ya'ni
+migratsiyagacha bo'lgan holatni faqat qo'lda nusxa kafolatlaydi; serverda, `$SVC` — service uuid):
 
 ```bash
 SVC=hi3x8b45gvbqslhrcqh6eggu
@@ -260,7 +278,8 @@ Relizlar: `git tag vX.Y.Z && git push origin vX.Y.Z` → `release.yml` GitHub Re
 (CHANGELOG.md'dan).
 
 ## Deploy'dan OLDIN — ma'lumotga tegadigan migratsiya bo'lsa
-- [ ] Yangi backup oling — **qo'lda**, yuqoridagi "Backup va tiklash" buyruqlari bilan
+- [ ] Migratsiya bo'lsa — deploy'dan OLDIN qo'lda backup oling ("Backup va tiklash").
+      Migratsiyasiz o'zgarishda shart emas: sidecar nusxasi 24 soatdan eski bo'lmaydi
       (avtomatik kunlik nusxa YO'Q; Flyway migratsiyalari **avtomatik va qaytarilmas**
       ishlaydi; ba'zilari mavjud qatorlarni o'zgartiradi, masalan `V40` fantom qarzlarni yopadi).
 - [ ] Yangi migratsiyalarni ko'ring:

@@ -1,0 +1,132 @@
+name: Compose check
+
+# `infra/coolify/docker-compose.yml` ni HAQIQIY Docker Compose bilan tekshiradi va
+# zaxira sidecar'i chindan ham dump yasashini isbotlaydi — prodga tegmasdan.
+#
+# Nega kerak: compose o'zgarishlari bu loyihada ikki marta prodni yiqitgan
+# (03.09.2026 va 06.09.2026). Sidecar buyrug'i esa YAML ichida shell skript —
+# `$$` qochirishi, BusyBox `date`, `10#` arifmetikasi kabi joylari faqat ishga
+# tushirilganda ma'lum bo'ladi. Bu workflow shu qismni izolyatsiyada yugurtiradi:
+# faqat `shina-db` va `shina-backup` ko'tariladi (ikkisi ham ommaviy
+# `postgres:16-alpine`), GHCR'dagi yopiq image'lar kerak emas.
+on:
+  push:
+    paths:
+      - 'infra/coolify/docker-compose.yml'
+      - '.github/workflows/compose-check.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: compose-check-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  check:
+    name: Compose va zaxira sidecar'i
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - name: Sintaksis va interpolyatsiya
+        working-directory: infra/coolify
+        env:
+          DB_PASSWORD: testpw
+          JWT_SECRET: MDEyMzQ1Njc4OTAxMjM0NTY3ODkwMTIzNDU2Nzg5MDE=
+        run: |
+          docker compose config -q
+          echo "::notice title=Compose sintaksisi::to'g'ri"
+
+      - name: Zaxira sidecar'i haqiqatan dump yasaydimi
+        run: |
+          set -uo pipefail
+          mkdir -p /tmp/bk && cd /tmp/bk
+          # Faqat db + backup servislarini ajratamiz. Sidecar TA'RIFI repodan
+          # o'zgarmasdan olinadi — ya'ni aynan prodga ketadigan skript sinaladi.
+          python3 - <<'PY'
+          import yaml, io, sys
+          src = yaml.safe_load(io.open('/home/runner/work/Shina-EPR/Shina-EPR/infra/coolify/docker-compose.yml', encoding='utf-8').read())
+          if 'shina-backup' not in src['services']:
+              io.open('/tmp/bk/SKIP', 'w').write('no sidecar')
+              print("shina-backup servisi yo'q, sidecar tekshiruvi o'tkazib yuborildi")
+              sys.exit(0)
+          bk = src['services']['shina-backup']
+          bk['environment'] = {
+              'PGHOST': 'shina-db', 'PGDATABASE': 'shina_epr_db',
+              'PGUSER': 'shina_epr_user', 'PGPASSWORD': 'testpw',
+              'BACKUP_KEEP_DAYS': '14',
+          }
+          test = {
+              'services': {
+                  'shina-db': {
+                      'image': src['services']['shina-db']['image'],
+                      'environment': {
+                          'POSTGRES_DB': 'shina_epr_db',
+                          'POSTGRES_USER': 'shina_epr_user',
+                          'POSTGRES_PASSWORD': 'testpw',
+                      },
+                      'healthcheck': {
+                          'test': ['CMD-SHELL', 'pg_isready -U shina_epr_user -d shina_epr_db'],
+                          'interval': '3s', 'timeout': '3s', 'retries': 20,
+                      },
+                  },
+                  'shina-backup': bk,
+              },
+              'volumes': {'backups_data': None, 'uploads_data': None},
+          }
+          io.open('/tmp/bk/docker-compose.yml', 'w', encoding='utf-8', newline='\n').write(
+              yaml.safe_dump(test, sort_keys=False, allow_unicode=True, width=10000))
+          PY
+          if [ -f /tmp/bk/SKIP ]; then
+            echo "::notice title=Sidecar yo'q::compose'da shina-backup topilmadi, tekshiruv o'tkazib yuborildi"
+            exit 0
+          fi
+          # Uploads bo'sh bo'lmasin — tar haqiqiy fayl bilan sinalsin
+          docker compose up -d
+          docker compose run --rm --no-deps -v bk_uploads_data:/u --entrypoint sh shina-backup \
+            -c 'mkdir -p /u/2026 && echo test-image-bytes > /u/2026/test.jpg' || true
+          docker compose restart shina-backup
+
+          ok=0
+          for i in $(seq 1 40); do
+            listing=$(docker compose exec -T shina-backup ls -l /backups 2>/dev/null || true)
+            if printf '%s' "$listing" | grep -q 'db_.*\.sql\.gz' && printf '%s' "$listing" | grep -q 'uploads_.*\.tar\.gz'; then
+              ok=1; break
+            fi
+            sleep 5
+          done
+
+          echo "::group::Sidecar logi"
+          docker compose logs --no-color shina-backup | tail -30
+          echo "::endgroup::"
+          echo "::group::/backups ichi"
+          docker compose exec -T shina-backup ls -lh /backups || true
+          echo "::endgroup::"
+
+          if [ "$ok" != "1" ]; then
+            echo "::error title=Zaxira yasalmadi::Sidecar 200 s ichida dump yaratmadi — YAML ichidagi shell skriptni tekshiring ($$ qochirishi, BusyBox date, 10# arifmetikasi)"
+            docker compose down -v || true
+            exit 1
+          fi
+
+          # Dump haqiqatan tiklanadigan bo'lsin: gzip butun va SQL boshi to'g'ri
+          f=$(docker compose exec -T shina-backup sh -c 'ls -1 /backups/db_*.sql.gz | head -1' | tr -d '\r')
+          docker compose exec -T shina-backup sh -c "gzip -t '$f' && gzip -dc '$f' | head -5"
+
+          # Uploads arxivi BO'SH bo'lmasin. Faylning bor bo'lishi yetarli emas: mount
+          # xato bo'lsa `tar` bo'sh arxiv yasaydi va u ham gzip jihatidan butun bo'ladi.
+          # Prodda aynan shunday bo'shlik ko'rilgan (arxiv 90 bayt), shuning uchun arxiv
+          # ichida ekilgan test fayli borligi TALAB qilinadi.
+          u=$(docker compose exec -T shina-backup sh -c 'ls -1 /backups/uploads_*.tar.gz | head -1' | tr -d '\r')
+          arch=$(docker compose exec -T shina-backup sh -c "gzip -t '$u' && tar tzf '$u'" || true)
+          if ! printf '%s' "$arch" | grep -q "test[.]jpg"; then
+            echo "::error title=Uploads arxivi bo'sh::$u ichida ekilgan fayl yo'q, uploads_data mount'ini tekshiring"
+            printf '%s\n' "$arch"
+            docker compose down -v || true
+            exit 1
+          fi
+          echo "::notice title=Zaxira ishlayapti::db dump va uploads arxivi yaratildi (ichida fayl bor), gzip butun"
+          docker compose down -v || true
