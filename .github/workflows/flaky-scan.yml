@@ -23,6 +23,12 @@ on:
       iterations:
         description: "Necha marta yugurilsin"
         default: "3"
+      seed:
+        description: "Surefire urug'i — yiqilgan tartibni AYNAN takrorlash uchun (bo'sh = har safar yangi)"
+        default: ""
+      run_order:
+        description: "Tartib: random (default), alphabetical, reversealphabetical"
+        default: "random"
 
 permissions:
   contents: read
@@ -63,22 +69,37 @@ jobs:
         env:
           TESTCONTAINERS_RYUK_DISABLED: "true"
           ITERATIONS: ${{ github.event.inputs.iterations || '3' }}
+          SEED: ${{ github.event.inputs.seed }}
+          RUN_ORDER: ${{ github.event.inputs.run_order || 'random' }}
         run: |
           chmod +x mvnw
           failed=0
           for i in $(seq 1 "$ITERATIONS"); do
             echo "::group::Iteratsiya $i/$ITERATIONS"
+            LOG="$RUNNER_TEMP/iter-$i.log"
             # `-Dsurefire.runOrder` pom'dagi `${surefire.runOrder}` xususiyatini
             # almashtiradi (to'g'ridan-to'g'ri yozilgan qiymat buni bekor qilardi).
-            if ./mvnw clean test -q -Djacoco.skip=true -Dsurefire.runOrder=random; then
+            #
+            # `-q` ATAYLAB YO'Q: sinflar TARTIBI ("Running <sinf>") va surefire'ning
+            # tasodifiy urug'i faqat to'liq chiqishda bo'ladi. 06–09.09.2026 da to'rt
+            # kecha bir xil test yiqildi, lekin undan OLDIN nima ishlagani noma'lum
+            # qoldi — artefakt fayl vaqtlarini saqlamaydi. Chiqish faylga yoziladi,
+            # ekranga faqat yiqilganda tartib va urug' chiqadi.
+            ARGS="-Djacoco.skip=true -Dsurefire.runOrder=$RUN_ORDER"
+            [ -n "$SEED" ] && ARGS="$ARGS -Dsurefire.runOrder.random.seed=$SEED"
+            if ./mvnw clean test $ARGS > "$LOG" 2>&1; then
               echo "iteratsiya $i: o'tdi"
+              echo "::endgroup::"
             else
               echo "iteratsiya $i: YIQILDI"
               failed=$i
               echo "::endgroup::"
+              echo "--- Takrorlash uchun urug' ---"
+              grep -F 'To reproduce ordering use flag' "$LOG" | head -1 || echo "(urug' topilmadi)"
+              echo "--- Sinflar tartibi (yiqilgan iteratsiya) ---"
+              grep -F '] Running uz.shinamagazin' "$LOG" | sed 's/.*Running uz.shinamagazin.api.//' | cat -n
               break
             fi
-            echo "::endgroup::"
           done
           echo "FAILED_ITERATION=$failed" >> "$GITHUB_ENV"
           [ "$failed" = "0" ]
