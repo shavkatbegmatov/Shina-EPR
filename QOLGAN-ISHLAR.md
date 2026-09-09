@@ -104,12 +104,7 @@ limitlar) bittalab qaytarish — Service turi qoidalari `DEPLOY.md` 3a.
   ikkita WebSocket klienti (ERP va kabinet) alohida; tokenlar localStorage'da
   (httpOnly cookie'ga o'tish backend o'zgarishini talab qiladi); service worker yo'q
   (PWA faqat o'rnatiladigan darajada); jsx-a11y qoidalari hozircha `warn`; prettier
-  konfiguratsiyasi bor, lekin butun baza formatlanmagan; **backend testlari sinf
-  tartibiga bog'liq** (tartib `alphabetical`ga qadab qo'yilgan, aks holda CI'da
-  `ProfitLossReportTest` goh yiqiladi; sizayotgan holat hali topilmagan — lokalda
-  Windows va Linux'da, tasodifiy va teskari tartibda 10+ marta takrorlanmadi.
-  Kechalik `flaky-scan.yml` uni tasodifiy tartibda qidiradi va topilsa Telegram'ga
-  yozadi; qidirish uchun `./mvnw test -Dsurefire.runOrder=random`); rate limiter in-memory
+  konfiguratsiyasi bor, lekin butun baza formatlanmagan; rate limiter in-memory
   (bir instansiya uchun); SMS provayderi stub.
 
 ### 03.09.2026 da bajarilgan (texnik audit bo'yicha)
