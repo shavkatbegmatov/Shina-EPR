@@ -122,7 +122,9 @@ Migratsiyada aniqlangan qoidalar (keyingi safar bilib qo'yish uchun):
   e'lon qilgan va `mnb0ofon9mrdcxdgrjluiw9o_postgres-data` chiqqan; hozirgi service uchun
   `hi3x8b45gvbqslhrcqh6eggu_postgres-data`.
   ⚠️ `b2fa058` (pinning'ni olib tashlash) commit'ini **REVERT QILMANG** — u eski
-  `mnb0…` volume nomlariga qaytaradi, ular esa o'chirilgan; tuzatish oldinga qarab qilinadi.
+  `mnb0…` volume nomlariga qaytaradi, ular esa 10.09.2026 da o'chirilgan; tuzatish oldinga
+  qarab qilinadi. Tuzoq yopilgani tekshirilgan: volume'lar o'chirilgandan keyin ataylab
+  deploy qilindi — `success`, katalog 22.
 - **Deploy sog'liq tekshiruvi bo'sh bazani USHLAMAYDI:** yangi bo'sh volume bilan ham Flyway
   ishlab, demo ma'lumot yoziladi va `/api/v1/settings/public` 200 qaytaradi. Volume bilan
   bog'liq o'zgarishdan keyin qo'shimcha tekshiruv: `GET /api/v1/catalog?size=1` →
@@ -191,8 +193,10 @@ Migratsiyada aniqlangan qoidalar (keyingi safar bilib qo'yish uchun):
 > edi — deploy oldidan "backup oling" deb kelgan operator xato buyruq olib, o'zini
 > himoyalangan deb o'ylashi mumkin edi. Holat `QOLGAN-ISHLAR.md` da ochiq band.
 >
-> Ayniqsa **rasmlar**: `uploads` volume'ining hech qanday nusxasi yo'q (DB dump'i faqat
-> yo'llarni saqlaydi, fayl baytlarini emas).
+> Ayniqsa **rasmlar**: `uploads` volume'ining avtomatik nusxasi yo'q (DB dump'i faqat
+> yo'llarni saqlaydi, fayl baytlarini emas). 10.09.2026 holatiga ko'ra bu volume BO'SH
+> (arxiv 90 bayt) — hozircha yo'qotadigan narsa yo'q, lekin birinchi yuklangan rasmdan
+> keyin uning yagona nusxasi shu volume'da bo'ladi.
 
 Hozircha backup **qo'lda** olinadi (serverda; `$SVC` — service uuid):
 

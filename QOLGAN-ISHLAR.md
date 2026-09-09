@@ -77,12 +77,18 @@ limitlar) bittalab qaytarish — Service turi qoidalari `DEPLOY.md` 3a.
   to'rt qorovul bilan: prod 200, yangi service running, eski to'xtagan, nomi mos);
   eskirgan `backend`/`db` sub-app yozuvlari UI'dan o'chirildi (service endi
   `running:healthy`); `coolify-diagnose.yml` resurs turini o'zi aniqlaydi.
-  **Qolgani (ixtiyoriy, serverda bitta buyruq):** eski volume'lar
-  `mnb0ofon9mrdcxdgrjluiw9o_{postgres,uploads,backups}-data` — ularda migratsiyadan
-  oldingi baza turibdi, ~70 MB. Ishonch hosil qilingach:
-  `docker volume rm mnb0ofon9mrdcxdgrjluiw9o_postgres-data mnb0ofon9mrdcxdgrjluiw9o_uploads-data mnb0ofon9mrdcxdgrjluiw9o_backups-data`.
-  Coolify'da eskirgan tokenlarni Revoke qilish ham qoldi — kerakli ikkitasi
-  `github-actions-shina-write` va `github-actions-deploy-shina`.
+  **Volume tozalash ham bajarildi (10.09.2026).** Compose'dagi `external` pinning'i
+  olib tashlandi (`b2fa058`) — deploy'dan keyin katalog 22 bo'lib qoldi, ya'ni mount
+  o'zgarmadi. So'ng serverda jonli mount'lar tasdiqlandi
+  (`hi3x8b45gvbqslhrcqh6eggu_{postgres,uploads}-data`), zaxiralar olindi va uchta eski
+  volume o'chirildi. Volume o'chirilgandan keyin ataylab deploy qilinib, "external volume
+  not found" tuzog'i yopilgani isbotlandi (deploy `success`, katalog 22).
+  Serverdagi zaxiralar: `/root/protektor-db-2026-09-10-0356.sql.gz` (33 KB),
+  `/root/protektor-old-volumes-2026-09-10-0356.tar.gz` (8,6 MB — eski volume'larning
+  to'liq arxivi).
+  **Qolgani:** Coolify'da eskirgan tokenlarni Revoke qilish — kerakli ikkitasi
+  `github-actions-shina-write` va `github-actions-deploy-shina` (API'da token
+  boshqarish yo'q, faqat UI).
 - **06.09.2026 uzilishi — yopildi (sabab: Coolify proksi porti).** Coolify 4.3.17 dan
   keyingi birinchi deploy'da Traefik frontend'ga `3000` portga urgan (nginx 80 da); compose'da
   `expose: ["80"]` bilan tuzatildi, CHANGELOG'da batafsil. Maven bump'i (`jjwt` 0.13.0,
@@ -93,10 +99,12 @@ limitlar) bittalab qaytarish — Service turi qoidalari `DEPLOY.md` 3a.
 - **AVTOMATIK BACKUP YO'Q (yangi, 10.09.2026 da aniqlandi).** Kunlik `db-backup` sidecar'i
   03.09 da qo'shilib, prod tushganda compose bilan birga qaytarib olingan va tiklanmagan;
   `DEPLOY.md` esa uni ishlayotgandek tasvirlardi (tuzatildi). Hozir bor narsa: qo'lda olingan
-  DB dump'lari `/root/protektor-*.sql.gz`. **Rasmlar (`uploads` volume'i) uchun hech qanday
-  nusxa yo'q** — DB dump faqat yo'llarni saqlaydi. Kerak: sidecar'ni qaytarish (Service turi
-  qoidalariga moslab, bittalab — `DEPLOY.md` 3a) yoki Coolify'ning o'z Backups bo'limini
-  yoqish; rasmlar uchun ham muntazam `tar` nusxasi.
+  DB dump'lari `/root/protektor-*.sql.gz`. **Rasmlar uchun avtomatik nusxa yo'q** — DB dump
+  faqat yo'llarni saqlaydi. Hozircha zarar kichik: 10.09.2026 da `uploads` volume'i BO'SH
+  ekani aniqlandi (arxiv 90 bayt), ya'ni yuklangan rasm yo'q. Lekin birinchi rasm
+  yuklanishi bilan uning yagona nusxasi shu volume'da bo'ladi. Kerak: sidecar'ni qaytarish
+  (Service turi qoidalariga moslab, bittalab — `DEPLOY.md` 3a) yoki Coolify'ning o'z Backups
+  bo'limini yoqish; rasmlar uchun ham muntazam `tar` nusxasi.
 - **Jonli to'lov** — Payme/Click default'da `enabled: false`. Kreditsial + webhook
   ro'yxatdan o'tkazish kerak (2-bo'lim). Kod tayyor (Payme idempotentlik va bekor qilish
   vaqt chizig'i V43 bilan), sandbox'da sinalmagan.
