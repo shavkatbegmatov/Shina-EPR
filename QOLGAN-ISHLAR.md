@@ -90,6 +90,13 @@ limitlar) bittalab qaytarish — Service turi qoidalari `DEPLOY.md` 3a.
   (`b8fe65c`). Serverda xotira tor (`free -m`: 7,9 GB dan 6,8 GB band, swap to'la, 8 ta
   limitsiz JVM) — compose limitlarini qaytarishdan oldin `docker stats` bilan o'lchash,
   uzoq muddatda RAM yoki swap oshirish.
+- **AVTOMATIK BACKUP YO'Q (yangi, 10.09.2026 da aniqlandi).** Kunlik `db-backup` sidecar'i
+  03.09 da qo'shilib, prod tushganda compose bilan birga qaytarib olingan va tiklanmagan;
+  `DEPLOY.md` esa uni ishlayotgandek tasvirlardi (tuzatildi). Hozir bor narsa: qo'lda olingan
+  DB dump'lari `/root/protektor-*.sql.gz`. **Rasmlar (`uploads` volume'i) uchun hech qanday
+  nusxa yo'q** — DB dump faqat yo'llarni saqlaydi. Kerak: sidecar'ni qaytarish (Service turi
+  qoidalariga moslab, bittalab — `DEPLOY.md` 3a) yoki Coolify'ning o'z Backups bo'limini
+  yoqish; rasmlar uchun ham muntazam `tar` nusxasi.
 - **Jonli to'lov** — Payme/Click default'da `enabled: false`. Kreditsial + webhook
   ro'yxatdan o'tkazish kerak (2-bo'lim). Kod tayyor (Payme idempotentlik va bekor qilish
   vaqt chizig'i V43 bilan), sandbox'da sinalmagan.

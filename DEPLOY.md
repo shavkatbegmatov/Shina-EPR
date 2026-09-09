@@ -116,9 +116,20 @@ Migratsiyada aniqlangan qoidalar (keyingi safar bilib qo'yish uchun):
   qiymatlarini o'qish uchun; deploy quvurining `COOLIFY_API_TOKEN` (read + deploy) qoladi.
 - **Tarmoq:** Service'da "Connect to the predefined Coolify network" yoqiq (API:
   `connect_to_docker_network: true`), aks holda Traefik konteynerga yetmaydi.
+- **Volume nomlash qoidasi:** Coolify `{resurs-uuid}_{compose-kaliti}` (kalitdagi `_` → `-`)
+  deb nomlaydi va compose'dagi `external`/`name` e'lonini E'TIBORSIZ qoldiradi. Shuning uchun
+  compose'da volume'lar oddiy e'lon qilinadi. Isbot: birinchi versiya (`a88fae1`) ham oddiy
+  e'lon qilgan va `mnb0ofon9mrdcxdgrjluiw9o_postgres-data` chiqqan; hozirgi service uchun
+  `hi3x8b45gvbqslhrcqh6eggu_postgres-data`.
+  ⚠️ `b2fa058` (pinning'ni olib tashlash) commit'ini **REVERT QILMANG** — u eski
+  `mnb0…` volume nomlariga qaytaradi, ular esa o'chirilgan; tuzatish oldinga qarab qilinadi.
+- **Deploy sog'liq tekshiruvi bo'sh bazani USHLAMAYDI:** yangi bo'sh volume bilan ham Flyway
+  ishlab, demo ma'lumot yoziladi va `/api/v1/settings/public` 200 qaytaradi. Volume bilan
+  bog'liq o'zgarishdan keyin qo'shimcha tekshiruv: `GET /api/v1/catalog?size=1` →
+  `totalElements` **22** bo'lishi kerak; **10** chiqsa bu bo'sh baza belgisi.
 - Yordamchi workflow'lar: `coolify-migrate.yml` (probe / prepare / redeploy / cutover /
-  rollback), `coolify-recover.yml` (restart / recreate / stop / start — resurs turini o'zi
-  aniqlaydi), `coolify-diagnose.yml` (faqat o'qiydi).
+  rollback / cleanup), `coolify-recover.yml` (restart / recreate / stop / start — resurs
+  turini o'zi aniqlaydi), `coolify-diagnose.yml` (faqat o'qiydi, turini o'zi aniqlaydi).
 
 
 > **`JWT_SECRET`** — default qiymat YO'Q. O'rnatilmasa Spring ishga tushishda xato beradi
@@ -173,20 +184,40 @@ Migratsiyada aniqlangan qoidalar (keyingi safar bilib qo'yish uchun):
 > `docker compose pull && docker compose up -d`. Lokal to'liq test: `docker compose -f docker-compose.dev.yml up`.
 
 ### Backup va tiklash
-`db-backup` sidecar'i har kuni 03:00 (Toshkent) da `pg_dump | gzip` ni `backups_data`
-volume'iga yozadi va `BACKUP_KEEP_DAYS` (default 14) kundan eskisini o'chiradi. Ilgari backup
-faqat "Coolify UI'da yoqish tavsiya etiladi" degan eslatma edi — repodan bor-yo'qligini bilib
-bo'lmasdi, Flyway migratsiyalari esa qaytarilmas.
+
+> ⚠️ **AVTOMATIK BACKUP HOZIRDA YO'Q.** Kunlik `db-backup` sidecar'i 03.09.2026 da
+> compose'ga qo'shilgan, so'ng prod tushganda butun compose bilan birga qaytarib
+> olingan (`0ef2779`) va tiklanmagan. Bu bo'lim ilgari uni ishlayotgandek tasvirlagan
+> edi — deploy oldidan "backup oling" deb kelgan operator xato buyruq olib, o'zini
+> himoyalangan deb o'ylashi mumkin edi. Holat `QOLGAN-ISHLAR.md` da ochiq band.
+>
+> Ayniqsa **rasmlar**: `uploads` volume'ining hech qanday nusxasi yo'q (DB dump'i faqat
+> yo'llarni saqlaydi, fayl baytlarini emas).
+
+Hozircha backup **qo'lda** olinadi (serverda; `$SVC` — service uuid):
 
 ```bash
-# Nusxalar ro'yxati (Coolify → Terminal, yoki serverda)
-docker compose exec db-backup ls -lh /backups
-# Serverga ko'chirib olish
-docker compose cp db-backup:/backups/shina_epr_db_2026-09-03_0300.sql.gz ./
-# TIKLASH (ehtiyot: mavjud ma'lumot ustidan yoziladi; avval backend'ni to'xtating)
-docker compose stop backend
-gunzip -c shina_epr_db_2026-09-03_0300.sql.gz | docker compose exec -T db psql -U shina_epr_user -d shina_epr_db
-docker compose start backend
+SVC=hi3x8b45gvbqslhrcqh6eggu
+DB=$(docker ps -q --filter name=shina-db-$SVC | head -1)
+BE=$(docker ps -q --filter name=shina-backend-$SVC | head -1)
+# Baza
+docker exec "$DB" pg_dump -U shina_epr_user shina_epr_db | gzip > /root/protektor-db-$(date +%F-%H%M).sql.gz
+# Rasmlar (uploads volume'i)
+docker run --rm -v "${SVC}_uploads-data:/from:ro" -v /root:/to alpine \
+  tar czf "/to/protektor-uploads-$(date +%F-%H%M).tar.gz" -C /from .
+ls -lh /root/protektor-*
+```
+
+Tiklash (ehtiyot: mavjud ma'lumot ustidan yoziladi):
+
+```bash
+# Baza — avval backend to'xtatiladi (Coolify → resurs → Stop, yoki `docker stop $BE`)
+docker stop "$BE"
+gunzip -c /root/protektor-db-<sana>.sql.gz | docker exec -i "$DB" psql -U shina_epr_user -d shina_epr_db
+docker start "$BE"
+# Rasmlar
+docker run --rm -v "${SVC}_uploads-data:/to" -v /root:/from alpine \
+  sh -c 'tar xzf /from/protektor-uploads-<sana>.tar.gz -C /to'
 ```
 
 ### Orqaga qaytarish (rollback)
@@ -225,9 +256,9 @@ Relizlar: `git tag vX.Y.Z && git push origin vX.Y.Z` → `release.yml` GitHub Re
 (CHANGELOG.md'dan).
 
 ## Deploy'dan OLDIN — ma'lumotga tegadigan migratsiya bo'lsa
-- [ ] Yangi backup oling: `docker compose exec db-backup sh -c 'pg_dump | gzip > /backups/manual_$(date +%F_%H%M).sql.gz'`
-      (kunlik nusxa 03:00 da; Flyway migratsiyalari **avtomatik va qaytarilmas** ishlaydi;
-      ba'zilari mavjud qatorlarni o'zgartiradi, masalan `V40` fantom qarzlarni yopadi).
+- [ ] Yangi backup oling — **qo'lda**, yuqoridagi "Backup va tiklash" buyruqlari bilan
+      (avtomatik kunlik nusxa YO'Q; Flyway migratsiyalari **avtomatik va qaytarilmas**
+      ishlaydi; ba'zilari mavjud qatorlarni o'zgartiradi, masalan `V40` fantom qarzlarni yopadi).
 - [ ] Yangi migratsiyalarni ko'ring:
       `git diff --name-only <oxirgi-deploy-sha>..HEAD -- shina-magazin-api/src/main/resources/db/migration`
 
