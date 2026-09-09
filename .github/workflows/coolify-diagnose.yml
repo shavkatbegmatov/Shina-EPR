@@ -106,23 +106,25 @@ jobs:
           # mexanizmi unga tegishli bo'lishi mumkin. Qaysi endpoint bor-yo'qligini
           # o'zgartirmasdan aniqlaymiz: 200 = bor, 404 = yo'q, 403 = huquq yetmadi.
           echo "::group::Backup endpointlari (faqat o'qish)"
-          api GET "/api/v1/$KIND/$UUID" > "$RUNNER_TEMP/res.json" || true
+          # DIQQAT: bu workflow'dagi `api` FAQAT yo'l oladi (metodsiz, har doim GET).
+          api "/api/v1/$KIND/$UUID" > "$RUNNER_TEMP/res.json" || true
           DBUUID=$(sed '$d' "$RUNNER_TEMP/res.json" | jq -r '(.databases // []) | .[0].uuid // empty' 2>/dev/null)
           DBNAME=$(sed '$d' "$RUNNER_TEMP/res.json" | jq -r '(.databases // []) | .[0].name // empty' 2>/dev/null)
           echo "database sub-resurs: ${DBNAME:-yoq} ${DBUUID:-}"
-          for path in \
-            "/api/v1/databases" \
-            "/api/v1/databases/$DBUUID" \
-            "/api/v1/databases/$DBUUID/backups" \
-            "/api/v1/$KIND/$UUID/backups" \
-            "/api/v1/backups" \
-            "/api/v1/$KIND/$UUID/scheduled-tasks" \
-            "/api/v1/servers" ; do
-            [ -n "$DBUUID" ] || case "$path" in *"$DBUUID"*) continue;; esac
-            out=$(api "$path") || true
+          probe() {
+            local out c
+            out=$(api "$1") || true
             c=$(printf '%s' "$out" | tail -n1)
-            printf '  %-46s -> %s  %s\n' "$path" "$c" "$(printf '%s' "$out" | sed '$d' | tr '\n' ' ' | head -c 140)"
-          done
+            printf '  %-48s -> %s  %s\n' "$1" "$c" "$(printf '%s' "$out" | sed '$d' | tr '\n' ' ' | head -c 130)"
+          }
+          probe "/api/v1/databases"
+          probe "/api/v1/$KIND/$UUID/backups"
+          probe "/api/v1/backups"
+          probe "/api/v1/$KIND/$UUID/scheduled-tasks"
+          if [ -n "$DBUUID" ]; then
+            probe "/api/v1/databases/$DBUUID"
+            probe "/api/v1/databases/$DBUUID/backups"
+          fi
           echo "::endgroup::"
 
           show "Env kalitlari (qiymatsiz)" "/api/v1/$KIND/$UUID/envs" \
