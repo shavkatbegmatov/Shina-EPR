@@ -63,7 +63,10 @@ jobs:
         run: |
           set -uo pipefail
           BASE=$(printf '%s' "$COOLIFY_WEBHOOK_URL" | sed -E 's#^(https?://[^/]+).*#\1#')
-          OLD=$(printf '%s' "$COOLIFY_WEBHOOK_URL" | sed -nE 's#.*[?&]uuid=([^&]+).*#\1#p')
+          # Cutover'dan keyin webhook secret'i YANGI resursni ko'rsatadi, shuning uchun
+          # eski uuid kirishdan olinadi; berilmasa — secret'dagi qiymat.
+          OLD="${OLD_INPUT:-}"
+          [ -n "$OLD" ] || OLD=$(printf '%s' "$COOLIFY_WEBHOOK_URL" | sed -nE 's#.*[?&]uuid=([^&]+).*#\1#p')
           [ -n "$OLD" ] || { echo "::error::COOLIFY_WEBHOOK_URL dan eski uuid ajratilmadi"; exit 1; }
           [ -n "$NEW" ] || { echo "::error::new_uuid kerak"; exit 1; }
           [ -f "$COMPOSE_FILE" ] || { echo "::error::$COMPOSE_FILE topilmadi"; exit 1; }
