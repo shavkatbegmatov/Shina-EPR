@@ -101,6 +101,30 @@ jobs:
 
           # Env o'zgaruvchilari — FAQAT nomi va qiymat uzunligi (qiymat hech qachon
           # chiqarilmaydi). Majburiy sir yo'qolgan yoki bo'sh qolganini shu ko'rsatadi.
+          # Backup imkoniyatlari: compose ichidagi `shina-db` Coolify uchun "database"
+          # sub-resurs (probe shuni ko'rsatgan), ya'ni Coolify'ning o'z jadvalli backup
+          # mexanizmi unga tegishli bo'lishi mumkin. Qaysi endpoint bor-yo'qligini
+          # o'zgartirmasdan aniqlaymiz: 200 = bor, 404 = yo'q, 403 = huquq yetmadi.
+          echo "::group::Backup endpointlari (faqat o'qish)"
+          api GET "/api/v1/$KIND/$UUID" > "$RUNNER_TEMP/res.json" || true
+          DBUUID=$(sed '$d' "$RUNNER_TEMP/res.json" | jq -r '(.databases // []) | .[0].uuid // empty' 2>/dev/null)
+          DBNAME=$(sed '$d' "$RUNNER_TEMP/res.json" | jq -r '(.databases // []) | .[0].name // empty' 2>/dev/null)
+          echo "database sub-resurs: ${DBNAME:-yoq} ${DBUUID:-}"
+          for path in \
+            "/api/v1/databases" \
+            "/api/v1/databases/$DBUUID" \
+            "/api/v1/databases/$DBUUID/backups" \
+            "/api/v1/$KIND/$UUID/backups" \
+            "/api/v1/backups" \
+            "/api/v1/$KIND/$UUID/scheduled-tasks" \
+            "/api/v1/servers" ; do
+            [ -n "$DBUUID" ] || case "$path" in *"$DBUUID"*) continue;; esac
+            out=$(api "$path") || true
+            c=$(printf '%s' "$out" | tail -n1)
+            printf '  %-46s -> %s  %s\n' "$path" "$c" "$(printf '%s' "$out" | sed '$d' | tr '\n' ' ' | head -c 140)"
+          done
+          echo "::endgroup::"
+
           show "Env kalitlari (qiymatsiz)" "/api/v1/$KIND/$UUID/envs" \
             'if type=="array" then . else (.data // []) end | .[] | "\(.key)  len=\((.value // "") | length)  runtime=\(.is_runtime // true)"'
 
