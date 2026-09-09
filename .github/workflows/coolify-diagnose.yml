@@ -42,7 +42,16 @@ jobs:
           fi
           BASE=$(printf '%s' "$COOLIFY_WEBHOOK_URL" | sed -E 's#^(https?://[^/]+).*#\1#')
           UUID=$(printf '%s' "$COOLIFY_WEBHOOK_URL" | sed -nE 's#.*[?&]uuid=([^&]+).*#\1#p')
-          echo "resurs uuid: ${UUID:-<ajratilmadi>}"
+          [ -n "$UUID" ] || { echo "::error::COOLIFY_WEBHOOK_URL dan uuid ajratilmadi"; exit 1; }
+          # Resurs turi: raw compose "Docker Compose Empty" — SERVICE (07.09.2026 dan prod
+          # shunday), git'dan o'qiydigan compose — APPLICATION. API yo'llari boshqacha,
+          # shuning uchun turini uuid bo'yicha aniqlaymiz.
+          if curl -sS --max-time 30 -o /dev/null -w '%{http_code}' -H "Authorization: Bearer $COOLIFY_API_TOKEN" "$BASE/api/v1/services/$UUID" | grep -q '^200$'; then
+            KIND=services
+          else
+            KIND=applications
+          fi
+          echo "resurs: $UUID  turi: $KIND"
 
           api() { curl -sS --max-time 30 -w '\n%{http_code}' -H "Authorization: Bearer $COOLIFY_API_TOKEN" "$BASE$1"; }
           show() {  # show <sarlavha> <yo'l> [jq-filtr]
@@ -61,33 +70,29 @@ jobs:
             echo "::endgroup::"
           }
 
-          # Compose resurs Coolify'da "application" (git + docker compose) bo'lishi
-          # mumkin; eski/boshqa sozlamada "service". Ikkalasini ham so'raymiz —
-          # 200 bergani haqiqiy tur.
-          show "Application" "/api/v1/applications/$UUID" '{name, status, fqdn, build_pack, git_branch, git_commit_sha, updated_at}'
-          show "Service" "/api/v1/services/$UUID" '{name, status, updated_at}'
+          show "Resurs" "/api/v1/$KIND/$UUID" '{name, status, fqdn, build_pack, git_branch, git_commit_sha, updated_at}'
 
           # Tarmoq va proksi: Coolify compose'ni o'zi to'ldiradi (networks, traefik
           # label'lari). Traefik 502 bersa-yu konteyner "Up" bo'lsa — sabab shu
           # generatsiyada. Qiymatlar `${VAR}` ko'rinishida, sirlar chiqmaydi.
-          show "Tarmoq sozlamalari" "/api/v1/applications/$UUID" \
+          show "Tarmoq sozlamalari" "/api/v1/$KIND/$UUID" \
             '{connect_to_docker_network: (.connect_to_docker_network // .settings.connect_to_docker_network // "?"), docker_compose_domains, docker_compose_location, ports_exposes, custom_docker_run_options, is_container_label_readonly_enabled, is_container_label_escape_enabled}'
           # Manba: Coolify har deploy'da repozitoriyni klon qiladimi (git) yoki compose
           # o'zida saqlanadimi (raw). Serverga tushadigan yukni baholash uchun.
-          show "Manba (git yoki raw compose)" "/api/v1/applications/$UUID" \
+          show "Manba (git yoki raw compose)" "/api/v1/$KIND/$UUID" \
             '{git_repository, git_branch, git_commit_sha, docker_compose_location, is_raw_compose_deployment_enabled: (.is_raw_compose_deployment_enabled // .settings.is_raw_compose_deployment_enabled // "?"), docker_compose_raw_len: ((.docker_compose_raw // "") | length), docker_compose_len: ((.docker_compose // "") | length), source_id, private_key_id}'
-          show "Coolify generatsiya qilgan compose" "/api/v1/applications/$UUID" \
+          show "Coolify generatsiya qilgan compose" "/api/v1/$KIND/$UUID" \
             '.docker_compose // "(docker_compose maydoni mavjud emas)"'
-          show "Custom labels (base64 dekodlanadi)" "/api/v1/applications/$UUID" \
+          show "Custom labels (base64 dekodlanadi)" "/api/v1/$KIND/$UUID" \
             '(.custom_labels // "") | if . == "" then "(mavjud emas)" else (try @base64d catch .) end'
 
           # Migratsiya faktlari: API env QIYMATINI beradimi (faqat uzunligi va maydon
           # nomlari chiqadi, qiymat emas), project/environment/server identifikatorlari.
-          show "Env obyekt maydonlari (birinchi yozuv)" "/api/v1/applications/$UUID/envs" \
+          show "Env obyekt maydonlari (birinchi yozuv)" "/api/v1/$KIND/$UUID/envs" \
             'if type=="array" then (.[0] // {}) | keys else (.data // []) | (.[0] // {}) | keys end'
-          show "Env qiymat uzunliklari (value / real_value)" "/api/v1/applications/$UUID/envs" \
+          show "Env qiymat uzunliklari (value / real_value)" "/api/v1/$KIND/$UUID/envs" \
             'if type=="array" then . else (.data // []) end | .[] | select(.is_preview != true) | "\(.key)  value_len=\((.value // "") | length)  real_len=\((.real_value // "") | length)"'
-          show "Ilova joylashuvi" "/api/v1/applications/$UUID" \
+          show "Ilova joylashuvi" "/api/v1/$KIND/$UUID" \
             '{environment_id, destination_id, destination_type, project: (.environment.project.name // .project.name // "?"), environment: (.environment.name // "?"), server: (.destination.server.name // "?")}'
           show "Projects" "/api/v1/projects" \
             'if type=="array" then .[] | {name, uuid, environments: ((.environments // []) | map(.name))} else . end'
@@ -96,13 +101,13 @@ jobs:
 
           # Env o'zgaruvchilari — FAQAT nomi va qiymat uzunligi (qiymat hech qachon
           # chiqarilmaydi). Majburiy sir yo'qolgan yoki bo'sh qolganini shu ko'rsatadi.
-          show "Env kalitlari (qiymatsiz)" "/api/v1/applications/$UUID/envs" \
+          show "Env kalitlari (qiymatsiz)" "/api/v1/$KIND/$UUID/envs" \
             'if type=="array" then . else (.data // []) end | .[] | "\(.key)  len=\((.value // "") | length)  runtime=\(.is_runtime // true)"'
 
           # Oxirgi deploy'lar va ularning Coolify logi (docker compose chiqishi shu yerda).
           # Javob shakli versiyaga qarab massiv yoki {data:[...]} — ikkalasi qabul qilinadi;
           # ajratib bo'lmasa xom javobning boshi ko'rsatiladi.
-          out=$(api "/api/v1/deployments/applications/$UUID") || true
+          out=$(api "/api/v1/deployments/$KIND/$UUID") || true
           code=$(printf '%s' "$out" | tail -n1); body=$(printf '%s' "$out" | sed '$d')
           echo "::group::Deploy ro'yxati (HTTP $code)"
           list=$(printf '%s' "$body" | jq -c '(.data // .deployments // .) | if type=="array" then . else [] end' 2>/dev/null || echo '[]')
@@ -122,4 +127,4 @@ jobs:
           # Konteyner loglari. Coolify bu endpointda compose'ning ASOSIY konteynerini
           # (bizda frontend nginx) qaytaradi; backend logi deploy logidagi
           # healthcheck kutish qatorlarida va serverda `docker logs` da ko'rinadi.
-          show "Konteyner loglari (oxirgi $LINES qator)" "/api/v1/applications/$UUID/logs?lines=$LINES" '.logs // .'
+          show "Konteyner loglari (oxirgi $LINES qator)" "/api/v1/$KIND/$UUID/logs?lines=$LINES" '.logs // .'

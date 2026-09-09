@@ -27,7 +27,7 @@ on:
       phase:
         description: "Bosqich"
         type: choice
-        options: [probe, prepare, redeploy, cutover, rollback]
+        options: [probe, prepare, redeploy, cutover, rollback, cleanup]
         default: probe
       new_uuid:
         description: "Yangi SERVICE uuid (Coolify URL'dagi /service/<uuid>)"
@@ -243,6 +243,43 @@ jobs:
             sleep 15
           done
           echo "::error title=Cutover tugallanmadi::15 daqiqada 200 kelmadi — rollback bosqichini ishga tushiring"; exit 1
+
+      - name: cleanup — eski Application'ni o'chirish (volume'lar QOLADI)
+        if: env.PHASE == 'cleanup'
+        run: |
+          set -uo pipefail; source "$RUNNER_TEMP/lib.sh"
+          # QAYTARIB BO'LMAYDIGAN amal — shuning uchun oldin to'rtta shart tekshiriladi.
+          echo "1) prod sog'lommi"
+          health || { echo "::error::Prod javob bermayapti — tozalash to'xtatildi"; exit 1; }
+          echo "2) yangi service ishlayaptimi"
+          api GET "/api/v1/services/$NEW"; ok || { echo "::error::Yangi service topilmadi (HTTP $CODE)"; exit 1; }
+          NST=$(printf '%s' "$BODY" | jq -r '.status // ""'); echo "   yangi service: $NST"
+          case "$NST" in running*) ;; *) echo "::error::Yangi service ishlamayapti ($NST) — tozalash to'xtatildi"; exit 1;; esac
+          echo "3) eski app to'xtaganmi va o'shami"
+          api GET "/api/v1/applications/$OLD"; ok || { echo "::notice title=Eski app allaqachon yo'q::$OLD topilmadi (HTTP $CODE) — tozalash shart emas"; exit 0; }
+          ONAME=$(printf '%s' "$BODY" | jq -r '.name // ""'); OST=$(printf '%s' "$BODY" | jq -r '.status // ""')
+          ODOM=$(printf '%s' "$BODY" | jq -r '.docker_compose_domains // ""')
+          # DIQQAT: apostrof `${x:-...}` ichida bash parserini buzadi — matn oldindan tayyorlanadi.
+          [ -n "$ODOM" ] || ODOM="(domen yoq)"
+          echo "   eski app: $ONAME  holat: $OST  domen: $ODOM"
+          case "$OST" in running*) echo "::error::Eski app HALI ISHLAYAPTI — avval to'xtating"; exit 1;; esac
+          case "$ONAME" in *shina*) ;; *) echo "::error::Kutilmagan resurs nomi ($ONAME) — noto'g'ri uuid bo'lishi mumkin"; exit 1;; esac
+          echo "4) o'chirish (volume'lar SAQLANADI)"
+          # `delete_volumes=false` ATAYLAB: eski volume'larda migratsiyadan oldingi
+          # baza turibdi — yagona zaxira nusxa emas, lekin bepul xavfsizlik. Ular
+          # keyinroq serverda qo'lda o'chiriladi.
+          api DELETE "/api/v1/applications/$OLD?delete_configurations=true&delete_volumes=false&docker_cleanup=true&delete_connected_networks=false"
+          echo "   DELETE -> HTTP $CODE: $(short 200)"
+          ok || { echo "::error::O'chirilmadi"; exit 1; }
+          sleep 5
+          api GET "/api/v1/applications/$OLD"
+          if [ "$CODE" = "404" ]; then
+            echo "::notice title=Tozalandi::Eski Application o'chirildi. Volume'lari serverda qoldi: mnb0…_postgres-data, _uploads-data, _backups-data"
+          else
+            echo "::warning::O'chirishdan keyin ham javob beryapti, HTTP $CODE"
+          fi
+          echo "5) prod hali sog'lommi"
+          health && echo "::notice::Prod tozalashdan keyin ham 200" || { echo "::error::Prod tozalashdan keyin javob bermayapti"; exit 1; }
 
       - name: rollback — eski app'ga qaytish
         if: env.PHASE == 'rollback'
