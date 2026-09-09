@@ -109,16 +109,18 @@ services:
       retries: 6
       start_period: 10s
 
-# Volume'lar MAVJUD nomlariga qadalgan (`external`): Coolify odatda ularni resurs
-# identifikatori bilan nomlaydi (`<uuid>_postgres-data`), ya'ni resurs qayta
-# yaratilsa yangi bo'sh volume paydo bo'lib, baza va rasmlar "yo'qolardi".
-# Qadab qo'yilgach istalgan resurs (git yoki raw compose) aynan shu ma'lumotga
-# ulanadi; `external` esa compose ularni hech qachon o'chirmasligini ham
-# kafolatlaydi. Nomlar 06.09.2026 da serverdagi `docker volume ls` dan olingan.
+# Volume'lar oddiy e'lon qilinadi: Coolify Service turi ularni resurs
+# identifikatori bilan nomlaydi (`<service-uuid>_postgres-data`).
+#
+# Ilgari bu yerda `external: true` + eski resursning volume nomi turardi — maqsad
+# resurs almashganda ma'lumotni saqlab qolish edi. 07.09.2026 migratsiyasi shuni
+# ko'rsatdi: **Service turi bu e'lonni E'TIBORSIZ qoldiradi** va baribir o'z
+# volume'ini yaratadi. Dalil: pinning turgan holda yangi service birinchi deploy'da
+# BO'SH baza bilan ko'tarildi (katalogda 10 ta demo mahsulot, 22 ta emas), ya'ni
+# eski volume'ga ulanmagan. Ma'lumot keyin qo'lda ko'chirildi.
+#
+# Ya'ni pinning hech narsa qilmasdi, faqat chalg'itardi va eski volume'lar
+# o'chirilgach "external volume not found" xatosiga aylanishi mumkin edi.
 volumes:
   postgres_data:
-    external: true
-    name: mnb0ofon9mrdcxdgrjluiw9o_postgres-data
   uploads_data:
-    external: true
-    name: mnb0ofon9mrdcxdgrjluiw9o_uploads-data
