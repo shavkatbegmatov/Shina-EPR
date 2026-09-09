@@ -71,17 +71,18 @@ limitlar) bittalab qaytarish — Service turi qoidalari `DEPLOY.md` 3a.
   **bittalab** qaytariladi, har biridan keyin deploy natijasi kuzatiladi.
   Frontend'ni backend sog'ligiga bog'lash esa umuman qaytarilmasin: aynan o'sha
   backend nosozligini butun saytning tushishiga aylantirgan.
-- **Raw compose Service'ga o'tildi (07.09.2026).** Server endi repozitoriyni klon qilmaydi;
-  compose repodan API orqali yuboriladi (`DEPLOY.md` 3a). Qolgan tozalash: (a) eski
-  Application `mnb0ofon9mrdcxdgrjluiw9o` — bir necha kun kuzatilgach Coolify'da o'chirish
-  (volume'lari `external` bo'lgani uchun qolaveradi; keyin `mnb0…_postgres-data`,
-  `mnb0…_uploads-data`, `mnb0…_backups-data` volume'larini ham qo'lda o'chirish mumkin — yangi
-  service o'z volume'larida ishlaydi); (b) yangi service'da eskirgan `backend`/`db` sub-app
-  yozuvlari (nomlar `shina-*` ga o'zgargan) — UI'da Delete: ular konteynersiz turgani
-  uchun Coolify service'ni doim `degraded:unhealthy` deb ko'rsatadi (deploy skripti bunga
-  qaramaydi, sog'liqqa qaraydi); (c) `coolify-diagnose.yml` hali
-  application yo'llarini so'raydi — service'ga moslash; (d) `COOLIFY_MIGRATE_ENVS` secret'i
-  yaratilmagan, o'chirish shart emas.
+- **Raw compose Service'ga o'tish — tozalash yakunlandi (10.09.2026).** Server repozitoriyni
+  klon qilmaydi; compose repodan API orqali yuboriladi (`DEPLOY.md` 3a). Bajarilgani: eski
+  Application `mnb0ofon9mrdcxdgrjluiw9o` o'chirildi (`coolify-migrate.yml` → `cleanup`,
+  to'rt qorovul bilan: prod 200, yangi service running, eski to'xtagan, nomi mos);
+  eskirgan `backend`/`db` sub-app yozuvlari UI'dan o'chirildi (service endi
+  `running:healthy`); `coolify-diagnose.yml` resurs turini o'zi aniqlaydi.
+  **Qolgani (ixtiyoriy, serverda bitta buyruq):** eski volume'lar
+  `mnb0ofon9mrdcxdgrjluiw9o_{postgres,uploads,backups}-data` — ularda migratsiyadan
+  oldingi baza turibdi, ~70 MB. Ishonch hosil qilingach:
+  `docker volume rm mnb0ofon9mrdcxdgrjluiw9o_postgres-data mnb0ofon9mrdcxdgrjluiw9o_uploads-data mnb0ofon9mrdcxdgrjluiw9o_backups-data`.
+  Coolify'da eskirgan tokenlarni Revoke qilish ham qoldi — kerakli ikkitasi
+  `github-actions-shina-write` va `github-actions-deploy-shina`.
 - **06.09.2026 uzilishi — yopildi (sabab: Coolify proksi porti).** Coolify 4.3.17 dan
   keyingi birinchi deploy'da Traefik frontend'ga `3000` portga urgan (nginx 80 da); compose'da
   `expose: ["80"]` bilan tuzatildi, CHANGELOG'da batafsil. Maven bump'i (`jjwt` 0.13.0,
