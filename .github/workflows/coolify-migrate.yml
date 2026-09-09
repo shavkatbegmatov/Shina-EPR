@@ -32,6 +32,9 @@ on:
       new_uuid:
         description: "Yangi SERVICE uuid (Coolify URL'dagi /service/<uuid>)"
         default: "hi3x8b45gvbqslhrcqh6eggu"
+      old_uuid:
+        description: "Eski APPLICATION uuid — cutover'dan keyin webhook secret'i yangi resursni ko'rsatadi, shuning uchun alohida beriladi"
+        default: "mnb0ofon9mrdcxdgrjluiw9o"
 
 permissions:
   contents: read
@@ -56,6 +59,7 @@ jobs:
       COOLIFY_MIGRATE_ENVS: ${{ secrets.COOLIFY_MIGRATE_ENVS }}
       PHASE: ${{ github.event.inputs.phase }}
       NEW: ${{ github.event.inputs.new_uuid }}
+      OLD_INPUT: ${{ github.event.inputs.old_uuid }}
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
 
