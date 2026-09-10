@@ -148,10 +148,17 @@ jobs:
   # yiqilgan bo'lsa ham deploy ketaverdi, ya'ni u faqat xabar berardi, himoya
   # qilmasdi. Mantiq takrorlanmasin uchun reusable workflow sifatida chaqiriladi.
   #
-  # Har push'da yuguradi (faqat compose o'zgarganda emas): u `build-and-push` bilan
-  # parallel ketadi va undan tez tugaydi, ya'ni umumiy vaqtga ta'sir qilmaydi.
+  # Master push'da HAR SAFAR yuguradi (faqat compose o'zgarganda emas): u
+  # `build-and-push` bilan parallel ketadi va undan tez tugaydi, ya'ni umumiy vaqtga
+  # ta'sir qilmaydi.
+  #
+  # `if` sharti nusxa yugurishni to'sadi: PR'da shox push'i tekshiruvni mustaqil
+  # ishga tushiradi (`compose-check.yml` ning o'z `push` trigger'i), bu job ham
+  # ishlasa bitta commit ikki marta tekshirilardi. Deploy faqat master push'da
+  # bo'lgani uchun to'siq bundan zaiflashmaydi.
   compose-check:
     name: Compose check
+    if: github.event_name == 'push'
     uses: ./.github/workflows/compose-check.yml
 
   build-and-push:

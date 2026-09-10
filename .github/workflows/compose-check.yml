@@ -26,9 +26,17 @@ on:
 permissions:
   contents: read
 
-# Concurrency ATAYLAB yo'q. `cancel-in-progress` bo'lsa, master'ga ketma-ket ikki
-# push bo'lganda ikkinchisi birinchi run'ning tekshiruvini bekor qilardi — bekor
-# qilingan `needs` esa deploy'ni to'xtatib qo'yadi. Navbatni `ci.yml` boshqaradi.
+# Guruh nomi ATAYLAB `compose-check-` bilan boshlanadi. `workflow_call` ichida
+# `github.workflow` CHAQIRUVCHInikiga ("CI/CD") teng bo'ladi, ya'ni prefiksiz guruh
+# `ci.yml`ning o'z guruhi bilan ustma-ust tushib, chaqirilgan job o'zini kutib
+# qolishi mumkin edi.
+#
+# Master'da bekor qilish xavfi yo'q: `ci.yml` master run'larini bekor qilmasdan
+# NAVBATGA qo'yadi, ya'ni ikkita chaqirilgan tekshiruv bir vaqtda yugurmaydi.
+# Shoxlarda esa eskirgan run bekor qilinadi — ketma-ket force-push'da foydali.
+concurrency:
+  group: compose-check-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
 
 jobs:
   check:
@@ -37,6 +45,19 @@ jobs:
     timeout-minutes: 12
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      # Bu tekshiruv deploy'ga to'siq bo'lgani uchun Docker Hub pull limiti endi
+      # RELIZNI to'xtatadi: image kelmasa deploy ham ketmaydi. `backend-ci` dagi
+      # bilan bir xil qayta urinish shuning uchun.
+      - name: Postgres image (Hub pull limiti uchun)
+        run: |
+          for i in 1 2 3; do
+            if docker pull --quiet postgres:16-alpine; then exit 0; fi
+            echo "::warning title=Docker pull urinishi $i yiqildi::postgres:16-alpine tortilmadi, 20 s dan keyin qayta urinamiz."
+            sleep 20
+          done
+          echo "::error title=Docker Hub image tortilmadi::postgres:16-alpine 3 urinishda ham kelmadi (ehtimol Hub pull limiti). Compose emas, muhit yiqildi."
+          exit 1
 
       - name: Sintaksis va interpolyatsiya
         working-directory: infra/coolify
@@ -57,8 +78,8 @@ jobs:
           import yaml, io, os, sys
           src = yaml.safe_load(io.open(os.path.join(os.environ['GITHUB_WORKSPACE'], 'infra', 'coolify', 'docker-compose.yml'), encoding='utf-8').read())
           if 'shina-backup' not in src['services']:
-              io.open('/tmp/bk/SKIP', 'w').write('no sidecar')
-              print("shina-backup servisi yo'q, sidecar tekshiruvi o'tkazib yuborildi")
+              io.open(os.path.join('/tmp/bk', 'MISSING'), 'w').write('no sidecar')
+              print("shina-backup servisi compose'da yo'q")
               sys.exit(0)
           bk = src['services']['shina-backup']
           bk['environment'] = {
@@ -87,9 +108,13 @@ jobs:
           io.open('/tmp/bk/docker-compose.yml', 'w', encoding='utf-8', newline='\n').write(
               yaml.safe_dump(test, sort_keys=False, allow_unicode=True, width=10000))
           PY
-          if [ -f /tmp/bk/SKIP ]; then
-            echo "::notice title=Sidecar yo'q::compose'da shina-backup topilmadi, tekshiruv o'tkazib yuborildi"
-            exit 0
+          # Sidecar YO'Qligi — XATO, o'tkazib yuborish emas. Bu tekshiruv aynan shu
+          # regressiyadan himoya qiladi: 03.09.2026 da sidecar prod tushganda compose
+          # bilan birga olib tashlangan va bir hafta hech kim sezmagan. Agar u ataylab
+          # olib tashlansa, bu tekshiruvni ham birga yangilash kerak.
+          if [ -f /tmp/bk/MISSING ]; then
+            echo "::error title=Sidecar yo'q::compose'da `shina-backup` topilmadi. Avtomatik zaxira shu servisda — ataylab olib tashlangan bo'lsa, compose-check.yml ni ham yangilang."
+            exit 1
           fi
           # Uploads bo'sh bo'lmasin — tar haqiqiy fayl bilan sinalsin
           docker compose up -d

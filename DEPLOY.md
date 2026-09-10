@@ -218,7 +218,13 @@ bir necha KB bo'ladi, ya'ni kichik fayl mount xatosidan darak beradi.
 > bilan yugurtirib, dump chindan yasalgani va `uploads` arxivi BO'SH emasligini
 > tekshiradi. **Bu tekshiruv deploy'ga to'siq**: master'da u `ci.yml` ichidan
 > chaqiriladi va yiqilsa deploy umuman boshlanmaydi (prod eski holatda qoladi).
-> Shoxlarda mustaqil yuguradi, ya'ni PR ochmasdan ham sinash mumkin. Ilgari bu sidecar 03.09.2026 da qo'shilib, prod tushganda butun compose
+> Shoxlarda mustaqil yuguradi, ya'ni PR ochmasdan ham sinash mumkin.
+>
+> Tekshiruvning o'zi buzilib qolsa (masalan Docker Hub pull limiti) reliz bloklanadi.
+> Zaxira yo'l: image'lar GHCR'ga allaqachon chiqqan bo'ladi, shuning uchun Coolify
+> panelidan **Redeploy** qilish yoki `coolify-recover.yml` workflow'ini ishlatish
+> mumkin. Bunda compose YANGILANMAYDI (uni faqat deploy job'i yuboradi), ya'ni
+> tekshirilmagan compose prodga tushmaydi. Ilgari bu sidecar 03.09.2026 da qo'shilib, prod tushganda butun compose
 > bilan qaytarib olingan (`0ef2779`) va bir hafta tiklanmagan — tekshiruv aynan shu
 > sinf xatolarni ushlash uchun.
 >
