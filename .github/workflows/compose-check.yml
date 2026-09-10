@@ -164,5 +164,41 @@ jobs:
             docker compose down -v || true
             exit 1
           fi
+
+          # JADVAL. Dastlabki nusxa sikldan OLDIN olinadi, ya'ni sikl butunlay
+          # yiqilsa ham yuqoridagi tekshiruvlar yashil qolardi va KUNLIK zaxira
+          # hech qachon otmasdi. Bu yerda siklning haqiqatan kutayotgani va
+          # to'g'ri muddat tanlagani tekshiriladi.
+          #
+          # 10.09.2026 da lokalda isbotlangan: `10#` prefiksi BusyBox ash uchun SHART
+          # (usiz `08` arifmetik xato beradi), maqsad vaqti surib sinalganda sikl
+          # aynan o'sha daqiqada ikkinchi nusxani yasadi.
+          slp=""
+          for i in $(seq 1 10); do
+            slp=$(docker compose exec -T shina-backup sh -c 'ps -o args' | tr -d '\r' | awk '$1 == "sleep" { if (!f) { print $2; f = 1 } }')
+            if [ -n "$slp" ]; then break; fi
+            sleep 3
+          done
+          now=$(docker compose exec -T shina-backup sh -c 'echo $(( 10#$(date -u +%H) * 3600 + 10#$(date -u +%M) * 60 + 10#$(date -u +%S) ))' | tr -d '\r')
+          tgt=79200          # 22:00 UTC = 03:00 Toshkent
+          if [ "$now" -lt "$tgt" ]; then exp=$(( tgt - now )); else exp=$(( 86400 - now + tgt )); fi
+          # `sleep` konteynerda BIZDAN OLDIN hisoblangan, shuning uchun u kutilgandan
+          # aynan o'shancha katta bo'ladi. Ya'ni farq bir tomonlama va kichik.
+          # 86400 bo'yicha modul yarim tunni va 22:00 chegarasini ham to'g'ri hisoblaydi
+          # (aks holda aynan 22:00 da yugurgan CI yolg'ondan yiqilardi).
+          d=-1
+          if [ -n "$slp" ]; then d=$(( (slp - exp + 86400) % 86400 )); fi
+          # DIQQAT: ${slp:-...} ichiga apostrof yozilmaydi. Qo'shtirnoq ichidagi
+          # bunday apostrof qatorni uzadi va `bash -n` buni ko'rmasligi mumkin —
+          # keyingi apostrof uni tasodifan juftlashtirib qo'yadi.
+          disp="$slp"
+          if [ -z "$slp" ]; then disp="topilmadi"; fi
+          echo "sikl kutmoqda: $disp s, jadval bo'yicha: $exp s, farq: $d s"
+          if [ -z "$slp" ] || [ "$d" -gt 300 ]; then
+            echo "::error title=Jadval ishlamayapti::sidecar ${slp:-hech narsa} s kutyapti, 22:00 UTC uchun ~$exp s kutilardi. Dastlabki nusxa yasalgan, lekin KUNLIK jadval otmaydi."
+            docker compose logs --no-color shina-backup | tail -20
+            docker compose down -v || true
+            exit 1
+          fi
           echo "::notice title=Zaxira ishlayapti::db dump va uploads arxivi yaratildi (ichida fayl bor), gzip butun"
           docker compose down -v || true
