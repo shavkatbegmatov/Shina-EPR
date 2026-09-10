@@ -106,7 +106,10 @@ limitlar) bittalab qaytarish — Service turi qoidalari `DEPLOY.md` 3a.
   SQL boshi to'g'ri, `uploads` arxivi bo'sh emas — bu tekshiruv compose o'zgarishlarida
   qoladi. Coolify'ning o'z jadvalli backup'i bu bazaga tegishli emas (compose ichidagi
   `shina-db` `/api/v1/databases/` da "not found").
-  Tekshirish: `docker exec $(docker ps -q --filter name=shina-backup-hi3x8b45gvbqslhrcqh6eggu) ls -lh /backups`.
+  **Prodda tasdiqlandi (10.09.2026, deploy 02:47):** sidecar `db_2026-09-10_0247.sql.gz`
+  (32 KB — bo'sh baza emas, jonli ma'lumot) va `uploads_2026-09-10_0247.tar.gz` yasadi.
+  Tekshirish: `docker exec $(docker ps -q --filter name=shina-backup-hi3x8b45gvbqslhrcqh6eggu) ls -lh /backups`,
+  yoki serversiz — `coolify-diagnose.yml` workflow'i sidecar logini chiqaradi.
   Qo'lda olingan eski nusxalar `/root/protektor-*.sql.gz` da qoldi.
 
 ### 03.09.2026 da bajarilgan (texnik audit bo'yicha)
