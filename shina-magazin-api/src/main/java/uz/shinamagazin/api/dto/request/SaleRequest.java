@@ -39,5 +39,17 @@ public class SaleRequest {
     @NotNull(message = "To'lov usuli kiritilishi shart")
     private PaymentMethod paymentMethod;
 
+    /**
+     * Avval qabul qilingan barter hujjati (mijoz shinasini oldinroq qoldirgan).
+     *
+     * <p>{@link #tradeIn} bilan birga berilmaydi — ikkalasi ham berilsa qaysi
+     * baho ishlatilgani noaniq bo'lardi.
+     */
+    private Long tradeInId;
+
+    /** Kassada shu zahoti qabul qilinayotgan eski shinalar. */
+    @Valid
+    private TradeInRequest tradeIn;
+
     private String notes;
 }

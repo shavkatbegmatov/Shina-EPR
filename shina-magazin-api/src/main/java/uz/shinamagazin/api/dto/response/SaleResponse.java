@@ -62,6 +62,14 @@ public class SaleResponse {
     @ExportColumn(header = "Qarz", order = 11, type = ColumnType.CURRENCY)
     private BigDecimal debtAmount;
 
+    /**
+     * Barter — eski shina hisobiga ayirilgan summa.
+     *
+     * <p>To'lanishi kerak bo'lgan summa: {@code totalAmount - tradeInAmount}.
+     * Chek va POS shu maydondan o'qiydi.
+     */
+    private BigDecimal tradeInAmount;
+
     @ExportColumn(header = "To'lov usuli", order = 12, type = ColumnType.ENUM)
     private PaymentMethod paymentMethod;
 
@@ -93,6 +101,7 @@ public class SaleResponse {
                 .totalAmount(sale.getTotalAmount())
                 .paidAmount(sale.getPaidAmount())
                 .debtAmount(sale.getDebtAmount())
+                .tradeInAmount(sale.getTradeInAmount())
                 .paymentMethod(sale.getPaymentMethod())
                 .paymentStatus(sale.getPaymentStatus())
                 .status(sale.getStatus())

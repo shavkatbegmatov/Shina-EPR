@@ -132,7 +132,16 @@ public class SaleReturnService {
         // Jami qaytarish savdo summasidan oshmasligi kerak. Miqdor chegarasi
         // yuqorida tekshirilgan, lekin qatorlar bo'yicha yaxlitlash tiyinlik
         // farq berishi mumkin — u esa `paidAmount` ni manfiyga olib chiqardi.
+        //
+        // Barter ham ayiriladi: mijoz savdoning bir qismini eski shinasi bilan
+        // "to'lagan", ya'ni u qism uchun kassadan pul chiqmagan. Ayirilmasa
+        // to'liq qaytarishda do'kon baholangan summani NAQD chiqarib berardi,
+        // eski shinalar esa omborda qolaverardi. Shinalarni qaytarish alohida
+        // amal — hujjatdagi mahsulotlar ombordan chiqariladi.
+        BigDecimal tradeIn = sale.getTradeInAmount() != null
+                ? sale.getTradeInAmount() : BigDecimal.ZERO;
         BigDecimal maxRefundable = sale.getTotalAmount()
+                .subtract(tradeIn)
                 .subtract(saleReturnRepository.sumRefundedBySale(saleId));
         if (refundAmount.compareTo(maxRefundable) > 0) {
             refundAmount = maxRefundable.max(BigDecimal.ZERO);

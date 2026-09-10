@@ -61,6 +61,26 @@ public class Sale extends BaseEntity implements Auditable {
     @Builder.Default
     private BigDecimal debtAmount = BigDecimal.ZERO;
 
+    /**
+     * Barter — mijozdan qabul qilingan eski shinalarning bahosi.
+     *
+     * <p>ATAYLAB {@code totalAmount} dan ayirilmaydi: sotilgan tovarning
+     * qiymati o'zgarmasligi kerak, aks holda tushum hisoboti kamayib
+     * ko'rinardi. To'lanishi kerak bo'lgan summa —
+     * {@code totalAmount - tradeInAmount}, va {@code paidAmount} faqat shu
+     * qismni qabul qiladi. Kassaga pul tushmagani uchun Z-hisobot buni naqd
+     * deb sanamaydi.
+     */
+    @Column(name = "trade_in_amount", nullable = false, precision = 15, scale = 2)
+    @Builder.Default
+    private BigDecimal tradeInAmount = BigDecimal.ZERO;
+
+    /** To'lanishi kerak bo'lgan summa: savdo qiymatidan barter ayirilgandan keyin. */
+    public BigDecimal amountDue() {
+        BigDecimal tradeIn = tradeInAmount != null ? tradeInAmount : BigDecimal.ZERO;
+        return totalAmount.subtract(tradeIn).max(BigDecimal.ZERO);
+    }
+
     @Enumerated(EnumType.STRING)
     @Column(name = "payment_method", nullable = false, length = 20)
     private PaymentMethod paymentMethod;
@@ -134,6 +154,7 @@ public class Sale extends BaseEntity implements Auditable {
         map.put("totalAmount", this.totalAmount);
         map.put("paidAmount", this.paidAmount);
         map.put("debtAmount", this.debtAmount);
+        map.put("tradeInAmount", this.tradeInAmount);
         map.put("paymentMethod", this.paymentMethod);
         map.put("paymentStatus", this.paymentStatus);
         map.put("status", this.status);

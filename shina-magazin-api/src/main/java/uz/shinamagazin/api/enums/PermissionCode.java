@@ -39,6 +39,11 @@ public enum PermissionCode {
     SALES_DELETE("SALES", "DELETE"),
     SALES_REFUND("SALES", "REFUND"),
 
+    // TRADE_INS module (barter — eski shinani hisobga olish)
+    TRADE_INS_VIEW("TRADE_INS", "VIEW"),
+    TRADE_INS_CREATE("TRADE_INS", "CREATE"),
+    TRADE_INS_CANCEL("TRADE_INS", "CANCEL"),
+
     // CUSTOMERS module
     CUSTOMERS_VIEW("CUSTOMERS", "VIEW"),
     CUSTOMERS_CREATE("CUSTOMERS", "CREATE"),

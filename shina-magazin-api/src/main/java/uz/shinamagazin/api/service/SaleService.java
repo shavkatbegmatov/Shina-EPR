@@ -8,6 +8,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import uz.shinamagazin.api.dto.request.SaleItemRequest;
 import uz.shinamagazin.api.dto.request.SaleRequest;
+import uz.shinamagazin.api.dto.request.TradeInRequest;
 import uz.shinamagazin.api.dto.response.SaleResponse;
 import uz.shinamagazin.api.entity.*;
 import uz.shinamagazin.api.enums.*;
@@ -42,6 +43,7 @@ public class SaleService {
     private final SettingsService settingsService;
     private final DocumentNumberService documentNumberService;
     private final CashShiftService cashShiftService;
+    private final TradeInService tradeInService;
 
     public Page<SaleResponse> getAllSales(LocalDate startDate, LocalDate endDate, Pageable pageable) {
         LocalDate effectiveStart = startDate;
@@ -209,6 +211,26 @@ public class SaleService {
         BigDecimal totalAmount = subtotal.subtract(discountAmount);
         sale.setTotalAmount(totalAmount);
 
+        // Barter: mijozdan qabul qilingan eski shinalarning bahosi.
+        //
+        // Hujjat savdodan OLDIN yaratiladi (yoki oldinroq yaratilgani olinadi),
+        // chunki uning summasi to'lov hisobiga kiradi. Savdoga bog'lash esa
+        // savdo saqlangandan keyin — hujjatga sale_id yozilishi kerak.
+        TradeIn tradeIn = resolveTradeIn(request, currentUser);
+        BigDecimal tradeInAmount = tradeIn != null ? tradeIn.getTotalAmount() : BigDecimal.ZERO;
+
+        // Chegirmadagi qoida bilan bir xil: barter savdo summasidan oshmaydi.
+        // Oshsa savdo manfiy bo'lib, kassaga qaytim yozilishi kerak bo'lardi —
+        // bu esa alohida pul chiqimi hujjatini talab qiladi.
+        if (tradeInAmount.compareTo(totalAmount) > 0) {
+            throw new BadRequestException(
+                    "Barter bahosi savdo summasidan katta bo'lishi mumkin emas");
+        }
+        sale.setTradeInAmount(tradeInAmount);
+
+        // To'lanishi kerak bo'lgan summa: barter allaqachon "to'langan" qism.
+        BigDecimal amountDue = totalAmount.subtract(tradeInAmount);
+
         // Handle payment.
         // Kassaga TUSHGAN pul savdo summasidan ortiq bo'lishi mumkin emas:
         // POS'da "to'langan summa" maydoni mijoz uzatgan pulni ham qabul
@@ -217,14 +239,16 @@ public class SaleService {
         // Z-hisobot, sotuv hisoboti va chek uni tushum deb sanardi va
         // kassirga aynan qaytim summasicha soxta kamomad yozilardi.
         // Xaridlarda bunday chegara allaqachon bor (createPurchase).
-        BigDecimal paidAmount = request.getPaidAmount().min(totalAmount);
+        // Chegara barter ayirilgandan KEYINGI summa: 900 000 lik savdoda
+        // 200 000 barter bo'lsa, kassaga eng ko'pi 700 000 tushadi.
+        BigDecimal paidAmount = request.getPaidAmount().min(amountDue);
         sale.setPaidAmount(paidAmount);
 
-        BigDecimal debtAmount = totalAmount.subtract(paidAmount);
+        BigDecimal debtAmount = amountDue.subtract(paidAmount);
         sale.setDebtAmount(debtAmount.max(BigDecimal.ZERO));
 
         // Determine payment status
-        if (paidAmount.compareTo(totalAmount) >= 0) {
+        if (paidAmount.compareTo(amountDue) >= 0) {
             sale.setPaymentStatus(PaymentStatus.PAID);
         } else if (paidAmount.compareTo(BigDecimal.ZERO) > 0) {
             sale.setPaymentStatus(PaymentStatus.PARTIAL);
@@ -235,6 +259,13 @@ public class SaleService {
         sale.setStatus(SaleStatus.COMPLETED);
 
         Sale savedSale = saleRepository.save(sale);
+
+        // Barter hujjatini savdoga bog'lash — savdo saqlangandan keyin, chunki
+        // hujjatga sale_id yoziladi. Hujjat bir marta ishlatiladi: `applyToSale`
+        // holatni tekshiradi va APPLIED ga o'tkazadi.
+        if (tradeIn != null) {
+            tradeInService.applyToSale(tradeIn.getId(), savedSale);
+        }
 
         // Send notification about new sale to staff
         String customerName = customer != null ? customer.getFullName() : "Noma'lum mijoz";
@@ -279,6 +310,38 @@ public class SaleService {
     }
 
     @Transactional
+    /**
+     * So'rovdagi barterni hujjatga aylantiradi.
+     *
+     * <p>Ikki yo'l bor: kassada shu zahoti qabul qilish ({@code tradeIn}) yoki
+     * mijoz oldinroq qoldirgan hujjatni olish ({@code tradeInId}). Ikkalasi ham
+     * berilsa xato: qaysi baho ishlatilgani noaniq bo'lardi va kassir
+     * o'zi bilmagan holda ikkinchisini yo'qotardi.
+     */
+    private TradeIn resolveTradeIn(SaleRequest request, User currentUser) {
+        TradeInRequest inline = request.getTradeIn();
+        Long existingId = request.getTradeInId();
+
+        boolean hasInline = inline != null && inline.getItems() != null && !inline.getItems().isEmpty();
+        if (hasInline && existingId != null) {
+            throw new BadRequestException(
+                    "Barterni bir vaqtda ham tanlab, ham yangi qabul qilib bo'lmaydi");
+        }
+
+        if (existingId != null) {
+            return tradeInService.findForSale(existingId);
+        }
+        if (hasInline) {
+            // Mijoz savdodan olinadi: kassir barter formasida uni qayta
+            // tanlamasligi kerak, aks holda ikki joyda ikki xil mijoz bo'lardi.
+            if (inline.getCustomerId() == null) {
+                inline.setCustomerId(request.getCustomerId());
+            }
+            return tradeInService.acceptInternal(inline, currentUser.getId());
+        }
+        return null;
+    }
+
     public SaleResponse cancelSale(Long id) {
         Sale sale = saleRepository.findByIdWithItems(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Sotuv", "id", id));
@@ -354,6 +417,11 @@ public class SaleService {
             customerRepository.save(customer);
         }
         cancelOpenDebtRecords(sale);
+
+        // Barter ham qaytariladi: qabul qilingan eski shinalar ombordan
+        // chiqariladi (mijozga qaytadi) va hujjat bekor bo'ladi. Busiz do'kon
+        // savdoni bekor qilib, mijozning shinalarini ham olib qolardi.
+        tradeInService.reverseForSale(sale, currentUser);
 
         sale.setStatus(SaleStatus.CANCELLED);
         return SaleResponse.from(saleRepository.save(sale));

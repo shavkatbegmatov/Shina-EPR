@@ -44,6 +44,8 @@ public class DocumentNumberService {
     private static final String PURCHASE_RETURN_KEY = "RT-";
     /** Savdo qaytarish — ta'minotchiga qaytarishdan (RT-) farqlanadi. */
     private static final String SALE_RETURN_KEY = "SR-";
+    /** Barter: eski shina qabuli. */
+    private static final String TRADE_IN_KEY = "TI-";
 
     /**
      * Atomik "oshir va qaytar".
@@ -90,6 +92,12 @@ public class DocumentNumberService {
     @Transactional(propagation = Propagation.MANDATORY)
     public String nextSaleReturnNumber() {
         return String.format("%s%06d", SALE_RETURN_KEY, next(SALE_RETURN_KEY));
+    }
+
+    /** Barter (eski shina qabuli) raqami: {@code TI-000001}. */
+    @Transactional(propagation = Propagation.MANDATORY)
+    public String nextTradeInNumber() {
+        return String.format("%s%06d", TRADE_IN_KEY, next(TRADE_IN_KEY));
     }
 
     private long next(String key) {
