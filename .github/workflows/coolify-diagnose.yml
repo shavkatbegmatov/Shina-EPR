@@ -153,4 +153,30 @@ jobs:
           # Konteyner loglari. Coolify bu endpointda compose'ning ASOSIY konteynerini
           # (bizda frontend nginx) qaytaradi; backend logi deploy logidagi
           # healthcheck kutish qatorlarida va serverda `docker logs` da ko'rinadi.
-          show "Konteyner loglari (oxirgi $LINES qator)" "/api/v1/$KIND/$UUID/logs?lines=$LINES" '.logs // .'
+          # Sub-servislar. Service turida compose API orqali qaytarilmaydi
+          # (docker_compose_len=0), shuning uchun qaysi konteynerlar Coolify
+          # ro'yxatidan o'tganini faqat shu ro'yxat ko'rsatadi.
+          echo "::group::Sub-servislar"
+          sed '$d' "$RUNNER_TEMP/res.json" | jq -r '{applications: ((.applications // []) | map(.name)), databases: ((.databases // []) | map(.name))}' 2>/dev/null || true
+          echo "::endgroup::"
+
+          # Konteyner loglari. Service turida bu endpoint sub-servis nomini talab
+          # qiladi ("Sub service name is required."), parametr nomi esa Coolify
+          # versiyasiga qarab farq qiladi — bir nechtasi sinaladi.
+          # Faqat zaxira sidecar'i olinadi: uning logi fayl nomlari va
+          # o'lchamlaridan iborat, sir chiqmaydi.
+          echo "::group::shina-backup logi (oxirgi $LINES qator)"
+          got=0
+          for prm in service_name sub_service_name name container service; do
+            [ "$got" = "1" ] && break
+            out=$(api "/api/v1/$KIND/$UUID/logs?${prm}=shina-backup&lines=$LINES") || true
+            c=$(printf '%s' "$out" | tail -n1)
+            body=$(printf '%s' "$out" | sed '$d')
+            printf '  %-18s -> %s\n' "$prm" "$c"
+            if [ "$c" = "200" ]; then
+              got=1
+              printf '%s' "$body" | jq -r '.logs // .' 2>/dev/null || printf '%s\n' "$body" | head -c 8000
+            fi
+          done
+          [ "$got" = "1" ] || echo "log olinmadi: parametr nomi topilmadi"
+          echo "::endgroup::"
