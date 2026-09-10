@@ -201,6 +201,15 @@ Ishlayotganini tekshirish (serverda):
 docker exec $(docker ps -q --filter name=shina-backup-hi3x8b45gvbqslhrcqh6eggu) ls -lh /backups
 ```
 
+Serverga kirmasdan ham ko'rish mumkin: `coolify-diagnose.yml` workflow'i (`workflow_dispatch`)
+sub-servislar ro'yxatini va `shina-backup` logini chiqaradi. Log qatori shu ko'rinishda:
+`backup OK: /backups/db_<sana>.sql.gz (32.0K)`. **O'lchamga qarang** — bo'sh baza dump'i
+bir necha KB bo'ladi, ya'ni kichik fayl mount xatosidan darak beradi.
+
+> Coolify `shina-backup` ni postgres image'i bo'lgani uchun `databases` sub-resursi deb
+> ro'yxatga oladi, lekin bu unga jadvalli backup qo'shmaydi (yuqoriga qarang). Loglar
+> endpointi sub-servis nomini `sub_service_name` parametrida kutadi.
+
 > Vaqt UTC'da hisoblanadi: alpine'da tzdata yo'q, BusyBox `date -d` esa GNU sintaksisini
 > tushunmaydi — shuning uchun sana arifmetikasi emas, yarim tundan o'tgan soniyalar
 > bo'yicha kutish (`infra/coolify/docker-compose.yml` izohiga qarang).
