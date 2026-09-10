@@ -215,8 +215,10 @@ bir necha KB bo'ladi, ya'ni kichik fayl mount xatosidan darak beradi.
 > bo'yicha kutish (`infra/coolify/docker-compose.yml` izohiga qarang).
 >
 > Sidecar'ni o'zgartirsangiz, `compose-check.yml` workflow'i uni CI'da haqiqiy Docker
-> bilan yugurtirib, dump chindan yasalgani va `uploads` arxivi BO'SH emasligini
-> tekshiradi. **Bu tekshiruv deploy'ga to'siq**: master'da u `ci.yml` ichidan
+> bilan yugurtirib, dump chindan yasalgani, `uploads` arxivi BO'SH emasligini va
+> KUNLIK JADVAL otishini tekshiradi (sidecar qancha kutayotgani `ps` dan o'qilib,
+> 22:00 UTC bilan solishtiriladi). Oxirgisi shuning uchun: dastlabki nusxa sikldan
+> oldin olinadi, ya'ni sikl yiqilsa ham qolgan tekshiruvlar yashil qolardi. **Bu tekshiruv deploy'ga to'siq**: master'da u `ci.yml` ichidan
 > chaqiriladi va yiqilsa deploy umuman boshlanmaydi (prod eski holatda qoladi).
 > Shoxlarda mustaqil yuguradi, ya'ni PR ochmasdan ham sinash mumkin.
 >
