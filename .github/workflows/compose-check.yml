@@ -88,6 +88,10 @@ jobs:
           docker compose up -d
           docker compose run --rm --no-deps -v bk_uploads_data:/u --entrypoint sh shina-backup \
             -c 'mkdir -p /u/2026 && echo test-image-bytes > /u/2026/test.jpg' || true
+          # Konteyner ishga tushganda DARHOL nusxa oladi — u test fayli ekilishidan
+          # OLDIN olingan va bo'sh bo'ladi. Restart'dan oldin tozalanmasa, tekshiruv
+          # o'sha eski bo'sh arxivni ko'rib yiqiladi (10.09.2026, master).
+          docker compose exec -T shina-backup sh -c 'rm -f /backups/*.gz' || true
           docker compose restart shina-backup
 
           ok=0
@@ -113,14 +117,14 @@ jobs:
           fi
 
           # Dump haqiqatan tiklanadigan bo'lsin: gzip butun va SQL boshi to'g'ri
-          f=$(docker compose exec -T shina-backup sh -c 'ls -1 /backups/db_*.sql.gz | head -1' | tr -d '\r')
+          f=$(docker compose exec -T shina-backup sh -c 'ls -1t /backups/db_*.sql.gz | head -1' | tr -d '\r')
           docker compose exec -T shina-backup sh -c "gzip -t '$f' && gzip -dc '$f' | head -5"
 
           # Uploads arxivi BO'SH bo'lmasin. Faylning bor bo'lishi yetarli emas: mount
           # xato bo'lsa `tar` bo'sh arxiv yasaydi va u ham gzip jihatidan butun bo'ladi.
           # Prodda aynan shunday bo'shlik ko'rilgan (arxiv 90 bayt), shuning uchun arxiv
           # ichida ekilgan test fayli borligi TALAB qilinadi.
-          u=$(docker compose exec -T shina-backup sh -c 'ls -1 /backups/uploads_*.tar.gz | head -1' | tr -d '\r')
+          u=$(docker compose exec -T shina-backup sh -c 'ls -1t /backups/uploads_*.tar.gz | head -1' | tr -d '\r')
           arch=$(docker compose exec -T shina-backup sh -c "gzip -t '$u' && tar tzf '$u'" || true)
           if ! printf '%s' "$arch" | grep -q "test[.]jpg"; then
             echo "::error title=Uploads arxivi bo'sh::$u ichida ekilgan fayl yo'q, uploads_data mount'ini tekshiring"
