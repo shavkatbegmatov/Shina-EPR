@@ -216,7 +216,9 @@ bir necha KB bo'ladi, ya'ni kichik fayl mount xatosidan darak beradi.
 >
 > Sidecar'ni o'zgartirsangiz, `compose-check.yml` workflow'i uni CI'da haqiqiy Docker
 > bilan yugurtirib, dump chindan yasalgani va `uploads` arxivi BO'SH emasligini
-> tekshiradi. Ilgari bu sidecar 03.09.2026 da qo'shilib, prod tushganda butun compose
+> tekshiradi. **Bu tekshiruv deploy'ga to'siq**: master'da u `ci.yml` ichidan
+> chaqiriladi va yiqilsa deploy umuman boshlanmaydi (prod eski holatda qoladi).
+> Shoxlarda mustaqil yuguradi, ya'ni PR ochmasdan ham sinash mumkin. Ilgari bu sidecar 03.09.2026 da qo'shilib, prod tushganda butun compose
 > bilan qaytarib olingan (`0ef2779`) va bir hafta tiklanmagan — tekshiruv aynan shu
 > sinf xatolarni ushlash uchun.
 >

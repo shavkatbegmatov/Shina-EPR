@@ -9,19 +9,26 @@ name: Compose check
 # tushirilganda ma'lum bo'ladi. Bu workflow shu qismni izolyatsiyada yugurtiradi:
 # faqat `shina-db` va `shina-backup` ko'tariladi (ikkisi ham ommaviy
 # `postgres:16-alpine`), GHCR'dagi yopiq image'lar kerak emas.
+#
+# Master'da bu tekshiruv `ci.yml` ICHIDAN chaqiriladi va deploy'ga TO'SIQ bo'ladi
+# (`workflow_call`). Shoxlarda esa mustaqil yuguradi, ya'ni PR ochmasdan ham
+# compose o'zgarishini sinash mumkin. `branches-ignore: [master]` shuning uchun:
+# aks holda master'da ikki marta yugurardi.
 on:
   push:
+    branches-ignore: [master]
     paths:
       - 'infra/coolify/docker-compose.yml'
       - '.github/workflows/compose-check.yml'
   workflow_dispatch:
+  workflow_call:
 
 permissions:
   contents: read
 
-concurrency:
-  group: compose-check-${{ github.ref }}
-  cancel-in-progress: true
+# Concurrency ATAYLAB yo'q. `cancel-in-progress` bo'lsa, master'ga ketma-ket ikki
+# push bo'lganda ikkinchisi birinchi run'ning tekshiruvini bekor qilardi — bekor
+# qilingan `needs` esa deploy'ni to'xtatib qo'yadi. Navbatni `ci.yml` boshqaradi.
 
 jobs:
   check:
@@ -47,8 +54,8 @@ jobs:
           # Faqat db + backup servislarini ajratamiz. Sidecar TA'RIFI repodan
           # o'zgarmasdan olinadi — ya'ni aynan prodga ketadigan skript sinaladi.
           python3 - <<'PY'
-          import yaml, io, sys
-          src = yaml.safe_load(io.open('/home/runner/work/Shina-EPR/Shina-EPR/infra/coolify/docker-compose.yml', encoding='utf-8').read())
+          import yaml, io, os, sys
+          src = yaml.safe_load(io.open(os.path.join(os.environ['GITHUB_WORKSPACE'], 'infra', 'coolify', 'docker-compose.yml'), encoding='utf-8').read())
           if 'shina-backup' not in src['services']:
               io.open('/tmp/bk/SKIP', 'w').write('no sidecar')
               print("shina-backup servisi yo'q, sidecar tekshiruvi o'tkazib yuborildi")
