@@ -113,7 +113,7 @@ jobs:
           # bilan birga olib tashlangan va bir hafta hech kim sezmagan. Agar u ataylab
           # olib tashlansa, bu tekshiruvni ham birga yangilash kerak.
           if [ -f /tmp/bk/MISSING ]; then
-            echo "::error title=Sidecar yo'q::compose'da `shina-backup` topilmadi. Avtomatik zaxira shu servisda — ataylab olib tashlangan bo'lsa, compose-check.yml ni ham yangilang."
+            echo "::error title=Sidecar yo'q::compose'da shina-backup topilmadi. Avtomatik zaxira shu servisda — ataylab olib tashlangan bo'lsa, compose-check.yml ni ham yangilang."
             exit 1
           fi
           # Uploads bo'sh bo'lmasin — tar haqiqiy fayl bilan sinalsin
