@@ -161,28 +161,43 @@ const currencySuffix = (): string => {
   return suffix === 'common.sum' ? "so'm" : suffix;
 };
 
-export const formatCurrency = (amount: number): string => {
-  return new Intl.NumberFormat('uz-UZ', {
+/**
+ * Ming ajratkichi — uzilmaydigan bo'sh joy (U+00A0): "2 760 000".
+ *
+ * <p>Ilgari `Intl.NumberFormat('uz-UZ')` ishlatilardi, lekin uz-UZ uchun
+ * ajratkich brauzerning ICU/CLDR versiyasiga qarab har xil: bir brauzerda
+ * "2,760,000", boshqasida "2 760 000" — bitta sahifada summa vergul bilan,
+ * kiritish maydoni esa bo'sh joy bilan chiqib qolardi. Endi guruhlash
+ * en-US (doim vergul) orqali olinib, vergul shu belgiga almashtiriladi —
+ * natija har qanday brauzer, Node (testlar) va printerda bir xil.
+ * Kasr ajratkichi nuqta (`46.25`), avvalgi brauzer ko'rinishi bilan bir xil.
+ */
+export const THOUSANDS_SEPARATOR = '\u00a0';
+
+/** Raqamni ming ajratkichi bilan, qo'shimchasiz: `formatAmount(2760000)` → "2 760 000". */
+export const formatAmount = (value: number, maxFractionDigits = 0): string =>
+  new Intl.NumberFormat('en-US', {
     style: 'decimal',
     minimumFractionDigits: 0,
-    maximumFractionDigits: 0,
-  }).format(amount) + ' ' + currencySuffix();
+    maximumFractionDigits: maxFractionDigits,
+  })
+    .format(value)
+    .replace(/,/g, THOUSANDS_SEPARATOR);
+
+export const formatCurrency = (amount: number): string => {
+  return formatAmount(amount) + ' ' + currencySuffix();
 };
 
 export const formatNumber = (num: number): string => {
-  return new Intl.NumberFormat('uz-UZ').format(num);
+  return formatAmount(num, 3);
 };
 
 /**
  * Hujjat valyutasidagi summa: `$46.25`, `$5 296`. So'm uchun `formatCurrency`.
- * Kasr faqat kerak bo'lganda (46,25 → ko'rinadi, 555 → yo'q).
+ * Kasr faqat kerak bo'lganda (46.25 → ko'rinadi, 555 → yo'q).
  */
 export const formatForeign = (amount: number, currency: string = 'USD'): string => {
-  const formatted = new Intl.NumberFormat('uz-UZ', {
-    style: 'decimal',
-    minimumFractionDigits: 0,
-    maximumFractionDigits: 2,
-  }).format(amount);
+  const formatted = formatAmount(amount, 2);
   return currency === 'USD' ? `$${formatted}` : `${formatted} ${currency}`;
 };
 

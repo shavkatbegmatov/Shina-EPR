@@ -1,5 +1,6 @@
 import { useState, useRef, useCallback, useEffect } from 'react';
 import clsx from 'clsx';
+import { formatAmount } from '../../config/constants';
 
 interface CurrencyInputProps {
   value: number;
@@ -16,14 +17,11 @@ interface CurrencyInputProps {
   required?: boolean;
 }
 
-// Format number with thousand separators (1 234 567)
+// Ming ajratkichi — sahifadagi summalar (`formatCurrency`) bilan BIR XIL belgi,
+// ilgari bu yerda ru-RU, u yerda uz-UZ edi va ikkisi har xil ko'rinardi.
 const formatNumber = (num: number): string => {
   if (num === 0) return '';
-  return new Intl.NumberFormat('ru-RU', {
-    style: 'decimal',
-    minimumFractionDigits: 0,
-    maximumFractionDigits: 0,
-  }).format(num);
+  return formatAmount(num);
 };
 
 // Parse formatted string to number (removes spaces and non-digits)
