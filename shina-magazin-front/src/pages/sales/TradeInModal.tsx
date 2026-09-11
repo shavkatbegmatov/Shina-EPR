@@ -6,25 +6,13 @@ import { Button } from '@/ui';
 import { ModalPortal } from '../../components/common/Modal';
 import { CurrencyInput } from '../../components/ui/CurrencyInput';
 import { formatCurrency } from '../../config/constants';
+import { suggestResalePrice, usedTireSku } from '../../shared/tradeIn';
 import type { TradeInLine } from '../../types';
 
 interface Props {
   isOpen: boolean;
   onClose: () => void;
   onAdd: (line: Omit<TradeInLine, 'key'>) => void;
-}
-
-/** Server bilan bir xil kalit: `BU-205-55-R16[-BREND]` — kassir SKU o'ylamaydi. */
-export function usedTireSku(width: number, profile: number, diameter: number, brandName?: string): string {
-  const base = `BU-${width}-${profile}-R${diameter}`;
-  const code = (brandName ?? '').toUpperCase().replace(/[^A-Z0-9]/g, '').slice(0, 12);
-  return code ? `${base}-${code}` : base;
-}
-
-/** Kredit asosida sotish narxi taklifi: ×1,5, mingga yaxlitlangan. */
-export function suggestResalePrice(unitValue: number): number {
-  if (unitValue <= 0) return 0;
-  return Math.round((unitValue * 1.5) / 1000) * 1000;
 }
 
 /**
