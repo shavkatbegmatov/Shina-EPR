@@ -687,6 +687,8 @@ export interface Sale {
   totalAmount: number;
   paidAmount: number;
   debtAmount: number;
+  /** Barter: eski shina hisobiga ayirilgan summa. To'lanishi kerak = totalAmount - tradeInAmount. */
+  tradeInAmount?: number;
   paymentMethod: PaymentMethod;
   paymentStatus: PaymentStatus;
   status: SaleStatus;
@@ -710,6 +712,51 @@ export interface SaleRequest {
   paidAmount: number;
   paymentMethod: PaymentMethod;
   notes?: string;
+  /** Avval qabul qilingan barter hujjati (mijoz shinasini oldinroq qoldirgan). */
+  tradeInId?: number;
+  /** Kassada shu zahoti qabul qilinayotgan eski shinalar. `tradeInId` bilan birga berilmaydi. */
+  tradeIn?: TradeInRequest;
+}
+
+// Barter (eski shinani hisobga olish)
+export type TradeInStatus = 'NEW' | 'APPLIED' | 'CANCELLED';
+
+export interface TradeInItemRequest {
+  productId: number;
+  quantity: number;
+  unitValue: number;
+  conditionNote?: string;
+}
+
+export interface TradeInRequest {
+  customerId?: number;
+  items: TradeInItemRequest[];
+  notes?: string;
+}
+
+export interface TradeInItem {
+  productId: number;
+  productName?: string;
+  quantity: number;
+  unitValue: number;
+  totalValue: number;
+  conditionNote?: string;
+}
+
+export interface TradeIn {
+  id: number;
+  documentNumber: string;
+  customerId?: number;
+  customerName?: string;
+  /** Qaysi savdoda ishlatilgan; bo'sh = hali ishlatilmagan. */
+  saleId?: number;
+  invoiceNumber?: string;
+  acceptedAt: string;
+  status: TradeInStatus;
+  totalAmount: number;
+  notes?: string;
+  createdByName?: string;
+  items?: TradeInItem[];
 }
 
 // Debt Types

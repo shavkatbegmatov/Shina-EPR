@@ -46,4 +46,25 @@ Chegirma savdo summasidan katta bo'la olmaydi. Savatdan tovar olib tashlasangiz,
 
 ---
 
+## 5. Barter — eski shinani hisobga olish
+
+Mijoz eski shinasini olib kelsa, uni chegirma qilib yozmang. Savat ostidagi
+**"Barter: eski shina qabul qilish"** tugmasini bosing, b/u kartochkani toping va
+bahoni kiriting. Summa savdodan ayiriladi va **"To'lanadi"** qatorida ko'rinadi.
+
+Nega chegirma emas: barterda do'kon tovar oladi. Shinalar omborga kirim bo'ladi va
+keyin sotiladi. Chegirma qilib yozsangiz ular hech qayerda hisobga olinmaydi.
+
+Bilib qo'ying:
+- Barter savdo summasidan **katta bo'la olmaydi**. Katta bo'lsa to'lovga o'tkazmaydi.
+- Baho **avtomatik kamaymaydi** — mijozga aytgan raqamingiz o'zgarmaydi. Kerak
+  bo'lsa o'zingiz tuzating yoki savatga tovar qo'shing.
+- Mijoz shinasini **qoldirib ketsa**, uni **Barter** sahifasida qabul qiling. Keyingi
+  xaridida kassadagi barter oynasida o'sha hujjat ro'yxatda chiqadi.
+- Qabul qilingan barterni **bekor qilish** sizda yo'q — administratorga ayting.
+- Chekda barter alohida qator bo'lib chiqadi, mijoz nima uchun kamroq to'laganini
+  ko'radi.
+
+---
+
 Savol bo'lsa — administratorga murojaat qiling.

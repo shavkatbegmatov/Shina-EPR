@@ -219,7 +219,8 @@
       "expenses": "Xarajatlar",
       "closeMenu": "Menyuni yopish",
       "mainNav": "Asosiy navigatsiya",
-      "staffRequests": "Xodimlik arizalari"
+      "staffRequests": "Xodimlik arizalari",
+      "tradeIns": "Barter"
     },
     "header": {
       "home": "Bosh sahifa",
@@ -785,7 +786,20 @@
       "colBalance": "Balans",
       "loadCustomersError": "Mijozlarni yuklashda xatolik",
       "saleCompleted": "Sotuv muvaffaqiyatli yakunlandi!",
-      "newSale": "Yangi savdo"
+      "newSale": "Yangi savdo",
+      "tradeInAdd": "Barter: eski shina qabul qilish",
+      "tradeInChange": "Barterni o'zgartirish",
+      "tradeInTitle": "Eski shinani hisobga olish",
+      "tradeInHint": "Eski shinani baholang — uning summasi savdodan ayiriladi. Shinalar b/u kartochkaga kirim bo'ladi.",
+      "tradeInLabel": "Barter (eski shina)",
+      "amountDue": "To'lanadi",
+      "tradeInQuantity": "Dona",
+      "tradeInUnitValue": "Bittasining bahosi",
+      "tradeInAvailable": "Mijoz oldin qoldirgan barterlar",
+      "tradeInSearchLabel": "B/U mahsulot qidirish",
+      "tradeInSearchPlaceholder": "B/U kartochka nomi yoki SKU",
+      "tradeInClear": "Barterni olib tashlash",
+      "tradeInExceedsTotal": "Barter bahosi savdo summasidan katta bo'lishi mumkin emas"
     },
     "settings": {
       "title": "Sozlamalar",
@@ -2033,7 +2047,9 @@
       "total": "JAMI",
       "paid": "To'landi",
       "debt": "Qarz",
-      "paymentMethod": "To'lov usuli"
+      "paymentMethod": "To'lov usuli",
+      "tradeIn": "Barter (eski shina)",
+      "amountDue": "To'lanadi"
     },
     "shifts": {
       "title": "Kassa smenalari",
@@ -2176,6 +2192,28 @@
       "purchaseDetail": "Xarid tafsiloti",
       "employeeDetail": "Xodim tafsiloti",
       "profile": "Profil"
+    },
+    "tradeIns": {
+      "title": "Barter",
+      "subtitle": "Mijozdan qabul qilingan eski shinalar va ularning bahosi",
+      "accept": "Eski shina qabul qilish",
+      "acceptTitle": "Eski shinani qabul qilish",
+      "acceptHint": "Shinalarni baholang. Ular b/u kartochkaga kirim bo'ladi, baho esa mijozning keyingi xaridida savdodan ayiriladi.",
+      "accepted": "Barter qabul qilindi",
+      "cancelled": "Barter bekor qilindi",
+      "cancelTitle": "Barterni bekor qilish",
+      "cancelHint": "Qabul qilingan shinalar ombordan chiqariladi. Savdoda ishlatilgan barterni bekor qilib bo'lmaydi.",
+      "colDocument": "Hujjat",
+      "colDate": "Sana",
+      "colCustomer": "Mijoz",
+      "colAmount": "Baho",
+      "colStatus": "Holat",
+      "colSale": "Savdo",
+      "status": {
+        "NEW": "Ishlatilmagan",
+        "APPLIED": "Savdoda ishlatilgan",
+        "CANCELLED": "Bekor qilingan"
+      }
     }
   },
   "shop": {

@@ -24,6 +24,7 @@ import { salesApi } from '../../api/sales.api';
 import { customersApi } from '../../api/customers.api';
 import { POSPage } from './POSPage';
 import { useCartStore } from '../../store/cartStore';
+import { useAuthStore } from '../../store/authStore';
 
 /**
  * Kassa (POS) — xarakteristik testlar.
@@ -94,6 +95,7 @@ describe('POSPage', () => {
     // Savat global store'da — testlar orasida tozalanmasa oldingi
     // testning pozitsiyalari keyingisiga o'tib ketardi.
     useCartStore.getState().clear();
+    useAuthStore.setState({ permissions: new Set<string>() });
 
     vi.mocked(productsApi.getAll).mockResolvedValue(pageOf([TIRE]));
     vi.mocked(customersApi.getAll).mockResolvedValue(pageOf([] as Customer[]));
@@ -303,5 +305,62 @@ describe('POSPage', () => {
     fireEvent.click(screen.getByRole('button', { name: /Ko'rish/i }));
 
     await waitFor(() => expect(customersApi.getAll).toHaveBeenCalled());
+  });
+
+  /**
+   * Barter: eski shina savdo QIYMATINI kamaytirmaydi, faqat to'lanadigan
+   * summani. 1 000 000 lik savdoda 200 000 lik barter bo'lsa kassaga
+   * 800 000 tushadi va server so'roviga barter qatorlari qo'shiladi.
+   */
+  describe('barter', () => {
+    const USED: Product = {
+      id: 2,
+      sku: 'BU-205',
+      name: 'B/U 205/55 R16',
+      sellingPrice: 400_000,
+      purchasePrice: 0,
+      quantity: 0,
+      minStockLevel: 0,
+      active: true,
+    } as Product;
+
+    beforeEach(() => {
+      useAuthStore.setState({ permissions: new Set(['TRADE_INS_CREATE']) });
+    });
+
+    it("to'lanadigan summani kamaytiradi va so'rovga qatorlarni qo'shadi", async () => {
+      renderPage();
+      await addTireToCart();
+
+      useCartStore.getState().addTradeInItem(USED, 200_000);
+
+      // Ekranda "To'lanadi" qatori paydo bo'ladi
+      await waitFor(() => expect(screen.getAllByText(/To'lanadi/i).length).toBeGreaterThan(0));
+
+      fireEvent.click(screen.getByRole('button', { name: /To'lovga o'tish/i }));
+      fireEvent.click(screen.getByRole('button', { name: /Tasdiqlash/i }));
+
+      await waitFor(() => expect(salesApi.create).toHaveBeenCalled());
+      const body = vi.mocked(salesApi.create).mock.calls[0][0];
+
+      expect(body.paidAmount).toBe(800_000);
+      expect(body.tradeIn).toEqual({
+        items: [{ productId: 2, quantity: 1, unitValue: 200_000, conditionNote: undefined }],
+      });
+    });
+
+    it("barter savdo summasidan katta bo'lsa to'lovga o'tkazmaydi", async () => {
+      renderPage();
+      await addTireToCart();
+
+      useCartStore.getState().addTradeInItem(USED, 1_500_000);
+
+      await waitFor(() =>
+        expect(
+          screen.getByRole('button', { name: /To'lovga o'tish/i })
+        ).toBeDisabled()
+      );
+      expect(salesApi.create).not.toHaveBeenCalled();
+    });
   });
 });

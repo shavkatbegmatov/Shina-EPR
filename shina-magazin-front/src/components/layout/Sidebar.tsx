@@ -27,6 +27,7 @@ import {
   ChevronDown,
   ExternalLink,
   type LucideIcon,
+  Repeat2,
 } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { useQuery } from '@tanstack/react-query';
@@ -72,6 +73,7 @@ const NAV_GROUPS: NavGroup[] = [
     items: [
       { path: '/admin/pos', icon: ShoppingCart, labelKey: 'erp.nav.pos', permission: PermissionCode.SALES_CREATE },
       { path: '/admin/sales', icon: Receipt, labelKey: 'erp.nav.sales', permission: PermissionCode.SALES_VIEW },
+      { path: '/admin/trade-ins', icon: Repeat2, labelKey: 'erp.nav.tradeIns', permission: PermissionCode.TRADE_INS_VIEW },
       { path: '/admin/shifts', icon: Clock, labelKey: 'erp.nav.shifts', permission: PermissionCode.SHIFTS_VIEW },
       { path: '/admin/shop-orders', icon: ClipboardList, labelKey: 'erp.nav.shopOrders', permission: PermissionCode.SALES_VIEW },
       { path: '/admin/customers', icon: Users, labelKey: 'erp.nav.customers', permission: PermissionCode.CUSTOMERS_VIEW },

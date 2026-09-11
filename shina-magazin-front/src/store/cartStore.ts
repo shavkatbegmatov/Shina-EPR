@@ -1,12 +1,29 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
-import type { CartItem, Customer, Product } from '../types';
+import type { CartItem, Customer, Product, TradeIn } from '../types';
+import {
+  addTradeInLine,
+  removeTradeInLine,
+  tradeInTotal,
+  updateTradeInLine,
+  type TradeInCartItem,
+} from '../shared/tradeInCart';
 
 interface CartState {
   items: CartItem[];
   customer: Customer | null;
   discount: number;
   discountPercent: number;
+
+  /** Kassada shu zahoti baholanayotgan eski shinalar. */
+  tradeInItems: TradeInCartItem[];
+  /**
+   * Mijoz oldinroq qoldirgan barter hujjati.
+   *
+   * <p>`tradeInItems` bilan BIR VAQTDA bo'lmaydi: server ikkalasini birga
+   * qabul qilmaydi, chunki qaysi baho ishlatilgani noaniq bo'lardi.
+   */
+  tradeInDocument: TradeIn | null;
 
   addItem: (product: Product, quantity?: number) => void;
   removeItem: (productId: number) => void;
@@ -17,10 +34,23 @@ interface CartState {
   setDiscountPercent: (percent: number) => void;
   clear: () => void;
 
+  addTradeInItem: (product: Product, unitValue?: number) => void;
+  updateTradeInItem: (
+    productId: number,
+    patch: Partial<Pick<TradeInCartItem, 'quantity' | 'unitValue' | 'conditionNote'>>
+  ) => void;
+  removeTradeInItem: (productId: number) => void;
+  setTradeInDocument: (tradeIn: TradeIn | null) => void;
+  clearTradeIn: () => void;
+
   getSubtotal: () => number;
   getDiscountAmount: () => number;
   getTotal: () => number;
   getItemCount: () => number;
+  /** Barter summasi: hujjat tanlangan bo'lsa undan, aks holda qatorlardan. */
+  getTradeInAmount: () => number;
+  /** To'lanishi kerak bo'lgan summa: jami minus barter (manfiy bo'lmaydi). */
+  getAmountDue: () => number;
 }
 
 /** Savat qatorlarining jami (qator chegirmalari bilan). */
@@ -51,6 +81,8 @@ export const useCartStore = create<CartState>()(
   customer: null,
   discount: 0,
   discountPercent: 0,
+  tradeInItems: [],
+  tradeInDocument: null,
 
   addItem: (product, quantity = 1) => {
     set((state) => {
@@ -114,7 +146,27 @@ export const useCartStore = create<CartState>()(
       customer: null,
       discount: 0,
       discountPercent: 0,
+      tradeInItems: [],
+      tradeInDocument: null,
     }),
+
+  // Qator qo'shilganda tanlangan hujjat bekor qilinadi (va aksincha): ikkalasi
+  // birga yuborilsa server so'rovni rad etadi.
+  addTradeInItem: (product, unitValue) =>
+    set((state) => ({
+      tradeInItems: addTradeInLine(state.tradeInItems, product, unitValue),
+      tradeInDocument: null,
+    })),
+
+  updateTradeInItem: (productId, patch) =>
+    set((state) => ({ tradeInItems: updateTradeInLine(state.tradeInItems, productId, patch) })),
+
+  removeTradeInItem: (productId) =>
+    set((state) => ({ tradeInItems: removeTradeInLine(state.tradeInItems, productId) })),
+
+  setTradeInDocument: (tradeIn) => set({ tradeInDocument: tradeIn, tradeInItems: [] }),
+
+  clearTradeIn: () => set({ tradeInItems: [], tradeInDocument: null }),
 
   getSubtotal: () => {
     const { items } = get();
@@ -141,6 +193,17 @@ export const useCartStore = create<CartState>()(
   getItemCount: () => {
     return get().items.reduce((sum, item) => sum + item.quantity, 0);
   },
+
+  getTradeInAmount: () => {
+    const { tradeInDocument, tradeInItems } = get();
+    if (tradeInDocument) return tradeInDocument.totalAmount;
+    return tradeInTotal(tradeInItems);
+  },
+
+  // Barter jamidan KATTA bo'lsa ham bu yerda kamaytirilmaydi: kassir mijozga
+  // aytgan bahoni tizim jimgina o'zgartirmasligi kerak. To'lovga o'tish
+  // sahifada to'siladi va server ham rad etadi.
+  getAmountDue: () => Math.max(0, get().getTotal() - get().getTradeInAmount()),
     }),
     {
       name: 'pos-cart',
@@ -149,6 +212,8 @@ export const useCartStore = create<CartState>()(
         customer: state.customer,
         discount: state.discount,
         discountPercent: state.discountPercent,
+        tradeInItems: state.tradeInItems,
+        tradeInDocument: state.tradeInDocument,
       }),
     }
   )

@@ -91,6 +91,20 @@ export function SaleReceipt({ sale, settings }: { sale: Sale; settings?: Receipt
         <span>{t('erp.receipt.total')}</span>
         <span>{formatCurrency(sale.totalAmount)}</span>
       </div>
+      {/* Barter savdo qiymatini kamaytirmaydi, shuning uchun jamidan KEYIN
+          ko'rsatiladi: mijoz nima uchun kamroq to'laganini ko'rishi kerak. */}
+      {(sale.tradeInAmount ?? 0) > 0 && (
+        <>
+          <div className="receipt-row">
+            <span>{t('erp.receipt.tradeIn')}</span>
+            <span>-{formatCurrency(sale.tradeInAmount ?? 0)}</span>
+          </div>
+          <div className="receipt-row receipt-total">
+            <span>{t('erp.receipt.amountDue')}</span>
+            <span>{formatCurrency(sale.totalAmount - (sale.tradeInAmount ?? 0))}</span>
+          </div>
+        </>
+      )}
       <div className="receipt-row">
         <span>{t('erp.receipt.paid')}</span>
         <span>{formatCurrency(sale.paidAmount)}</span>

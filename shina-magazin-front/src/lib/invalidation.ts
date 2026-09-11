@@ -34,9 +34,25 @@ export const invalidateAfter = {
    * <p>Server: zaxirani kamaytiradi, qarzga sotilgan bo'lsa qarz yozuvi
    * yaratadi va mijoz balansini o'zgartiradi.
    */
+  /**
+   * Barter qabul qilindi yoki bekor qilindi.
+   *
+   * <p>Savdo bilan bir xil sohalarga tegadi: qabul omborga kirim yasaydi,
+   * bekor qilish esa uni qaytaradi.
+   */
+  tradeIn: (client: QueryClient) =>
+    invalidate(client, [
+      queryKeys.tradeIns.all,
+      queryKeys.products.all,
+      queryKeys.warehouse.all,
+      queryKeys.reports.all,
+      queryKeys.dashboard.all,
+    ]),
+
   sale: (client: QueryClient) =>
     invalidate(client, [
       queryKeys.sales.all,
+      queryKeys.tradeIns.all,
       queryKeys.debts.all,
       queryKeys.customers.all,
       queryKeys.products.all,
@@ -54,6 +70,7 @@ export const invalidateAfter = {
   saleReturn: (client: QueryClient) =>
     invalidate(client, [
       queryKeys.sales.all,
+      queryKeys.tradeIns.all,
       queryKeys.debts.all,
       queryKeys.customers.all,
       queryKeys.products.all,

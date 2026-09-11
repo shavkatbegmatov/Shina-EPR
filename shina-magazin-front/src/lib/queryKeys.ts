@@ -197,6 +197,15 @@ export const queryKeys = {
     byCustomer: (customerId: number) => ['shop-orders', 'customer', customerId] as const,
   },
 
+  tradeIns: {
+    all: ['trade-ins'] as const,
+    list: (params: { page: number; size: number; status?: string }) =>
+      ['trade-ins', 'list', params] as const,
+    /** Kassada tanlash uchun: hali savdoga bog'lanmagan hujjatlar. */
+    available: (customerId?: number) => ['trade-ins', 'available', customerId ?? null] as const,
+    detail: (id: number) => ['trade-ins', 'detail', id] as const,
+  },
+
   sales: {
     all: ['sales'] as const,
     list: (params: { page: number; size: number; startDate?: string; endDate?: string }) =>
