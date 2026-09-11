@@ -33,6 +33,8 @@ public class SalesReportResponse {
     private BigDecimal cardTotal;
     private BigDecimal transferTotal;
     private BigDecimal debtTotal;
+    /** Barter: eski shinalar bilan "to'langan" qism — pul emas, hisobotda alohida. */
+    private BigDecimal barterTotal;
     /**
      * Tannarxi noma'lum savdo qatorlari.
      *

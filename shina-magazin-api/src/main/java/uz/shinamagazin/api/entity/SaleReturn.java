@@ -55,6 +55,15 @@ public class SaleReturn extends BaseEntity {
     @Builder.Default
     private BigDecimal cashRefunded = BigDecimal.ZERO;
 
+    /**
+     * Mijoz balansiga yozilgan kredit — barter savdosida naqd faqat kassaga
+     * TUSHGAN qismgacha qaytariladi; eski shinalar uchun berilgan kredit
+     * qismi shu yerda (kassadan pul chiqmagan).
+     */
+    @Column(name = "credit_issued", nullable = false, precision = 15, scale = 2)
+    @Builder.Default
+    private BigDecimal creditIssued = BigDecimal.ZERO;
+
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "shift_id")
     private CashShift shift;

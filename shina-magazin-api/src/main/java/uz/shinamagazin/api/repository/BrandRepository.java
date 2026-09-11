@@ -11,5 +11,8 @@ import java.util.Optional;
 public interface BrandRepository extends JpaRepository<Brand, Long> {
     List<Brand> findByActiveTrue();
     Optional<Brand> findByName(String name);
+
+    /** Kassir yozgan brend nomi ("michelin") katalogdagi bilan harf farqsiz mos kelsin. */
+    Optional<Brand> findFirstByNameIgnoreCase(String name);
     boolean existsByName(String name);
 }

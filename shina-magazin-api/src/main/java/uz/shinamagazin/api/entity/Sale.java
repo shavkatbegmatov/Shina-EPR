@@ -61,6 +61,18 @@ public class Sale extends BaseEntity implements Auditable {
     @Builder.Default
     private BigDecimal debtAmount = BigDecimal.ZERO;
 
+    /**
+     * Barter: eski shinalar uchun berilgan kredit.
+     *
+     * <p>{@code totalAmount} O'ZGARMAYDI — tovar to'liq narxda sotilgan
+     * (daromad shu). Mijoz to'laydigan farq = {@code totalAmount −
+     * tradeInAmount}; {@code paidAmount} va {@code debtAmount} shu farqdan
+     * hisoblanadi.
+     */
+    @Column(name = "trade_in_amount", nullable = false, precision = 15, scale = 2)
+    @Builder.Default
+    private BigDecimal tradeInAmount = BigDecimal.ZERO;
+
     @Enumerated(EnumType.STRING)
     @Column(name = "payment_method", nullable = false, length = 20)
     private PaymentMethod paymentMethod;
@@ -100,10 +112,30 @@ public class Sale extends BaseEntity implements Auditable {
     @Builder.Default
     private List<Payment> payments = new ArrayList<>();
 
+    /** Barterda qabul qilingan eski shinalar (bo'sh — oddiy savdo). */
+    @OneToMany(mappedBy = "sale", cascade = CascadeType.ALL, orphanRemoval = true)
+    @Builder.Default
+    private List<SaleTradeInItem> tradeInItems = new ArrayList<>();
+
     // Helper: element qo'shish
     public void addItem(SaleItem item) {
         items.add(item);
         item.setSale(this);
+    }
+
+    public void addTradeInItem(SaleTradeInItem item) {
+        tradeInItems.add(item);
+        item.setSale(this);
+    }
+
+    /** Mijoz to'lashi kerak bo'lgan summa: jami − barter krediti. */
+    public BigDecimal getAmountDue() {
+        BigDecimal tradeIn = tradeInAmount != null ? tradeInAmount : BigDecimal.ZERO;
+        return (totalAmount != null ? totalAmount : BigDecimal.ZERO).subtract(tradeIn);
+    }
+
+    public boolean isBarter() {
+        return tradeInAmount != null && tradeInAmount.signum() > 0;
     }
 
     // Helper: to'lov qo'shish
@@ -134,6 +166,7 @@ public class Sale extends BaseEntity implements Auditable {
         map.put("totalAmount", this.totalAmount);
         map.put("paidAmount", this.paidAmount);
         map.put("debtAmount", this.debtAmount);
+        map.put("tradeInAmount", this.tradeInAmount);
         map.put("paymentMethod", this.paymentMethod);
         map.put("paymentStatus", this.paymentStatus);
         map.put("status", this.status);
@@ -151,6 +184,9 @@ public class Sale extends BaseEntity implements Auditable {
         }
         if (this.payments != null) {
             map.put("paymentCount", this.payments.size());
+        }
+        if (this.tradeInItems != null) {
+            map.put("tradeInCount", this.tradeInItems.size());
         }
 
         return map;

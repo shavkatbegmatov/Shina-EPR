@@ -62,6 +62,15 @@ public class SaleResponse {
     @ExportColumn(header = "Qarz", order = 11, type = ColumnType.CURRENCY)
     private BigDecimal debtAmount;
 
+    /** Barter: eski shinalar uchun berilgan kredit (0 — oddiy savdo). */
+    @ExportColumn(header = "Barter", order = 17, type = ColumnType.CURRENCY)
+    private BigDecimal tradeInAmount;
+
+    /** Mijoz to'lashi kerak bo'lgan summa: jami − barter. */
+    private BigDecimal amountDue;
+
+    private List<SaleTradeInItemResponse> tradeInItems; // Not exported (complex type)
+
     @ExportColumn(header = "To'lov usuli", order = 12, type = ColumnType.ENUM)
     private PaymentMethod paymentMethod;
 
@@ -93,6 +102,12 @@ public class SaleResponse {
                 .totalAmount(sale.getTotalAmount())
                 .paidAmount(sale.getPaidAmount())
                 .debtAmount(sale.getDebtAmount())
+                .tradeInAmount(sale.getTradeInAmount() != null ? sale.getTradeInAmount() : BigDecimal.ZERO)
+                .amountDue(sale.getAmountDue())
+                .tradeInItems(sale.getTradeInItems() != null ?
+                        sale.getTradeInItems().stream()
+                                .map(SaleTradeInItemResponse::from)
+                                .collect(Collectors.toList()) : null)
                 .paymentMethod(sale.getPaymentMethod())
                 .paymentStatus(sale.getPaymentStatus())
                 .status(sale.getStatus())

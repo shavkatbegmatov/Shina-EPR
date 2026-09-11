@@ -40,4 +40,12 @@ public class SaleRequest {
     private PaymentMethod paymentMethod;
 
     private String notes;
+
+    /**
+     * Barter: mijozdan qabul qilinayotgan eski shinalar. Bo'sh bo'lsa oddiy
+     * savdo. Berilsa mijoz tanlangan bo'lishi shart va kredit yig'indisi
+     * savdo summasidan oshmasligi kerak.
+     */
+    @Valid
+    private List<TradeInItemRequest> tradeInItems;
 }
