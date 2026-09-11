@@ -15,14 +15,29 @@ loyiha jiddiy o'zgardi — bu bo'lim uni ustidan yozadi, quyisi tarix sifatida q
 | **Prod** | 🟢 Jonli: `https://protektor.uz` (Coolify). `master`'ga push → CI → GHCR image → deploy avtomatik. Batafsil: `DEPLOY.md` |
 | **Marshrutlar** | Do'kon `/` · ERP `/admin` · Mijoz kabineti `/hisob` (B2 bajarilgan, `/magazin` va `/kabinet` **endi yo'q**) |
 | **Mantiqiy audit** | Uch bosqich, 45 tasdiqlangan xato tuzatildi, ochiq qolgani yo'q → **`AUDIT.md`** |
-| **Migratsiyalar** | V43 gacha (V41 refresh rotatsiyasi, V42 scheduler qulflari, V43 to'lov vaqt chizig'i) |
-| **Testlar** | Frontend 344, backend 390 (shu jumladan haqiqiy Postgres'da migratsiya testi) — ikkalasi ham CI'da har push'da ishlaydi |
+| **Migratsiyalar** | V44 gacha (V41 refresh rotatsiyasi, V42 scheduler qulflari, V43 to'lov vaqt chizig'i, V44 kirim hujjati + barter) |
+| **Testlar** | Frontend 358, backend 412 (shu jumladan haqiqiy Postgres'da migratsiya testi) — ikkalasi ham CI'da har push'da ishlaydi |
 | **Git hook'lar** | `.githooks/` — `npm install` avtomatik yoqadi (`prepare`); qo'lda: `git config core.hooksPath .githooks` |
 
 **Hujjatlar taqsimoti:** joriy qoidalar va buyruqlar → `AGENTS.md` · deploy va env →
 `DEPLOY.md` · audit topilmalari → `AUDIT.md` · kassirlarga eslatma →
 `KASSIRLAR-UCHUN.md` / `ДЛЯ-КАССИРОВ.md` · **bu fayl** → iyun rejasining tarixi va
 hali ochiq qolgan ishlar.
+
+### 🆕 Kirim hujjati va barter (11.09.2026)
+
+Bajarildi (`KIRIM-VA-BARTER.md`, `CHANGELOG.md`): ta'minotchi yuk xati shablonidagi kirim
+hujjati (USD + kurs, bonus, yo'l haqi → tannarx, "Kutilmoqda → Qabul qilish (TEKSHIRILDI)",
+A4 chop etish) va barter (eski shina → B/U mahsulot, farq to'lovi, bekor/qaytarish qoidalari).
+
+Ochiq qolgan (mijoz talab qilsa):
+- Ta'minotchi balansini **dollarda** ham yuritish (hozir hujjat kursida so'mda; kurs farqi
+  hisobga olinmaydi). Kerak bo'lsa `suppliers` ga valyuta balansi + to'lovda kurs.
+- Kirim hujjatini qabul qilinguncha **tahrirlash** (hozir: bekor qilib qaytadan kiritiladi).
+- Barter qaytarilganda eski shinalarni mijozga **qaytarib berish** varianti (hozir kredit
+  yoziladi; ombor chiqimi qo'lda).
+- Ta'minotchidan oldindan to'lovni qaytarib olish (supplier refund) — hozir bunday hujjat
+  bekor qilinmaydi.
 
 ### 🔁 Boshqa mashinada davom ettirish (yozildi 07.09.2026, 05:40)
 
