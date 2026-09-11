@@ -114,6 +114,12 @@ public class ReportService {
                         .add(laterDebtPayments.getOrDefault(s.getId(), BigDecimal.ZERO)))
                 .reduce(BigDecimal.ZERO, BigDecimal::add);
 
+        // Barter qismi pul emas — u na naqd, na karta, na qarz. Alohida
+        // ko'rsatilmasa "daromad" bilan "kassaga tushgan pul" farqi tushunarsiz.
+        BigDecimal barterTotal = sales.stream()
+                .map(s -> s.getTradeInAmount() != null ? s.getTradeInAmount() : BigDecimal.ZERO)
+                .reduce(BigDecimal.ZERO, BigDecimal::add);
+
         List<SalesReportResponse.DailySalesData> dailyData =
                 getDailyData(sales, returns, startDate, endDate);
 
@@ -135,6 +141,7 @@ public class ReportService {
                 .cardTotal(cardTotal)
                 .transferTotal(transferTotal)
                 .debtTotal(debtTotal)
+                .barterTotal(barterTotal)
                 .itemsWithoutCost(countItemsWithoutCost(sales))
                 .dailyData(dailyData)
                 .topProducts(topProducts)

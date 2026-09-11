@@ -25,6 +25,8 @@ public class SaleReturnResponse {
     private BigDecimal debtReduced;
     /** Mijozga haqiqatan qaytarilgan pul. */
     private BigDecimal cashRefunded;
+    /** Barter savdosida mijoz balansiga yozilgan kredit (naqd chiqmagan). */
+    private BigDecimal creditIssued;
     private String createdByName;
     private List<Item> items;
 
@@ -52,6 +54,7 @@ public class SaleReturnResponse {
                 .refundAmount(ret.getRefundAmount())
                 .debtReduced(ret.getDebtReduced())
                 .cashRefunded(ret.getCashRefunded())
+                .creditIssued(ret.getCreditIssued() != null ? ret.getCreditIssued() : BigDecimal.ZERO)
                 .createdByName(ret.getCreatedBy() != null ? ret.getCreatedBy().getFullName() : null)
                 .items(ret.getItems().stream()
                         .map(i -> Item.builder()

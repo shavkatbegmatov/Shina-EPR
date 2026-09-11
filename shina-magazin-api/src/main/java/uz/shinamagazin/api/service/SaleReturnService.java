@@ -144,11 +144,27 @@ public class SaleReturnService {
         // qaytarib, ustiga naqd pul ham olib ketardi.
         BigDecimal outstandingDebt = sale.getDebtAmount() != null ? sale.getDebtAmount() : BigDecimal.ZERO;
         BigDecimal debtReduced = refundAmount.min(outstandingDebt);
-        BigDecimal cashRefunded = refundAmount.subtract(debtReduced);
+
+        // Naqd faqat kassaga TUSHGAN qismgacha qaytariladi. Barter savdosida
+        // tovarning bir qismi eski shinalar bilan "to'langan" — u pul emas,
+        // ya'ni undan naqd qaytarib bo'lmaydi (paidAmount manfiyga tushib,
+        // Z-hisobot kassadan chiqmagan pulni chiqqan deb sanardi). Do'kon
+        // eski shinalarni qaytarib bermaydi (ular allaqachon omborda, sotilgan
+        // bo'lishi ham mumkin); qolgan qism mijoz balansiga KREDIT bo'lib
+        // yoziladi — keyingi xaridida hisobga olinadi.
+        BigDecimal cashReceived = sale.getPaidAmount() != null ? sale.getPaidAmount() : BigDecimal.ZERO;
+        BigDecimal cashRefunded = refundAmount.subtract(debtReduced).min(cashReceived).max(BigDecimal.ZERO);
+        BigDecimal creditIssued = refundAmount.subtract(debtReduced).subtract(cashRefunded);
+        if (creditIssued.signum() > 0 && sale.getCustomer() == null) {
+            // Barter savdosi mijozsiz yaratilmaydi; bu faqat ma'lumot buzilganda
+            throw new BadRequestException(
+                    "Qaytarish summasi kassaga tushgan puldan ko'p, kredit yozish uchun esa mijoz yo'q");
+        }
 
         saleReturn.setRefundAmount(refundAmount);
         saleReturn.setDebtReduced(debtReduced);
         saleReturn.setCashRefunded(cashRefunded);
+        saleReturn.setCreditIssued(creditIssued);
 
         if (debtReduced.signum() > 0) {
             sale.setDebtAmount(outstandingDebt.subtract(debtReduced));
@@ -162,6 +178,11 @@ public class SaleReturnService {
         if (cashRefunded.signum() > 0) {
             sale.setPaidAmount(sale.getPaidAmount().subtract(cashRefunded));
         }
+        if (creditIssued.signum() > 0) {
+            Customer customer = sale.getCustomer();
+            customer.setBalance(customer.getBalance().add(creditIssued));
+            customerRepository.save(customer);
+        }
 
         // Hammasi qaytarilgan bo'lsa — savdo REFUNDED
         if (isFullyReturned(sale, alreadyReturned, request)) {
@@ -170,9 +191,9 @@ public class SaleReturnService {
         saleRepository.save(sale);
 
         SaleReturn saved = saleReturnRepository.save(saleReturn);
-        log.info("Savdo qaytarildi: {} (savdo {}), summa={}, qarzdan={}, naqd={}",
+        log.info("Savdo qaytarildi: {} (savdo {}), summa={}, qarzdan={}, naqd={}, kredit={}",
                 saved.getReturnNumber(), sale.getInvoiceNumber(),
-                refundAmount, debtReduced, cashRefunded);
+                refundAmount, debtReduced, cashRefunded, creditIssued);
 
         return SaleReturnResponse.from(saved);
     }

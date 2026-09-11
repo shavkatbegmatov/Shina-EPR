@@ -11,4 +11,7 @@ public interface CategoryRepository extends JpaRepository<Category, Long> {
     List<Category> findByActiveTrue();
     List<Category> findByParentIsNullAndActiveTrue();
     List<Category> findByParentIdAndActiveTrue(Long parentId);
+
+    /** Nom bo'yicha (katta-kichik harf farqsiz) — B/U kategoriyasini topish uchun. */
+    java.util.Optional<Category> findFirstByNameIgnoreCaseAndActiveTrue(String name);
 }
