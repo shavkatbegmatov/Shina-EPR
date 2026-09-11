@@ -128,6 +128,7 @@ public class FieldLabelService {
         saleLabels.put("employeeName", "Xodim");
         saleLabels.put("paymentMethod", "To'lov usuli");
         saleLabels.put("status", "Holat");
+        saleLabels.put("tradeInAmount", "Barter (eski shina krediti)");
         entityFieldLabels.put("Sale", saleLabels);
 
         // PurchaseOrder labels
@@ -139,6 +140,16 @@ public class FieldLabelService {
         purchaseLabels.put("supplierName", "Yetkazib beruvchi");
         purchaseLabels.put("status", "Holat");
         purchaseLabels.put("notes", "Izohlar");
+        purchaseLabels.put("currency", "Valyuta");
+        purchaseLabels.put("exchangeRate", "Kurs");
+        purchaseLabels.put("supplierDocNumber", "Ta'minotchi hujjati");
+        purchaseLabels.put("supplierDocDate", "Hujjat sanasi");
+        purchaseLabels.put("vehicleNumber", "Mashina raqami");
+        purchaseLabels.put("transportCost", "Yo'l haqi");
+        purchaseLabels.put("goodsAmount", "Tovar summasi");
+        purchaseLabels.put("bonusAmount", "Bonus");
+        purchaseLabels.put("foreignTotalAmount", "Summa (valyuta)");
+        purchaseLabels.put("receivedAt", "Qabul qilingan vaqt");
         entityFieldLabels.put("PurchaseOrder", purchaseLabels);
     }
 

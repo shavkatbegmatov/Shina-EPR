@@ -18,4 +18,13 @@ public class PurchaseStatsResponse {
     private BigDecimal totalAmount;
     private BigDecimal totalDebt;
     private Long pendingReturns;
+
+    /** Hali qabul qilinmagan (kutilayotgan yoki qisman kelgan) hujjatlar soni. */
+    private Long awaitingReceipt;
+
+    /**
+     * Oxirgi USD hujjatdagi kurs — yangi hujjat formasida taklif sifatida.
+     * USD hujjat bo'lmasa null.
+     */
+    private BigDecimal lastUsdRate;
 }

@@ -27,12 +27,36 @@ public class PurchaseItemResponse {
     @ExportColumn(header = "SKU", order = 3)
     private String productSku;
 
+    private String sizeString;
+
+    /** Hujjatdagi miqdor (= {@code orderedQuantity}; eski mijozlar uchun saqlangan nom). */
     @ExportColumn(header = "Miqdor", order = 4, type = ColumnType.NUMBER)
     private Integer quantity;
 
+    private Integer orderedQuantity;
+
+    /** Sanab qabul qilingan miqdor — kutilayotgan hujjatda 0. */
+    private Integer receivedQuantity;
+
+    /** Birlik narxi (so'm). */
     @ExportColumn(header = "Birlik narxi", order = 5, type = ColumnType.CURRENCY)
     private BigDecimal unitPrice;
 
+    /** Qator summasi bonusgacha (so'm). */
     @ExportColumn(header = "Jami narx", order = 6, type = ColumnType.CURRENCY)
     private BigDecimal totalPrice;
+
+    /** Narx hujjat valyutasida (UZS hujjatda null). */
+    private BigDecimal foreignUnitPrice;
+
+    /** Bir dona uchun bonus (so'm). */
+    private BigDecimal bonusPerUnit;
+
+    private BigDecimal bonusPercent;
+
+    /** Qator bonusi (so'm). */
+    private BigDecimal bonusAmount;
+
+    /** Tannarx: (jami − bonus + yo'l haqi ulushi) / miqdor. */
+    private BigDecimal landedUnitCost;
 }

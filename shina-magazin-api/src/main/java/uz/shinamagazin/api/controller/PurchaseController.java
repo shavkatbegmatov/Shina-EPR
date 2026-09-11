@@ -16,6 +16,7 @@ import org.springframework.web.bind.annotation.*;
 import org.springframework.core.io.ByteArrayResource;
 import org.springframework.core.io.Resource;
 import uz.shinamagazin.api.dto.request.PaymentRequest;
+import uz.shinamagazin.api.dto.request.PurchaseReceiveRequest;
 import uz.shinamagazin.api.dto.request.PurchaseRequest;
 import uz.shinamagazin.api.dto.request.ReturnRequest;
 import uz.shinamagazin.api.dto.response.*;
@@ -131,7 +132,34 @@ public class PurchaseController {
             @Valid @RequestBody PurchaseRequest request) {
         PurchaseOrderResponse purchase = purchaseService.createPurchase(request);
         return ResponseEntity.status(HttpStatus.CREATED)
-                .body(ApiResponse.success("Xarid yaratildi va omborga kirim qilindi", purchase));
+                .body(ApiResponse.success(Boolean.FALSE.equals(request.getReceiveNow())
+                        ? "Kirim hujjati saqlandi — mol kelganda qabul qiling"
+                        : "Xarid yaratildi va omborga kirim qilindi", purchase));
+    }
+
+    /**
+     * "TEKSHIRILDI" — molni sanab qabul qilish. Ro'yxat bo'sh bo'lsa hamma
+     * qator hujjatdagi miqdorda qabul qilinadi; berilsa har qator uchun JAMI
+     * qabul qilingan miqdor (qisman yetkazma keyin to'ldiriladi).
+     */
+    @PostMapping("/{id}/receive")
+    @Operation(summary = "Receive purchase", description = "Molni sanab qabul qilish (omborga kirim)")
+    @RequiresPermission(PermissionCode.PURCHASES_RECEIVE)
+    public ResponseEntity<ApiResponse<PurchaseOrderResponse>> receivePurchase(
+            @PathVariable Long id,
+            @Valid @RequestBody(required = false) PurchaseReceiveRequest request) {
+        PurchaseOrderResponse purchase = purchaseService.receivePurchase(id, request);
+        return ResponseEntity.ok(ApiResponse.success("Mol qabul qilindi va omborga kirim qilindi", purchase));
+    }
+
+    @PutMapping("/{id}/cancel")
+    @Operation(summary = "Cancel purchase", description = "Hali qabul qilinmagan xaridni bekor qilish")
+    @RequiresPermission(PermissionCode.PURCHASES_UPDATE)
+    public ResponseEntity<ApiResponse<PurchaseOrderResponse>> cancelPurchase(
+            @PathVariable Long id,
+            @RequestParam(required = false) String reason) {
+        PurchaseOrderResponse purchase = purchaseService.cancelPurchase(id, reason);
+        return ResponseEntity.ok(ApiResponse.success("Xarid bekor qilindi", purchase));
     }
 
     @PutMapping("/{id}")

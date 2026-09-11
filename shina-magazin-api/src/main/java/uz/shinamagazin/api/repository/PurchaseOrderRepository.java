@@ -7,6 +7,7 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 import uz.shinamagazin.api.entity.PurchaseOrder;
+import uz.shinamagazin.api.enums.PurchaseCurrency;
 import uz.shinamagazin.api.enums.PurchaseOrderStatus;
 
 import java.math.BigDecimal;
@@ -43,6 +44,19 @@ public interface PurchaseOrderRepository extends JpaRepository<PurchaseOrder, Lo
 
     @Query("SELECT COALESCE(SUM(p.totalAmount - p.paidAmount), 0) FROM PurchaseOrder p WHERE p.status != 'CANCELLED'")
     BigDecimal sumTotalDebt();
+
+    /** Hali sanab qabul qilinmagan hujjatlar (kutilmoqda yoki qisman kelgan). */
+    @Query("SELECT COUNT(p) FROM PurchaseOrder p WHERE p.status IN ('ORDERED', 'PARTIAL')")
+    Long countAwaitingReceipt();
+
+    /**
+     * Berilgan valyutadagi oxirgi hujjatlarning kursi (eng yangisi birinchi).
+     * Yangi hujjat formasida taklif sifatida ko'rsatiladi — kassir kursni
+     * har safar qidirib o'tirmasin.
+     */
+    @Query("SELECT p.exchangeRate FROM PurchaseOrder p WHERE p.currency = :currency "
+            + "AND p.status != 'CANCELLED' ORDER BY p.orderDate DESC, p.id DESC")
+    List<BigDecimal> findLatestExchangeRates(@Param("currency") PurchaseCurrency currency, Pageable pageable);
 
     // Filter qidiruv - PostgreSQL uchun CAST bilan
     @Query(value = "SELECT * FROM purchase_orders p WHERE " +

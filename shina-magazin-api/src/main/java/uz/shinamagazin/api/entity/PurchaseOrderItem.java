@@ -44,6 +44,39 @@ public class PurchaseOrderItem extends BaseEntity implements Auditable {
     @Column(name = "total_price", nullable = false, precision = 15, scale = 2)
     private BigDecimal totalPrice;
 
+    // ─── Kirim hujjati qatori ───
+
+    /** Narx hujjat valyutasida (masalan 46.25 USD); UZS hujjatda null. */
+    @Column(name = "foreign_unit_price", precision = 15, scale = 4)
+    private BigDecimal foreignUnitPrice;
+
+    /** Bir dona uchun bonus (so'm) — shablondagi "Bonus $" ustuni. */
+    @Column(name = "bonus_per_unit", nullable = false, precision = 15, scale = 2)
+    @Builder.Default
+    private BigDecimal bonusPerUnit = BigDecimal.ZERO;
+
+    /** Qator bonusi foizda — "Bonus %" ustuni ({@code bonusPerUnit} o'rniga). */
+    @Column(name = "bonus_percent", nullable = false, precision = 5, scale = 2)
+    @Builder.Default
+    private BigDecimal bonusPercent = BigDecimal.ZERO;
+
+    /** Qator bonusi (so'm) — "Bonus summa" ustuni. */
+    @Column(name = "bonus_amount", nullable = false, precision = 15, scale = 2)
+    @Builder.Default
+    private BigDecimal bonusAmount = BigDecimal.ZERO;
+
+    /**
+     * Tannarx (so'm): {@code (totalPrice − bonusAmount + yo'l haqi ulushi) / miqdor}.
+     * Mahsulot kartochkasidagi {@code purchasePrice} aynan shundan yoziladi.
+     */
+    @Column(name = "landed_unit_cost", precision = 15, scale = 2)
+    private BigDecimal landedUnitCost;
+
+    /** Eski qatorlarda tannarx yozilmagan — u holda xarid narxi. */
+    public BigDecimal effectiveLandedUnitCost() {
+        return landedUnitCost != null ? landedUnitCost : unitPrice;
+    }
+
     // ============================================
     // Auditable Interface Implementation
     // ============================================
@@ -62,6 +95,11 @@ public class PurchaseOrderItem extends BaseEntity implements Auditable {
         map.put("receivedQuantity", this.receivedQuantity);
         map.put("unitPrice", this.unitPrice);
         map.put("totalPrice", this.totalPrice);
+        map.put("foreignUnitPrice", this.foreignUnitPrice);
+        map.put("bonusPerUnit", this.bonusPerUnit);
+        map.put("bonusPercent", this.bonusPercent);
+        map.put("bonusAmount", this.bonusAmount);
+        map.put("landedUnitCost", this.landedUnitCost);
 
         // Avoid lazy loading
         if (this.purchaseOrder != null) {

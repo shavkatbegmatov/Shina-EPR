@@ -8,10 +8,12 @@ import uz.shinamagazin.api.audit.Auditable;
 import uz.shinamagazin.api.audit.AuditEntityListener;
 import uz.shinamagazin.api.entity.base.BaseEntity;
 import uz.shinamagazin.api.enums.PaymentStatus;
+import uz.shinamagazin.api.enums.PurchaseCurrency;
 import uz.shinamagazin.api.enums.PurchaseOrderStatus;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -66,6 +68,60 @@ public class PurchaseOrder extends BaseEntity implements Auditable {
 
     @Column(length = 500)
     private String notes;
+
+    // ─── Kirim hujjati (ta'minotchi shabloni) ───
+
+    /** Hujjat valyutasi. Pul ustunlari doim so'mda; bu faqat kiritish va ko'rsatish uchun. */
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false, length = 3)
+    @Builder.Default
+    private PurchaseCurrency currency = PurchaseCurrency.UZS;
+
+    /** 1 birlik hujjat valyutasi = N so'm (UZS uchun 1). Hujjat bilan birga MUHRLANADI. */
+    @Column(name = "exchange_rate", nullable = false, precision = 15, scale = 4)
+    @Builder.Default
+    private BigDecimal exchangeRate = BigDecimal.ONE;
+
+    /** Ta'minotchi hujjat raqami ("Kun ID"). */
+    @Column(name = "supplier_doc_number", length = 50)
+    private String supplierDocNumber;
+
+    @Column(name = "supplier_doc_date")
+    private LocalDate supplierDocDate;
+
+    /** Yuk mashina raqami / jo'natma. */
+    @Column(name = "vehicle_number", length = 50)
+    private String vehicleNumber;
+
+    /**
+     * Yo'l haqi (so'm). Ta'minotchi qarziga KIRMAYDI — shablondagi
+     * "To'lov summa" = "Jami summa" − "Bonus". Tannarxga taqsimlanadi.
+     */
+    @Column(name = "transport_cost", nullable = false, precision = 15, scale = 2)
+    @Builder.Default
+    private BigDecimal transportCost = BigDecimal.ZERO;
+
+    /** Tovar summasi bonusgacha (so'm). {@code totalAmount = goodsAmount − bonusAmount}. */
+    @Column(name = "goods_amount", nullable = false, precision = 15, scale = 2)
+    @Builder.Default
+    private BigDecimal goodsAmount = BigDecimal.ZERO;
+
+    /** Ta'minotchi bonusi (so'm) — to'lov summasini kamaytiradi. */
+    @Column(name = "bonus_amount", nullable = false, precision = 15, scale = 2)
+    @Builder.Default
+    private BigDecimal bonusAmount = BigDecimal.ZERO;
+
+    /** To'lov summasi hujjat valyutasida (UZS hujjatda null) — ta'minotchi bilan solishtirish uchun. */
+    @Column(name = "foreign_total_amount", precision = 15, scale = 2)
+    private BigDecimal foreignTotalAmount;
+
+    /** "TEKSHIRILDI": molni sanab qabul qilgan xodim va vaqt. */
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "received_by")
+    private User receivedBy;
+
+    @Column(name = "received_at")
+    private LocalDateTime receivedAt;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "created_by", nullable = false)
@@ -122,6 +178,16 @@ public class PurchaseOrder extends BaseEntity implements Auditable {
         map.put("status", this.status);
         map.put("paymentStatus", this.paymentStatus);
         map.put("notes", this.notes);
+        map.put("currency", this.currency);
+        map.put("exchangeRate", this.exchangeRate);
+        map.put("supplierDocNumber", this.supplierDocNumber);
+        map.put("supplierDocDate", this.supplierDocDate);
+        map.put("vehicleNumber", this.vehicleNumber);
+        map.put("transportCost", this.transportCost);
+        map.put("goodsAmount", this.goodsAmount);
+        map.put("bonusAmount", this.bonusAmount);
+        map.put("foreignTotalAmount", this.foreignTotalAmount);
+        map.put("receivedAt", this.receivedAt);
 
         // Avoid lazy loading
         if (this.supplier != null) {
@@ -129,6 +195,9 @@ public class PurchaseOrder extends BaseEntity implements Auditable {
         }
         if (this.createdBy != null) {
             map.put("createdById", this.createdBy.getId());
+        }
+        if (this.receivedBy != null) {
+            map.put("receivedById", this.receivedBy.getId());
         }
         if (this.items != null) {
             map.put("itemCount", this.items.size());

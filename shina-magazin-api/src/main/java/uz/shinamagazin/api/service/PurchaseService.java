@@ -2,6 +2,7 @@ package uz.shinamagazin.api.service;
 
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
@@ -11,6 +12,7 @@ import uz.shinamagazin.api.dto.response.*;
 import uz.shinamagazin.api.entity.*;
 import uz.shinamagazin.api.enums.MovementType;
 import uz.shinamagazin.api.enums.PaymentStatus;
+import uz.shinamagazin.api.enums.PurchaseCurrency;
 import uz.shinamagazin.api.enums.PurchaseOrderStatus;
 import uz.shinamagazin.api.enums.PurchaseReturnStatus;
 import uz.shinamagazin.api.exception.BadRequestException;
@@ -19,12 +21,33 @@ import uz.shinamagazin.api.repository.*;
 import uz.shinamagazin.api.security.CustomUserDetails;
 
 import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.time.YearMonth;
+import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
+/**
+ * Xaridlar — kirim hujjati (ta'minotchi yuk xati) asosida.
+ *
+ * <p>Hujjat ikki yo'l bilan rasmiylashtiriladi:
+ * <ul>
+ *   <li>{@code receiveNow = true} — kiritish = qabul qilish: mol darhol
+ *       omborga kiradi, ta'minotchi balansiga qarz yoziladi (eski oqim);
+ *   <li>{@code receiveNow = false} — hujjat {@code ORDERED} holatida
+ *       kutadi (mol yo'lda yoki hali sanalmagan). Omborchi molni sanab
+ *       {@link #receivePurchase} bilan qabul qiladi — "TEKSHIRILDI" muhri.
+ *       Kam kelgan mol qatorda {@code ordered − received} sifatida
+ *       ko'rinadi, ta'minotchi qarzi esa faqat kelgan mol uchun yoziladi.
+ * </ul>
+ *
+ * <p>Pul arifmetikasi {@link PurchasePricing} da — bu yerda faqat holat
+ * mashinasi va yozuvlar.
+ */
 @Service
 @RequiredArgsConstructor
 public class PurchaseService {
@@ -71,78 +94,265 @@ public class PurchaseService {
 
         User currentUser = getCurrentUser();
 
-        // Generate order number
-        String orderNumber = generateOrderNumber();
+        PurchaseCurrency currency = request.getCurrency() != null ? request.getCurrency() : PurchaseCurrency.UZS;
+        BigDecimal rate = resolveExchangeRate(currency, request.getExchangeRate());
+        boolean receiveNow = !Boolean.FALSE.equals(request.getReceiveNow());
+        BigDecimal transportCost = nz(request.getTransportCost());
 
-        // Calculate total amount
-        BigDecimal totalAmount = BigDecimal.ZERO;
-        for (PurchaseItemRequest item : request.getItems()) {
-            BigDecimal itemTotal = item.getUnitPrice().multiply(BigDecimal.valueOf(item.getQuantity()));
-            totalAmount = totalAmount.add(itemTotal);
+        List<Product> products = new ArrayList<>();
+        List<PurchasePricing.LineInput> inputs = new ArrayList<>();
+        for (PurchaseItemRequest itemRequest : request.getItems()) {
+            Product product = productRepository.findById(itemRequest.getProductId())
+                    .orElseThrow(() -> new ResourceNotFoundException("Mahsulot", "id", itemRequest.getProductId()));
+            products.add(product);
+            inputs.add(new PurchasePricing.LineInput(product.getId(), itemRequest.getQuantity(),
+                    itemRequest.getUnitPrice(), itemRequest.getBonusPerUnit(), itemRequest.getBonusPercent()));
         }
+
+        PurchasePricing.Totals totals = PurchasePricing.compute(currency, rate, transportCost, inputs);
+        BigDecimal totalAmount = totals.totalAmount();
+        BigDecimal paidAmount = nz(request.getPaidAmount());
 
         // Xarid summasidan ORTIQCHA to'lab bo'lmaydi. addPayment'da bu chegara
         // bor edi, yaratishda esa yo'q: ortiqcha summa tekshirilmasdan PAID
         // deb saqlanib, javobdagi debtAmount manfiyga tushardi.
-        if (request.getPaidAmount() != null && request.getPaidAmount().compareTo(totalAmount) > 0) {
+        if (paidAmount.compareTo(totalAmount) > 0) {
             throw new BadRequestException(String.format(
                     "To'langan summa xarid summasidan (%s) katta bo'lishi mumkin emas", totalAmount));
         }
 
-        // Determine payment status
-        PaymentStatus paymentStatus = calculatePaymentStatus(request.getPaidAmount(), totalAmount);
-
-        // Create purchase order
         PurchaseOrder purchase = PurchaseOrder.builder()
-                .orderNumber(orderNumber)
+                .orderNumber(generateOrderNumber())
                 .supplier(supplier)
                 .orderDate(request.getOrderDate())
-                .totalAmount(totalAmount)
-                .paidAmount(request.getPaidAmount())
-                .status(PurchaseOrderStatus.RECEIVED)
-                .paymentStatus(paymentStatus)
-                .notes(request.getNotes())
+                .status(receiveNow ? PurchaseOrderStatus.RECEIVED : PurchaseOrderStatus.ORDERED)
+                .paymentStatus(calculatePaymentStatus(paidAmount, totalAmount))
+                .notes(trimToNull(request.getNotes()))
                 .createdBy(currentUser)
+                .currency(currency)
+                .exchangeRate(rate)
+                .supplierDocNumber(trimToNull(request.getSupplierDocNumber()))
+                .supplierDocDate(request.getSupplierDocDate())
+                .vehicleNumber(trimToNull(request.getVehicleNumber()))
+                .transportCost(transportCost)
+                .goodsAmount(totals.goodsAmount())
+                .bonusAmount(totals.bonusAmount())
+                .totalAmount(totalAmount)
+                .foreignTotalAmount(totals.foreignTotalAmount())
+                .paidAmount(paidAmount)
                 .build();
 
-        // Create items
-        for (PurchaseItemRequest itemRequest : request.getItems()) {
-            Product product = productRepository.findById(itemRequest.getProductId())
-                    .orElseThrow(() -> new ResourceNotFoundException("Mahsulot", "id", itemRequest.getProductId()));
-
-            BigDecimal itemTotalPrice = itemRequest.getUnitPrice()
-                    .multiply(BigDecimal.valueOf(itemRequest.getQuantity()));
-
-            PurchaseOrderItem item = PurchaseOrderItem.builder()
-                    .purchaseOrder(purchase)
-                    .product(product)
-                    .orderedQuantity(itemRequest.getQuantity())
-                    .receivedQuantity(itemRequest.getQuantity())
-                    .unitPrice(itemRequest.getUnitPrice())
-                    .totalPrice(itemTotalPrice)
-                    .build();
-
-            purchase.addItem(item);
-
-            // Create stock movement for each item
-            createStockMovement(product, itemRequest.getQuantity(), purchase.getOrderNumber(), currentUser);
-
-            // Update product stock + tannarx (oxirgi xarid narxi mahsulot kartochkasiga yoziladi)
-            product.setQuantity(product.getQuantity() + itemRequest.getQuantity());
-            product.setPurchasePrice(itemRequest.getUnitPrice());
-            productRepository.save(product);
+        for (int i = 0; i < totals.lines().size(); i++) {
+            PurchasePricing.Line line = totals.lines().get(i);
+            purchase.addItem(PurchaseOrderItem.builder()
+                    .product(products.get(i))
+                    .orderedQuantity(line.quantity())
+                    .receivedQuantity(receiveNow ? line.quantity() : 0)
+                    .unitPrice(line.unitPrice())
+                    .totalPrice(line.totalPrice())
+                    .foreignUnitPrice(line.foreignUnitPrice())
+                    .bonusPerUnit(line.bonusPerUnit())
+                    .bonusPercent(line.bonusPercent())
+                    .bonusAmount(line.bonusAmount())
+                    .landedUnitCost(line.landedUnitCost())
+                    .build());
         }
 
-        purchase.setReceivedDate(LocalDate.now());
+        if (receiveNow) {
+            stampReceived(purchase, currentUser);
+        }
+
+        // Avval saqlanadi: ombor harakati hujjat ID'siga bog'lanishi kerak
         PurchaseOrder savedPurchase = purchaseOrderRepository.save(purchase);
 
-        // Update supplier balance (add debt)
-        BigDecimal debtAmount = totalAmount.subtract(request.getPaidAmount());
-        if (debtAmount.compareTo(BigDecimal.ZERO) > 0) {
-            supplierService.updateBalance(supplier.getId(), debtAmount);
+        if (receiveNow) {
+            for (PurchaseOrderItem item : savedPurchase.getItems()) {
+                applyStockIn(savedPurchase, item, item.getOrderedQuantity(), currentUser);
+            }
+            // Ta'minotchi balansi: qarz faqat KELGAN mol uchun
+            BigDecimal debtAmount = totalAmount.subtract(paidAmount);
+            if (debtAmount.compareTo(BigDecimal.ZERO) > 0) {
+                supplierService.updateBalance(supplier.getId(), debtAmount);
+            }
+        } else if (paidAmount.signum() > 0) {
+            // Oldindan to'lov: mol hali kelmagan — ta'minotchi bizga qarzdor
+            // (balans manfiy). Qabul qilinganda mol summasi qo'shiladi.
+            supplierService.updateBalance(supplier.getId(), paidAmount.negate());
         }
 
         return mapToResponseWithItems(savedPurchase);
+    }
+
+    /**
+     * Molni sanab qabul qilish — "TEKSHIRILDI" muhri.
+     *
+     * <p>Har qator uchun JAMI qabul qilingan miqdor yuboriladi (ro'yxat
+     * bo'sh bo'lsa — hujjatdagi miqdor). Summalar QABUL QILINGAN miqdor
+     * bo'yicha qayta hisoblanadi: ta'minotchiga kelmagan mol uchun qarz
+     * yozilmaydi, kamomad esa qatorda ko'rinib turadi. Hammasi kelgan
+     * bo'lsa RECEIVED, qismi kelsa PARTIAL — qolgani keyingi yetkazmada
+     * shu endpoint orqali qabul qilinadi.
+     */
+    @Transactional
+    public PurchaseOrderResponse receivePurchase(Long id, PurchaseReceiveRequest request) {
+        PurchaseOrder purchase = purchaseOrderRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("Xarid", "id", id));
+
+        if (purchase.getStatus() == PurchaseOrderStatus.RECEIVED) {
+            throw new BadRequestException("Bu xarid allaqachon to'liq qabul qilingan");
+        }
+        if (purchase.getStatus() == PurchaseOrderStatus.CANCELLED) {
+            throw new BadRequestException("Bekor qilingan xaridni qabul qilib bo'lmaydi");
+        }
+
+        User currentUser = getCurrentUser();
+
+        Map<Long, Integer> requested = new HashMap<>();
+        if (request != null && request.getItems() != null) {
+            for (PurchaseReceiveRequest.Line line : request.getItems()) {
+                boolean known = purchase.getItems().stream()
+                        .anyMatch(i -> i.getId().equals(line.getItemId()));
+                if (!known) {
+                    throw new BadRequestException("Bu xarid qatori topilmadi: " + line.getItemId());
+                }
+                requested.put(line.getItemId(), line.getReceivedQuantity());
+            }
+        }
+
+        boolean foreign = purchase.getCurrency() != PurchaseCurrency.UZS;
+        BigDecimal rate = purchase.getExchangeRate();
+        List<PurchaseOrderItem> items = purchase.getItems();
+        List<PurchasePricing.LineInput> inputs = new ArrayList<>(items.size());
+        List<Integer> previouslyReceived = new ArrayList<>(items.size());
+        int totalTarget = 0;
+
+        for (PurchaseOrderItem item : items) {
+            int current = item.getReceivedQuantity() != null ? item.getReceivedQuantity() : 0;
+            // Ro'yxat berilgan bo'lsa unda yo'q qatorlar O'ZGARMAYDI; ro'yxat
+            // umuman berilmasa hamma qator to'liq qabul qilinadi.
+            int target = requested.isEmpty()
+                    ? item.getOrderedQuantity()
+                    : requested.getOrDefault(item.getId(), current);
+
+            if (target < current) {
+                throw new BadRequestException(String.format(
+                        "\"%s\" uchun qabul qilingan miqdorni kamaytirib bo'lmaydi (avval qabul qilingan: %d)",
+                        item.getProduct().getName(), current));
+            }
+            if (target > item.getOrderedQuantity()) {
+                throw new BadRequestException(String.format(
+                        "\"%s\" uchun qabul qilingan miqdor (%d) hujjatdagi miqdordan (%d) ko'p — "
+                                + "ortiqcha mol uchun alohida hujjat kiriting",
+                        item.getProduct().getName(), target, item.getOrderedQuantity()));
+            }
+
+            BigDecimal unitPriceDoc = foreign && item.getForeignUnitPrice() != null
+                    ? item.getForeignUnitPrice() : item.getUnitPrice();
+            BigDecimal bonusUnitDoc = foreign
+                    ? nz(item.getBonusPerUnit()).divide(rate, 4, RoundingMode.HALF_UP)
+                    : nz(item.getBonusPerUnit());
+
+            inputs.add(new PurchasePricing.LineInput(item.getId(), target, unitPriceDoc,
+                    bonusUnitDoc, item.getBonusPercent()));
+            previouslyReceived.add(current);
+            totalTarget += target;
+        }
+
+        if (totalTarget == 0) {
+            throw new BadRequestException("Hech bo'lmaganda bitta qatorda qabul qilingan miqdor kiritilishi kerak");
+        }
+
+        PurchasePricing.Totals totals = PurchasePricing.compute(
+                purchase.getCurrency(), rate, purchase.getTransportCost(), inputs);
+
+        // Qisman qabul qilingan hujjatning summasi ta'minotchi balansiga
+        // ALLAQACHON yozilgan; faqat farq qo'shiladi.
+        BigDecimal bookedBefore = purchase.getStatus() == PurchaseOrderStatus.PARTIAL
+                ? purchase.getTotalAmount() : BigDecimal.ZERO;
+
+        boolean complete = true;
+        int shortage = 0;
+        for (int i = 0; i < items.size(); i++) {
+            PurchaseOrderItem item = items.get(i);
+            PurchasePricing.Line line = totals.lines().get(i);
+
+            item.setReceivedQuantity(line.quantity());
+            item.setTotalPrice(line.totalPrice());
+            item.setBonusAmount(line.bonusAmount());
+            if (line.landedUnitCost() != null) {
+                item.setLandedUnitCost(line.landedUnitCost());
+            }
+
+            int delta = line.quantity() - previouslyReceived.get(i);
+            if (delta > 0) {
+                applyStockIn(purchase, item, delta, currentUser);
+            }
+            if (line.quantity() < item.getOrderedQuantity()) {
+                complete = false;
+                shortage += item.getOrderedQuantity() - line.quantity();
+            }
+        }
+
+        purchase.setGoodsAmount(totals.goodsAmount());
+        purchase.setBonusAmount(totals.bonusAmount());
+        purchase.setTotalAmount(totals.totalAmount());
+        purchase.setForeignTotalAmount(totals.foreignTotalAmount());
+        purchase.setStatus(complete ? PurchaseOrderStatus.RECEIVED : PurchaseOrderStatus.PARTIAL);
+        purchase.updatePaymentStatus();
+        stampReceived(purchase, currentUser);
+
+        StringBuilder note = new StringBuilder();
+        if (shortage > 0) {
+            note.append("Kamomad: ").append(shortage).append(" dona");
+        }
+        if (request != null && trimToNull(request.getNotes()) != null) {
+            if (note.length() > 0) {
+                note.append(" — ");
+            }
+            note.append(request.getNotes().trim());
+        }
+        if (note.length() > 0) {
+            appendNote(purchase, note.toString());
+        }
+
+        PurchaseOrder saved = purchaseOrderRepository.save(purchase);
+
+        BigDecimal balanceDelta = totals.totalAmount().subtract(bookedBefore);
+        if (balanceDelta.signum() != 0) {
+            supplierService.updateBalance(purchase.getSupplier().getId(), balanceDelta);
+        }
+
+        return mapToResponseWithItems(saved);
+    }
+
+    /**
+     * Hali qabul qilinmagan hujjatni bekor qilish.
+     *
+     * <p>Qabul qilingan mol uchun bu yo'l yopiq — u zaxira va ta'minotchi
+     * balansini o'zgartirgan, ya'ni qaytarish rasmiylashtirilishi kerak.
+     * Oldindan to'lov qilingan hujjat ham bekor qilinmaydi: kassadan
+     * chiqqan pul iz qoldirishi shart, ta'minotchi bilan hisob-kitob avval.
+     */
+    @Transactional
+    public PurchaseOrderResponse cancelPurchase(Long id, String reason) {
+        PurchaseOrder purchase = purchaseOrderRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("Xarid", "id", id));
+
+        if (purchase.getStatus() != PurchaseOrderStatus.ORDERED
+                && purchase.getStatus() != PurchaseOrderStatus.DRAFT) {
+            throw new BadRequestException(
+                    "Faqat hali qabul qilinmagan xaridni bekor qilish mumkin — "
+                            + "qabul qilingan mol uchun qaytarish rasmiylashtiring");
+        }
+        if (purchase.getPaidAmount() != null && purchase.getPaidAmount().signum() > 0) {
+            throw new BadRequestException(
+                    "Bu xarid bo'yicha oldindan to'lov qilingan — avval ta'minotchi bilan hisob-kitob qiling");
+        }
+
+        purchase.setStatus(PurchaseOrderStatus.CANCELLED);
+        appendNote(purchase, "Bekor qilindi" + (trimToNull(reason) != null ? ": " + reason.trim() : ""));
+
+        return mapToResponseWithItems(purchaseOrderRepository.save(purchase));
     }
 
     @Transactional
@@ -157,42 +367,61 @@ public class PurchaseService {
         Supplier supplier = supplierRepository.findById(request.getSupplierId())
                 .orElseThrow(() -> new ResourceNotFoundException("Ta'minotchi", "id", request.getSupplierId()));
 
+        PurchaseCurrency currency = request.getCurrency() != null ? request.getCurrency() : PurchaseCurrency.UZS;
+        BigDecimal rate = resolveExchangeRate(currency, request.getExchangeRate());
+        BigDecimal transportCost = nz(request.getTransportCost());
+
         purchase.setSupplier(supplier);
         purchase.setOrderDate(request.getOrderDate());
-        purchase.setPaidAmount(request.getPaidAmount());
-        purchase.setNotes(request.getNotes());
+        purchase.setPaidAmount(nz(request.getPaidAmount()));
+        purchase.setNotes(trimToNull(request.getNotes()));
+        purchase.setCurrency(currency);
+        purchase.setExchangeRate(rate);
+        purchase.setSupplierDocNumber(trimToNull(request.getSupplierDocNumber()));
+        purchase.setSupplierDocDate(request.getSupplierDocDate());
+        purchase.setVehicleNumber(trimToNull(request.getVehicleNumber()));
+        purchase.setTransportCost(transportCost);
 
         purchase.getItems().clear();
 
-        BigDecimal totalAmount = BigDecimal.ZERO;
+        List<Product> products = new ArrayList<>();
+        List<PurchasePricing.LineInput> inputs = new ArrayList<>();
         for (PurchaseItemRequest itemRequest : request.getItems()) {
             Product product = productRepository.findById(itemRequest.getProductId())
                     .orElseThrow(() -> new ResourceNotFoundException("Mahsulot", "id", itemRequest.getProductId()));
+            products.add(product);
+            inputs.add(new PurchasePricing.LineInput(product.getId(), itemRequest.getQuantity(),
+                    itemRequest.getUnitPrice(), itemRequest.getBonusPerUnit(), itemRequest.getBonusPercent()));
+        }
+        PurchasePricing.Totals totals = PurchasePricing.compute(currency, rate, transportCost, inputs);
 
-            BigDecimal itemTotalPrice = itemRequest.getUnitPrice()
-                    .multiply(BigDecimal.valueOf(itemRequest.getQuantity()));
-            totalAmount = totalAmount.add(itemTotalPrice);
-
-            PurchaseOrderItem item = PurchaseOrderItem.builder()
-                    .purchaseOrder(purchase)
-                    .product(product)
-                    .orderedQuantity(itemRequest.getQuantity())
+        for (int i = 0; i < totals.lines().size(); i++) {
+            PurchasePricing.Line line = totals.lines().get(i);
+            purchase.addItem(PurchaseOrderItem.builder()
+                    .product(products.get(i))
+                    .orderedQuantity(line.quantity())
                     .receivedQuantity(0)
-                    .unitPrice(itemRequest.getUnitPrice())
-                    .totalPrice(itemTotalPrice)
-                    .build();
-
-            purchase.addItem(item);
+                    .unitPrice(line.unitPrice())
+                    .totalPrice(line.totalPrice())
+                    .foreignUnitPrice(line.foreignUnitPrice())
+                    .bonusPerUnit(line.bonusPerUnit())
+                    .bonusPercent(line.bonusPercent())
+                    .bonusAmount(line.bonusAmount())
+                    .landedUnitCost(line.landedUnitCost())
+                    .build());
         }
 
         // Yaratishdagi bilan bir xil chegara: qoralama tahrirlanganda ham
         // to'langan summa yangi jami summadan oshib ketmasligi kerak
-        if (purchase.getPaidAmount() != null && purchase.getPaidAmount().compareTo(totalAmount) > 0) {
+        if (purchase.getPaidAmount().compareTo(totals.totalAmount()) > 0) {
             throw new BadRequestException(String.format(
-                    "To'langan summa xarid summasidan (%s) katta bo'lishi mumkin emas", totalAmount));
+                    "To'langan summa xarid summasidan (%s) katta bo'lishi mumkin emas", totals.totalAmount()));
         }
 
-        purchase.setTotalAmount(totalAmount);
+        purchase.setGoodsAmount(totals.goodsAmount());
+        purchase.setBonusAmount(totals.bonusAmount());
+        purchase.setTotalAmount(totals.totalAmount());
+        purchase.setForeignTotalAmount(totals.foreignTotalAmount());
         purchase.updatePaymentStatus();
         PurchaseOrder savedPurchase = purchaseOrderRepository.save(purchase);
 
@@ -223,6 +452,10 @@ public class PurchaseService {
         BigDecimal totalAmount = purchaseOrderRepository.sumTotalAmount();
         BigDecimal totalDebt = purchaseOrderRepository.sumTotalDebt();
         Long pendingReturns = purchaseReturnRepository.countByStatus(PurchaseReturnStatus.PENDING);
+        Long awaitingReceipt = purchaseOrderRepository.countAwaitingReceipt();
+        BigDecimal lastUsdRate = purchaseOrderRepository
+                .findLatestExchangeRates(PurchaseCurrency.USD, PageRequest.of(0, 1))
+                .stream().findFirst().orElse(null);
 
         return PurchaseStatsResponse.builder()
                 .totalPurchases(totalPurchases != null ? totalPurchases : 0L)
@@ -231,6 +464,8 @@ public class PurchaseService {
                 .totalAmount(totalAmount != null ? totalAmount : BigDecimal.ZERO)
                 .totalDebt(totalDebt != null ? totalDebt : BigDecimal.ZERO)
                 .pendingReturns(pendingReturns != null ? pendingReturns : 0L)
+                .awaitingReceipt(awaitingReceipt != null ? awaitingReceipt : 0L)
+                .lastUsdRate(lastUsdRate)
                 .build();
     }
 
@@ -250,6 +485,10 @@ public class PurchaseService {
     public PurchasePaymentResponse addPayment(Long purchaseId, PaymentRequest request) {
         PurchaseOrder purchase = purchaseOrderRepository.findById(purchaseId)
                 .orElseThrow(() -> new ResourceNotFoundException("Xarid", "id", purchaseId));
+
+        if (purchase.getStatus() == PurchaseOrderStatus.CANCELLED) {
+            throw new BadRequestException("Bekor qilingan xarid uchun to'lov qilib bo'lmaydi");
+        }
 
         User currentUser = getCurrentUser();
 
@@ -278,7 +517,9 @@ public class PurchaseService {
         purchase.updatePaymentStatus();
         purchaseOrderRepository.save(purchase);
 
-        // Update supplier balance (reduce debt)
+        // Update supplier balance (reduce debt). Kutilayotgan hujjatda bu
+        // oldindan to'lov — balans manfiyga tushadi, qabul qilinganda mol
+        // summasi qo'shilib, farq qoladi.
         supplierService.updateBalance(purchase.getSupplier().getId(), request.getAmount().negate());
 
         return mapToPaymentResponse(payment);
@@ -316,7 +557,10 @@ public class PurchaseService {
         PurchaseOrder purchase = purchaseOrderRepository.findById(purchaseId)
                 .orElseThrow(() -> new ResourceNotFoundException("Xarid", "id", purchaseId));
 
-        if (purchase.getStatus() != PurchaseOrderStatus.RECEIVED) {
+        // Qisman qabul qilingan hujjatdan ham qaytarish mumkin — kvota
+        // baribir receivedQuantity bilan cheklanadi.
+        if (purchase.getStatus() != PurchaseOrderStatus.RECEIVED
+                && purchase.getStatus() != PurchaseOrderStatus.PARTIAL) {
             throw new BadRequestException("Faqat qabul qilingan xaridlardan qaytarish mumkin");
         }
 
@@ -570,17 +814,25 @@ public class PurchaseService {
 
     // ==================== HELPERS ====================
 
-    private PaymentStatus calculatePaymentStatus(BigDecimal paidAmount, BigDecimal totalAmount) {
-        if (paidAmount == null || paidAmount.compareTo(BigDecimal.ZERO) == 0) {
-            return PaymentStatus.UNPAID;
-        } else if (paidAmount.compareTo(totalAmount) >= 0) {
-            return PaymentStatus.PAID;
-        } else {
-            return PaymentStatus.PARTIAL;
+    /** UZS hujjatda kurs doim 1; boshqa valyutada musbat kurs majburiy. */
+    private BigDecimal resolveExchangeRate(PurchaseCurrency currency, BigDecimal requested) {
+        if (currency == PurchaseCurrency.UZS) {
+            return BigDecimal.ONE;
         }
+        if (requested == null || requested.signum() <= 0) {
+            throw new BadRequestException(currency + " hujjat uchun valyuta kursi kiritilishi shart");
+        }
+        return requested.setScale(4, RoundingMode.HALF_UP);
     }
 
-    private void createStockMovement(Product product, int quantity, String referenceNumber, User user) {
+    /**
+     * Omborga kirim: harakat yozuvi + mahsulot qoldig'i + tannarx.
+     *
+     * <p>Tannarx sifatida QATOR TANNARXI (bonus va yo'l haqi hisobga olingan)
+     * yoziladi — foyda hisobi haqiqiy xarajatni ko'rsin.
+     */
+    private void applyStockIn(PurchaseOrder purchase, PurchaseOrderItem item, int quantity, User user) {
+        Product product = item.getProduct();
         int previousStock = product.getQuantity();
         int newStock = previousStock + quantity;
 
@@ -591,12 +843,52 @@ public class PurchaseService {
                 .previousStock(previousStock)
                 .newStock(newStock)
                 .referenceType("PURCHASE")
-                .referenceId(null)
-                .notes("Xarid: " + referenceNumber)
+                .referenceId(purchase.getId())
+                .notes("Xarid: " + purchase.getOrderNumber())
+                .supplier(purchase.getSupplier())
+                .unitPrice(item.effectiveLandedUnitCost())
                 .createdBy(user)
                 .build();
-
         stockMovementRepository.save(movement);
+
+        product.setQuantity(newStock);
+        product.setPurchasePrice(item.effectiveLandedUnitCost());
+        productRepository.save(product);
+    }
+
+    private void stampReceived(PurchaseOrder purchase, User user) {
+        purchase.setReceivedDate(LocalDate.now());
+        purchase.setReceivedBy(user);
+        purchase.setReceivedAt(LocalDateTime.now());
+    }
+
+    /** notes VARCHAR(500) — uzun tarixda oshib ketmasligi uchun kesiladi. */
+    private void appendNote(PurchaseOrder purchase, String note) {
+        String combined = (purchase.getNotes() == null || purchase.getNotes().isBlank())
+                ? note : purchase.getNotes() + "; " + note;
+        purchase.setNotes(combined.length() > 500 ? combined.substring(0, 500) : combined);
+    }
+
+    private static String trimToNull(String value) {
+        if (value == null) {
+            return null;
+        }
+        String trimmed = value.trim();
+        return trimmed.isEmpty() ? null : trimmed;
+    }
+
+    private static BigDecimal nz(BigDecimal value) {
+        return value != null ? value : BigDecimal.ZERO;
+    }
+
+    private PaymentStatus calculatePaymentStatus(BigDecimal paidAmount, BigDecimal totalAmount) {
+        if (paidAmount == null || paidAmount.compareTo(BigDecimal.ZERO) == 0) {
+            return PaymentStatus.UNPAID;
+        } else if (paidAmount.compareTo(totalAmount) >= 0) {
+            return PaymentStatus.PAID;
+        } else {
+            return PaymentStatus.PARTIAL;
+        }
     }
 
     /** Xarid raqami — atomik (ilgari "MAX(...) + 1" poygaga sabab bo'lardi). */
@@ -621,8 +913,20 @@ public class PurchaseService {
         int totalQuantity = purchase.getItems().stream()
                 .mapToInt(PurchaseOrderItem::getOrderedQuantity)
                 .sum();
+        int totalReceived = purchase.getItems().stream()
+                .mapToInt(i -> i.getReceivedQuantity() != null ? i.getReceivedQuantity() : 0)
+                .sum();
         int paymentCount = purchase.getPayments() != null ? purchase.getPayments().size() : 0;
         int returnCount = purchase.getReturns() != null ? purchase.getReturns().size() : 0;
+
+        // Kamomad faqat sanab qabul qilingan hujjatda ma'noga ega — kutilayotgan
+        // hujjatda hali hech narsa kelmagan, bu kamomad emas.
+        boolean counted = purchase.getStatus() == PurchaseOrderStatus.RECEIVED
+                || purchase.getStatus() == PurchaseOrderStatus.PARTIAL;
+        int shortage = counted ? purchase.getItems().stream()
+                .mapToInt(i -> Math.max(0, i.getOrderedQuantity()
+                        - (i.getReceivedQuantity() != null ? i.getReceivedQuantity() : 0)))
+                .sum() : 0;
 
         return PurchaseOrderResponse.builder()
                 .id(purchase.getId())
@@ -633,16 +937,31 @@ public class PurchaseService {
                 .dueDate(purchase.getDueDate())
                 .totalAmount(purchase.getTotalAmount())
                 .paidAmount(purchase.getPaidAmount())
-                .debtAmount(purchase.getTotalAmount().subtract(purchase.getPaidAmount()))
+                // Oldindan to'lov kam kelgan moldan ortiq bo'lsa qarz manfiy
+                // chiqardi — ortiqcha pul ta'minotchi balansida ko'rinadi.
+                .debtAmount(purchase.getTotalAmount().subtract(purchase.getPaidAmount()).max(BigDecimal.ZERO))
                 .status(purchase.getStatus())
                 .paymentStatus(purchase.getPaymentStatus())
                 .notes(purchase.getNotes())
                 .itemCount(itemCount)
                 .totalQuantity(totalQuantity)
+                .totalReceivedQuantity(totalReceived)
+                .shortageQuantity(shortage)
                 .paymentCount(paymentCount)
                 .returnCount(returnCount)
                 .createdAt(purchase.getCreatedAt())
                 .createdByName(purchase.getCreatedBy().getFullName())
+                .supplierDocNumber(purchase.getSupplierDocNumber())
+                .supplierDocDate(purchase.getSupplierDocDate())
+                .vehicleNumber(purchase.getVehicleNumber())
+                .currency(purchase.getCurrency())
+                .exchangeRate(purchase.getExchangeRate())
+                .foreignTotalAmount(purchase.getForeignTotalAmount())
+                .goodsAmount(purchase.getGoodsAmount())
+                .bonusAmount(purchase.getBonusAmount())
+                .transportCost(purchase.getTransportCost())
+                .receivedByName(purchase.getReceivedBy() != null ? purchase.getReceivedBy().getFullName() : null)
+                .receivedAt(purchase.getReceivedAt())
                 .build();
     }
 
@@ -655,9 +974,17 @@ public class PurchaseService {
                         .productId(item.getProduct().getId())
                         .productName(item.getProduct().getName())
                         .productSku(item.getProduct().getSku())
+                        .sizeString(item.getProduct().getSizeString())
                         .quantity(item.getOrderedQuantity())
+                        .orderedQuantity(item.getOrderedQuantity())
+                        .receivedQuantity(item.getReceivedQuantity() != null ? item.getReceivedQuantity() : 0)
                         .unitPrice(item.getUnitPrice())
                         .totalPrice(item.getTotalPrice())
+                        .foreignUnitPrice(item.getForeignUnitPrice())
+                        .bonusPerUnit(item.getBonusPerUnit())
+                        .bonusPercent(item.getBonusPercent())
+                        .bonusAmount(item.getBonusAmount())
+                        .landedUnitCost(item.effectiveLandedUnitCost())
                         .build())
                 .collect(Collectors.toList());
 
