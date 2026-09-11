@@ -24,6 +24,7 @@ import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 import java.time.YearMonth;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -51,6 +52,9 @@ import java.util.stream.Collectors;
 @Service
 @RequiredArgsConstructor
 public class PurchaseService {
+
+    /** Qabul izohidagi sana: «Qolgan 2 dona 12.09.2026 da qabul qilindi». */
+    private static final DateTimeFormatter NOTE_DATE = DateTimeFormatter.ofPattern("dd.MM.yyyy");
 
     private final PurchaseOrderRepository purchaseOrderRepository;
     private final PurchaseOrderItemRepository purchaseOrderItemRepository;
@@ -225,6 +229,10 @@ public class PurchaseService {
         List<PurchasePricing.LineInput> inputs = new ArrayList<>(items.size());
         List<Integer> previouslyReceived = new ArrayList<>(items.size());
         int totalTarget = 0;
+        // Qisman qabuldan keyingi yetkazma: izohga qachon va qancha kelgani yoziladi —
+        // aks holda to'liq qabul qilingan hujjatda faqat eski «Kamomad» qolib chalg'itadi.
+        boolean wasPartial = purchase.getStatus() == PurchaseOrderStatus.PARTIAL;
+        int receivedNow = 0;
 
         for (PurchaseOrderItem item : items) {
             int current = item.getReceivedQuantity() != null ? item.getReceivedQuantity() : 0;
@@ -286,6 +294,7 @@ public class PurchaseService {
             int delta = line.quantity() - previouslyReceived.get(i);
             if (delta > 0) {
                 applyStockIn(purchase, item, delta, currentUser);
+                receivedNow += delta;
             }
             if (line.quantity() < item.getOrderedQuantity()) {
                 complete = false;
@@ -301,18 +310,19 @@ public class PurchaseService {
         purchase.updatePaymentStatus();
         stampReceived(purchase, currentUser);
 
-        StringBuilder note = new StringBuilder();
+        List<String> noteParts = new ArrayList<>();
+        if (wasPartial && receivedNow > 0) {
+            noteParts.add((complete ? "Qolgan " : "Yana ") + receivedNow + " dona "
+                    + LocalDate.now().format(NOTE_DATE) + " da qabul qilindi");
+        }
         if (shortage > 0) {
-            note.append("Kamomad: ").append(shortage).append(" dona");
+            noteParts.add("Kamomad: " + shortage + " dona");
         }
         if (request != null && trimToNull(request.getNotes()) != null) {
-            if (note.length() > 0) {
-                note.append(" — ");
-            }
-            note.append(request.getNotes().trim());
+            noteParts.add(request.getNotes().trim());
         }
-        if (note.length() > 0) {
-            appendNote(purchase, note.toString());
+        if (!noteParts.isEmpty()) {
+            appendNote(purchase, String.join(" — ", noteParts));
         }
 
         PurchaseOrder saved = purchaseOrderRepository.save(purchase);

@@ -65,7 +65,9 @@ Formada "Mol qabul qilindi — omborga kirim qilinsin" **yoqiq** bo'lsa (standar
 darhol qabul qilinadi — eski oqim. O'chirilsa hujjat kutadi; mol kelganda xarid
 tafsilotida **Qabul qilish (TEKSHIRILDI)** bosiladi: har qator uchun haqiqatda kelgan
 miqdor kiritiladi, kamomad qatorda ko'rinadi, summalar va ta'minotchi qarzi **kelgan
-mol bo'yicha** qayta hisoblanadi. Qolgan mol keyin kelsa — o'sha tugma, jami miqdor bilan.
+mol bo'yicha** qayta hisoblanadi. Qolgan mol keyin kelsa — o'sha tugma, jami miqdor bilan;
+izohga «Qolgan N dona DD.MM.YYYY da qabul qilindi» qo'shiladi (eski «Kamomad» yozuvi tarix
+sifatida qoladi).
 
 Chop etish: xarid tafsilotida **Kirim hujjatini chop etish** — A4 hujjat, ta'minotchi
 shablonidagi ustunlar bilan, qabul qilingan bo'lsa TEKSHIRILDI muhri (kim, qachon).
