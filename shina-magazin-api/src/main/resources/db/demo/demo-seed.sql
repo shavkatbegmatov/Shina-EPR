@@ -202,13 +202,15 @@ INSERT INTO protektor_demo_purchase_plan VALUES
 @@
 
 INSERT INTO purchase_orders (order_number, supplier_id, order_date, expected_date,
-                             received_date, due_date, total_amount, paid_amount,
+                             received_date, due_date, total_amount, goods_amount, paid_amount,
                              status, payment_status, notes, created_by, created_at)
 SELECT plan.order_number, supplier.id, CURRENT_DATE - plan.day_offset,
        CURRENT_DATE - plan.day_offset + 7,
        CASE WHEN plan.status IN ('RECEIVED','PARTIAL')
             THEN CURRENT_DATE - plan.day_offset + 6 ELSE NULL END,
        CURRENT_DATE - plan.day_offset + 30,
+       product.purchase_price * plan.ordered_quantity,
+       -- Bonus yo'q: tovar summasi = to'lov summasi (V44)
        product.purchase_price * plan.ordered_quantity,
        product.purchase_price * plan.ordered_quantity * plan.paid_ratio,
        plan.status,
@@ -222,11 +224,14 @@ JOIN products product ON product.sku = plan.sku
 @@
 
 INSERT INTO purchase_order_items (purchase_order_id, product_id, ordered_quantity,
-                                  received_quantity, unit_price, total_price, created_at)
+                                  received_quantity, unit_price, total_price,
+                                  landed_unit_cost, created_at)
 SELECT purchase.id, product.id, plan.ordered_quantity,
        CASE WHEN plan.status = 'RECEIVED' THEN plan.ordered_quantity
             WHEN plan.status = 'PARTIAL' THEN plan.ordered_quantity / 2 ELSE 0 END,
        product.purchase_price, product.purchase_price * plan.ordered_quantity,
+       -- Yo'l haqi va bonus yo'q: tannarx = xarid narxi (V44)
+       product.purchase_price,
        purchase.created_at
 FROM protektor_demo_purchase_plan plan
 JOIN purchase_orders purchase ON purchase.order_number = plan.order_number
@@ -241,6 +246,13 @@ SELECT purchase.id, purchase.paid_amount, purchase.order_date + 2,
        purchase.order_date + TIME '14:00'
 FROM purchase_orders purchase
 WHERE purchase.order_number LIKE 'DEMO-P-%' AND purchase.paid_amount > 0
+@@
+
+UPDATE purchase_orders purchase
+SET received_by = current_setting('protektor.demo_user_id')::bigint,
+    received_at = purchase.received_date + TIME '16:00'
+WHERE purchase.order_number LIKE 'DEMO-P-%'
+  AND purchase.status IN ('RECEIVED','PARTIAL')
 @@
 
 UPDATE suppliers supplier
