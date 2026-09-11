@@ -47,6 +47,7 @@ Tekshiruvlar: `npm run lint`, `npm test`, `npm run build`, `npm run typecheck`, 
 | [AUDIT.md](AUDIT.md) | Mantiqiy audit topilmalari va ularning holati |
 | [QOLGAN-ISHLAR.md](QOLGAN-ISHLAR.md) | Reja tarixi va hali ochiq ishlar |
 | [DEMO.md](DEMO.md) | Demo ma'lumotlarni yaratish/o'chirish |
+| [KIRIM-VA-BARTER.md](KIRIM-VA-BARTER.md) | Kirim hujjati (ta'minotchi shabloni, USD, bonus, TEKSHIRILDI) va barter — qo'llanma + demo ssenariysi |
 | [KASSIRLAR-UCHUN.md](KASSIRLAR-UCHUN.md) / [ДЛЯ-КАССИРОВ.md](ДЛЯ-КАССИРОВ.md) | Kassirlar uchun eslatma |
 
 ## Ishlab chiqish qoidalari (qisqacha)
