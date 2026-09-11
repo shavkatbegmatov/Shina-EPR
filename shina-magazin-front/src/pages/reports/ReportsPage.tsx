@@ -23,6 +23,7 @@ import {
   Scale,
   Wallet,
   TrendingDown,
+  Recycle,
 } from 'lucide-react';
 import clsx from 'clsx';
 import { useTranslation } from 'react-i18next';
@@ -395,6 +396,9 @@ function SalesReportView({ report }: { report: SalesReport }) {
           <PaymentMethodCard icon={CreditCard} label={t('erp.reports.card')} amount={report.cardTotal} color="bg-blue-500" />
           <PaymentMethodCard icon={Building2} label={t('erp.reports.transfer')} amount={report.transferTotal} color="bg-purple-500" />
           <PaymentMethodCard icon={AlertCircle} label={t('erp.reports.debt')} amount={report.debtTotal} color="bg-orange-500" />
+          {(report.barterTotal ?? 0) > 0 && (
+            <PaymentMethodCard icon={Recycle} label={t('erp.reports.barter')} amount={report.barterTotal ?? 0} color="bg-teal-600" />
+          )}
         </div>
       </div>
 

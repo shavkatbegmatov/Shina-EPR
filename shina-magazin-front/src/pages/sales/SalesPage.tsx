@@ -253,6 +253,9 @@ export function SalesPage() {
         <div className="flex items-center gap-1.5">
           {paymentMethodIcons[sale.paymentMethod]}
           <span className="text-sm">{enumLabel('payment', sale.paymentMethod)}</span>
+          {sale.tradeInAmount > 0 && (
+            <span className="badge badge-info badge-xs badge-outline">{t('erp.sales.barterBadge')}</span>
+          )}
         </div>
       ),
     },
@@ -529,7 +532,19 @@ export function SalesPage() {
                     <div className="mt-1 flex items-center gap-2">
                       {paymentMethodIcons[selectedSale.paymentMethod]}
                       <span className="font-medium">{enumLabel('payment', selectedSale.paymentMethod)}</span>
+                      {selectedSale.tradeInAmount > 0 && (
+                        <span className="badge badge-info badge-sm badge-outline">{t('erp.sales.barterBadge')}</span>
+                      )}
                     </div>
+                    {selectedSale.tradeInAmount > 0 && (
+                      <p className="mt-1 text-sm text-base-content/70">
+                        {t('erp.sales.tradeInLabel')}: −{formatCurrency(selectedSale.tradeInAmount)} ·{' '}
+                        {t('erp.sales.amountDueLabel')}:{' '}
+                        <span className="font-medium">
+                          {formatCurrency(selectedSale.amountDue ?? selectedSale.totalAmount - selectedSale.tradeInAmount)}
+                        </span>
+                      </p>
+                    )}
                   </div>
                   <div className="surface-soft rounded-lg p-3">
                     <p className="text-xs font-semibold uppercase tracking-wider text-base-content/50">{t('erp.sales.sellerLabel')}</p>

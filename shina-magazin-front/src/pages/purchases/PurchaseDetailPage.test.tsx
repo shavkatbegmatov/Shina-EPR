@@ -6,6 +6,9 @@ import type { ReactNode } from 'react';
 import '../../i18n';
 import type { PurchaseOrder, PurchasePayment, PurchaseReturn } from '../../types';
 
+vi.mock('../../api/settings.api', () => ({
+  settingsApi: { get: vi.fn().mockResolvedValue({}) },
+}));
 vi.mock('../../api/purchases.api', () => ({
   purchasesApi: {
     getById: vi.fn(),
@@ -16,6 +19,8 @@ vi.mock('../../api/purchases.api', () => ({
     approveReturn: vi.fn(),
     completeReturn: vi.fn(),
     deleteReturn: vi.fn(),
+    receive: vi.fn(),
+    cancel: vi.fn(),
   },
 }));
 
@@ -129,5 +134,64 @@ describe('PurchaseDetailPage', () => {
 
     expect(await screen.findByText(/Xarid topilmadi/i)).toBeInTheDocument();
     expect(purchasesApi.getById).not.toHaveBeenCalled();
+  });
+
+  /**
+   * "TEKSHIRILDI" — kutilayotgan hujjatda molni sanab qabul qilish.
+   *
+   * <p>Har qator uchun JAMI qabul qilingan miqdor yuboriladi: omborchi kam
+   * kelgan qatorni tuzatadi, qolganlari hujjatdagi miqdorda ketadi. Bu
+   * so'rov zaxira va ta'minotchi qarzini yozadi — tarkibi qulflanadi.
+   */
+  it('kutilayotgan hujjatda qabul qilish qator miqdorlari bilan yuboriladi', async () => {
+    useAuthStore.setState({
+      permissions: new Set([PermissionCode.PURCHASES_VIEW, PermissionCode.PURCHASES_RECEIVE]),
+    });
+    vi.mocked(purchasesApi.getById).mockResolvedValue({
+      ...PURCHASE,
+      status: 'ORDERED',
+      totalQuantity: 16,
+      items: [
+        { id: 11, productId: 1, productName: 'JOYROAD 195/65 R15', productSku: 'LRG-195', quantity: 8,
+          orderedQuantity: 8, receivedQuantity: 0, unitPrice: 508_000, totalPrice: 4_064_000,
+          bonusPerUnit: 0, bonusPercent: 0, bonusAmount: 0, landedUnitCost: 508_000 },
+        { id: 12, productId: 2, productName: 'JOYROAD 205/60 R16', productSku: 'LRG-205', quantity: 8,
+          orderedQuantity: 8, receivedQuantity: 0, unitPrice: 615_950, totalPrice: 4_927_600,
+          bonusPerUnit: 0, bonusPercent: 0, bonusAmount: 0, landedUnitCost: 615_950 },
+      ],
+    } as unknown as PurchaseOrder);
+    vi.mocked(purchasesApi.receive).mockResolvedValue(PURCHASE);
+
+    renderPage();
+
+    fireEvent.click(await screen.findByRole('button', { name: /Qabul qilish \(TEKSHIRILDI\)/i }));
+
+    // 205/60 R16 dan 2 dona yetib kelmadi
+    const input = await screen.findByRole('spinbutton', { name: /JOYROAD 205\/60 R16/i });
+    fireEvent.change(input, { target: { value: '6' } });
+    expect(screen.getByText(/Kamomad: 2/i)).toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole('button', { name: /^Qabul qilish$/i }));
+
+    await waitFor(() => expect(purchasesApi.receive).toHaveBeenCalled());
+    expect(purchasesApi.receive).toHaveBeenCalledWith(1, {
+      items: [
+        { itemId: 11, receivedQuantity: 8 },
+        { itemId: 12, receivedQuantity: 6 },
+      ],
+      notes: undefined,
+    });
+  });
+
+  // Qabul qilingan hujjatda "Qabul qilish" tugmasi bo'lmaydi — ikki marta
+  // kirim qilib bo'lmasin.
+  it('qabul qilingan hujjatda qabul qilish tugmasi ko\'rinmaydi', async () => {
+    useAuthStore.setState({
+      permissions: new Set([PermissionCode.PURCHASES_VIEW, PermissionCode.PURCHASES_RECEIVE]),
+    });
+    renderPage();
+
+    await screen.findAllByText('PO-1');
+    expect(screen.queryByRole('button', { name: /Qabul qilish \(TEKSHIRILDI\)/i })).not.toBeInTheDocument();
   });
 });

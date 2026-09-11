@@ -13,7 +13,7 @@ import { usePurchasesData } from './usePurchasesData';
 import { SuppliersTab } from './SuppliersTab';
 import { PurchasesTab } from './PurchasesTab';
 import { SupplierFormModal } from './SupplierFormModal';
-import { PurchaseFormModal } from './PurchaseFormModal';
+import { PurchaseFormModal } from '../../components/purchases/PurchaseFormModal';
 import type { Supplier } from '../../types';
 
 type TabType = 'suppliers' | 'purchases';

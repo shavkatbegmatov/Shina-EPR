@@ -3,6 +3,7 @@ import type {
   ApiResponse,
   PagedResponse,
   PurchaseOrder,
+  PurchaseReceiveRequest,
   PurchaseRequest,
   PurchaseStats,
   PurchasePayment,
@@ -71,6 +72,25 @@ export const purchasesApi = {
 
   delete: async (id: number): Promise<void> => {
     await api.delete(`/v1/purchases/${id}`);
+  },
+
+  /**
+   * Molni sanab qabul qilish ("TEKSHIRILDI"). PURCHASES_RECEIVE talab qiladi.
+   * `items` bo'sh bo'lsa hamma qator hujjatdagi miqdorda qabul qilinadi.
+   */
+  receive: async (id: number, data: PurchaseReceiveRequest = {}): Promise<PurchaseOrder> => {
+    const response = await api.post<ApiResponse<PurchaseOrder>>(`/v1/purchases/${id}/receive`, data);
+    return response.data.data;
+  },
+
+  /** Hali qabul qilinmagan (va to'lanmagan) hujjatni bekor qilish. */
+  cancel: async (id: number, reason?: string): Promise<PurchaseOrder> => {
+    const response = await api.put<ApiResponse<PurchaseOrder>>(
+      `/v1/purchases/${id}/cancel`,
+      null,
+      { params: reason ? { reason } : undefined }
+    );
+    return response.data.data;
   },
 
   // ==================== PAYMENTS ====================

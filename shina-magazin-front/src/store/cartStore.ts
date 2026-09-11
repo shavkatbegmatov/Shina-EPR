@@ -1,12 +1,14 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
-import type { CartItem, Customer, Product } from '../types';
+import type { CartItem, Customer, Product, TradeInLine } from '../types';
 
 interface CartState {
   items: CartItem[];
   customer: Customer | null;
   discount: number;
   discountPercent: number;
+  /** Barter: mijozdan qabul qilinayotgan eski shinalar (kredit sifatida). */
+  tradeIns: TradeInLine[];
 
   addItem: (product: Product, quantity?: number) => void;
   removeItem: (productId: number) => void;
@@ -15,12 +17,18 @@ interface CartState {
   setCustomer: (customer: Customer | null) => void;
   setDiscount: (discount: number) => void;
   setDiscountPercent: (percent: number) => void;
+  addTradeIn: (line: Omit<TradeInLine, 'key'>) => void;
+  removeTradeIn: (key: string) => void;
   clear: () => void;
 
   getSubtotal: () => number;
   getDiscountAmount: () => number;
   getTotal: () => number;
   getItemCount: () => number;
+  /** Eski shinalar uchun beriladigan jami kredit. */
+  getTradeInTotal: () => number;
+  /** Mijoz to'lashi kerak bo'lgan summa: jami − barter (manfiy bo'lmaydi). */
+  getAmountDue: () => number;
 }
 
 /** Savat qatorlarining jami (qator chegirmalari bilan). */
@@ -51,6 +59,7 @@ export const useCartStore = create<CartState>()(
   customer: null,
   discount: 0,
   discountPercent: 0,
+  tradeIns: [],
 
   addItem: (product, quantity = 1) => {
     set((state) => {
@@ -108,12 +117,25 @@ export const useCartStore = create<CartState>()(
 
   setDiscountPercent: (discountPercent) => set({ discountPercent, discount: 0 }),
 
+  addTradeIn: (line) =>
+    set((state) => ({
+      tradeIns: [
+        ...state.tradeIns,
+        // Kalit faqat ro'yxatda ajratish uchun — serverga ketmaydi
+        { ...line, key: `${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 8)}` },
+      ],
+    })),
+
+  removeTradeIn: (key) =>
+    set((state) => ({ tradeIns: state.tradeIns.filter((line) => line.key !== key) })),
+
   clear: () =>
     set({
       items: [],
       customer: null,
       discount: 0,
       discountPercent: 0,
+      tradeIns: [],
     }),
 
   getSubtotal: () => {
@@ -141,6 +163,14 @@ export const useCartStore = create<CartState>()(
   getItemCount: () => {
     return get().items.reduce((sum, item) => sum + item.quantity, 0);
   },
+
+  getTradeInTotal: () => {
+    return get().tradeIns.reduce((sum, line) => sum + line.quantity * line.unitValue, 0);
+  },
+
+  getAmountDue: () => {
+    return Math.max(0, get().getTotal() - get().getTradeInTotal());
+  },
     }),
     {
       name: 'pos-cart',
@@ -149,6 +179,13 @@ export const useCartStore = create<CartState>()(
         customer: state.customer,
         discount: state.discount,
         discountPercent: state.discountPercent,
+        tradeIns: state.tradeIns,
+      }),
+      // Eski saqlangan savatda `tradeIns` yo'q — bo'sh ro'yxat bilan to'ldiriladi
+      merge: (persisted, current) => ({
+        ...current,
+        ...(persisted as Partial<CartState>),
+        tradeIns: (persisted as Partial<CartState>)?.tradeIns ?? [],
       }),
     }
   )

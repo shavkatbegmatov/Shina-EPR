@@ -114,9 +114,28 @@ export const MOVEMENT_TYPES = {
 export const REFERENCE_TYPES = {
   SALE: enumEntry('reference', 'SALE'),
   SALE_CANCEL: enumEntry('reference', 'SALE_CANCEL'),
+  SALE_RETURN: enumEntry('reference', 'SALE_RETURN'),
   PURCHASE: enumEntry('reference', 'PURCHASE'),
+  PURCHASE_RETURN: enumEntry('reference', 'PURCHASE_RETURN'),
+  TRADE_IN: enumEntry('reference', 'TRADE_IN'),
+  TRADE_IN_CANCEL: enumEntry('reference', 'TRADE_IN_CANCEL'),
   MANUAL: enumEntry('reference', 'MANUAL'),
   RETURN: enumEntry('reference', 'RETURN'),
+} as const;
+
+/** Kirim hujjati holatlari — badge ranglari bilan. */
+export const PURCHASE_STATUSES = {
+  DRAFT: { ...enumEntry('purchaseStatus', 'DRAFT'), color: 'badge-ghost' },
+  ORDERED: { ...enumEntry('purchaseStatus', 'ORDERED'), color: 'badge-info' },
+  PARTIAL: { ...enumEntry('purchaseStatus', 'PARTIAL'), color: 'badge-warning' },
+  RECEIVED: { ...enumEntry('purchaseStatus', 'RECEIVED'), color: 'badge-success' },
+  CANCELLED: { ...enumEntry('purchaseStatus', 'CANCELLED'), color: 'badge-error' },
+} as const;
+
+/** Kirim hujjati valyutalari; pul ustunlari doim so'mda, bu faqat kiritish uchun. */
+export const PURCHASE_CURRENCIES = {
+  UZS: enumEntry('currency', 'UZS'),
+  USD: enumEntry('currency', 'USD'),
 } as const;
 
 export const CUSTOMER_TYPES = {
@@ -152,6 +171,19 @@ export const formatCurrency = (amount: number): string => {
 
 export const formatNumber = (num: number): string => {
   return new Intl.NumberFormat('uz-UZ').format(num);
+};
+
+/**
+ * Hujjat valyutasidagi summa: `$46.25`, `$5 296`. So'm uchun `formatCurrency`.
+ * Kasr faqat kerak bo'lganda (46,25 → ko'rinadi, 555 → yo'q).
+ */
+export const formatForeign = (amount: number, currency: string = 'USD'): string => {
+  const formatted = new Intl.NumberFormat('uz-UZ', {
+    style: 'decimal',
+    minimumFractionDigits: 0,
+    maximumFractionDigits: 2,
+  }).format(amount);
+  return currency === 'USD' ? `$${formatted}` : `${formatted} ${currency}`;
 };
 
 // Sana formati: dd.mm.yyyy (masalan: 09.02.2026) - Toshkent TZ

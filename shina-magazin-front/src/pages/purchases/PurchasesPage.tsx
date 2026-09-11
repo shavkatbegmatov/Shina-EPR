@@ -1,75 +1,80 @@
 import { useCallback, useMemo, useState } from 'react';
-import { keepPreviousData, useQuery, useQueryClient } from '@tanstack/react-query';
+import { keepPreviousData, useQuery } from '@tanstack/react-query';
 import { useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
-import toast from 'react-hot-toast';
 import { getApiErrorMessage } from '../../utils/apiError';
 import { queryKeys } from '../../lib/queryKeys';
-import { invalidateAfter } from '../../lib/invalidation';
 import { useInvalidateOnNotification } from '../../hooks/useInvalidateOnNotification';
-import { useDebouncedValue } from '../../hooks/useDebouncedValue';
 import {
-  Plus,
-  ShoppingCart,
   Calendar,
-  TrendingUp,
-  Wallet,
-  Package,
-  Truck,
-  X,
-  Trash2,
-  RefreshCw,
-  RotateCcw,
+  ClipboardCheck,
   FileText,
   Hash,
+  Package,
+  Plus,
+  RefreshCw,
+  RotateCcw,
+  ShoppingCart,
+  TrendingUp,
+  Truck,
+  Wallet,
+  X,
 } from 'lucide-react';
 import clsx from 'clsx';
 import { purchasesApi, type PurchaseFilters } from '../../api/purchases.api';
 import { suppliersApi } from '../../api/suppliers.api';
-import { productsApi } from '../../api/products.api';
 import {
   formatCurrency,
   formatDate,
+  formatForeign,
   getTashkentToday,
   getDateDaysAgo,
   getDateMonthsAgo,
   getDateYearsAgo,
+  PURCHASE_STATUSES,
 } from '../../config/constants';
+import { enumLabel } from '@/shared/enumLabel';
 import { DataTable, Column } from '../../components/ui/DataTable';
-import { ModalPortal } from '../../components/common/Modal';
 import { ExportButtons } from '../../components/common/ExportButtons';
 import { DateRangePicker, type DateRangePreset, type DateRange } from '../../components/common/DateRangePicker';
-import { ProductSearchCombobox } from '../../components/common/ProductSearchCombobox';
-import { CurrencyInput } from '../../components/ui/CurrencyInput';
 import { Select } from '../../components/ui/Select';
 import { Button } from '@/ui';
 import { useHighlight } from '../../hooks/useHighlight';
 import { PermissionCode } from '../../hooks/usePermission';
 import { PermissionGate } from '../../components/common/PermissionGate';
-import type {
-  Supplier,
-  PurchaseOrder,
+import { PurchaseFormModal } from '../../components/purchases/PurchaseFormModal';
+import type { PurchaseOrder, PurchaseStatus, PaymentStatus } from '../../types';
 
-  PurchaseRequest,
-  PurchaseItemRequest,
-  Product,
-  PurchaseStatus,
-  PaymentStatus,
-} from '../../types';
-import {
-  addToCart,
-  cartTotal as sumCart,
-  cartTotalQuantity as sumCartQuantity,
-  removeFromCart,
-  updateCartItem,
-  type CartItem,
-} from '../../shared/purchaseCart';
+/** Holat belgisi — rang va matn `PURCHASE_STATUSES` dan (ikkala tilda). */
+function StatusBadge({ status, size = 'sm' }: { status: PurchaseStatus; size?: 'sm' | 'md' }) {
+  const meta = PURCHASE_STATUSES[status];
+  return (
+    <span className={clsx('badge', size === 'sm' && 'badge-sm', meta?.color ?? 'badge-ghost')}>
+      {enumLabel('purchaseStatus', status)}
+    </span>
+  );
+}
+
+function PaymentBadge({ status }: { status: PaymentStatus }) {
+  return (
+    <span
+      className={clsx(
+        'badge badge-sm',
+        status === 'PAID' && 'badge-success',
+        status === 'PARTIAL' && 'badge-warning',
+        status === 'UNPAID' && 'badge-error'
+      )}
+    >
+      {enumLabel('paymentStatus', status)}
+    </span>
+  );
+}
 
 export function PurchasesPage() {
   const { t } = useTranslation();
-  const queryClient = useQueryClient();
   const navigate = useNavigate();
-  // Purchases state
+
+  // Pagination state
   const [page, setPage] = useState(0);
   const [pageSize, setPageSize] = useState(20);
 
@@ -80,26 +85,8 @@ export function PurchasesPage() {
   const [selectedStatus, setSelectedStatus] = useState<PurchaseStatus | ''>('');
   const [selectedPaymentStatus, setSelectedPaymentStatus] = useState<PaymentStatus | ''>('');
 
-  // Suppliers for filter dropdown
-
-  // Purchase modal state
+  // Kirim hujjati oynasi — forma holati oynaning o'zida (yopilganda tozalanadi)
   const [showPurchaseModal, setShowPurchaseModal] = useState(false);
-  const [purchaseSaving, setPurchaseSaving] = useState(false);
-  const [selectedSupplier, setSelectedSupplier] = useState<Supplier | null>(null);
-  const [purchaseDate, setPurchaseDate] = useState(getTashkentToday());
-  const [cartItems, setCartItems] = useState<CartItem[]>([]);
-  const [paidAmount, setPaidAmount] = useState<number>(0);
-  const [purchaseNotes, setPurchaseNotes] = useState('');
-
-  // Product search
-  const [productSearch, setProductSearch] = useState('');
-
-  // Savat hisoblari — `shared/purchaseCart` da, ta'minotchilar sahifasidagi
-  // xarid oynasi bilan BIR XIL mantiq (ilgari ikki nusxa edi va ajralib
-  // ketgan edi: bu yerda yaxlitlash bor, u yerda yo'q).
-  const cartTotal = useMemo(() => sumCart(cartItems), [cartItems]);
-  const cartTotalQuantity = useMemo(() => sumCartQuantity(cartItems), [cartItems]);
-  const debtAmount = useMemo(() => Math.max(0, cartTotal - paidAmount), [cartTotal, paidAmount]);
 
   const { highlightId, clearHighlight } = useHighlight();
 
@@ -168,30 +155,14 @@ export function PurchasesPage() {
     queryFn: () => suppliersApi.getActive(),
   });
 
-  // Har bosilgan harfda so'rov yubormaslik uchun kechiktiriladi
-  const debouncedProductSearch = useDebouncedValue(productSearch.trim(), 300);
-  const productQuery = useQuery({
-    queryKey: queryKeys.products.search(debouncedProductSearch),
-    queryFn: () => productsApi.getAll({ search: debouncedProductSearch, size: 10 }),
-    enabled: debouncedProductSearch.length > 0,
-  });
-
   const purchases = purchasesQuery.data?.content ?? [];
   const totalPages = purchasesQuery.data?.totalPages ?? 0;
   const totalElements = purchasesQuery.data?.totalElements ?? 0;
   const purchaseStats = statsQuery.data ?? null;
   const suppliers = useMemo(() => suppliersQuery.data ?? [], [suppliersQuery.data]);
-  // Maydon bo'shatilganda ro'yxat DARHOL yopilishi kerak
-  const productResults = productSearch.trim() ? productQuery.data?.content ?? [] : [];
-  const productSearchLoading = productQuery.isFetching;
   const loadError = purchasesQuery.isError ? getApiErrorMessage(purchasesQuery.error) : null;
   const initialLoading = rangeReady && purchasesQuery.isPending;
   const refreshing = purchasesQuery.isFetching && !purchasesQuery.isPending;
-
-  /** Xarid zaxira, ta'minotchi balansi va omborga ta'sir qiladi. */
-  const invalidatePurchases = () => {
-    invalidateAfter.purchase(queryClient);
-  };
 
   useInvalidateOnNotification([queryKeys.purchases.all]);
 
@@ -236,69 +207,6 @@ export function PurchasesPage() {
     });
   };
 
-  // Purchase modal handlers
-  const handleOpenPurchaseModal = () => {
-    setSelectedSupplier(null);
-    setPurchaseDate(getTashkentToday());
-    setCartItems([]);
-    setPaidAmount(0);
-    setPurchaseNotes('');
-    setProductSearch('');
-    setShowPurchaseModal(true);
-  };
-
-  const handleClosePurchaseModal = () => {
-    setShowPurchaseModal(false);
-    setSelectedSupplier(null);
-    setCartItems([]);
-    setPaidAmount(0);
-    setPurchaseNotes('');
-    setProductSearch('');
-  };
-
-  const handleAddToCart = (product: Product) => {
-    setCartItems((prev) => addToCart(prev, product));
-    setProductSearch('');
-  };
-
-  const handleUpdateCartItem = (productId: number, field: 'quantity' | 'unitPrice', value: number) => {
-    setCartItems((prev) => updateCartItem(prev, productId, field, value));
-  };
-
-  const handleRemoveFromCart = (productId: number) => {
-    setCartItems((prev) => removeFromCart(prev, productId));
-  };
-
-  const handleSavePurchase = async () => {
-    if (!selectedSupplier || cartItems.length === 0) return;
-
-    setPurchaseSaving(true);
-    try {
-      const items: PurchaseItemRequest[] = cartItems.map(item => ({
-        productId: item.product.id,
-        quantity: item.quantity,
-        unitPrice: item.unitPrice,
-      }));
-
-      const request: PurchaseRequest = {
-        supplierId: selectedSupplier.id,
-        orderDate: purchaseDate,
-        paidAmount,
-        notes: purchaseNotes || undefined,
-        items,
-      };
-
-      await purchasesApi.create(request);
-      handleClosePurchaseModal();
-      invalidatePurchases();
-    } catch (error) {
-      console.error('Failed to save purchase:', error);
-      toast.error(getApiErrorMessage(error));
-    } finally {
-      setPurchaseSaving(false);
-    }
-  };
-
   // Navigate to detail page
   const handleRowClick = (purchase: PurchaseOrder) => {
     navigate(`/admin/purchases/${purchase.id}`);
@@ -310,9 +218,16 @@ export function PurchasesPage() {
       key: 'orderNumber',
       header: t('erp.purchases.colNumber'),
       render: (purchase) => (
-        <div className="flex items-center gap-2">
-          <Hash className="h-4 w-4 text-base-content/50" />
-          <span className="font-mono font-medium">{purchase.orderNumber}</span>
+        <div>
+          <div className="flex items-center gap-2">
+            <Hash className="h-4 w-4 text-base-content/50" />
+            <span className="font-mono font-medium">{purchase.orderNumber}</span>
+          </div>
+          {purchase.supplierDocNumber && (
+            <p className="mt-0.5 pl-6 text-xs text-base-content/60">
+              {t('erp.purchases.docNumberShort')}: {purchase.supplierDocNumber}
+            </p>
+          )}
         </div>
       ),
     },
@@ -340,9 +255,16 @@ export function PurchasesPage() {
       key: 'items',
       header: t('erp.purchases.colItems'),
       render: (purchase) => (
-        <div className="flex items-center gap-2">
-          <Package className="h-4 w-4 text-base-content/50" />
-          <span>{t('erp.purchases.itemsSummary', { types: purchase.itemCount, units: purchase.totalQuantity })}</span>
+        <div>
+          <div className="flex items-center gap-2">
+            <Package className="h-4 w-4 text-base-content/50" />
+            <span>{t('erp.purchases.itemsSummary', { types: purchase.itemCount, units: purchase.totalQuantity })}</span>
+          </div>
+          {purchase.shortageQuantity > 0 && (
+            <span className="mt-1 badge badge-warning badge-xs badge-outline">
+              {t('erp.purchases.shortageBadge', { count: purchase.shortageQuantity })}
+            </span>
+          )}
         </div>
       ),
     },
@@ -351,7 +273,14 @@ export function PurchasesPage() {
       header: t('common.amount'),
       getValue: (purchase) => purchase.totalAmount,
       render: (purchase) => (
-        <span className="font-semibold">{formatCurrency(purchase.totalAmount)}</span>
+        <div className="text-right sm:text-left">
+          <span className="font-semibold">{formatCurrency(purchase.totalAmount)}</span>
+          {purchase.currency && purchase.currency !== 'UZS' && purchase.foreignTotalAmount != null && (
+            <p className="text-xs text-base-content/60">
+              {formatForeign(purchase.foreignTotalAmount, purchase.currency)}
+            </p>
+          )}
+        </div>
       ),
     },
     {
@@ -378,34 +307,12 @@ export function PurchasesPage() {
     {
       key: 'paymentStatus',
       header: t('erp.purchases.colPayment'),
-      render: (purchase) => (
-        <span className={clsx(
-          'badge badge-sm',
-          purchase.paymentStatus === 'PAID' && 'badge-success',
-          purchase.paymentStatus === 'PARTIAL' && 'badge-warning',
-          purchase.paymentStatus === 'UNPAID' && 'badge-error'
-        )}>
-          {purchase.paymentStatus === 'PAID' && t('erp.purchases.paymentPaid')}
-          {purchase.paymentStatus === 'PARTIAL' && t('erp.purchases.paymentPartial')}
-          {purchase.paymentStatus === 'UNPAID' && t('erp.purchases.paymentUnpaid')}
-        </span>
-      ),
+      render: (purchase) => <PaymentBadge status={purchase.paymentStatus} />,
     },
     {
       key: 'status',
       header: t('common.status'),
-      render: (purchase) => (
-        <span className={clsx(
-          'badge badge-sm',
-          purchase.status === 'RECEIVED' && 'badge-success',
-          purchase.status === 'DRAFT' && 'badge-warning',
-          purchase.status === 'CANCELLED' && 'badge-error'
-        )}>
-          {purchase.status === 'RECEIVED' && t('erp.purchases.statusReceived')}
-          {purchase.status === 'DRAFT' && t('erp.purchases.statusDraft')}
-          {purchase.status === 'CANCELLED' && t('erp.purchases.statusCancelled')}
-        </span>
-      ),
+      render: (purchase) => <StatusBadge status={purchase.status} />,
     },
   ], [t]);
 
@@ -426,7 +333,7 @@ export function PurchasesPage() {
             loading={refreshing}
           />
           <PermissionGate permission={PermissionCode.PURCHASES_CREATE}>
-            <Button variant="primary" onClick={handleOpenPurchaseModal}>
+            <Button variant="primary" onClick={() => setShowPurchaseModal(true)}>
               <Plus className="h-5 w-5" />
               {t('erp.purchases.newPurchase')}
             </Button>
@@ -497,6 +404,16 @@ export function PurchasesPage() {
         </div>
       </div>
 
+      {/* Mol qabul qilishni kutayotgan hujjatlar — omborchi uchun eslatma */}
+      {purchaseStats && purchaseStats.awaitingReceipt > 0 && (
+        <div className="alert alert-info">
+          <ClipboardCheck className="h-5 w-5" />
+          <span>
+            <strong>{purchaseStats.awaitingReceipt}</strong> {t('erp.purchases.awaitingReceiptSuffix')}
+          </span>
+        </div>
+      )}
+
       {/* Pending Returns Info */}
       {purchaseStats && purchaseStats.pendingReturns > 0 && (
         <div className="alert alert-warning">
@@ -548,12 +465,10 @@ export function PurchasesPage() {
                 setPage(0);
               }}
               placeholder={t('common.all')}
-              options={[
-                { value: 'RECEIVED', label: t('erp.purchases.statusReceivedFull') },
-                { value: 'DRAFT', label: t('erp.purchases.statusDraft') },
-                { value: 'CANCELLED', label: t('erp.purchases.statusCancelledFull') },
-              ]}
-              className="w-36"
+              options={(['ORDERED', 'PARTIAL', 'RECEIVED', 'DRAFT', 'CANCELLED'] as PurchaseStatus[]).map(
+                (status) => ({ value: status, label: enumLabel('purchaseStatus', status) })
+              )}
+              className="w-44"
             />
 
             {/* Payment Status Filter */}
@@ -617,270 +532,76 @@ export function PurchasesPage() {
           highlightId={highlightId}
           onHighlightComplete={clearHighlight}
           emptyIcon={<ShoppingCart className="h-12 w-12" />}
-        emptyTitle={t('erp.purchases.emptyTitle')}
-        emptyDescription={t('erp.purchases.emptyDescription')}
-        onRowClick={handleRowClick}
-        rowClassName={(purchase) => clsx(
-          'cursor-pointer hover:bg-base-200/50',
-          purchase.debtAmount > 0 && 'bg-error/5'
-        )}
-        currentPage={page}
-        totalPages={totalPages}
-        totalElements={totalElements}
-        pageSize={pageSize}
-        onPageChange={setPage}
-        onPageSizeChange={handlePageSizeChange}
-        renderMobileCard={(purchase) => (
-          <div
-            className="surface-panel flex flex-col gap-3 rounded-xl p-4 cursor-pointer"
-            onClick={() => handleRowClick(purchase)}
-          >
-            <div className="flex items-start justify-between gap-3">
-              <div>
-                <p className="font-mono font-semibold">{purchase.orderNumber}</p>
-                <p className="text-sm font-medium text-base-content/80">{purchase.supplierName}</p>
-                <p className="text-xs text-base-content/60">
-                  {formatDate(purchase.orderDate)}
-                </p>
+          emptyTitle={t('erp.purchases.emptyTitle')}
+          emptyDescription={t('erp.purchases.emptyDescription')}
+          onRowClick={handleRowClick}
+          rowClassName={(purchase) => clsx(
+            'cursor-pointer hover:bg-base-200/50',
+            purchase.debtAmount > 0 && 'bg-error/5',
+            (purchase.status === 'ORDERED' || purchase.status === 'PARTIAL') && 'bg-info/5'
+          )}
+          currentPage={page}
+          totalPages={totalPages}
+          totalElements={totalElements}
+          pageSize={pageSize}
+          onPageChange={setPage}
+          onPageSizeChange={handlePageSizeChange}
+          renderMobileCard={(purchase) => (
+            <div
+              className="surface-panel flex flex-col gap-3 rounded-xl p-4 cursor-pointer"
+              onClick={() => handleRowClick(purchase)}
+            >
+              <div className="flex items-start justify-between gap-3">
+                <div>
+                  <p className="font-mono font-semibold">{purchase.orderNumber}</p>
+                  <p className="text-sm font-medium text-base-content/80">{purchase.supplierName}</p>
+                  <p className="text-xs text-base-content/60">
+                    {formatDate(purchase.orderDate)}
+                    {purchase.supplierDocNumber && ` • ${t('erp.purchases.docNumberShort')}: ${purchase.supplierDocNumber}`}
+                  </p>
+                </div>
+                <div className="flex flex-col items-end gap-1">
+                  <StatusBadge status={purchase.status} />
+                  <PaymentBadge status={purchase.paymentStatus} />
+                </div>
               </div>
-              <div className="flex flex-col items-end gap-1">
-                <span className={clsx(
-                  'badge badge-sm',
-                  purchase.status === 'RECEIVED' && 'badge-success',
-                  purchase.status === 'DRAFT' && 'badge-warning',
-                  purchase.status === 'CANCELLED' && 'badge-error'
-                )}>
-                  {purchase.status === 'RECEIVED' && t('erp.purchases.statusReceived')}
-                  {purchase.status === 'DRAFT' && t('erp.purchases.statusDraft')}
-                  {purchase.status === 'CANCELLED' && t('erp.purchases.statusCancelled')}
-                </span>
-                <span className={clsx(
-                  'badge badge-sm',
-                  purchase.paymentStatus === 'PAID' && 'badge-success',
-                  purchase.paymentStatus === 'PARTIAL' && 'badge-warning',
-                  purchase.paymentStatus === 'UNPAID' && 'badge-error'
-                )}>
-                  {purchase.paymentStatus === 'PAID' && t('erp.purchases.paymentPaid')}
-                  {purchase.paymentStatus === 'PARTIAL' && t('erp.purchases.paymentPartial')}
-                  {purchase.paymentStatus === 'UNPAID' && t('erp.purchases.paymentUnpaid')}
-                </span>
-              </div>
-            </div>
 
-            <div className="flex items-center gap-2 text-sm text-base-content/70">
-              <Package className="h-4 w-4" />
-              {t('erp.purchases.itemsSummary', { types: purchase.itemCount, units: purchase.totalQuantity })}
-            </div>
-
-            <div className="flex items-center justify-between pt-2 border-t border-base-200">
-              <div>
-                <p className="text-sm font-semibold">{formatCurrency(purchase.totalAmount)}</p>
-                {purchase.debtAmount > 0 && (
-                  <p className="text-xs text-error">{t('erp.purchases.colDebt')}: {formatCurrency(purchase.debtAmount)}</p>
+              <div className="flex items-center gap-2 text-sm text-base-content/70">
+                <Package className="h-4 w-4" />
+                {t('erp.purchases.itemsSummary', { types: purchase.itemCount, units: purchase.totalQuantity })}
+                {purchase.shortageQuantity > 0 && (
+                  <span className="badge badge-warning badge-xs badge-outline">
+                    {t('erp.purchases.shortageBadge', { count: purchase.shortageQuantity })}
+                  </span>
                 )}
               </div>
+
+              <div className="flex items-center justify-between pt-2 border-t border-base-200">
+                <div>
+                  <p className="text-sm font-semibold">
+                    {formatCurrency(purchase.totalAmount)}
+                    {purchase.currency && purchase.currency !== 'UZS' && purchase.foreignTotalAmount != null && (
+                      <span className="ml-2 text-xs font-normal text-base-content/60">
+                        {formatForeign(purchase.foreignTotalAmount, purchase.currency)}
+                      </span>
+                    )}
+                  </p>
+                  {purchase.debtAmount > 0 && (
+                    <p className="text-xs text-error">{t('erp.purchases.colDebt')}: {formatCurrency(purchase.debtAmount)}</p>
+                  )}
+                </div>
+              </div>
             </div>
-          </div>
-        )}
-      />
+          )}
+        />
       </div>
 
-      {/* Purchase Modal */}
-      <ModalPortal isOpen={showPurchaseModal} onClose={handleClosePurchaseModal}>
-        <div className="w-full max-w-4xl bg-base-100 rounded-2xl shadow-2xl max-h-[90vh] overflow-y-auto">
-          <div className="p-4 sm:p-6">
-            <div className="flex items-start justify-between gap-4">
-              <div>
-                <h3 className="text-xl font-semibold">{t('erp.purchases.newPurchase')}</h3>
-                <p className="text-sm text-base-content/60">
-                  {t('erp.purchases.modalSubtitle')}
-                </p>
-              </div>
-              <Button variant="ghost" size="sm" onClick={handleClosePurchaseModal}>
-                <X className="h-4 w-4" />
-              </Button>
-            </div>
-
-            <div className="mt-6 space-y-5">
-              {/* Ta'minotchi va sana */}
-              <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-                <Select
-                  label={t('erp.purchases.supplierRequiredLabel')}
-                  value={selectedSupplier?.id || ''}
-                  onChange={(value) => {
-                    const supplier = suppliers.find(s => s.id === Number(value));
-                    setSelectedSupplier(supplier || null);
-                  }}
-                  placeholder={t('erp.purchases.supplierSelectPlaceholder')}
-                  options={suppliers.map(supplier => ({
-                    value: supplier.id,
-                    label: supplier.name,
-                  }))}
-                />
-                <label className="form-control">
-                  <span className="label-text mb-1 text-xs font-semibold uppercase tracking-[0.18em] text-base-content/50">
-                    {t('erp.purchases.dateRequiredLabel')}
-                  </span>
-                  <input
-                    type="date"
-                    className="input input-bordered w-full"
-                    value={purchaseDate}
-                    onChange={(e) => setPurchaseDate(e.target.value)}
-                  />
-                </label>
-              </div>
-
-              {/* Mahsulotlar */}
-              <div className="surface-soft rounded-xl p-4">
-                <h4 className="text-sm font-semibold uppercase tracking-[0.15em] text-base-content/60 mb-4 flex items-center gap-2">
-                  <Package className="h-4 w-4" />
-                  {t('erp.purchases.colItems')}
-                </h4>
-
-                {/* Product search with Portal-based dropdown */}
-                <ProductSearchCombobox
-                  value={productSearch}
-                  onChange={setProductSearch}
-                  onSelect={handleAddToCart}
-                  products={productResults}
-                  isLoading={productSearchLoading}
-                  placeholder={t('erp.purchases.productSearchPlaceholder')}
-                  className="mb-4"
-                />
-
-                {/* Cart items table */}
-                {cartItems.length > 0 ? (
-                  <div className="overflow-x-auto">
-                    <table className="table table-sm">
-                      <thead>
-                        <tr>
-                          <th>{t('erp.purchases.colProduct')}</th>
-                          <th className="w-28">{t('erp.purchases.colQuantity')}</th>
-                          <th className="w-36">{t('erp.purchases.colPrice')}</th>
-                          <th className="w-32 text-right">{t('common.amount')}</th>
-                          <th className="w-12"><span className="sr-only">{t('common.actions')}</span></th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {cartItems.map(item => (
-                          <tr key={item.product.id}>
-                            <td>
-                              <div>
-                                <p className="font-medium">{item.product.name}</p>
-                                <p className="text-xs text-base-content/60">{item.product.sku}</p>
-                              </div>
-                            </td>
-                            <td>
-                              <input
-                                type="number"
-                                min={1}
-                                className="input input-bordered input-sm w-full"
-                                value={item.quantity}
-                                onChange={(e) => handleUpdateCartItem(item.product.id, 'quantity', Number(e.target.value) || 1)}
-                              />
-                            </td>
-                            <td>
-                              <CurrencyInput
-                                value={item.unitPrice}
-                                onChange={(val) => handleUpdateCartItem(item.product.id, 'unitPrice', val)}
-                                size="sm"
-                                min={0}
-                              />
-                            </td>
-                            <td className="text-right font-semibold">
-                              {formatCurrency(item.quantity * item.unitPrice)}
-                            </td>
-                            <td>
-                              <Button
-                                variant="ghost"
-                                size="sm"
-                                iconOnly
-                                className="text-error"
-                                onClick={() => handleRemoveFromCart(item.product.id)}
-                              >
-                                <Trash2 className="h-4 w-4" />
-                              </Button>
-                            </td>
-                          </tr>
-                        ))}
-                      </tbody>
-                    </table>
-                  </div>
-                ) : (
-                  <div className="text-center py-8 text-base-content/50">
-                    <Package className="h-12 w-12 mx-auto mb-2 opacity-50" />
-                    <p>{t('erp.purchases.cartEmpty')}</p>
-                  </div>
-                )}
-              </div>
-
-              {/* Summary */}
-              {cartItems.length > 0 && (
-                <div className="surface-soft rounded-xl p-4">
-                  <div className="space-y-3">
-                    <div className="flex justify-between text-sm">
-                      <span className="text-base-content/70">{t('erp.purchases.summaryTotalItems')}</span>
-                      <span className="font-medium">{t('erp.purchases.unitsCount', { count: cartTotalQuantity })}</span>
-                    </div>
-                    <div className="flex justify-between text-lg font-semibold">
-                      <span>{t('erp.purchases.summaryTotalAmount')}</span>
-                      <span>{formatCurrency(cartTotal)}</span>
-                    </div>
-                    <div className="divider my-2"></div>
-                    <label className="form-control">
-                      <span className="label-text mb-1 text-xs font-semibold uppercase tracking-[0.18em] text-base-content/50">
-                        {t('erp.purchases.paidAmountLabel')}
-                      </span>
-                      <input
-                        type="number"
-                        min={0}
-                        max={cartTotal}
-                        className="input input-bordered w-full"
-                        value={paidAmount}
-                        onChange={(e) => setPaidAmount(Number(e.target.value) || 0)}
-                      />
-                    </label>
-                    <div className="flex justify-between text-lg">
-                      <span className="text-base-content/70">{t('erp.purchases.colDebt')}:</span>
-                      <span className={clsx('font-semibold', debtAmount > 0 ? 'text-error' : 'text-success')}>
-                        {formatCurrency(debtAmount)}
-                      </span>
-                    </div>
-                  </div>
-                </div>
-              )}
-
-              {/* Notes */}
-              <label className="form-control">
-                <span className="label-text mb-1 text-xs font-semibold uppercase tracking-[0.18em] text-base-content/50">
-                  {t('erp.purchases.notesLabel')}
-                </span>
-                <textarea
-                  className="textarea textarea-bordered w-full"
-                  rows={2}
-                  value={purchaseNotes}
-                  onChange={(e) => setPurchaseNotes(e.target.value)}
-                  placeholder={t('erp.purchases.notesPlaceholder')}
-                />
-              </label>
-            </div>
-
-            <div className="mt-6 flex justify-end gap-2">
-              <Button variant="ghost" onClick={handleClosePurchaseModal} disabled={purchaseSaving}>
-                {t('common.cancel')}
-              </Button>
-              <Button
-                variant="primary"
-                onClick={handleSavePurchase}
-                loading={purchaseSaving}
-                disabled={!selectedSupplier || cartItems.length === 0}
-              >
-                {t('erp.purchases.saveAndReceive')}
-              </Button>
-            </div>
-          </div>
-        </div>
-      </ModalPortal>
+      {/* Kirim hujjati — Ta'minotchilar sahifasi bilan bitta oyna */}
+      <PurchaseFormModal
+        isOpen={showPurchaseModal}
+        suppliers={suppliers}
+        onClose={() => setShowPurchaseModal(false)}
+      />
     </div>
   );
 }

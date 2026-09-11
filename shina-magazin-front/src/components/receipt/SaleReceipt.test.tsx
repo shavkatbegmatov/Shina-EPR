@@ -24,6 +24,7 @@ const SALE: Sale = {
   totalAmount: 2_200_000,
   paidAmount: 2_000_000,
   debtAmount: 200_000,
+  tradeInAmount: 0,
   paymentMethod: 'CASH',
   paymentStatus: 'PARTIAL',
   status: 'COMPLETED',
