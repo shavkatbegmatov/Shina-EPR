@@ -210,6 +210,12 @@ class PurchaseReceiptTest {
 
         assertThat(completed.getStatus()).isEqualTo(PurchaseOrderStatus.RECEIVED);
         assertThat(completed.getShortageQuantity()).isZero();
+        // Izoh tarixi saqlanadi, yakuniy yetkazma sanasi bilan qo'shiladi — TEKSHIRILDI
+        // muhrli hujjatda faqat eski «Kamomad» qolib ketmasin
+        assertThat(completed.getNotes())
+                .contains("Kamomad: 2 dona")
+                .contains("Qolgan 2 dona")
+                .contains("da qabul qilindi");
         assertThat(completed.getTotalAmount()).isEqualByComparingTo("8788400");
         assertThat(reload(joyroad205).getQuantity()).isEqualTo(8);
         assertThat(reloadSupplier().getBalance()).as("farq qo'shildi, ikki marta emas")
