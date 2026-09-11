@@ -6,10 +6,11 @@ import type { SalesReport, WarehouseReport, DebtsReport } from '../types';
 // Yagona formatlash — config/constants (ilgari uchta nusxa bor edi va format
 // o'zgarsa bir-biridan ajralib ketardi)
 import { formatCurrency } from '../config/constants';
+import { toServerWallClock } from '../shared/serverDate';
 
 const formatDate = (dateStr: string): string => {
   if (!dateStr) return '—';
-  const date = new Date(dateStr);
+  const date = toServerWallClock(dateStr);
   const day = date.getDate().toString().padStart(2, '0');
   const month = (date.getMonth() + 1).toString().padStart(2, '0');
   const year = date.getFullYear();

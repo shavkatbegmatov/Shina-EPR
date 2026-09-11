@@ -2,6 +2,7 @@ import type { AuditLogGroup, AuditOperationType, AuditLogGroupDetail, GroupDetai
 import { format } from 'date-fns';
 import { uz } from 'date-fns/locale';
 import { formatCurrency as formatMoney } from '../config/constants';
+import { toServerWallClock } from '../shared/serverDate';
 
 /**
  * Format currency value in Uzbek som
@@ -54,7 +55,7 @@ function translateDebtStatus(status: string): string {
  */
 function formatTimestamp(dateString: string): string {
   try {
-    return format(new Date(dateString), 'dd.MM.yyyy HH:mm', { locale: uz });
+    return format(toServerWallClock(dateString), 'dd.MM.yyyy HH:mm', { locale: uz });
   } catch {
     return dateString;
   }

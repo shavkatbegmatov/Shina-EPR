@@ -20,6 +20,7 @@ import { Button } from '@/ui';
 import { AuditLogDetailModal } from './AuditLogDetailModal';
 import { AuditLogGroupDetailModal } from './AuditLogGroupDetailModal';
 import { extractGroupDetail } from '../../utils/audit-log-extractors';
+import { parseServerDate } from '../../shared/serverDate';
 
 interface AuditLogGroupCardProps {
   group: AuditLogGroup;
@@ -33,7 +34,7 @@ export function AuditLogGroupCard({ group }: AuditLogGroupCardProps) {
   const [showGroupDetailModal, setShowGroupDetailModal] = useState(false);
 
   const formatTimestamp = (dateString: string): string => {
-    return formatDistanceToNow(new Date(dateString), {
+    return formatDistanceToNow(parseServerDate(dateString), {
       addSuffix: true,
       locale: uz,
     });
@@ -291,7 +292,7 @@ export function AuditLogGroupRow({ group }: AuditLogGroupRowProps) {
   const [showGroupDetailModal, setShowGroupDetailModal] = useState(false);
 
   const formatTimestamp = (dateString: string): string => {
-    return formatDistanceToNow(new Date(dateString), {
+    return formatDistanceToNow(parseServerDate(dateString), {
       addSuffix: true,
       locale: uz,
     });

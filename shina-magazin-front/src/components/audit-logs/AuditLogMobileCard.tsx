@@ -7,6 +7,7 @@ import type { AuditLog } from '../../api/audit-logs.api';
 import type { FieldChange } from '../../types';
 import { AuditLogDetailModal } from './AuditLogDetailModal';
 import { Button } from '@/ui';
+import { parseServerDate } from '../../shared/serverDate';
 
 interface AuditLogMobileCardProps {
   log: AuditLog;
@@ -37,7 +38,7 @@ export function AuditLogMobileCard({
   };
 
   const formatTimeAgo = (dateString: string) => {
-    return formatDistanceToNow(new Date(dateString), {
+    return formatDistanceToNow(parseServerDate(dateString), {
       addSuffix: true,
       locale: uz,
     });

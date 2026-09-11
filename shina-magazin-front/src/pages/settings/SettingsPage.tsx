@@ -41,6 +41,7 @@ import { Button } from '@/ui';
 import { ProductImage } from '../../shop/components/ProductImage';
 import { TELEGRAM_EVENT_TYPES } from '../../types';
 import type { Brand, Category, ReceiptSettings, TelegramEventType } from '../../types';
+import { SERVER_TIMEZONE, parseServerDate } from '../../shared/serverDate';
 
 type Tab = 'appearance' | 'brands' | 'categories' | 'debts' | 'receipt' | 'telegram' | 'demo';
 
@@ -449,7 +450,8 @@ export function SettingsPage() {
     ? new Intl.DateTimeFormat(i18n.language, {
         dateStyle: 'medium',
         timeStyle: 'short',
-      }).format(new Date(demoStatus.generatedAt))
+        timeZone: SERVER_TIMEZONE,
+      }).format(parseServerDate(demoStatus.generatedAt))
     : null;
 
   const demoStats = [

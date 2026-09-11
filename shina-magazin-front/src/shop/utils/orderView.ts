@@ -1,5 +1,6 @@
 import type { AccountOrderDetail } from '../data/accountApi';
 import type { ShopOrder } from '../store/orderStore';
+import { SERVER_TIMEZONE, parseServerDate } from '../../shared/serverDate';
 
 export type Tone = 'neutral' | 'primary' | 'success' | 'warning' | 'error' | 'info';
 
@@ -14,9 +15,10 @@ export const PAY_TONE: Record<string, Tone> = {
   FAILED: 'error', CANCELLED: 'neutral', REFUNDED: 'neutral',
 };
 
-/** Storefront sanasi — mijoz tiliga mos (ERP `formatDateTime` ru-RU'ga qattiq bog'langan). */
+/** Storefront sanasi — mijoz tiliga mos (ERP `formatDateTime` ru-RU'ga qattiq bog'langan), do'kon vaqtida. */
 export function formatOrderDate(d: number | string, lang: string): string {
-  return new Date(d).toLocaleString(lang === 'ru' ? 'ru-RU' : 'uz-UZ', {
+  return parseServerDate(d).toLocaleString(lang === 'ru' ? 'ru-RU' : 'uz-UZ', {
+    timeZone: SERVER_TIMEZONE,
     day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit',
   });
 }

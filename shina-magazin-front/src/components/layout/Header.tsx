@@ -34,6 +34,7 @@ import { enumLabel } from '@/shared/enumLabel';
 import { SearchCommand } from '../common/SearchCommand';
 import { Button } from '@/ui';
 import type { Role } from '../../types';
+import { parseServerDate, toServerWallClock } from '../../shared/serverDate';
 
 const getNotificationIcon = (type: Notification['type']) => {
   switch (type) {
@@ -70,7 +71,7 @@ const getNotificationBorderColor = (type: Notification['type']) => {
 };
 
 const formatTimeAgo = (dateString: string) => {
-  const date = new Date(dateString);
+  const date = parseServerDate(dateString);
   const now = new Date();
   const diffMs = now.getTime() - date.getTime();
   const diffMins = Math.floor(diffMs / 60000);
@@ -84,9 +85,10 @@ const formatTimeAgo = (dateString: string) => {
   } else if (diffDays < 7) {
     return i18n.t('erp.header.daysAgo', { count: diffDays });
   } else {
-    const day = date.getDate().toString().padStart(2, '0');
-    const month = (date.getMonth() + 1).toString().padStart(2, '0');
-    const year = date.getFullYear();
+    const wall = toServerWallClock(date);
+    const day = wall.getDate().toString().padStart(2, '0');
+    const month = (wall.getMonth() + 1).toString().padStart(2, '0');
+    const year = wall.getFullYear();
     return `${day}.${month}.${year}`;
   }
 };

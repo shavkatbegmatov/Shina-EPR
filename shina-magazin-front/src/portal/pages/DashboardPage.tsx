@@ -11,6 +11,7 @@ import { PortalError, PortalLoading } from '../components/PortalState';
 import { getApiErrorMessage } from '../../utils/apiError';
 import { formatNumber as formatMoney } from '../../config/constants';
 import { buttonVariants } from '@/ui';
+import { toServerWallClock } from '../../shared/serverDate';
 
 export default function PortalDashboardPage() {
   const { t } = useTranslation();
@@ -154,7 +155,7 @@ export default function PortalDashboardPage() {
                     <div>
                       <p className="font-medium text-sm">{purchase.invoiceNumber}</p>
                       <p className="text-xs text-base-content/60">
-                        {format(new Date(purchase.saleDate), 'dd.MM.yyyy')}
+                        {format(toServerWallClock(purchase.saleDate), 'dd.MM.yyyy')}
                       </p>
                     </div>
                     <div className="text-right">

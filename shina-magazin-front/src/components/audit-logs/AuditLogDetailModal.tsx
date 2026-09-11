@@ -8,6 +8,7 @@ import { auditLogsApi } from '../../api/audit-logs.api';
 import type { AuditLogDetailResponse } from '../../types';
 import { JsonDiffViewer } from './JsonDiffViewer';
 import { Button, buttonVariants } from '@/ui';
+import { toServerWallClock } from '../../shared/serverDate';
 
 interface AuditLogDetailModalProps {
   logId: number;
@@ -94,7 +95,7 @@ export function AuditLogDetailModal({ logId, onClose }: AuditLogDetailModalProps
 
   const formatTimestamp = (dateString: string): string => {
     try {
-      return format(new Date(dateString), "dd.MM.yyyy HH:mm:ss", { locale: uz });
+      return format(toServerWallClock(dateString), "dd.MM.yyyy HH:mm:ss", { locale: uz });
     } catch {
       return dateString;
     }
@@ -102,7 +103,7 @@ export function AuditLogDetailModal({ logId, onClose }: AuditLogDetailModalProps
 
   const formatFullTimestamp = (dateString: string): string => {
     try {
-      return format(new Date(dateString), "PPpp", { locale: uz });
+      return format(toServerWallClock(dateString), "PPpp", { locale: uz });
     } catch {
       return dateString;
     }

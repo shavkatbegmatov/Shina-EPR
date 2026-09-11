@@ -19,6 +19,7 @@ import { useNotificationsStore, type Notification } from '../../store/notificati
 import { PermissionCode } from '../../hooks/usePermission';
 import { PermissionGate } from '../../components/common/PermissionGate';
 import { Button } from '@/ui';
+import { parseServerDate, toServerWallClock } from '../../shared/serverDate';
 
 type NotificationType = Notification['type'];
 
@@ -57,7 +58,7 @@ const getNotificationBorderColor = (type: NotificationType) => {
 };
 
 const formatTimeAgo = (dateString: string, t: TFunction) => {
-  const date = new Date(dateString);
+  const date = parseServerDate(dateString);
   const now = new Date();
   const diffMs = now.getTime() - date.getTime();
   const diffMins = Math.floor(diffMs / 60000);
@@ -71,9 +72,10 @@ const formatTimeAgo = (dateString: string, t: TFunction) => {
   } else if (diffDays < 7) {
     return t('erp.notifications.daysAgo', { count: diffDays });
   } else {
-    const day = date.getDate().toString().padStart(2, '0');
-    const month = (date.getMonth() + 1).toString().padStart(2, '0');
-    const year = date.getFullYear();
+    const wall = toServerWallClock(date);
+    const day = wall.getDate().toString().padStart(2, '0');
+    const month = (wall.getMonth() + 1).toString().padStart(2, '0');
+    const year = wall.getFullYear();
     return `${day}.${month}.${year}`;
   }
 };

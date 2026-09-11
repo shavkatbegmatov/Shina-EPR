@@ -20,6 +20,7 @@ import { formatDistanceToNow } from 'date-fns';
 import { uz } from 'date-fns/locale';
 import type { SessionUpdateMessage } from '../../services/websocket';
 import { Button } from '@/ui';
+import { parseServerDate } from '../../shared/serverDate';
 
 export function SessionsTab() {
   const { t } = useTranslation();
@@ -165,7 +166,7 @@ export function SessionsTab() {
   };
 
   const formatTimeAgo = (dateString: string) => {
-    return formatDistanceToNow(new Date(dateString), {
+    return formatDistanceToNow(parseServerDate(dateString), {
       addSuffix: true,
       locale: uz,
     });

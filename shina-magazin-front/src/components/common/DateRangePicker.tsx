@@ -12,6 +12,7 @@ import clsx from 'clsx';
 import { useTranslation } from 'react-i18next';
 import { Button } from '@/ui';
 import { getTashkentToday, getDateDaysAgo, formatDateForApi, getTashkentNow } from '../../config/constants';
+import { toServerWallClock } from '../../shared/serverDate';
 
 export type DateRangePreset = 'all' | 'today' | 'week' | 'month' | 'quarter' | 'year' | 'custom';
 
@@ -110,7 +111,7 @@ export function DateRangePicker({
 
   const formatDisplayDate = (dateStr: string) => {
     if (!dateStr) return '';
-    const date = new Date(dateStr);
+    const date = toServerWallClock(dateStr);
     const day = date.getDate().toString().padStart(2, '0');
     const month = (date.getMonth() + 1).toString().padStart(2, '0');
     return `${day}.${month}`;

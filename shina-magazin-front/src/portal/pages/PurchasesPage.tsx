@@ -10,6 +10,7 @@ import { PortalError, PortalLoading } from '../components/PortalState';
 import { getApiErrorMessage } from '../../utils/apiError';
 import { formatNumber as formatMoney } from '../../config/constants';
 import { Button } from '@/ui';
+import { toServerWallClock } from '../../shared/serverDate';
 
 const PAGE_SIZE = 10;
 
@@ -66,7 +67,7 @@ export default function PortalPurchasesPage() {
                       <div>
                         <p className="font-semibold">{purchase.invoiceNumber}</p>
                         <p className="text-sm text-base-content/60">
-                          {format(new Date(purchase.saleDate), 'dd.MM.yyyy HH:mm')}
+                          {format(toServerWallClock(purchase.saleDate), 'dd.MM.yyyy HH:mm')}
                         </p>
                       </div>
                       <span className={`badge badge-sm ${STATUS_BADGE[purchase.status] ?? 'badge-ghost'}`}>
