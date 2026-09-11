@@ -4,6 +4,7 @@ import clsx from 'clsx';
 import { useTranslation } from 'react-i18next';
 import { Skeleton } from '@/ui';
 import { Select } from './Select';
+import { formatNumber } from '../../config/constants';
 
 // Types
 export type SortDirection = 'asc' | 'desc' | null;
@@ -467,7 +468,7 @@ export function DataTable<T>({
               <div className="text-base-content/60">
                 <span className="font-medium text-base-content">{startItem}-{endItem}</span>
                 {' / '}
-                <span className="font-medium text-base-content">{totalElements.toLocaleString()}</span>
+                <span className="font-medium text-base-content">{formatNumber(totalElements)}</span>
                 {' '}{t('common.pagination.items')}
               </div>
             )}
