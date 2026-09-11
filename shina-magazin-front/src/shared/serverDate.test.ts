@@ -19,10 +19,16 @@ describe('parseServerDate', () => {
     expect(parseServerDate('2026-09-11').toISOString()).toBe('2026-09-10T19:00:00.000Z');
   });
 
-  it('zona belgisi bor qator o\'zgarmaydi', () => {
+  it('offsetli qator (server endi shunday yuboradi) offset bilan o\'qiladi', () => {
     expect(parseServerDate('2026-09-11T14:06:41Z').toISOString()).toBe('2026-09-11T14:06:41.000Z');
     expect(parseServerDate('2026-09-11T19:06:41+05:00').toISOString()).toBe('2026-09-11T14:06:41.000Z');
     expect(parseServerDate('2026-09-11T10:06:41-04:00').toISOString()).toBe('2026-09-11T14:06:41.000Z');
+    // Server formati: mikrosekund kasri + offset — brauzer parseriga bog'lanmasdan
+    expect(parseServerDate('2026-09-11T19:06:41.202714+05:00').toISOString()).toBe('2026-09-11T14:06:41.202Z');
+    expect(parseServerDate('2026-09-11T00:30:00+05:00').toISOString()).toBe('2026-09-10T19:30:00.000Z');
+    expect(parseServerDate('2026-09-11T19:06:41+0500').toISOString()).toBe('2026-09-11T14:06:41.000Z');
+    expect(parseServerDate('2026-09-11T05:36:41+05:30').toISOString()).toBe('2026-09-11T00:06:41.000Z');
+    expect(parseServerDate('2026-09-11T14:06:41.5z').toISOString()).toBe('2026-09-11T14:06:41.500Z');
   });
 
   it('Date va epoch ms o\'zgarishsiz, noto\'g\'ri qator Invalid Date', () => {
@@ -54,6 +60,8 @@ describe('formatDate / formatDateTime', () => {
     expect(formatDate('2026-09-11T00:30:00')).toBe('11.09.2026');
     expect(formatDate('2026-09-11')).toBe('11.09.2026');
     expect(formatDateTime('2026-09-11T14:06:41Z')).toBe('11.09.2026, 19:06');
+    expect(formatDateTime('2026-09-11T19:06:41.202714+05:00')).toBe('11.09.2026, 19:06');
+    expect(formatDate('2026-09-11T00:30:00+05:00')).toBe('11.09.2026');
     expect(formatDate('')).toBe('—');
   });
 });
