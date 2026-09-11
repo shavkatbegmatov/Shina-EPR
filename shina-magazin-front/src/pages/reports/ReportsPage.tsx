@@ -44,6 +44,7 @@ import { DateRangePicker, type DateRangePreset, type DateRange } from '../../com
 import type { SalesReport, WarehouseReport, DebtsReport, ProfitLossReport } from '../../types';
 import { PermissionCode, usePermission } from '../../hooks/usePermission';
 import { PermissionGate } from '../../components/common/PermissionGate';
+import { toServerWallClock } from '../../shared/serverDate';
 
 type ReportTab = 'sales' | 'warehouse' | 'debts' | 'profitLoss';
 
@@ -987,7 +988,7 @@ function SimpleBarChart({ data }: { data: { date: string; revenue: number }[] })
 
 function formatShortDate(dateStr: string): string {
   if (!dateStr) return '—';
-  const date = new Date(dateStr);
+  const date = toServerWallClock(dateStr);
   const day = date.getDate().toString().padStart(2, '0');
   const month = (date.getMonth() + 1).toString().padStart(2, '0');
   return `${day}.${month}`;

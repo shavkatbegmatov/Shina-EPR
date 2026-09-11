@@ -12,6 +12,7 @@ import { RefreshButton } from '../../components/common/RefreshButton';
 import { ExportButtons } from '../../components/common/ExportButtons';
 import { LoadingOverlay } from '../../components/common/LoadingOverlay';
 import { Button, buttonVariants } from '@/ui';
+import { parseServerDate } from '../../shared/serverDate';
 
 export function LoginActivityTab() {
   const { t } = useTranslation();
@@ -52,7 +53,7 @@ export function LoginActivityTab() {
   };
 
   const formatTimeAgo = (dateString: string) => {
-    return formatDistanceToNow(new Date(dateString), {
+    return formatDistanceToNow(parseServerDate(dateString), {
       addSuffix: true,
       locale: uz,
     });

@@ -12,6 +12,7 @@ import { getApiErrorMessage } from '../../utils/apiError';
 import type { PortalNotification, NotificationType, PagedResponse } from '../types/portal.types';
 import { usePortalAuthStore } from '../store/portalAuthStore';
 import { Button } from '@/ui';
+import { parseServerDate } from '../../shared/serverDate';
 
 const PAGE_SIZE = 20;
 
@@ -146,7 +147,7 @@ export default function PortalNotificationsPage() {
                         </div>
                         <p className="text-sm text-base-content/70 mt-1">{notification.message}</p>
                         <p className="text-xs text-base-content/50 mt-2">
-                          {formatDistanceToNow(new Date(notification.createdAt), { addSuffix: true, locale })}
+                          {formatDistanceToNow(parseServerDate(notification.createdAt), { addSuffix: true, locale })}
                         </p>
                       </div>
                     </div>

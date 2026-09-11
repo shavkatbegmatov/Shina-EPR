@@ -1,11 +1,12 @@
 import i18n from '../i18n';
 import { enumLabel } from '../shared/enumLabel';
+import { SERVER_TIMEZONE, parseServerDate } from '../shared/serverDate';
 
 export const API_BASE_URL = '/api';
 
 // ==================== TIMEZONE CONFIGURATION ====================
 // Loyiha standarti: Asia/Tashkent (UTC+5)
-export const TIMEZONE = 'Asia/Tashkent';
+export const TIMEZONE = SERVER_TIMEZONE;
 
 /**
  * Toshkent vaqtida bugungi sanani YYYY-MM-DD formatida qaytaradi
@@ -201,10 +202,12 @@ export const formatForeign = (amount: number, currency: string = 'USD'): string 
   return currency === 'USD' ? `$${formatted}` : `${formatted} ${currency}`;
 };
 
-// Sana formati: dd.mm.yyyy (masalan: 09.02.2026) - Toshkent TZ
+// Sana formati: dd.mm.yyyy (masalan: 09.02.2026) - Toshkent TZ.
+// Server qatori zona belgisisiz — `parseServerDate` uni Toshkent vaqti deb o'qiydi,
+// brauzer zonasi qanday bo'lishidan qat'i nazar (`shared/serverDate.ts`).
 export const formatDate = (dateStr: string): string => {
   if (!dateStr) return '—';
-  const date = new Date(dateStr);
+  const date = parseServerDate(dateStr);
   return date.toLocaleDateString('ru-RU', {
     timeZone: TIMEZONE,
     day: '2-digit',
@@ -216,7 +219,7 @@ export const formatDate = (dateStr: string): string => {
 // Sana va vaqt formati: dd.mm.yyyy HH:mm (masalan: 09.02.2026 14:30) - Toshkent TZ
 export const formatDateTime = (dateStr: string): string => {
   if (!dateStr) return '—';
-  const date = new Date(dateStr);
+  const date = parseServerDate(dateStr);
   return date.toLocaleString('ru-RU', {
     timeZone: TIMEZONE,
     day: '2-digit',

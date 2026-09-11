@@ -8,6 +8,7 @@ import type { AuditLog } from '../../api/audit-logs.api';
 import type { FieldChange } from '../../types';
 import { AuditLogDetailModal } from './AuditLogDetailModal';
 import { Button } from '@/ui';
+import { parseServerDate } from '../../shared/serverDate';
 
 interface AuditLogExpandableRowProps {
   log: AuditLog;
@@ -104,7 +105,7 @@ export function AuditLogExpandableRow({
   };
 
   const formatTimestamp = (dateString: string): string => {
-    return formatDistanceToNow(new Date(dateString), {
+    return formatDistanceToNow(parseServerDate(dateString), {
       addSuffix: true,
       locale: uz,
     });

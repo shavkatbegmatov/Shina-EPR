@@ -12,6 +12,7 @@ import { shopOrdersApi, type ShopOrderDto, type ShopOrderStatus, type ShopPaymen
 import { queryKeys } from '../../lib/queryKeys';
 import { Modal } from '../../components/common/Modal';
 import { usePermission } from '../../hooks/usePermission';
+import { SERVER_TIMEZONE, parseServerDate } from '../../shared/serverDate';
 
 const STATUSES: ShopOrderStatus[] = ['NEW', 'CONFIRMED', 'COMPLETED', 'CANCELLED'];
 const STATUS_TONE: Record<ShopOrderStatus, 'warning' | 'info' | 'success' | 'neutral'> = {
@@ -30,7 +31,8 @@ const PAY_TONE: Record<ShopPaymentStatus, 'warning' | 'info' | 'success' | 'erro
 };
 
 function formatDate(iso: string, lang: string): string {
-  return new Date(iso).toLocaleString(lang === 'ru' ? 'ru-RU' : 'uz-UZ', {
+  return parseServerDate(iso).toLocaleString(lang === 'ru' ? 'ru-RU' : 'uz-UZ', {
+    timeZone: SERVER_TIMEZONE,
     day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit',
   });
 }

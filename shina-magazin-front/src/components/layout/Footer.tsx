@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { Circle, Keyboard, ExternalLink } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { Logo } from '../brand/Logo';
+import { SERVER_TIMEZONE } from '../../shared/serverDate';
 
 export function Footer() {
   const { t } = useTranslation();
@@ -15,6 +16,7 @@ export function Footer() {
 
   const formatTime = (date: Date) => {
     return date.toLocaleTimeString('uz-UZ', {
+      timeZone: SERVER_TIMEZONE,
       hour: '2-digit',
       minute: '2-digit',
     });

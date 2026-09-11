@@ -8,6 +8,7 @@ import PortalHeader from '../components/layout/PortalHeader';
 import { PortalError, PortalLoading } from '../components/PortalState';
 import { getApiErrorMessage } from '../../utils/apiError';
 import { formatNumber as formatMoney } from '../../config/constants';
+import { toServerWallClock } from '../../shared/serverDate';
 
 export default function PortalDebtsPage() {
   const { t } = useTranslation();
@@ -114,7 +115,7 @@ export default function PortalDebtsPage() {
                           <div>
                             <p className="font-medium">{debt.invoiceNumber || `#${debt.id}`}</p>
                             <p className="text-xs text-base-content/60">
-                              {format(new Date(debt.createdAt), 'dd.MM.yyyy')}
+                              {format(toServerWallClock(debt.createdAt), 'dd.MM.yyyy')}
                             </p>
                           </div>
                         </div>
@@ -142,7 +143,7 @@ export default function PortalDebtsPage() {
                           <div>
                             <p className="text-base-content/60 text-xs">{t('debts.dueDate')}</p>
                             <p className={`font-medium ${debt.overdue ? 'text-error' : ''}`}>
-                              {format(new Date(debt.dueDate), 'dd.MM.yyyy')}
+                              {format(toServerWallClock(debt.dueDate), 'dd.MM.yyyy')}
                             </p>
                           </div>
                         )}

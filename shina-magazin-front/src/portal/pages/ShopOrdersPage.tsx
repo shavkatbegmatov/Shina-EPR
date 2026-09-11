@@ -10,6 +10,7 @@ import { PortalError, PortalLoading } from '../components/PortalState';
 import { getApiErrorMessage } from '../../utils/apiError';
 import { formatNumber as formatMoney } from '../../config/constants';
 import { Button } from '@/ui';
+import { toServerWallClock } from '../../shared/serverDate';
 
 const PAGE_SIZE = 10;
 
@@ -65,7 +66,7 @@ export default function PortalShopOrdersPage() {
                       <div>
                         <p className="font-mono font-semibold">{o.orderNo}</p>
                         <p className="text-sm text-base-content/60">
-                          {format(new Date(o.createdAt), 'dd.MM.yyyy HH:mm')}
+                          {format(toServerWallClock(o.createdAt), 'dd.MM.yyyy HH:mm')}
                         </p>
                       </div>
                       <span className={`badge badge-sm ${STATUS_BADGE[o.status] ?? 'badge-ghost'}`}>

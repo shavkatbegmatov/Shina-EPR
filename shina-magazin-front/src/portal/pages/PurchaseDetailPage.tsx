@@ -9,6 +9,7 @@ import PortalHeader from '../components/layout/PortalHeader';
 import { PortalError, PortalLoading } from '../components/PortalState';
 import { getApiErrorMessage } from '../../utils/apiError';
 import { formatNumber as formatMoney } from '../../config/constants';
+import { toServerWallClock } from '../../shared/serverDate';
 
 const PAYMENT_BADGE: Record<string, string> = {
   PAID: 'badge-success',
@@ -72,7 +73,7 @@ export default function PortalPurchaseDetailPage() {
               <div>
                 <p className="text-sm text-base-content/60">{t('purchases.date')}</p>
                 <p className="font-medium">
-                  {format(new Date(purchase.saleDate), 'dd.MM.yyyy HH:mm')}
+                  {format(toServerWallClock(purchase.saleDate), 'dd.MM.yyyy HH:mm')}
                 </p>
               </div>
               <span className={`badge ${PAYMENT_BADGE[purchase.paymentStatus] ?? 'badge-ghost'}`}>

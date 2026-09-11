@@ -37,6 +37,7 @@ import { queryKeys } from '../../lib/queryKeys';
 import { PermissionCode } from '../../hooks/usePermission';
 import { PermissionGate } from '../../components/common/PermissionGate';
 import { Button } from '@/ui';
+import { parseServerDate } from '../../shared/serverDate';
 
 type TabType = 'all' | 'by-customer' | 'overdue' | 'stats';
 
@@ -247,7 +248,7 @@ export function DebtsPage() {
     return allDebts
       .filter(debt => debt.overdue && debt.status !== 'PAID')
       .map(debt => {
-        const dueDate = debt.dueDate ? new Date(debt.dueDate) : null;
+        const dueDate = debt.dueDate ? parseServerDate(debt.dueDate) : null;
         const today = new Date();
         const daysOverdue = dueDate ? Math.floor((today.getTime() - dueDate.getTime()) / (1000 * 60 * 60 * 24)) : 0;
         return { ...debt, daysOverdue };

@@ -45,6 +45,7 @@ import type {
   StockMovement,
 
 } from '../../types';
+import { parseServerDate } from '../../shared/serverDate';
 
 export function WarehousePage() {
   const { t } = useTranslation();
@@ -86,7 +87,7 @@ export function WarehousePage() {
     {
       key: 'createdAt',
       header: t('erp.warehouse.colDate'),
-      getValue: (m) => new Date(m.createdAt).getTime(),
+      getValue: (m) => parseServerDate(m.createdAt).getTime(),
       render: (movement) => (
         <span className="text-sm text-base-content/70">
           {formatDateTime(movement.createdAt)}

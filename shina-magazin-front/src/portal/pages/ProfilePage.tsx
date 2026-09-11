@@ -14,6 +14,7 @@ import PortalHeader from '../components/layout/PortalHeader';
 import { PortalError, PortalLoading } from '../components/PortalState';
 import { getApiErrorMessage } from '../../utils/apiError';
 import { Button } from '@/ui';
+import { toServerWallClock } from '../../shared/serverDate';
 
 const MINUTE = 60 * 1000;
 
@@ -148,7 +149,7 @@ export default function PortalProfilePage() {
                 <div>
                   <p className="text-xs text-base-content/60">{t('profile.memberSince')}</p>
                   <p className="font-medium">
-                    {profile.createdAt ? format(new Date(profile.createdAt), 'dd.MM.yyyy') : '-'}
+                    {profile.createdAt ? format(toServerWallClock(profile.createdAt), 'dd.MM.yyyy') : '-'}
                   </p>
                 </div>
               </div>
