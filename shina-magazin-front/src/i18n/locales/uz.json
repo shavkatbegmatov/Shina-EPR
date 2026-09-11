@@ -1402,7 +1402,9 @@
       "totalsBonus": "Bonus:",
       "totalsPayable": "To'lov summasi:",
       "printDoc": "Kirim hujjatini chop etish",
-      "notReceivedHint": "Bu hujjat bo'yicha mol hali omborga kirmagan — «Qabul qilish» bosilgach zaxira va ta'minotchi qarzi yoziladi."
+      "notReceivedHint": "Bu hujjat bo'yicha mol hali omborga kirmagan — «Qabul qilish» bosilgach zaxira va ta'minotchi qarzi yoziladi.",
+      "partialHint": "Qisman qabul qilingan: {{received}} / {{ordered}} dona keldi, {{shortage}} dona hali yetib kelmadi. Qolgan mol kelganda «Qabul qilish» bosiladi — summalar va ta'minotchi qarzi kelgan mol bo'yicha hisoblangan.",
+      "productsSummaryPartial": "{{itemCount}} xil, {{received}} / {{totalQuantity}} dona"
     },
     "employeeDetail": {
       "statusActive": "Faol",

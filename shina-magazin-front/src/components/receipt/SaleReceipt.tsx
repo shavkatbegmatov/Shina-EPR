@@ -137,7 +137,7 @@ export function SaleReceipt({ sale, settings }: { sale: Sale; settings?: Receipt
       )}
       <div className="receipt-row">
         <span>{t('erp.receipt.paymentMethod')}</span>
-        <span>{enumLabel('paymentMethod', sale.paymentMethod)}</span>
+        <span>{enumLabel('payment', sale.paymentMethod)}</span>
       </div>
 
       {footer && (
