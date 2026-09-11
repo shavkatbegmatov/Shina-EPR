@@ -442,10 +442,22 @@ export function PurchaseDetailPage() {
         </div>
       </div>
 
-      {awaitingReceipt && (
+      {purchase.status === 'ORDERED' && (
         <div className="alert alert-info">
           <ClipboardCheck className="h-5 w-5" />
           <span>{t('erp.purchaseDetail.notReceivedHint')}</span>
+        </div>
+      )}
+      {purchase.status === 'PARTIAL' && (
+        <div className="alert alert-warning">
+          <ClipboardCheck className="h-5 w-5" />
+          <span>
+            {t('erp.purchaseDetail.partialHint', {
+              received: purchase.totalReceivedQuantity ?? 0,
+              ordered: purchase.totalQuantity,
+              shortage: purchase.shortageQuantity ?? 0,
+            })}
+          </span>
         </div>
       )}
 
@@ -470,7 +482,18 @@ export function PurchaseDetailPage() {
             </div>
             <div>
               <p className="text-xs text-base-content/60">{t('erp.purchaseDetail.products')}</p>
-              <p className="font-semibold">{t('erp.purchaseDetail.productsSummary', { itemCount: purchase.itemCount, totalQuantity: purchase.totalQuantity })}</p>
+              <p className="font-semibold">
+                {purchase.status === 'PARTIAL'
+                  ? t('erp.purchaseDetail.productsSummaryPartial', {
+                      itemCount: purchase.itemCount,
+                      received: purchase.totalReceivedQuantity ?? 0,
+                      totalQuantity: purchase.totalQuantity,
+                    })
+                  : t('erp.purchaseDetail.productsSummary', {
+                      itemCount: purchase.itemCount,
+                      totalQuantity: purchase.totalQuantity,
+                    })}
+              </p>
             </div>
           </div>
         </div>

@@ -47,7 +47,7 @@ export function ZReportPrint({ report, settings }: { report: ZReport; settings?:
       {report.byPaymentMethod.map((b) => (
         <div key={b.method} className="receipt-row">
           <span>
-            {enumLabel('paymentMethod', b.method)} ({b.count})
+            {enumLabel('payment', b.method)} ({b.count})
           </span>
           <span>{formatCurrency(b.total)}</span>
         </div>
