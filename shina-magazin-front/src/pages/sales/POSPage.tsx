@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { keepPreviousData, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
-import { Plus, Minus, Trash2, ShoppingCart, User, X, Users, ArrowRight, Phone, Check, Printer } from 'lucide-react';
+import { Plus, Minus, Trash2, ShoppingCart, User, X, Users, ArrowRight, Phone, Check, Printer, Recycle } from 'lucide-react';
 import toast from 'react-hot-toast';
 import clsx from 'clsx';
 import { productsApi } from '../../api/products.api';
@@ -23,7 +23,8 @@ import { SearchInput } from '../../components/ui/SearchInput';
 import { CustomerSearchCombobox } from '../../components/common/NamePhoneSearchCombobox';
 import { Button } from '@/ui';
 import { useSaleReceipt } from '../../components/receipt/useSaleReceipt';
-import type { PaymentMethod, Customer, Sale } from '../../types';
+import { TradeInModal } from './TradeInModal';
+import type { PaymentMethod, Customer, Sale, TradeInItemRequest } from '../../types';
 
 export function POSPage() {
   const { t } = useTranslation();
@@ -35,6 +36,8 @@ export function POSPage() {
   const { printReceipt, receipt } = useSaleReceipt();
   const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>('CASH');
   const [paidAmount, setPaidAmount] = useState(0);
+  /** Barter — eski shina qabul qilish oynasi */
+  const [showTradeIn, setShowTradeIn] = useState(false);
 
   // Customer search state
   const [customerSearch, setCustomerSearch] = useState('');
@@ -236,8 +239,34 @@ export function POSPage() {
       return;
     }
 
+    // Barter: eski shinalar kimdan qabul qilingani hujjatda qolishi kerak
+    if (barterNeedsCustomer) {
+      toast.error(t('erp.pos.barterNeedsCustomer'));
+      return;
+    }
+    if (barterExceeds) {
+      toast.error(t('erp.pos.barterExceeds'));
+      return;
+    }
+
     setLoading(true);
     try {
+      // Barter qatorlari faqat bor bo'lsa yuboriladi — oddiy savdo so'rovi
+      // avvalgidek qoladi.
+      const tradeInItems: TradeInItemRequest[] | undefined =
+        cart.tradeIns.length > 0
+          ? cart.tradeIns.map((line) => ({
+              width: line.width,
+              profile: line.profile,
+              diameter: line.diameter,
+              brandName: line.brandName,
+              condition: line.condition,
+              quantity: line.quantity,
+              unitValue: line.unitValue,
+              resalePrice: line.resalePrice,
+            }))
+          : undefined;
+
       // Javob ilgari tashlab yuborilardi — chek uchun hisob-faktura raqami,
       // pozitsiyalar va yakuniy summalar aynan shu yerdan keladi.
       const sale = await salesApi.create({
@@ -251,9 +280,11 @@ export function POSPage() {
         discountPercent: cart.discountPercent,
         // Kassaga TUSHGAN pul — mijoz uzatgani emas: qaytim unga qaytariladi.
         // Ortiqcha qiymat Z-hisobotda tushum bo'lib sanalib, kassirga soxta
-        // kamomad yozardi (server ham shu chegarani qo'llaydi).
-        paidAmount: Math.min(paidAmount, total),
+        // kamomad yozardi (server ham shu chegarani qo'llaydi). Barterda
+        // chegara — to'lanadigan FARQ.
+        paidAmount: Math.min(paidAmount, amountDue),
         paymentMethod,
+        ...(tradeInItems ? { tradeInItems } : {}),
       });
 
       toast.success(t('erp.pos.saleCompleted'));
@@ -275,6 +306,11 @@ export function POSPage() {
   };
 
   const total = cart.getTotal();
+  const tradeInTotal = cart.getTradeInTotal();
+  /** Mijoz to'laydigan farq — barter krediti ayirilgan */
+  const amountDue = cart.getAmountDue();
+  const barterNeedsCustomer = cart.tradeIns.length > 0 && !cart.customer;
+  const barterExceeds = cart.tradeIns.length > 0 && tradeInTotal > total;
 
   /**
    * Klaviatura yorliqlari — kassir sichqonchasiz ishlay olishi uchun (ilgari bitta
@@ -291,20 +327,21 @@ export function POSPage() {
         event.key === 'F9' &&
         !showPayment &&
         !showCustomerModal &&
+        !showTradeIn &&
         cart.items.length > 0
       ) {
         event.preventDefault();
-        setPaidAmount(total);
+        setPaidAmount(amountDue);
         setShowPayment(true);
       }
     };
     window.addEventListener('keydown', onKeyDown);
     return () => window.removeEventListener('keydown', onKeyDown);
-  }, [showPayment, showCustomerModal, cart.items.length, total]);
+  }, [showPayment, showCustomerModal, showTradeIn, cart.items.length, amountDue]);
   const subtotal = cart.getSubtotal();
   const discountAmount = cart.getDiscountAmount();
   const itemCount = cart.getItemCount();
-  const change = paidAmount - total;
+  const change = paidAmount - amountDue;
   const isDebt = change < 0;
 
   const discountSummary = useMemo(() => {
@@ -558,6 +595,64 @@ export function POSPage() {
           )}
         </div>
 
+        {/* Barter — eski shinalar (kredit sifatida) */}
+        <div className="border-t border-base-200 p-4">
+          <div className="surface-soft space-y-2 rounded-xl p-3">
+            <div className="flex items-center justify-between gap-2">
+              <span className="flex items-center gap-2 text-sm font-medium">
+                <Recycle className="h-4 w-4 text-primary" />
+                {t('erp.pos.barterTitle')}
+              </span>
+              <Button variant="ghost" size="sm" onClick={() => setShowTradeIn(true)}>
+                <Plus className="h-4 w-4" />
+                {t('erp.pos.barterAdd')}
+              </Button>
+            </div>
+            {cart.tradeIns.length === 0 ? (
+              <p className="text-xs text-base-content/60">{t('erp.pos.barterEmpty')}</p>
+            ) : (
+              <ul className="space-y-1">
+                {cart.tradeIns.map((line) => (
+                  <li key={line.key} className="flex items-center justify-between gap-2 text-sm">
+                    <div className="min-w-0">
+                      <p className="truncate font-medium">
+                        {line.brandName ? `${line.brandName} ` : ''}
+                        {line.width}/{line.profile} R{line.diameter}
+                        {line.condition && (
+                          <span className="ml-1 text-xs text-base-content/60">· {line.condition}</span>
+                        )}
+                      </p>
+                      <p className="text-xs text-base-content/70">
+                        {line.quantity} × {formatCurrency(line.unitValue)}
+                      </p>
+                    </div>
+                    <div className="flex items-center gap-1">
+                      <span className="font-semibold tabular-nums">
+                        {formatCurrency(line.quantity * line.unitValue)}
+                      </span>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="btn-circle text-error"
+                        aria-label={t('erp.pos.tradeInRemove')}
+                        onClick={() => cart.removeTradeIn(line.key)}
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
+                    </div>
+                  </li>
+                ))}
+              </ul>
+            )}
+            {barterNeedsCustomer && (
+              <p className="text-xs font-medium text-warning">{t('erp.pos.barterNeedsCustomer')}</p>
+            )}
+            {barterExceeds && (
+              <p className="text-xs font-medium text-error">{t('erp.pos.barterExceeds')}</p>
+            )}
+          </div>
+        </div>
+
         {/* Discount */}
         <div className="border-t border-base-200 p-4">
           <div className="surface-soft space-y-3 rounded-xl p-3">
@@ -599,12 +694,24 @@ export function POSPage() {
             <span>{t('erp.pos.totalLabel')}</span>
             <span className="font-bold">{formatCurrency(total)}</span>
           </div>
+          {cart.tradeIns.length > 0 && (
+            <>
+              <div className="flex items-center justify-between text-sm">
+                <span className="text-base-content/70">{t('erp.pos.barterTotal')}</span>
+                <span className="font-medium text-info">−{formatCurrency(tradeInTotal)}</span>
+              </div>
+              <div className="flex items-center justify-between text-lg">
+                <span>{t('erp.pos.amountDue')}</span>
+                <span className="font-bold text-primary">{formatCurrency(amountDue)}</span>
+              </div>
+            </>
+          )}
           <Button
             variant="primary"
             block
-            disabled={cart.items.length === 0}
+            disabled={cart.items.length === 0 || barterExceeds}
             onClick={() => {
-              setPaidAmount(total);
+              setPaidAmount(amountDue);
               setShowPayment(true);
             }}
           >
@@ -688,6 +795,23 @@ export function POSPage() {
                   <span>{t('erp.pos.summaryTotal')}</span>
                   <span className="font-bold">{formatCurrency(total)}</span>
                 </div>
+                {cart.tradeIns.length > 0 && (
+                  <>
+                    <div className="mt-2 flex justify-between text-sm">
+                      <span>{t('erp.pos.barterTotal')}</span>
+                      <span className="font-medium text-info">−{formatCurrency(tradeInTotal)}</span>
+                    </div>
+                    <div className="mt-2 flex justify-between text-lg">
+                      <span>{t('erp.pos.amountDue')}</span>
+                      <span className="font-bold text-primary">{formatCurrency(amountDue)}</span>
+                    </div>
+                    {barterNeedsCustomer && (
+                      <p className="mt-2 text-xs font-medium text-warning">
+                        {t('erp.pos.barterNeedsCustomer')}
+                      </p>
+                    )}
+                  </>
+                )}
                 <div className="mt-3 flex justify-between text-sm">
                   <span>{isDebt ? t('erp.pos.debtAmount') : t('erp.pos.changeAmount')}</span>
                   <span
@@ -713,6 +837,7 @@ export function POSPage() {
                 variant="primary"
                 onClick={handleCompleteSale}
                 loading={loading}
+                disabled={barterNeedsCustomer || barterExceeds}
               >
                 {t('common.confirm')}
               </Button>
@@ -724,6 +849,13 @@ export function POSPage() {
 
       {/* Yashirin chek — faqat chop etishda ko'rinadi (@media print) */}
       {receipt}
+
+      {/* Barter — eski shina qabul qilish */}
+      <TradeInModal
+        isOpen={showTradeIn}
+        onClose={() => setShowTradeIn(false)}
+        onAdd={(line) => cart.addTradeIn(line)}
+      />
 
       {/* Customer Selection Modal */}
       <ModalPortal

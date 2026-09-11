@@ -9,7 +9,11 @@ import { useInvalidateOnNotification } from '../../hooks/useInvalidateOnNotifica
 import { useParams, useNavigate } from 'react-router-dom';
 import {
   ArrowLeft,
+  Ban,
   Calendar,
+  ClipboardCheck,
+  Coins,
+  FileText,
   Package,
   Hash,
   Wallet,
@@ -20,21 +24,30 @@ import {
   AlertCircle,
   Printer,
   Trash2,
+  Truck,
   CheckCircle,
   XCircle,
   X,
 } from 'lucide-react';
 import clsx from 'clsx';
 import { purchasesApi } from '../../api/purchases.api';
-import { formatCurrency, formatDate, getTashkentToday } from '../../config/constants';
+import {
+  formatCurrency,
+  formatDate,
+  formatDateTime,
+  formatForeign,
+  getTashkentToday,
+  PURCHASE_STATUSES,
+} from '../../config/constants';
+import { enumLabel } from '@/shared/enumLabel';
 import { ModalPortal } from '../../components/common/Modal';
+import { PermissionGate } from '../../components/common/PermissionGate';
+import { PermissionCode } from '../../hooks/usePermission';
 import { Select } from '../../components/ui/Select';
 import { CurrencyInput } from '../../components/ui/CurrencyInput';
 import { Button } from '@/ui';
+import { usePurchaseDocument } from '../../components/purchases/usePurchaseDocument';
 import type {
-
-
-
   PurchasePaymentRequest,
   PurchaseReturnRequest,
   PurchaseReturnItemRequest,
@@ -76,6 +89,14 @@ export function PurchaseDetailPage() {
   const [returnReason, setReturnReason] = useState('');
   const [returnItems, setReturnItems] = useState<ReturnCartItem[]>([]);
   const [returnSaving, setReturnSaving] = useState(false);
+
+  // Qabul qilish ("TEKSHIRILDI") oynasi — qator bo'yicha JAMI qabul qilingan miqdor
+  const [showReceiveModal, setShowReceiveModal] = useState(false);
+  const [receiveQty, setReceiveQty] = useState<Record<number, number>>({});
+  const [receiveNotes, setReceiveNotes] = useState('');
+  const [receiveSaving, setReceiveSaving] = useState(false);
+
+  const { printDocument, document: printableDocument } = usePurchaseDocument();
 
   const purchaseQuery = useQuery({
     queryKey: queryKeys.purchases.detail(Number(id)),
@@ -163,7 +184,8 @@ export function PurchaseDetailPage() {
     const items: ReturnCartItem[] = purchase.items.map(item => ({
       product: { id: item.productId, name: item.productName, sku: item.productSku } as Product,
       productId: item.productId,
-      maxQuantity: item.quantity,
+      // Qaytarish kvotasi QABUL QILINGAN miqdordan — kam kelgan mol qaytarilmaydi
+      maxQuantity: item.receivedQuantity ?? item.quantity,
       quantity: 0,
       unitPrice: item.unitPrice,
     }));
@@ -271,6 +293,68 @@ export function PurchaseDetailPage() {
   const returnTotal = returnItems.reduce((sum, item) => sum + (item.quantity * item.unitPrice), 0);
   const selectedReturnItemsCount = returnItems.filter(item => item.quantity > 0).length;
 
+  // ─── Qabul qilish ───
+  const awaitingReceipt = purchase?.status === 'ORDERED' || purchase?.status === 'PARTIAL';
+  const counted = purchase?.status === 'RECEIVED' || purchase?.status === 'PARTIAL';
+  const isForeign = !!purchase?.currency && purchase.currency !== 'UZS';
+  const docCurrency = purchase?.currency ?? 'UZS';
+  /** Hujjat valyutasidagi summa: USD → `$692`, UZS → so'm. */
+  const fmtDoc = (value: number) => (isForeign ? formatForeign(value, docCurrency) : formatCurrency(value));
+
+  const handleOpenReceiveModal = () => {
+    if (!purchase) return;
+    // Standart: hamma qator to'liq keldi — omborchi faqat farqni tuzatadi
+    setReceiveQty(Object.fromEntries(purchase.items.map((item) => [item.id, item.orderedQuantity])));
+    setReceiveNotes('');
+    setShowReceiveModal(true);
+  };
+
+  const receiveTotal = purchase
+    ? purchase.items.reduce((sum, item) => sum + (receiveQty[item.id] ?? 0), 0)
+    : 0;
+  const receiveShortage = purchase
+    ? purchase.items.reduce((sum, item) => sum + Math.max(0, item.orderedQuantity - (receiveQty[item.id] ?? 0)), 0)
+    : 0;
+
+  const handleReceive = async () => {
+    if (!purchase) return;
+    if (receiveTotal === 0) {
+      toast.error(t('erp.purchaseDetail.receiveNothing'));
+      return;
+    }
+    setReceiveSaving(true);
+    try {
+      await purchasesApi.receive(purchase.id, {
+        items: purchase.items.map((item) => ({
+          itemId: item.id,
+          receivedQuantity: receiveQty[item.id] ?? item.receivedQuantity,
+        })),
+        notes: receiveNotes.trim() || undefined,
+      });
+      toast.success(t('erp.purchaseDetail.received'));
+      setShowReceiveModal(false);
+      // Zaxira, tannarx va ta'minotchi balansi o'zgardi
+      invalidatePurchase();
+    } catch (error) {
+      toast.error(getApiErrorMessage(error));
+    } finally {
+      setReceiveSaving(false);
+    }
+  };
+
+  const handleCancelPurchase = async () => {
+    if (!purchase) return;
+    const reason = prompt(t('erp.purchaseDetail.cancelPrompt'));
+    if (reason === null) return;
+    try {
+      await purchasesApi.cancel(purchase.id, reason.trim() || undefined);
+      toast.success(t('erp.purchaseDetail.cancelled'));
+      invalidatePurchase();
+    } catch (error) {
+      toast.error(getApiErrorMessage(error));
+    }
+  };
+
   if (initialLoading) {
     return (
       <div className="space-y-6">
@@ -322,15 +406,8 @@ export function PurchaseDetailPage() {
           </div>
         </div>
         <div className="flex flex-wrap items-center gap-2">
-          <span className={clsx(
-            'badge',
-            purchase.status === 'RECEIVED' && 'badge-success',
-            purchase.status === 'DRAFT' && 'badge-warning',
-            purchase.status === 'CANCELLED' && 'badge-error'
-          )}>
-            {purchase.status === 'RECEIVED' && t('erp.purchaseDetail.statusReceived')}
-            {purchase.status === 'DRAFT' && t('erp.purchaseDetail.statusDraft')}
-            {purchase.status === 'CANCELLED' && t('erp.purchaseDetail.statusCancelled')}
+          <span className={clsx('badge', PURCHASE_STATUSES[purchase.status]?.color ?? 'badge-ghost')}>
+            {enumLabel('purchaseStatus', purchase.status)}
           </span>
           <span className={clsx(
             'badge',
@@ -342,8 +419,35 @@ export function PurchaseDetailPage() {
             {purchase.paymentStatus === 'PARTIAL' && t('erp.purchaseDetail.paymentStatusPartial')}
             {purchase.paymentStatus === 'UNPAID' && t('erp.purchaseDetail.paymentStatusUnpaid')}
           </span>
+          {/* "TEKSHIRILDI" muhri — ta'minotchi hujjatidagi muhr bilan bir xil ma'no */}
+          {counted && purchase.receivedAt ? (
+            <span
+              className="inline-flex flex-col items-center rounded-md border-2 border-double border-success px-3 py-1 text-success -rotate-3"
+              title={t('erp.purchaseDetail.verifiedBy', {
+                name: purchase.receivedByName ?? '',
+                date: formatDateTime(purchase.receivedAt),
+              })}
+            >
+              <span className="text-xs font-extrabold tracking-[0.2em]">{t('erp.purchaseDetail.verifiedStamp')}</span>
+              <span className="text-[10px] font-medium">
+                {purchase.receivedByName} · {formatDate(purchase.receivedAt)}
+              </span>
+            </span>
+          ) : awaitingReceipt ? (
+            <span className="badge badge-outline badge-info gap-1">
+              <ClipboardCheck className="h-3.5 w-3.5" />
+              {t('erp.purchaseDetail.awaitingStamp')}
+            </span>
+          ) : null}
         </div>
       </div>
+
+      {awaitingReceipt && (
+        <div className="alert alert-info">
+          <ClipboardCheck className="h-5 w-5" />
+          <span>{t('erp.purchaseDetail.notReceivedHint')}</span>
+        </div>
+      )}
 
       {/* Summary Cards */}
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
@@ -401,22 +505,115 @@ export function PurchaseDetailPage() {
         </div>
       </div>
 
+      {/* Ta'minotchi hujjati: Kun ID, mashina, valyuta/kurs, yo'l haqi */}
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+        <div className="surface-card p-4">
+          <div className="flex items-start gap-3">
+            <div className="rounded-lg bg-base-200 p-2.5">
+              <FileText className="h-5 w-5 text-base-content/70" />
+            </div>
+            <div className="min-w-0">
+              <p className="text-xs text-base-content/60">{t('erp.purchaseDetail.docInfo')}</p>
+              <p className="font-semibold">
+                {purchase.supplierDocNumber
+                  ? `${t('erp.purchaseDetail.docNumber')} ${purchase.supplierDocNumber}`
+                  : '—'}
+              </p>
+              {purchase.supplierDocDate && (
+                <p className="text-xs text-base-content/60">
+                  {t('erp.purchaseDetail.docDate')}: {formatDate(purchase.supplierDocDate)}
+                </p>
+              )}
+              {purchase.vehicleNumber && (
+                <p className="mt-1 flex items-center gap-1 text-xs text-base-content/70">
+                  <Truck className="h-3.5 w-3.5" />
+                  {purchase.vehicleNumber}
+                </p>
+              )}
+            </div>
+          </div>
+        </div>
+
+        <div className="surface-card p-4">
+          <div className="flex items-start gap-3">
+            <div className="rounded-lg bg-secondary/10 p-2.5">
+              <Coins className="h-5 w-5 text-secondary" />
+            </div>
+            <div>
+              <p className="text-xs text-base-content/60">{t('erp.purchaseDetail.currencyInfo')}</p>
+              {isForeign ? (
+                <>
+                  <p className="font-semibold">
+                    {purchase.foreignTotalAmount != null && fmtDoc(purchase.foreignTotalAmount)}
+                  </p>
+                  <p className="text-xs text-base-content/60">
+                    {t('erp.purchaseDetail.rate')}: 1 {docCurrency} = {formatCurrency(purchase.exchangeRate)}
+                  </p>
+                </>
+              ) : (
+                <p className="font-semibold">{enumLabel('currency', 'UZS')}</p>
+              )}
+            </div>
+          </div>
+        </div>
+
+        <div className="surface-card p-4">
+          <div className="flex items-start gap-3">
+            <div className="rounded-lg bg-warning/10 p-2.5">
+              <Truck className="h-5 w-5 text-warning" />
+            </div>
+            <div>
+              <p className="text-xs text-base-content/60">{t('erp.purchaseDetail.transportCost')}</p>
+              <p className="font-semibold">
+                {purchase.transportCost > 0 ? formatCurrency(purchase.transportCost) : '—'}
+              </p>
+              {purchase.transportCost > 0 && (
+                <p className="text-xs text-base-content/60">{t('erp.purchaseDetail.transportCostHint')}</p>
+              )}
+              {purchase.bonusAmount > 0 && (
+                <p className="mt-1 text-xs text-success">
+                  {t('erp.purchaseDetail.bonus')}: −{formatCurrency(purchase.bonusAmount)}
+                </p>
+              )}
+            </div>
+          </div>
+        </div>
+      </div>
+
       {/* Action Buttons */}
       <div className="flex flex-wrap gap-2">
+        {awaitingReceipt && (
+          <PermissionGate permission={PermissionCode.PURCHASES_RECEIVE}>
+            <Button variant="primary" size="sm" onClick={handleOpenReceiveModal}>
+              <ClipboardCheck className="h-4 w-4" />
+              {t('erp.purchaseDetail.receive')}
+            </Button>
+          </PermissionGate>
+        )}
         {purchase.debtAmount > 0 && (
-          <Button variant="primary" size="sm" onClick={handleOpenPaymentModal}>
+          <Button variant={awaitingReceipt ? 'secondary' : 'primary'} size="sm" onClick={handleOpenPaymentModal}>
             <Plus className="h-4 w-4" />
             {t('erp.purchaseDetail.addPayment')}
           </Button>
         )}
-        <Button variant="secondary" size="sm" onClick={handleOpenReturnModal}>
-          <RotateCcw className="h-4 w-4" />
-          {t('erp.purchaseDetail.createReturn')}
-        </Button>
-        <Button variant="ghost" size="sm">
+        {counted && (
+          <Button variant="secondary" size="sm" onClick={handleOpenReturnModal}>
+            <RotateCcw className="h-4 w-4" />
+            {t('erp.purchaseDetail.createReturn')}
+          </Button>
+        )}
+        <Button variant="ghost" size="sm" onClick={() => printDocument(purchase)}>
           <Printer className="h-4 w-4" />
-          {t('erp.purchaseDetail.print')}
+          {t('erp.purchaseDetail.printDoc')}
         </Button>
+        {(purchase.status === 'ORDERED' || purchase.status === 'DRAFT') && (
+          <PermissionGate permission={PermissionCode.PURCHASES_UPDATE}>
+            <Button variant="ghost" size="sm" className="text-error" onClick={handleCancelPurchase}>
+              <Ban className="h-4 w-4" />
+              {t('erp.purchaseDetail.cancelPurchase')}
+            </Button>
+          </PermissionGate>
+        )}
       </div>
 
       {/* Tabs */}
@@ -454,31 +651,101 @@ export function PurchaseDetailPage() {
                 <tr>
                   <th>#</th>
                   <th>{t('erp.purchaseDetail.colProduct')}</th>
-                  <th className="text-right">{t('erp.purchaseDetail.colQuantity')}</th>
+                  <th className="text-right">{t('erp.purchaseDetail.colOrderedQty')}</th>
+                  <th className="text-right">{t('erp.purchaseDetail.colReceivedQty')}</th>
                   <th className="text-right">{t('erp.purchaseDetail.colPrice')}</th>
+                  <th className="text-right">{t('erp.purchaseDetail.colBonus')}</th>
                   <th className="text-right">{t('erp.purchaseDetail.colAmount')}</th>
+                  <th className="text-right">{t('erp.purchaseDetail.colLanded')}</th>
                 </tr>
               </thead>
               <tbody>
-                {purchase.items.map((item, index) => (
-                  <tr key={item.id}>
-                    <td className="text-base-content/60">{index + 1}</td>
-                    <td>
-                      <div>
-                        <p className="font-medium">{item.productName}</p>
-                        <p className="text-xs text-base-content/60">{item.productSku}</p>
-                      </div>
-                    </td>
-                    <td className="text-right">{t('erp.purchaseDetail.quantityUnit', { count: item.quantity })}</td>
-                    <td className="text-right">{formatCurrency(item.unitPrice)}</td>
-                    <td className="text-right font-semibold">{formatCurrency(item.totalPrice)}</td>
-                  </tr>
-                ))}
+                {purchase.items.map((item, index) => {
+                  const ordered = item.orderedQuantity ?? item.quantity;
+                  const shortage = counted ? Math.max(0, ordered - item.receivedQuantity) : 0;
+                  return (
+                    <tr key={item.id} className={clsx(shortage > 0 && 'bg-warning/5')}>
+                      <td className="text-base-content/60">{index + 1}</td>
+                      <td>
+                        <div>
+                          <p className="font-medium">{item.productName}</p>
+                          <p className="text-xs text-base-content/60">
+                            {item.productSku}
+                            {item.sizeString && ` • ${item.sizeString}`}
+                          </p>
+                        </div>
+                      </td>
+                      <td className="text-right tabular-nums">{t('erp.purchaseDetail.quantityUnit', { count: ordered })}</td>
+                      <td className="text-right tabular-nums">
+                        {counted ? (
+                          <span className={clsx(shortage > 0 ? 'font-semibold text-warning' : 'text-success')}>
+                            {t('erp.purchaseDetail.quantityUnit', { count: item.receivedQuantity })}
+                            {shortage > 0 && (
+                              <span className="ml-1 badge badge-warning badge-xs badge-outline">−{shortage}</span>
+                            )}
+                          </span>
+                        ) : (
+                          <span className="text-base-content/40">—</span>
+                        )}
+                      </td>
+                      <td className="text-right tabular-nums">
+                        {isForeign && item.foreignUnitPrice != null ? (
+                          <>
+                            <span>{fmtDoc(item.foreignUnitPrice)}</span>
+                            <p className="text-xs text-base-content/60">{formatCurrency(item.unitPrice)}</p>
+                          </>
+                        ) : (
+                          formatCurrency(item.unitPrice)
+                        )}
+                      </td>
+                      <td className="text-right tabular-nums">
+                        {item.bonusAmount > 0 ? (
+                          <span className="text-success">
+                            −{formatCurrency(item.bonusAmount)}
+                            {item.bonusPercent > 0 && (
+                              <span className="ml-1 text-xs text-base-content/60">({item.bonusPercent}%)</span>
+                            )}
+                          </span>
+                        ) : (
+                          '—'
+                        )}
+                      </td>
+                      <td className="text-right font-semibold tabular-nums">
+                        {formatCurrency(item.totalPrice - item.bonusAmount)}
+                      </td>
+                      <td className="text-right tabular-nums text-base-content/80">
+                        {formatCurrency(item.landedUnitCost ?? item.unitPrice)}
+                      </td>
+                    </tr>
+                  );
+                })}
               </tbody>
               <tfoot>
+                {purchase.bonusAmount > 0 && (
+                  <>
+                    <tr>
+                      <td colSpan={6} className="text-right text-base-content/70">{t('erp.purchaseDetail.totalsGoods')}</td>
+                      <td className="text-right tabular-nums">{formatCurrency(purchase.goodsAmount)}</td>
+                      <td></td>
+                    </tr>
+                    <tr>
+                      <td colSpan={6} className="text-right text-base-content/70">{t('erp.purchaseDetail.totalsBonus')}</td>
+                      <td className="text-right tabular-nums text-success">−{formatCurrency(purchase.bonusAmount)}</td>
+                      <td></td>
+                    </tr>
+                  </>
+                )}
                 <tr>
-                  <td colSpan={4} className="text-right font-semibold">{t('erp.purchaseDetail.totalLabel')}</td>
-                  <td className="text-right font-bold text-lg">{formatCurrency(purchase.totalAmount)}</td>
+                  <td colSpan={6} className="text-right font-semibold">{t('erp.purchaseDetail.totalsPayable')}</td>
+                  <td className="text-right font-bold text-lg tabular-nums">
+                    {formatCurrency(purchase.totalAmount)}
+                    {isForeign && purchase.foreignTotalAmount != null && (
+                      <span className="block text-sm font-medium text-base-content/60">
+                        {fmtDoc(purchase.foreignTotalAmount)}
+                      </span>
+                    )}
+                  </td>
+                  <td></td>
                 </tr>
               </tfoot>
             </table>
@@ -900,6 +1167,126 @@ export function PurchaseDetailPage() {
           </div>
         </div>
       </ModalPortal>
+
+      {/* Qabul qilish ("TEKSHIRILDI") */}
+      <ModalPortal isOpen={showReceiveModal} onClose={() => setShowReceiveModal(false)}>
+        <div className="w-full max-w-3xl bg-base-100 rounded-2xl shadow-2xl max-h-[90vh] overflow-y-auto">
+          <div className="p-4 sm:p-6">
+            <div className="flex items-start justify-between gap-4">
+              <div>
+                <h3 className="text-xl font-semibold flex items-center gap-2">
+                  <ClipboardCheck className="h-5 w-5 text-primary" />
+                  {t('erp.purchaseDetail.receiveTitle')}
+                </h3>
+                <p className="text-sm text-base-content/60">{t('erp.purchaseDetail.receiveSubtitle')}</p>
+              </div>
+              <div className="flex items-center gap-2">
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() =>
+                    setReceiveQty(Object.fromEntries(purchase.items.map((item) => [item.id, item.orderedQuantity])))
+                  }
+                >
+                  {t('erp.purchaseDetail.receiveAll')}
+                </Button>
+                <Button variant="ghost" size="sm" onClick={() => setShowReceiveModal(false)}>
+                  <X className="h-4 w-4" />
+                </Button>
+              </div>
+            </div>
+
+            <div className="mt-6 overflow-x-auto">
+              <table className="table table-sm">
+                <thead>
+                  <tr>
+                    <th>{t('erp.purchaseDetail.colProduct')}</th>
+                    <th className="text-center">{t('erp.purchaseDetail.colOrdered')}</th>
+                    <th className="text-center">{t('erp.purchaseDetail.colReceivedBefore')}</th>
+                    <th className="w-32 text-center">{t('erp.purchaseDetail.colReceiving')}</th>
+                    <th className="text-center">{t('erp.purchaseDetail.colShortage')}</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {purchase.items.map((item) => {
+                    const target = receiveQty[item.id] ?? item.receivedQuantity;
+                    const shortage = Math.max(0, item.orderedQuantity - target);
+                    return (
+                      <tr key={item.id} className={clsx(shortage > 0 && 'bg-warning/10')}>
+                        <td>
+                          <p className="font-medium">{item.productName}</p>
+                          <p className="text-xs text-base-content/60">{item.productSku}</p>
+                        </td>
+                        <td className="text-center tabular-nums">{item.orderedQuantity}</td>
+                        <td className="text-center tabular-nums text-base-content/60">{item.receivedQuantity}</td>
+                        <td>
+                          <input
+                            type="number"
+                            min={item.receivedQuantity}
+                            max={item.orderedQuantity}
+                            className="input input-bordered input-sm w-full text-center tabular-nums"
+                            value={target}
+                            aria-label={`${t('erp.purchaseDetail.colReceiving')} — ${item.productName}`}
+                            onChange={(e) =>
+                              setReceiveQty((prev) => ({
+                                ...prev,
+                                [item.id]: Math.min(
+                                  item.orderedQuantity,
+                                  Math.max(item.receivedQuantity, Number(e.target.value) || 0)
+                                ),
+                              }))
+                            }
+                          />
+                        </td>
+                        <td className={clsx('text-center tabular-nums', shortage > 0 ? 'font-semibold text-warning' : 'text-base-content/40')}>
+                          {shortage > 0 ? `−${shortage}` : '—'}
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
+
+            <label className="form-control mt-4">
+              <span className="label-text mb-1 text-xs font-semibold uppercase tracking-[0.18em] text-base-content/50">
+                {t('erp.purchaseDetail.receiveNotes')}
+              </span>
+              <input
+                type="text"
+                className="input input-bordered w-full"
+                maxLength={300}
+                value={receiveNotes}
+                onChange={(e) => setReceiveNotes(e.target.value)}
+              />
+            </label>
+
+            <div className="mt-4 flex flex-wrap items-center justify-between gap-2 rounded-xl bg-base-200/60 px-4 py-3 text-sm">
+              <span>
+                {t('erp.purchaseDetail.colReceiving')}: <strong>{receiveTotal}</strong> / {purchase.totalQuantity}
+              </span>
+              {receiveShortage > 0 && (
+                <span className="font-semibold text-warning">
+                  {t('erp.purchases.shortageBadge', { count: receiveShortage })}
+                </span>
+              )}
+            </div>
+
+            <div className="mt-6 flex justify-end gap-2">
+              <Button variant="ghost" onClick={() => setShowReceiveModal(false)} disabled={receiveSaving}>
+                {t('common.cancel')}
+              </Button>
+              <Button variant="primary" onClick={handleReceive} loading={receiveSaving} disabled={receiveSaving || receiveTotal === 0}>
+                <Check className="h-4 w-4" />
+                {t('erp.purchaseDetail.confirmReceive')}
+              </Button>
+            </div>
+          </div>
+        </div>
+      </ModalPortal>
+
+      {/* Yashirin kirim hujjati — faqat chop etishda ko'rinadi (@media print) */}
+      {printableDocument}
     </div>
   );
 }

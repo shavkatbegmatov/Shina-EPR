@@ -304,4 +304,68 @@ describe('POSPage', () => {
 
     await waitFor(() => expect(customersApi.getAll).toHaveBeenCalled());
   });
+
+  /**
+   * Barter: mijoz eski shinalarini beradi, farqni to'laydi.
+   *
+   * <p>So'rovga `tradeInItems` qo'shiladi, `paidAmount` esa jami emas —
+   * FARQ bilan cheklanadi (eski shinalar puli kassaga tushmaydi). Mijozsiz
+   * barter yuborilmaydi.
+   */
+  it('barter savdosi eski shinalar bilan yuboriladi, to\'lov farq bilan cheklanadi', async () => {
+    renderPage();
+    await addTireToCart();
+
+    // Eski shina: 4 × 150 000 = 600 000 kredit (mijoz hali tanlanmagan)
+    fireEvent.click(screen.getByRole('button', { name: /Eski shina qo'shish/i }));
+    fireEvent.change(await screen.findByRole('spinbutton', { name: 'Eni' }), { target: { value: '205' } });
+    fireEvent.change(screen.getByRole('spinbutton', { name: 'Profil' }), { target: { value: '55' } });
+    fireEvent.change(screen.getByRole('spinbutton', { name: 'Diametr (R)' }), { target: { value: '16' } });
+    fireEvent.change(screen.getByRole('spinbutton', { name: 'Soni' }), { target: { value: '4' } });
+    const creditInput = screen.getAllByRole('textbox').find((el) =>
+      el.closest('.form-control')?.textContent?.includes('Qabul narxi')
+    ) as HTMLInputElement;
+    fireEvent.change(creditInput, { target: { value: '150000' } });
+    fireEvent.click(screen.getByRole('button', { name: /^Qo'shish$/i }));
+
+    // Savatda barter qatori va to'lanadigan farq
+    await waitFor(() => expect(useCartStore.getState().tradeIns).toHaveLength(1));
+    expect(useCartStore.getState().getAmountDue()).toBe(400_000);
+    expect(screen.getAllByText(/Barter uchun mijoz tanlang/i).length).toBeGreaterThan(0);
+
+    // Mijozsiz tasdiqlash o'chirilgan
+    fireEvent.click(screen.getByRole('button', { name: /To'lovga o'tish/i }));
+    expect(await screen.findByRole('button', { name: 'Tasdiqlash' })).toBeDisabled();
+    fireEvent.click(screen.getByRole('button', { name: /Bekor qilish/i }));
+
+    // Mijoz tanlanadi va savdo yakunlanadi
+    useCartStore.getState().setCustomer({ id: 5, fullName: 'Muslihiddin aka', phone: '+998904060036' } as Customer);
+    fireEvent.click(screen.getByRole('button', { name: /To'lovga o'tish/i }));
+    fireEvent.click(await screen.findByRole('button', { name: 'Tasdiqlash' }));
+
+    await waitFor(() => expect(salesApi.create).toHaveBeenCalled());
+    expect(salesApi.create).toHaveBeenCalledWith({
+      customerId: 5,
+      items: [{ productId: 1, quantity: 1, discount: 0 }],
+      discountAmount: 0,
+      discountPercent: 0,
+      paidAmount: 400_000,
+      paymentMethod: 'CASH',
+      tradeInItems: [
+        {
+          width: 205,
+          profile: 55,
+          diameter: 16,
+          brandName: undefined,
+          condition: undefined,
+          quantity: 4,
+          unitValue: 150_000,
+          // Taklif: 150 000 × 1,5 = 225 000
+          resalePrice: 225_000,
+        },
+      ],
+    });
+    // Savdodan keyin barter qatorlari ham tozalanadi
+    await waitFor(() => expect(useCartStore.getState().tradeIns).toHaveLength(0));
+  });
 });

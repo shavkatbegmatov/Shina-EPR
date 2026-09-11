@@ -615,3 +615,189 @@ body:has(.modal-open) {
 .receipt-muted {
   opacity: 0.75;
 }
+
+/* ==========================================================================
+   Kirim hujjati (A4) — `PurchaseDocumentPrint`.
+
+   Kassa cheki bilan bir xil mexanizm (`#receipt-print`), lekin sahifa A4:
+   nomlangan `@page a4doc` faqat shu hujjatga qo'llanadi, chekning 80mm
+   sahifasi bilan aralashmaydi. Ekranda hujjat yashirin turadi.
+   ========================================================================== */
+
+#document-print {
+  display: none;
+}
+
+@media print {
+  #document-print,
+  #document-print * {
+    visibility: visible;
+  }
+
+  #document-print {
+    display: block;
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 100%;
+    color: #000;
+    background: #fff;
+    font-family: 'Manrope', system-ui, sans-serif;
+    font-size: 12px;
+    line-height: 1.4;
+    page: a4doc;
+  }
+
+  @page a4doc {
+    size: A4 portrait;
+    margin: 12mm;
+  }
+}
+
+.print-doc-header {
+  display: flex;
+  justify-content: space-between;
+  gap: 16px;
+  border-bottom: 2px solid #000;
+  padding-bottom: 8px;
+}
+
+.print-doc-shop {
+  font-size: 18px;
+  font-weight: 700;
+}
+
+.print-doc-title-block {
+  text-align: right;
+}
+
+.print-doc-title {
+  font-size: 16px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+}
+
+.print-doc-muted {
+  color: #444;
+  font-size: 11px;
+}
+
+.print-doc-meta {
+  width: 100%;
+  margin: 10px 0;
+  border-collapse: collapse;
+}
+
+.print-doc-meta th {
+  text-align: left;
+  font-weight: 600;
+  padding: 3px 8px 3px 0;
+  white-space: nowrap;
+  width: 1%;
+}
+
+.print-doc-meta td {
+  padding: 3px 16px 3px 0;
+}
+
+.print-doc-items {
+  width: 100%;
+  border-collapse: collapse;
+  margin-top: 6px;
+}
+
+.print-doc-items th,
+.print-doc-items td {
+  border: 1px solid #000;
+  padding: 4px 6px;
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+
+.print-doc-items th {
+  background: #eee;
+  font-weight: 600;
+  text-align: center;
+}
+
+.print-doc-items .print-doc-left {
+  text-align: left;
+}
+
+.print-doc-totals {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: 8px;
+}
+
+.print-doc-totals table {
+  border-collapse: collapse;
+  min-width: 260px;
+}
+
+.print-doc-totals th {
+  text-align: left;
+  font-weight: 500;
+  padding: 2px 16px 2px 0;
+}
+
+.print-doc-totals td {
+  text-align: right;
+  padding: 2px 0;
+  font-variant-numeric: tabular-nums;
+}
+
+.print-doc-totals .print-doc-total th,
+.print-doc-totals .print-doc-total td {
+  font-weight: 700;
+  font-size: 14px;
+  border-top: 1px solid #000;
+  padding-top: 4px;
+}
+
+.print-doc-notes {
+  margin-top: 10px;
+}
+
+.print-doc-footer {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-end;
+  gap: 24px;
+  margin-top: 28px;
+}
+
+.print-doc-sign {
+  flex: 1;
+}
+
+.print-doc-line {
+  margin-top: 22px;
+  border-top: 1px solid #000;
+  padding-top: 2px;
+  font-size: 10px;
+  color: #444;
+}
+
+.print-doc-stamp {
+  border: 3px double #1d4ed8;
+  color: #1d4ed8;
+  border-radius: 6px;
+  padding: 6px 14px;
+  font-size: 15px;
+  font-weight: 800;
+  letter-spacing: 0.14em;
+  text-align: center;
+  transform: rotate(-6deg);
+}
+
+.print-doc-stamp-muted {
+  border-color: #888;
+  color: #888;
+}
+
+.print-doc-stamp-date {
+  font-size: 10px;
+  font-weight: 500;
+  letter-spacing: 0;
+}

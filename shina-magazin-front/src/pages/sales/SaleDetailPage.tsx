@@ -15,6 +15,7 @@ import {
   AlertCircle,
   Hash,
   Printer,
+  Recycle,
   Undo2,
 } from 'lucide-react';
 import clsx from 'clsx';
@@ -418,6 +419,25 @@ export function SaleDetailPage() {
               <span className="font-bold text-lg">{formatCurrency(sale.totalAmount)}</span>
             </div>
 
+            {/* Barter: eski shinalar krediti va to'lanadigan farq */}
+            {sale.tradeInAmount > 0 && (
+              <>
+                <div className="flex items-center justify-between py-2 border-b border-base-200">
+                  <span className="flex items-center gap-2 text-base-content/70">
+                    <Recycle className="h-4 w-4 text-info" />
+                    {t('erp.saleDetail.tradeIn')}
+                  </span>
+                  <span className="font-semibold text-info">-{formatCurrency(sale.tradeInAmount)}</span>
+                </div>
+                <div className="flex items-center justify-between py-2 border-b border-base-200">
+                  <span className="text-base-content/70 font-medium">{t('erp.saleDetail.amountDue')}</span>
+                  <span className="font-bold">
+                    {formatCurrency(sale.amountDue ?? sale.totalAmount - sale.tradeInAmount)}
+                  </span>
+                </div>
+              </>
+            )}
+
             {/* Paid Amount */}
             <div className="flex items-center justify-between py-2 border-b border-base-200">
               <span className="text-base-content/70">{t('erp.saleDetail.paid')}</span>
@@ -499,6 +519,56 @@ export function SaleDetailPage() {
         </div>
       )}
 
+      {/* Barter: qabul qilingan eski shinalar (B/U mahsulot bo'lib omborga kirgan) */}
+      {sale.tradeInItems && sale.tradeInItems.length > 0 && (
+        <div className="surface-card">
+          <div className="p-4 border-b border-base-200">
+            <h3 className="text-sm font-semibold uppercase tracking-[0.15em] text-base-content/60 flex items-center gap-2">
+              <Recycle className="h-4 w-4" />
+              {t('erp.saleDetail.tradeInSection')}
+            </h3>
+          </div>
+          <div className="overflow-x-auto">
+            <table className="table">
+              <thead>
+                <tr>
+                  <th>#</th>
+                  <th>{t('erp.saleDetail.tradeInProduct')}</th>
+                  <th>{t('erp.saleDetail.tradeInDescription')}</th>
+                  <th className="text-right">{t('erp.saleDetail.quantity')}</th>
+                  <th className="text-right">{t('erp.saleDetail.tradeInUnitValue')}</th>
+                  <th className="text-right">{t('common.sum')}</th>
+                </tr>
+              </thead>
+              <tbody>
+                {sale.tradeInItems.map((item, index) => (
+                  <tr key={item.id || index}>
+                    <td className="text-base-content/60">{index + 1}</td>
+                    <td>
+                      <p className="font-medium">{item.productName}</p>
+                      <p className="text-xs text-base-content/60">
+                        {item.productSku}
+                        {item.sizeString && ` • ${item.sizeString}`}
+                      </p>
+                    </td>
+                    <td className="text-base-content/70">{item.description || '—'}</td>
+                    <td className="text-right">{t('erp.saleDetail.qtyPcs', { count: item.quantity })}</td>
+                    <td className="text-right">{formatCurrency(item.unitValue)}</td>
+                    <td className="text-right font-semibold">{formatCurrency(item.totalValue)}</td>
+                  </tr>
+                ))}
+              </tbody>
+              <tfoot>
+                <tr>
+                  <td colSpan={5} className="text-right font-semibold">{t('erp.saleDetail.tradeInTotal')}</td>
+                  <td className="text-right font-bold text-info">{formatCurrency(sale.tradeInAmount)}</td>
+                </tr>
+              </tfoot>
+            </table>
+          </div>
+        </div>
+      )}
+
       {/* Additional Info */}
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
         {/* Notes */}
@@ -547,6 +617,11 @@ export function SaleDetailPage() {
                   {r.debtReduced > 0 && (
                     <div className="text-base-content/60">
                       {t('erp.returns.debtReduced')}: {formatCurrency(r.debtReduced)}
+                    </div>
+                  )}
+                  {(r.creditIssued ?? 0) > 0 && (
+                    <div className="text-info">
+                      {t('erp.returns.creditIssued')}: {formatCurrency(r.creditIssued ?? 0)}
                     </div>
                   )}
                 </div>

@@ -139,6 +139,7 @@ describe('PurchasesPage', () => {
       totalAmount: 1_399_998,
       totalDebt: 0,
       pendingCount: 0,
+      awaitingReceipt: 0,
     } as never);
     vi.mocked(purchasesApi.create).mockResolvedValue(PURCHASE);
     vi.mocked(suppliersApi.getActive).mockResolvedValue([SUPPLIER]);
@@ -180,7 +181,15 @@ describe('PurchasesPage', () => {
       paidAmount: 0,
       notes: undefined,
       // Xarid narxi yo'q -> sotuv narxining 70% i, BUTUN so'mda
-      items: [{ productId: 7, quantity: 1, unitPrice: 699_999 }],
+      items: [{ productId: 7, quantity: 1, unitPrice: 699_999, bonusPerUnit: 0, bonusPercent: 0 }],
+      // Kirim hujjati standartlari: so'mda, kurssiz, darhol qabul qilinadi
+      currency: 'UZS',
+      exchangeRate: undefined,
+      supplierDocNumber: undefined,
+      supplierDocDate: undefined,
+      vehicleNumber: undefined,
+      transportCost: undefined,
+      receiveNow: true,
     });
   }, 10_000);
 

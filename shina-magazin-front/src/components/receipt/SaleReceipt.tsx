@@ -91,6 +91,40 @@ export function SaleReceipt({ sale, settings }: { sale: Sale; settings?: Receipt
         <span>{t('erp.receipt.total')}</span>
         <span>{formatCurrency(sale.totalAmount)}</span>
       </div>
+      {sale.tradeInAmount > 0 && (
+        <>
+          {(sale.tradeInItems ?? []).length > 0 && (
+            <>
+              <hr className="receipt-rule" />
+              <div className="receipt-muted">{t('erp.receipt.tradeInItems')}</div>
+              <table className="receipt-items">
+                <tbody>
+                  {(sale.tradeInItems ?? []).map((item, index) => (
+                    <tr key={item.id ?? `${item.productId}-${index}`}>
+                      <td colSpan={2} className="receipt-item-name">
+                        {item.productName ?? item.productSku}
+                        {item.description && <span className="receipt-muted"> ({item.description})</span>}
+                        <div className="receipt-item-calc">
+                          {item.quantity} × {formatCurrency(item.unitValue)}
+                          <span className="receipt-item-total">{formatCurrency(item.totalValue)}</span>
+                        </div>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </>
+          )}
+          <div className="receipt-row">
+            <span>{t('erp.receipt.tradeIn')}</span>
+            <span>−{formatCurrency(sale.tradeInAmount)}</span>
+          </div>
+          <div className="receipt-row receipt-total">
+            <span>{t('erp.receipt.amountDue')}</span>
+            <span>{formatCurrency(sale.amountDue ?? sale.totalAmount - sale.tradeInAmount)}</span>
+          </div>
+        </>
+      )}
       <div className="receipt-row">
         <span>{t('erp.receipt.paid')}</span>
         <span>{formatCurrency(sale.paidAmount)}</span>

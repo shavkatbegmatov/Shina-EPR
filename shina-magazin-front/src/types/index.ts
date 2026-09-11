@@ -71,6 +71,8 @@ export interface SaleReturn {
   debtReduced: number;
   /** Mijozga haqiqatan qaytarilgan pul. */
   cashRefunded: number;
+  /** Barter savdosida mijoz balansiga yozilgan kredit (kassadan pul chiqmagan). */
+  creditIssued?: number;
   createdByName?: string;
   items: SaleReturnItem[];
 }
@@ -674,6 +676,21 @@ export interface SaleItem {
   totalPrice: number;
 }
 
+/** Barter qatori — savdoda mijozdan qabul qilingan eski shina (B/U mahsulot). */
+export interface SaleTradeInItem {
+  id?: number;
+  productId: number;
+  productName?: string;
+  productSku?: string;
+  sizeString?: string;
+  quantity: number;
+  /** Bir dona uchun berilgan kredit (so'm). */
+  unitValue: number;
+  totalValue: number;
+  /** Brend, holati ("protektor 60%"). */
+  description?: string;
+}
+
 export interface Sale {
   id: number;
   invoiceNumber: string;
@@ -687,6 +704,14 @@ export interface Sale {
   totalAmount: number;
   paidAmount: number;
   debtAmount: number;
+  /**
+   * Barter: eski shinalar uchun berilgan kredit (0 — oddiy savdo).
+   * `totalAmount` o'zgarmaydi; mijoz to'laydigan farq — `amountDue`.
+   */
+  tradeInAmount: number;
+  /** Jami − barter. Eski javoblarda bo'lmasligi mumkin — `totalAmount - tradeInAmount`. */
+  amountDue?: number;
+  tradeInItems?: SaleTradeInItem[];
   paymentMethod: PaymentMethod;
   paymentStatus: PaymentStatus;
   status: SaleStatus;
@@ -702,6 +727,24 @@ export interface SaleItemRequest {
   customPrice?: number;
 }
 
+/**
+ * Barter qatori so'rovi. Mavjud B/U mahsulot (`productId`) yoki o'lcham —
+ * server o'lcham (va brend) bo'yicha B/U kartochkani topadi yoki yaratadi.
+ */
+export interface TradeInItemRequest {
+  productId?: number;
+  width?: number;
+  profile?: number;
+  diameter?: number;
+  brandName?: string;
+  condition?: string;
+  quantity: number;
+  /** Bir dona uchun kredit (so'm). */
+  unitValue: number;
+  /** Faqat YANGI B/U kartochka yaratilganda sotish narxi. */
+  resalePrice?: number;
+}
+
 export interface SaleRequest {
   customerId?: number;
   items: SaleItemRequest[];
@@ -710,6 +753,8 @@ export interface SaleRequest {
   paidAmount: number;
   paymentMethod: PaymentMethod;
   notes?: string;
+  /** Barter: bo'sh bo'lsa oddiy savdo. Mijoz tanlangan bo'lishi shart. */
+  tradeInItems?: TradeInItemRequest[];
 }
 
 // Debt Types
@@ -841,6 +886,19 @@ export interface CartItem {
   discount: number;
 }
 
+/** POS savatidagi barter qatori (serverga `TradeInItemRequest` bo'lib ketadi). */
+export interface TradeInLine {
+  key: string;
+  width: number;
+  profile: number;
+  diameter: number;
+  brandName?: string;
+  condition?: string;
+  quantity: number;
+  unitValue: number;
+  resalePrice?: number;
+}
+
 // Warehouse Types
 export type MovementType = 'IN' | 'OUT' | 'ADJUSTMENT';
 
@@ -901,6 +959,8 @@ export interface SalesReport {
   cardTotal: number;
   transferTotal: number;
   debtTotal: number;
+  /** Barter: eski shinalar bilan "to'langan" qism (pul emas). */
+  barterTotal?: number;
   /** Tannarxi noma'lum qatorlar — noldan katta bo'lsa foyda oshib ko'rinadi. */
   itemsWithoutCost: number;
   dailyData: DailySalesData[];
@@ -1061,7 +1121,13 @@ export interface SupplierRequest {
 }
 
 // Purchase Order Types
-export type PurchaseStatus = 'DRAFT' | 'RECEIVED' | 'CANCELLED';
+/**
+ * ORDERED — hujjat kiritilgan, mol hali sanab qabul qilinmagan (kutilmoqda);
+ * PARTIAL — qismi kelgan; RECEIVED — to'liq qabul qilingan ("TEKSHIRILDI").
+ */
+export type PurchaseStatus = 'DRAFT' | 'ORDERED' | 'PARTIAL' | 'RECEIVED' | 'CANCELLED';
+/** Kirim hujjati valyutasi; pul ustunlari doim so'mda. */
+export type PurchaseCurrency = 'UZS' | 'USD';
 export type PurchaseReturnStatus = 'PENDING' | 'APPROVED' | 'COMPLETED' | 'REJECTED';
 
 export interface PurchaseOrderItem {
@@ -1069,9 +1135,23 @@ export interface PurchaseOrderItem {
   productId: number;
   productName: string;
   productSku: string;
+  sizeString?: string;
+  /** Hujjatdagi miqdor (= orderedQuantity). */
   quantity: number;
+  orderedQuantity: number;
+  /** Sanab qabul qilingan miqdor — kutilayotgan hujjatda 0. */
+  receivedQuantity: number;
+  /** Birlik narxi (so'm). */
   unitPrice: number;
+  /** Qator summasi bonusgacha (so'm). */
   totalPrice: number;
+  /** Narx hujjat valyutasida (UZS hujjatda yo'q). */
+  foreignUnitPrice?: number;
+  bonusPerUnit: number;
+  bonusPercent: number;
+  bonusAmount: number;
+  /** Tannarx: (jami − bonus + yo'l haqi ulushi) / miqdor. */
+  landedUnitCost: number;
 }
 
 export interface PurchaseOrder {
@@ -1081,6 +1161,7 @@ export interface PurchaseOrder {
   supplierName: string;
   orderDate: string;
   dueDate?: string;
+  /** To'lov summasi (so'm): tovar summasi − bonus. */
   totalAmount: number;
   paidAmount: number;
   debtAmount: number;
@@ -1090,24 +1171,69 @@ export interface PurchaseOrder {
   items: PurchaseOrderItem[];
   itemCount: number;
   totalQuantity: number;
+  /** Qabul qilingan jami miqdor. */
+  totalReceivedQuantity: number;
+  /** Hujjatdagi va qabul qilingan miqdor farqi — faqat sanab qabul qilinganda. */
+  shortageQuantity: number;
   paymentCount: number;
   returnCount: number;
   createdAt: string;
   createdByName: string;
+  // ─── Kirim hujjati (ta'minotchi shabloni) ───
+  currency: PurchaseCurrency;
+  /** 1 birlik hujjat valyutasi = N so'm (UZS hujjatda 1). */
+  exchangeRate: number;
+  /** Ta'minotchi hujjat raqami ("Kun ID"). */
+  supplierDocNumber?: string;
+  supplierDocDate?: string;
+  /** Yuk mashina raqami / jo'natma. */
+  vehicleNumber?: string;
+  /** Yo'l haqi (so'm) — tannarxga taqsimlanadi, qarzga kirmaydi. */
+  transportCost: number;
+  /** Tovar summasi bonusgacha (so'm). */
+  goodsAmount: number;
+  bonusAmount: number;
+  /** To'lov summasi hujjat valyutasida (UZS hujjatda yo'q). */
+  foreignTotalAmount?: number;
+  /** "TEKSHIRILDI" — kim va qachon qabul qilgan. */
+  receivedByName?: string;
+  receivedAt?: string;
 }
 
+/** Kirim hujjati qatori — narx va bonus HUJJAT VALYUTASIDA. */
 export interface PurchaseItemRequest {
   productId: number;
   quantity: number;
   unitPrice: number;
+  /** Bir dona uchun bonus ("Bonus $"), hujjat valyutasida. */
+  bonusPerUnit?: number;
+  /** Qator bonusi foizda ("Bonus %") — berilsa bonusPerUnit e'tiborga olinmaydi. */
+  bonusPercent?: number;
 }
 
 export interface PurchaseRequest {
   supplierId: number;
   orderDate: string;
+  /** So'mda — kassadan chiqqan haqiqiy pul. */
   paidAmount: number;
   notes?: string;
   items: PurchaseItemRequest[];
+  currency?: PurchaseCurrency;
+  /** UZS bo'lmagan hujjatda majburiy. */
+  exchangeRate?: number;
+  supplierDocNumber?: string;
+  supplierDocDate?: string;
+  vehicleNumber?: string;
+  /** Yo'l haqi, so'm. */
+  transportCost?: number;
+  /** false — hujjat "kutilmoqda" holatida, mol kelganda `receive` bilan qabul qilinadi. */
+  receiveNow?: boolean;
+}
+
+/** Molni sanab qabul qilish; `items` bo'sh — hammasi hujjatdagi miqdorda. */
+export interface PurchaseReceiveRequest {
+  items?: { itemId: number; receivedQuantity: number }[];
+  notes?: string;
 }
 
 export interface PurchaseStats {
@@ -1117,6 +1243,10 @@ export interface PurchaseStats {
   totalAmount: number;
   totalDebt: number;
   pendingReturns: number;
+  /** Mol qabul qilishni kutayotgan hujjatlar (ORDERED/PARTIAL). */
+  awaitingReceipt: number;
+  /** Oxirgi USD hujjatdagi kurs — forma uchun taklif. */
+  lastUsdRate?: number;
 }
 
 // Purchase Payment Types
