@@ -33,7 +33,9 @@ public class JwtAuthenticationEntryPoint implements AuthenticationEntryPoint {
         body.put("success", false);
         body.put("message", "Avtorizatsiya talab qilinadi");
         body.put("error", authException.getMessage());
-        body.put("timestamp", LocalDateTime.now().toString());
+        // LocalDateTime OBYEKT sifatida — Jackson uni boshqa javoblar kabi Toshkent
+        // offset'i bilan yozadi; `.toString()` qilinsa offsetsiz qator ketardi.
+        body.put("timestamp", LocalDateTime.now());
         body.put("path", request.getServletPath());
 
         objectMapper.writeValue(response.getOutputStream(), body);
