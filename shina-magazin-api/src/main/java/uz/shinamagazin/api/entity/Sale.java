@@ -112,10 +112,15 @@ public class Sale extends BaseEntity implements Auditable {
     @Builder.Default
     private List<Payment> payments = new ArrayList<>();
 
-    /** Barterda qabul qilingan eski shinalar (bo'sh — oddiy savdo). */
-    @OneToMany(mappedBy = "sale", cascade = CascadeType.ALL, orphanRemoval = true)
+    /**
+     * Shu savdoda hisobga olingan barter hujjatlari (bo'sh — oddiy savdo).
+     *
+     * <p>Hujjat mustaqil yozuv (savdodan oldin ham yashaydi), shuning uchun
+     * kaskad yo'q: bog'lash/ajratish {@code TradeInService} da.
+     */
+    @OneToMany(mappedBy = "sale")
     @Builder.Default
-    private List<SaleTradeInItem> tradeInItems = new ArrayList<>();
+    private List<TradeIn> tradeIns = new ArrayList<>();
 
     // Helper: element qo'shish
     public void addItem(SaleItem item) {
@@ -123,9 +128,25 @@ public class Sale extends BaseEntity implements Auditable {
         item.setSale(this);
     }
 
-    public void addTradeInItem(SaleTradeInItem item) {
-        tradeInItems.add(item);
-        item.setSale(this);
+    /** Hujjatni savdoga bog'laydi (ikkala tomonda ham). */
+    public void attachTradeIn(TradeIn tradeIn) {
+        tradeIns.add(tradeIn);
+        tradeIn.setSale(this);
+    }
+
+    /** Hujjatni savdodan ajratadi (savdo bekor qilinganda oldindan qabul qilingan hujjat bo'shaydi). */
+    public void detachTradeIn(TradeIn tradeIn) {
+        tradeIns.remove(tradeIn);
+        tradeIn.setSale(null);
+    }
+
+    /** Chek va tafsilot uchun: barcha bog'langan hujjatlarning qatorlari. */
+    public List<TradeInItem> getTradeInItems() {
+        List<TradeInItem> all = new ArrayList<>();
+        for (TradeIn tradeIn : tradeIns) {
+            all.addAll(tradeIn.getItems());
+        }
+        return all;
     }
 
     /** Mijoz to'lashi kerak bo'lgan summa: jami − barter krediti. */
@@ -185,8 +206,8 @@ public class Sale extends BaseEntity implements Auditable {
         if (this.payments != null) {
             map.put("paymentCount", this.payments.size());
         }
-        if (this.tradeInItems != null) {
-            map.put("tradeInCount", this.tradeInItems.size());
+        if (this.tradeIns != null) {
+            map.put("tradeInCount", this.tradeIns.size());
         }
 
         return map;

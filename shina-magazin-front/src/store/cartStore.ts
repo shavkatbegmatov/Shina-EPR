@@ -1,6 +1,6 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
-import type { CartItem, Customer, Product, TradeInLine } from '../types';
+import type { CartItem, Customer, Product, TradeIn, TradeInLine } from '../types';
 
 interface CartState {
   items: CartItem[];
@@ -9,6 +9,12 @@ interface CartState {
   discountPercent: number;
   /** Barter: mijozdan qabul qilinayotgan eski shinalar (kredit sifatida). */
   tradeIns: TradeInLine[];
+  /**
+   * Mijoz oldinroq qoldirib ketgan barter hujjati (Barter sahifasida qabul
+   * qilingan, kassada kutmoqda). Krediti savdodan ayiriladi; `tradeIns`
+   * bilan birga bo'lishi mumkin — ikkalasi qo'shiladi.
+   */
+  tradeInDocument: TradeIn | null;
 
   addItem: (product: Product, quantity?: number) => void;
   removeItem: (productId: number) => void;
@@ -19,13 +25,14 @@ interface CartState {
   setDiscountPercent: (percent: number) => void;
   addTradeIn: (line: Omit<TradeInLine, 'key'>) => void;
   removeTradeIn: (key: string) => void;
+  setTradeInDocument: (document: TradeIn | null) => void;
   clear: () => void;
 
   getSubtotal: () => number;
   getDiscountAmount: () => number;
   getTotal: () => number;
   getItemCount: () => number;
-  /** Eski shinalar uchun beriladigan jami kredit. */
+  /** Eski shinalar uchun beriladigan jami kredit (qatorlar + tanlangan hujjat). */
   getTradeInTotal: () => number;
   /** Mijoz to'lashi kerak bo'lgan summa: jami − barter (manfiy bo'lmaydi). */
   getAmountDue: () => number;
@@ -60,6 +67,7 @@ export const useCartStore = create<CartState>()(
   discount: 0,
   discountPercent: 0,
   tradeIns: [],
+  tradeInDocument: null,
 
   addItem: (product, quantity = 1) => {
     set((state) => {
@@ -111,7 +119,16 @@ export const useCartStore = create<CartState>()(
     });
   },
 
-  setCustomer: (customer) => set({ customer }),
+  setCustomer: (customer) =>
+    set((state) => ({
+      customer,
+      // Hujjat mijozga bog'liq: boshqa mijoz tanlansa (yoki mijoz olib
+      // tashlansa) u savatda qolmasligi kerak — server baribir rad etadi
+      tradeInDocument:
+        state.tradeInDocument && customer && state.tradeInDocument.customerId === customer.id
+          ? state.tradeInDocument
+          : null,
+    })),
 
   setDiscount: (discount) => set({ discount, discountPercent: 0 }),
 
@@ -129,6 +146,8 @@ export const useCartStore = create<CartState>()(
   removeTradeIn: (key) =>
     set((state) => ({ tradeIns: state.tradeIns.filter((line) => line.key !== key) })),
 
+  setTradeInDocument: (document) => set({ tradeInDocument: document }),
+
   clear: () =>
     set({
       items: [],
@@ -136,6 +155,7 @@ export const useCartStore = create<CartState>()(
       discount: 0,
       discountPercent: 0,
       tradeIns: [],
+      tradeInDocument: null,
     }),
 
   getSubtotal: () => {
@@ -165,7 +185,9 @@ export const useCartStore = create<CartState>()(
   },
 
   getTradeInTotal: () => {
-    return get().tradeIns.reduce((sum, line) => sum + line.quantity * line.unitValue, 0);
+    const { tradeIns, tradeInDocument } = get();
+    const lines = tradeIns.reduce((sum, line) => sum + line.quantity * line.unitValue, 0);
+    return lines + (tradeInDocument?.totalAmount ?? 0);
   },
 
   getAmountDue: () => {
@@ -180,12 +202,14 @@ export const useCartStore = create<CartState>()(
         discount: state.discount,
         discountPercent: state.discountPercent,
         tradeIns: state.tradeIns,
+        tradeInDocument: state.tradeInDocument,
       }),
-      // Eski saqlangan savatda `tradeIns` yo'q — bo'sh ro'yxat bilan to'ldiriladi
+      // Eski saqlangan savatda `tradeIns`/`tradeInDocument` yo'q — bo'sh bilan to'ldiriladi
       merge: (persisted, current) => ({
         ...current,
         ...(persisted as Partial<CartState>),
         tradeIns: (persisted as Partial<CartState>)?.tradeIns ?? [],
+        tradeInDocument: (persisted as Partial<CartState>)?.tradeInDocument ?? null,
       }),
     }
   )

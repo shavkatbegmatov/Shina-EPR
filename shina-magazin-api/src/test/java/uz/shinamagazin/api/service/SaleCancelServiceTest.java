@@ -94,7 +94,7 @@ class SaleCancelServiceTest {
                 userRepository, debtRepository, stockMovementRepository, saleReturnRepository,
                 mock(StaffNotificationService.class), mock(NotificationService.class),
                 mock(SettingsService.class), mock(DocumentNumberService.class),
-                mock(CashShiftService.class), mock(UsedProductService.class));
+                mock(CashShiftService.class), mock(TradeInService.class));
 
         // Qaytarishlar REAL servis orqali — u omborni ham tiklaydi, aynan
         // shu bilan "ikki marta to'ldirish" ssenariysi haqiqiy bo'ladi.

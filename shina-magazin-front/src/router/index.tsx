@@ -24,6 +24,7 @@ const CustomerDetailPage = lazyWithRetry(() => import('../pages/customers/Custom
 const POSPage = lazyWithRetry(() => import('../pages/sales/POSPage').then(m => ({ default: m.POSPage })));
 const SalesPage = lazyWithRetry(() => import('../pages/sales/SalesPage').then(m => ({ default: m.SalesPage })));
 const SaleDetailPage = lazyWithRetry(() => import('../pages/sales/SaleDetailPage').then(m => ({ default: m.SaleDetailPage })));
+const TradeInsPage = lazyWithRetry(() => import('../pages/trade-ins/TradeInsPage').then(m => ({ default: m.TradeInsPage })));
 const DebtsPage = lazyWithRetry(() => import('../pages/debts/DebtsPage').then(m => ({ default: m.DebtsPage })));
 const WarehousePage = lazyWithRetry(() => import('../pages/warehouse/WarehousePage').then(m => ({ default: m.WarehousePage })));
 const SuppliersPage = lazyWithRetry(() => import('../pages/suppliers/SuppliersPage').then(m => ({ default: m.SuppliersPage })));
@@ -176,6 +177,17 @@ export const router = createBrowserRouter([
           </ProtectedRoute>
         ),
         handle: { titleKey: 'erp.nav.pos' },
+      },
+      {
+        path: 'trade-ins',
+        element: (
+          <ProtectedRoute permission={PermissionCode.TRADE_INS_VIEW}>
+            <LazyRoute>
+              <TradeInsPage />
+            </LazyRoute>
+          </ProtectedRoute>
+        ),
+        handle: { titleKey: 'erp.nav.tradeIns' },
       },
       {
         path: 'shifts',

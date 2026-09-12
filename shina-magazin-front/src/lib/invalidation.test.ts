@@ -37,7 +37,7 @@ describe('invalidateAfter', () => {
     invalidateAfter.sale(client);
 
     expect(invalidatedDomains(client).sort()).toEqual(
-      ['customers', 'dashboard', 'debts', 'products', 'reports', 'sales', 'warehouse'].sort()
+      ['customers', 'dashboard', 'debts', 'products', 'reports', 'sales', 'tradeIns', 'warehouse'].sort()
     );
   });
 

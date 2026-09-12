@@ -93,12 +93,46 @@ Nima bo'ladi:
    bitta kartochkada yig'iladi, tannarxi = berilgan kredit. Ombor harakati `TRADE_IN`.
 4. Chekda eski shinalar, barter krediti va to'lanadigan summa alohida chiqadi.
 5. Barter uchun **mijoz tanlash shart** — eski shinalar kimdan olingani hujjatda qoladi.
+6. Har barter — raqamlangan **hujjat** (`TI-000001`, jadval `trade_ins` + `trade_in_items`).
+   Kassada qabul qilingani darhol "Savdoda ishlatilgan" holatda savdoga bog'lanadi.
+
+### Alohida qabul — mijoz shinasini qoldirib ketadi
+
+Mijoz eski shinalarini bugun qoldirib, yangisini keyinroq oladi ("pulim yig'ilsin",
+"kerakli o'lcham kelsin"). Buning uchun **Barter** sahifasi (`/admin/trade-ins`):
+
+- **Eski shina qabul qilish** → mijoz, o'lcham qatorlari (kassadagi oyna bilan bir xil),
+  izoh. Hujjat **Kutmoqda** (`NEW`) holatida yaratiladi, shinalar shu zahoti B/U
+  kartochkaga kirim bo'ladi (shina jismonan do'konda — qoldiq haqiqatni ko'rsatadi).
+- Keyingi xaridda kassada shu mijoz tanlanganda **"Mijozning kutayotgan barterlari"**
+  ro'yxati chiqadi → **Qo'llash**: krediti savdodan ayiriladi, hujjat **Savdoda
+  ishlatilgan** (`APPLIED`) bo'ladi. Serverga `tradeInId` ketadi (kassada qabul
+  qilinayotgan qatorlar bilan birga ham bo'lishi mumkin — ikkalasi qo'shiladi).
+- Hujjat faqat **bir marta** va faqat **o'z mijozining** savdosida ishlatiladi.
+- Sahifada holat filtri, hujjat tafsiloti (qatorlar, savdo havolasi, kim qabul qilgan);
+  savdo tafsilotidan hujjat raqami bosilsa shu yerda ochiladi.
+
+Holatlar: `NEW` (kutmoqda) → `APPLIED` (savdoda ishlatilgan) yoki `CANCELLED` (bekor —
+shinalar mijozga qaytarilgan).
+
+Ruxsatlar (`TRADE_INS_*`): ADMIN va MANAGER — hammasi; SELLER — ko'rish va qabul qilish,
+**bekor qilish yo'q** (bekor qilish omborga kirimni qaytaradi va kreditni yo'q qiladi —
+`SALES_REFUND` bilan bir xil mulohaza).
+
+Tannarx: B/U kartochka bo'sh bo'lsa tannarx = qabul narxi; kartochkada tovar bo'lsa
+**o'rtacha tortilgan** ((eski qoldiq × eski tannarx + soni × qabul narxi) / jami) — bitta
+arzon baholangan shina butun qoldiqning tannarxini tushirib, foyda hisobotini buzmaydi.
 
 Qoidalar:
 
 - Barter qiymati savdo summasidan katta bo'lolmaydi (kassa mijozga pul qaytarmaydi).
-- **Bekor qilish** (pul tushmagan savdo): eski shinalar mijozga qaytariladi — B/U qoldiq
-  kamayadi (`TRADE_IN_CANCEL`). Ular allaqachon sotilgan bo'lsa bekor qilinmaydi.
+- **Bekor qilish** (pul tushmagan savdo): kassada savdo ichida qabul qilingan eski shinalar
+  mijozga qaytariladi — B/U qoldiq kamayadi (`TRADE_IN_CANCEL`), hujjat `CANCELLED`. Ular
+  allaqachon sotilgan bo'lsa bekor qilinmaydi. **Oldindan** qabul qilingan hujjat esa yana
+  `NEW` ga qaytadi — mijozning krediti saqlanadi, shinalar omborda qolaveradi (kerak bo'lsa
+  rahbar hujjatni Barter sahifasida alohida bekor qiladi).
+- **Kutayotgan hujjatni bekor qilish** (Barter sahifasi, `TRADE_INS_CANCEL`): shinalar
+  mijozga qaytariladi; savdoda ishlatilgan hujjat bekor qilinmaydi — avval savdo.
 - **Qaytarish**: naqd faqat kassaga tushgan qismgacha qaytariladi; eski shinalar uchun
   berilgan kredit qismi **mijoz balansiga kredit** bo'lib yoziladi (do'kon eski shinalarni
   qaytarib bermaydi). Z-hisobotga faqat naqd qaytarim tushadi.

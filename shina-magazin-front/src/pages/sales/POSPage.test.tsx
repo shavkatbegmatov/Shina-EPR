@@ -15,6 +15,9 @@ vi.mock('../../api/sales.api', () => ({
 vi.mock('../../api/customers.api', () => ({
   customersApi: { getAll: vi.fn() },
 }));
+vi.mock('../../api/tradeIns.api', () => ({
+  tradeInsApi: { getAvailable: vi.fn() },
+}));
 vi.mock('../../api/settings.api', () => ({
   settingsApi: { get: vi.fn().mockResolvedValue({}), getPublic: vi.fn().mockResolvedValue({}) },
 }));
@@ -22,8 +25,11 @@ vi.mock('../../api/settings.api', () => ({
 import { productsApi } from '../../api/products.api';
 import { salesApi } from '../../api/sales.api';
 import { customersApi } from '../../api/customers.api';
+import { tradeInsApi } from '../../api/tradeIns.api';
 import { POSPage } from './POSPage';
 import { useCartStore } from '../../store/cartStore';
+import { useAuthStore } from '../../store/authStore';
+import type { TradeIn } from '../../types';
 
 /**
  * Kassa (POS) — xarakteristik testlar.
@@ -94,10 +100,13 @@ describe('POSPage', () => {
     // Savat global store'da — testlar orasida tozalanmasa oldingi
     // testning pozitsiyalari keyingisiga o'tib ketardi.
     useCartStore.getState().clear();
+    // Barter bo'limi ruxsatga bog'liq (TRADE_INS_*); oddiy testlar ruxsatsiz
+    useAuthStore.setState({ permissions: new Set<string>() });
 
     vi.mocked(productsApi.getAll).mockResolvedValue(pageOf([TIRE]));
     vi.mocked(customersApi.getAll).mockResolvedValue(pageOf([] as Customer[]));
     vi.mocked(salesApi.create).mockResolvedValue(SALE);
+    vi.mocked(tradeInsApi.getAvailable).mockResolvedValue([]);
   });
 
   it('mahsulotlarni ko\'rsatadi', async () => {
@@ -313,6 +322,7 @@ describe('POSPage', () => {
    * barter yuborilmaydi.
    */
   it('barter savdosi eski shinalar bilan yuboriladi, to\'lov farq bilan cheklanadi', async () => {
+    useAuthStore.setState({ permissions: new Set(['TRADE_INS_CREATE', 'TRADE_INS_VIEW']) });
     renderPage();
     await addTireToCart();
 
@@ -367,5 +377,76 @@ describe('POSPage', () => {
     });
     // Savdodan keyin barter qatorlari ham tozalanadi
     await waitFor(() => expect(useCartStore.getState().tradeIns).toHaveLength(0));
+  });
+
+  /**
+   * Mijoz eski shinasini oldinroq qoldirib ketgan (Barter sahifasi, hujjat
+   * "Kutmoqda"). Kassada mijoz tanlansa hujjat taklif qilinadi; qo'llansa
+   * krediti savdodan ayiriladi va serverga `tradeInId` ketadi — qatorlar
+   * emas (shinalar allaqachon omborda).
+   */
+  it('mijozning kutayotgan barter hujjati qo\'llanadi va tradeInId bilan yuboriladi', async () => {
+    useAuthStore.setState({ permissions: new Set(['TRADE_INS_CREATE', 'TRADE_INS_VIEW']) });
+    const DOC: TradeIn = {
+      id: 12,
+      documentNumber: 'TI-000012',
+      customerId: 5,
+      customerName: 'Muslihiddin aka',
+      acceptedAt: '2026-09-10T12:00:00+05:00',
+      acceptedInSale: false,
+      status: 'NEW',
+      totalAmount: 600_000,
+      totalQuantity: 4,
+    };
+    vi.mocked(tradeInsApi.getAvailable).mockResolvedValue([DOC]);
+
+    renderPage();
+    await addTireToCart();
+
+    // Mijozsiz hujjatlar so'ralmaydi
+    expect(tradeInsApi.getAvailable).not.toHaveBeenCalled();
+
+    useCartStore.getState().setCustomer({ id: 5, fullName: 'Muslihiddin aka', phone: '+998904060036' } as Customer);
+    await waitFor(() => expect(tradeInsApi.getAvailable).toHaveBeenCalledWith(5));
+
+    fireEvent.click(await screen.findByRole('button', { name: /^Qo'llash$/i }));
+    expect(useCartStore.getState().tradeInDocument?.id).toBe(12);
+    expect(useCartStore.getState().getAmountDue()).toBe(400_000);
+    // Qo'llangan hujjat taklif ro'yxatidan yo'qoladi
+    expect(screen.queryByRole('button', { name: /^Qo'llash$/i })).toBeNull();
+    expect(screen.getAllByText('TI-000012').length).toBeGreaterThan(0);
+
+    fireEvent.click(screen.getByRole('button', { name: /To'lovga o'tish/i }));
+    fireEvent.click(await screen.findByRole('button', { name: 'Tasdiqlash' }));
+
+    await waitFor(() => expect(salesApi.create).toHaveBeenCalled());
+    expect(salesApi.create).toHaveBeenCalledWith({
+      customerId: 5,
+      items: [{ productId: 1, quantity: 1, discount: 0 }],
+      discountAmount: 0,
+      discountPercent: 0,
+      paidAmount: 400_000,
+      paymentMethod: 'CASH',
+      tradeInId: 12,
+    });
+    await waitFor(() => expect(useCartStore.getState().tradeInDocument).toBeNull());
+  });
+
+  it('boshqa mijoz tanlansa qo\'llangan hujjat savatdan chiqadi', () => {
+    useCartStore.getState().setCustomer({ id: 5, fullName: 'A' } as Customer);
+    useCartStore.getState().setTradeInDocument({
+      id: 12,
+      documentNumber: 'TI-000012',
+      customerId: 5,
+      acceptedAt: '2026-09-10T12:00:00+05:00',
+      acceptedInSale: false,
+      status: 'NEW',
+      totalAmount: 600_000,
+    });
+    expect(useCartStore.getState().getTradeInTotal()).toBe(600_000);
+
+    useCartStore.getState().setCustomer({ id: 6, fullName: 'B' } as Customer);
+    expect(useCartStore.getState().tradeInDocument).toBeNull();
+    expect(useCartStore.getState().getTradeInTotal()).toBe(0);
   });
 });

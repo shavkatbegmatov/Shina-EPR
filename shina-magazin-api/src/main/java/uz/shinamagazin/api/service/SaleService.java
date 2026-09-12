@@ -24,7 +24,6 @@ import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.time.format.DateTimeFormatter;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -44,7 +43,7 @@ public class SaleService {
     private final SettingsService settingsService;
     private final DocumentNumberService documentNumberService;
     private final CashShiftService cashShiftService;
-    private final UsedProductService usedProductService;
+    private final TradeInService tradeInService;
 
     public Page<SaleResponse> getAllSales(LocalDate startDate, LocalDate endDate, Pageable pageable) {
         LocalDate effectiveStart = startDate;
@@ -97,11 +96,16 @@ public class SaleService {
         // Barter mijozsiz bo'lmaydi — buni zaxiraga tegishdan OLDIN tekshiramiz
         List<TradeInItemRequest> tradeIns = request.getTradeInItems() != null
                 ? request.getTradeInItems() : List.of();
-        if (!tradeIns.isEmpty() && customer == null) {
+        if ((!tradeIns.isEmpty() || request.getTradeInId() != null) && customer == null) {
             throw new BadRequestException(
                     "Barter savdosi uchun mijoz tanlash shart — eski shinalar kimdan "
                             + "qabul qilingani hujjatda qolishi kerak");
         }
+
+        // Mijoz oldinroq qoldirgan barter hujjati (Barter sahifasida qabul
+        // qilingan): NEW bo'lishi va shu mijozniki bo'lishi tekshiriladi.
+        TradeIn existingTradeIn = request.getTradeInId() != null
+                ? tradeInService.findForSale(request.getTradeInId(), customer) : null;
 
         // Create sale
         Sale sale = Sale.builder()
@@ -224,32 +228,24 @@ public class SaleService {
         // ─── Barter: eski shinalar pul o'rniga ───
         // Kredit yig'indisi savdo summasidan ayiriladi; totalAmount
         // O'ZGARMAYDI (tovar to'liq narxda sotilgan — daromad shu), kassaga
-        // esa faqat farq tushadi. Eski shinalar B/U mahsulot sifatida omborga
-        // kiradi — ombor harakati savdo saqlangandan KEYIN yoziladi, chunki
-        // u hujjat ID'siga bog'lanadi.
+        // esa faqat farq tushadi. Ikki manba qo'shiladi: kassada shu zahoti
+        // qabul qilinayotgan shinalar (hujjat savdo saqlangach bog'lanadi va
+        // omborga kiradi) va mijoz oldinroq qoldirgan hujjat (shinalar
+        // allaqachon omborda).
+        TradeIn inlineTradeIn = !tradeIns.isEmpty()
+                ? tradeInService.prepareForSale(customer, tradeIns, currentUser) : null;
         BigDecimal tradeInAmount = BigDecimal.ZERO;
-        if (!tradeIns.isEmpty()) {
-            for (TradeInItemRequest tradeIn : tradeIns) {
-                Product usedProduct = usedProductService.resolve(tradeIn, currentUser);
-                BigDecimal unitValue = (tradeIn.getUnitValue() != null ? tradeIn.getUnitValue() : BigDecimal.ZERO)
-                        .setScale(2, RoundingMode.HALF_UP);
-                BigDecimal totalValue = unitValue.multiply(BigDecimal.valueOf(tradeIn.getQuantity()));
-
-                sale.addTradeInItem(SaleTradeInItem.builder()
-                        .product(usedProduct)
-                        .quantity(tradeIn.getQuantity())
-                        .unitValue(unitValue)
-                        .totalValue(totalValue)
-                        .description(describeTradeIn(tradeIn))
-                        .build());
-                tradeInAmount = tradeInAmount.add(totalValue);
-            }
-            if (tradeInAmount.compareTo(totalAmount) > 0) {
-                throw new BadRequestException(String.format(
-                        "Barter qiymati (%s) savdo summasidan (%s) katta bo'lishi mumkin emas — "
-                                + "eski shina narxini kamaytiring yoki yangi shina qo'shing",
-                        tradeInAmount, totalAmount));
-            }
+        if (existingTradeIn != null) {
+            tradeInAmount = tradeInAmount.add(existingTradeIn.getTotalAmount());
+        }
+        if (inlineTradeIn != null) {
+            tradeInAmount = tradeInAmount.add(inlineTradeIn.getTotalAmount());
+        }
+        if (tradeInAmount.compareTo(totalAmount) > 0) {
+            throw new BadRequestException(String.format(
+                    "Barter qiymati (%s) savdo summasidan (%s) katta bo'lishi mumkin emas — "
+                            + "eski shina narxini kamaytiring yoki yangi shina qo'shing",
+                    tradeInAmount, totalAmount));
         }
         sale.setTradeInAmount(tradeInAmount);
 
@@ -283,29 +279,15 @@ public class SaleService {
 
         Sale savedSale = saleRepository.save(sale);
 
-        // Eski shinalar omborga: B/U mahsulot qoldig'i oshadi, tannarxi =
-        // berilgan kredit (keyingi sotuvda foyda shundan hisoblanadi)
-        for (SaleTradeInItem tradeIn : savedSale.getTradeInItems()) {
-            Product usedProduct = tradeIn.getProduct();
-            int previousStock = usedProduct.getQuantity();
-            int newStock = previousStock + tradeIn.getQuantity();
-            usedProduct.setQuantity(newStock);
-            usedProduct.setPurchasePrice(tradeIn.getUnitValue());
-            productRepository.save(usedProduct);
-
-            stockMovementRepository.save(StockMovement.builder()
-                    .product(usedProduct)
-                    .movementType(MovementType.IN)
-                    .quantity(tradeIn.getQuantity())
-                    .previousStock(previousStock)
-                    .newStock(newStock)
-                    .referenceType("TRADE_IN")
-                    .referenceId(savedSale.getId())
-                    .notes("Barter: " + savedSale.getInvoiceNumber()
-                            + (tradeIn.getDescription() != null ? " — " + tradeIn.getDescription() : ""))
-                    .unitPrice(tradeIn.getUnitValue())
-                    .createdBy(currentUser)
-                    .build());
+        // Barter hujjatlari savdoga bog'lanadi — savdo saqlangandan KEYIN,
+        // chunki hujjatga sale_id yoziladi. Kassada qabul qilinayotgan eski
+        // shinalar shu yerda omborga kiradi (B/U qoldiq oshadi, tannarx
+        // qayta hisoblanadi); oldindan qabul qilingani allaqachon omborda.
+        if (existingTradeIn != null) {
+            tradeInService.applyToSale(existingTradeIn, savedSale);
+        }
+        if (inlineTradeIn != null) {
+            tradeInService.attachToSale(inlineTradeIn, savedSale, currentUser);
         }
 
         // Send notification about new sale to staff
@@ -419,34 +401,11 @@ public class SaleService {
             stockMovementRepository.save(movement);
         }
 
-        // Barter: qabul qilingan eski shinalar mijozga QAYTARILADI — B/U
-        // mahsulot qoldig'i kamayadi. Ular allaqachon sotilgan bo'lsa bekor
-        // qilib bo'lmaydi: ombor manfiyga tushib, ledger buzilardi.
-        for (SaleTradeInItem tradeIn : sale.getTradeInItems()) {
-            Product usedProduct = tradeIn.getProduct();
-            int previousStock = usedProduct.getQuantity();
-            int newStock = previousStock - tradeIn.getQuantity();
-            if (newStock < 0) {
-                throw new BadRequestException(String.format(
-                        "\"%s\" B/U shinalari allaqachon sotilgan (zaxira: %d) — barter savdosini "
-                                + "bekor qilib bo'lmaydi, qaytarishni rasmiylashtiring",
-                        usedProduct.getName(), previousStock));
-            }
-            usedProduct.setQuantity(newStock);
-            productRepository.save(usedProduct);
-
-            stockMovementRepository.save(StockMovement.builder()
-                    .product(usedProduct)
-                    .movementType(MovementType.OUT)
-                    .quantity(-tradeIn.getQuantity())
-                    .previousStock(previousStock)
-                    .newStock(newStock)
-                    .referenceType("TRADE_IN_CANCEL")
-                    .referenceId(sale.getId())
-                    .notes("Barter bekor qilindi: " + sale.getInvoiceNumber())
-                    .createdBy(currentUser)
-                    .build());
-        }
+        // Barter: savdo ichida qabul qilingan eski shinalar mijozga
+        // QAYTARILADI (B/U qoldiq kamayadi; sotilib ketgan bo'lsa bekor qilish
+        // to'siladi), oldindan qabul qilingan hujjat esa yana NEW holatga
+        // qaytadi — mijozning krediti saqlanadi.
+        tradeInService.reverseForSale(sale, currentUser);
 
         // Cancel related debts
         if (sale.getCustomer() != null && sale.getDebtAmount().compareTo(BigDecimal.ZERO) > 0) {
@@ -479,22 +438,6 @@ public class SaleService {
             debt.setNotes(combined.length() > 500 ? combined.substring(0, 500) : combined);
             debtRepository.save(debt);
         }
-    }
-
-    /** Chek va ombor izohi uchun: "Michelin, protektor 60%". */
-    private static String describeTradeIn(TradeInItemRequest tradeIn) {
-        List<String> parts = new ArrayList<>();
-        if (tradeIn.getBrandName() != null && !tradeIn.getBrandName().isBlank()) {
-            parts.add(tradeIn.getBrandName().trim());
-        }
-        if (tradeIn.getCondition() != null && !tradeIn.getCondition().isBlank()) {
-            parts.add(tradeIn.getCondition().trim());
-        }
-        if (parts.isEmpty()) {
-            return null;
-        }
-        String joined = String.join(", ", parts);
-        return joined.length() > 300 ? joined.substring(0, 300) : joined;
     }
 
     /**

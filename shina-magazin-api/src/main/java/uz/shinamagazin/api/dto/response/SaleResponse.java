@@ -8,9 +8,11 @@ import uz.shinamagazin.api.annotation.ExportColumn;
 import uz.shinamagazin.api.annotation.ExportColumn.ColumnType;
 import uz.shinamagazin.api.annotation.ExportEntity;
 import uz.shinamagazin.api.entity.Sale;
+import uz.shinamagazin.api.entity.TradeIn;
 import uz.shinamagazin.api.enums.PaymentMethod;
 import uz.shinamagazin.api.enums.PaymentStatus;
 import uz.shinamagazin.api.enums.SaleStatus;
+import uz.shinamagazin.api.enums.TradeInStatus;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
@@ -69,7 +71,10 @@ public class SaleResponse {
     /** Mijoz to'lashi kerak bo'lgan summa: jami − barter. */
     private BigDecimal amountDue;
 
-    private List<SaleTradeInItemResponse> tradeInItems; // Not exported (complex type)
+    private List<TradeInItemResponse> tradeInItems; // Not exported (complex type)
+
+    /** Savdoda hisobga olingan barter hujjatlari (raqami bilan). */
+    private List<TradeInDocument> tradeInDocuments; // Not exported (complex type)
 
     @ExportColumn(header = "To'lov usuli", order = 12, type = ColumnType.ENUM)
     private PaymentMethod paymentMethod;
@@ -88,6 +93,29 @@ public class SaleResponse {
 
     private List<SaleItemResponse> items; // Not exported (complex type)
 
+    /** Barter hujjatiga qisqa ishora — tafsilot sahifasida raqami bilan ko'rsatiladi. */
+    @Data
+    @Builder
+    @NoArgsConstructor
+    @AllArgsConstructor
+    public static class TradeInDocument {
+        private Long id;
+        private String documentNumber;
+        private TradeInStatus status;
+        private BigDecimal totalAmount;
+        private boolean acceptedInSale;
+
+        public static TradeInDocument from(TradeIn tradeIn) {
+            return TradeInDocument.builder()
+                    .id(tradeIn.getId())
+                    .documentNumber(tradeIn.getDocumentNumber())
+                    .status(tradeIn.getStatus())
+                    .totalAmount(tradeIn.getTotalAmount())
+                    .acceptedInSale(tradeIn.isAcceptedInSale())
+                    .build();
+        }
+    }
+
     public static SaleResponse from(Sale sale) {
         return SaleResponse.builder()
                 .id(sale.getId())
@@ -104,9 +132,13 @@ public class SaleResponse {
                 .debtAmount(sale.getDebtAmount())
                 .tradeInAmount(sale.getTradeInAmount() != null ? sale.getTradeInAmount() : BigDecimal.ZERO)
                 .amountDue(sale.getAmountDue())
-                .tradeInItems(sale.getTradeInItems() != null ?
+                .tradeInItems(sale.getTradeIns() != null ?
                         sale.getTradeInItems().stream()
-                                .map(SaleTradeInItemResponse::from)
+                                .map(TradeInItemResponse::from)
+                                .collect(Collectors.toList()) : null)
+                .tradeInDocuments(sale.getTradeIns() != null ?
+                        sale.getTradeIns().stream()
+                                .map(TradeInDocument::from)
                                 .collect(Collectors.toList()) : null)
                 .paymentMethod(sale.getPaymentMethod())
                 .paymentStatus(sale.getPaymentStatus())
