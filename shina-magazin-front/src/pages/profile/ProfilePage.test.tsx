@@ -23,6 +23,7 @@ import { authApi } from '../../api/auth.api';
 import { rolesApi } from '../../api/roles.api';
 import { ProfilePage } from './ProfilePage';
 import { useAuthStore } from '../../store/authStore';
+import { PermissionCode } from '../../hooks/usePermission';
 import { configureQueryDefaults } from '../../lib/queryConfig';
 
 /**
@@ -188,5 +189,26 @@ describe('ProfilePage', () => {
     expect(useAuthStore.getState().isAuthenticated).toBe(false);
     expect(useAuthStore.getState().accessToken).toBeNull();
     expect(localStorage.getItem('accessToken')).toBeNull();
+  });
+  /**
+   * Rollar ro'yxati ROLES_VIEW talab qiladi. Sotuvchida u yo'q — ilgari so'rov
+   * baribir ketib, 403 va "ruxsat yo'q" xabari chiqardi. Standart rol nomi
+   * i18n'dan olinadi, so'rovning keragi yo'q.
+   */
+  it("ROLES_VIEW bo'lmasa rollar ro'yxati so'ralmaydi", async () => {
+    useAuthStore.setState({ permissions: new Set() });
+    renderPage();
+
+    expect(await screen.findByText('Anvar Qodirov')).toBeInTheDocument();
+    expect(rolesApi.getAll).not.toHaveBeenCalled();
+  });
+
+  it("ROLES_VIEW bo'lsa rollar ro'yxati so'raladi (maxsus rol nomi uchun)", async () => {
+    useAuthStore.setState({ permissions: new Set([PermissionCode.ROLES_VIEW]) });
+    renderPage();
+
+    expect(await screen.findByText('Anvar Qodirov')).toBeInTheDocument();
+    await waitFor(() => expect(rolesApi.getAll).toHaveBeenCalled());
+    useAuthStore.setState({ permissions: new Set() });
   });
 });

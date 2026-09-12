@@ -22,6 +22,7 @@ import toast from 'react-hot-toast';
 import clsx from 'clsx';
 import { authApi } from '../../api/auth.api';
 import { rolesApi } from '../../api/roles.api';
+import { usePermission, PermissionCode } from '../../hooks/usePermission';
 import { queryKeys } from '../../lib/queryKeys';
 import { useAuthStore } from '../../store/authStore';
 import { ROLES } from '../../config/constants';
@@ -70,19 +71,24 @@ export function ProfilePage() {
     setValue('confirmPassword', password, { shouldDirty: true, shouldTouch: true, shouldValidate: true });
   };
 
+  const { hasPermission } = usePermission();
   const userQuery = useQuery({
     queryKey: queryKeys.profile.currentUser(),
     queryFn: () => authApi.getCurrentUser(),
   });
 
+  // Rollar ro'yxati ROLES_VIEW talab qiladi — sotuvchida yo'q, so'rov 403 berib
+  // "ruxsat yo'q" chiqarardi. Standart rollar nomi i18n'dan, maxsus rol — kodi.
+  const canViewRoles = hasPermission(PermissionCode.ROLES_VIEW);
   const rolesQuery = useQuery({
     queryKey: queryKeys.roles.list(),
     queryFn: () => rolesApi.getAll(),
+    enabled: canViewRoles,
   });
 
   const userData = userQuery.data ?? null;
   const roles = useMemo(() => rolesQuery.data ?? [], [rolesQuery.data]);
-  const loading = userQuery.isPending || rolesQuery.isPending;
+  const loading = userQuery.isPending || (canViewRoles && rolesQuery.isPending);
 
   useEffect(() => {
     if (userQuery.isError || rolesQuery.isError) {

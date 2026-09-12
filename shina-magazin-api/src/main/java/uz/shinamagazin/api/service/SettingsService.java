@@ -131,6 +131,11 @@ public class SettingsService {
                 .telegramBotUsername(botUsername)
                 .deliveryFee(getDeliveryFee())
                 .freeDeliveryThreshold(getFreeDeliveryThreshold())
+                // Chek/hujjat sarlavhasi — kassirga ham kerak, SETTINGS_VIEW'siz
+                .receiptShopName(getText(RECEIPT_SHOP_NAME_KEY))
+                .receiptShopPhone(getText(RECEIPT_SHOP_PHONE_KEY))
+                .receiptShopAddress(getText(RECEIPT_SHOP_ADDRESS_KEY))
+                .receiptFooter(getText(RECEIPT_FOOTER_KEY))
                 .build();
     }
 
