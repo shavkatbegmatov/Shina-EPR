@@ -6,13 +6,14 @@ import toast from 'react-hot-toast';
 import clsx from 'clsx';
 import { productsApi } from '../../api/products.api';
 import { salesApi } from '../../api/sales.api';
+import { tradeInsApi } from '../../api/tradeIns.api';
 import { customersApi } from '../../api/customers.api';
 import { useCartStore } from '../../store/cartStore';
 import { useDebouncedValue } from '../../hooks/useDebouncedValue';
 import { useInvalidateOnNotification } from '../../hooks/useInvalidateOnNotification';
 import { queryKeys } from '../../lib/queryKeys';
 import { invalidateAfter } from '../../lib/invalidation';
-import { formatCurrency, PAYMENT_METHODS } from '../../config/constants';
+import { formatCurrency, formatDate, PAYMENT_METHODS } from '../../config/constants';
 import { enumLabel } from '@/shared/enumLabel';
 import { CurrencyInput } from '../../components/ui/CurrencyInput';
 import { PercentInput } from '../../components/ui/PercentInput';
@@ -24,6 +25,8 @@ import { CustomerSearchCombobox } from '../../components/common/NamePhoneSearchC
 import { Button } from '@/ui';
 import { useSaleReceipt } from '../../components/receipt/useSaleReceipt';
 import { TradeInModal } from './TradeInModal';
+import { toTradeInItemRequest } from '../../shared/tradeIn';
+import { usePermission, PermissionCode } from '../../hooks/usePermission';
 import type { PaymentMethod, Customer, Sale, TradeInItemRequest } from '../../types';
 
 export function POSPage() {
@@ -38,6 +41,11 @@ export function POSPage() {
   const [paidAmount, setPaidAmount] = useState(0);
   /** Barter — eski shina qabul qilish oynasi */
   const [showTradeIn, setShowTradeIn] = useState(false);
+  // Barter ruxsatlari: qabul qilish (kassir) va mijozning kutayotgan
+  // hujjatlarini ko'rish; bekor qilish faqat Barter sahifasida (rahbar)
+  const { hasPermission } = usePermission();
+  const canAcceptTradeIns = hasPermission(PermissionCode.TRADE_INS_CREATE);
+  const canViewTradeIns = hasPermission(PermissionCode.TRADE_INS_VIEW);
 
   // Customer search state
   const [customerSearch, setCustomerSearch] = useState('');
@@ -130,6 +138,18 @@ export function POSPage() {
       toast.error(t('erp.pos.loadCustomersError'));
     }
   }, [modalCustomersQuery.isError, modalCustomersQuery.error, t]);
+
+  // Mijoz oldinroq qoldirib ketgan barter hujjatlari (Barter sahifasida
+  // qabul qilingan, NEW) — mijoz tanlanganda so'raladi, savdoda tanlanadi.
+  const customerId = cart.customer?.id;
+  const availableTradeInsQuery = useQuery({
+    queryKey: queryKeys.tradeIns.available(customerId ?? 0),
+    queryFn: () => tradeInsApi.getAvailable(customerId as number),
+    enabled: canViewTradeIns && customerId !== undefined,
+  });
+  const availableTradeIns = (availableTradeInsQuery.data ?? []).filter(
+    (doc) => doc.id !== cart.tradeInDocument?.id
+  );
 
   const handleOpenModal = () => {
     setModalPage(0);
@@ -254,18 +274,7 @@ export function POSPage() {
       // Barter qatorlari faqat bor bo'lsa yuboriladi — oddiy savdo so'rovi
       // avvalgidek qoladi.
       const tradeInItems: TradeInItemRequest[] | undefined =
-        cart.tradeIns.length > 0
-          ? cart.tradeIns.map((line) => ({
-              width: line.width,
-              profile: line.profile,
-              diameter: line.diameter,
-              brandName: line.brandName,
-              condition: line.condition,
-              quantity: line.quantity,
-              unitValue: line.unitValue,
-              resalePrice: line.resalePrice,
-            }))
-          : undefined;
+        cart.tradeIns.length > 0 ? cart.tradeIns.map(toTradeInItemRequest) : undefined;
 
       // Javob ilgari tashlab yuborilardi — chek uchun hisob-faktura raqami,
       // pozitsiyalar va yakuniy summalar aynan shu yerdan keladi.
@@ -285,6 +294,8 @@ export function POSPage() {
         paidAmount: Math.min(paidAmount, amountDue),
         paymentMethod,
         ...(tradeInItems ? { tradeInItems } : {}),
+        // Mijoz oldinroq qoldirgan hujjat — krediti ham savdodan ayiriladi
+        ...(cart.tradeInDocument ? { tradeInId: cart.tradeInDocument.id } : {}),
       });
 
       toast.success(t('erp.pos.saleCompleted'));
@@ -309,8 +320,9 @@ export function POSPage() {
   const tradeInTotal = cart.getTradeInTotal();
   /** Mijoz to'laydigan farq — barter krediti ayirilgan */
   const amountDue = cart.getAmountDue();
-  const barterNeedsCustomer = cart.tradeIns.length > 0 && !cart.customer;
-  const barterExceeds = cart.tradeIns.length > 0 && tradeInTotal > total;
+  const hasBarter = cart.tradeIns.length > 0 || cart.tradeInDocument !== null;
+  const barterNeedsCustomer = hasBarter && !cart.customer;
+  const barterExceeds = hasBarter && tradeInTotal > total;
 
   /**
    * Klaviatura yorliqlari — kassir sichqonchasiz ishlay olishi uchun (ilgari bitta
@@ -595,63 +607,127 @@ export function POSPage() {
           )}
         </div>
 
-        {/* Barter — eski shinalar (kredit sifatida) */}
-        <div className="border-t border-base-200 p-4">
-          <div className="surface-soft space-y-2 rounded-xl p-3">
-            <div className="flex items-center justify-between gap-2">
-              <span className="flex items-center gap-2 text-sm font-medium">
-                <Recycle className="h-4 w-4 text-primary" />
-                {t('erp.pos.barterTitle')}
-              </span>
-              <Button variant="ghost" size="sm" onClick={() => setShowTradeIn(true)}>
-                <Plus className="h-4 w-4" />
-                {t('erp.pos.barterAdd')}
-              </Button>
+        {/* Barter — eski shinalar (kredit sifatida): kassada qabul qilinayotgan
+            qatorlar va mijoz oldinroq qoldirgan hujjat (Barter sahifasi) */}
+        {(canAcceptTradeIns || canViewTradeIns || hasBarter) && (
+          <div className="border-t border-base-200 p-4">
+            <div className="surface-soft space-y-2 rounded-xl p-3">
+              <div className="flex items-center justify-between gap-2">
+                <span className="flex items-center gap-2 text-sm font-medium">
+                  <Recycle className="h-4 w-4 text-primary" />
+                  {t('erp.pos.barterTitle')}
+                </span>
+                {canAcceptTradeIns && (
+                  <Button variant="ghost" size="sm" onClick={() => setShowTradeIn(true)}>
+                    <Plus className="h-4 w-4" />
+                    {t('erp.pos.barterAdd')}
+                  </Button>
+                )}
+              </div>
+              {!hasBarter ? (
+                <p className="text-xs text-base-content/60">{t('erp.pos.barterEmpty')}</p>
+              ) : (
+                <ul className="space-y-1">
+                  {cart.tradeInDocument && (
+                    <li className="flex items-center justify-between gap-2 rounded-lg bg-primary/5 px-2 py-1 text-sm">
+                      <div className="min-w-0">
+                        <p className="truncate font-medium">
+                          {cart.tradeInDocument.documentNumber}
+                          <span className="ml-1 text-xs text-base-content/60">
+                            · {t('erp.pos.barterDocApplied')}
+                          </span>
+                        </p>
+                        <p className="text-xs text-base-content/70">
+                          {t('erp.pos.barterDocQty', { count: cart.tradeInDocument.totalQuantity ?? 0 })}
+                          {' · '}
+                          {t('erp.pos.barterDocAcceptedAt', {
+                            date: formatDate(cart.tradeInDocument.acceptedAt),
+                          })}
+                        </p>
+                      </div>
+                      <div className="flex items-center gap-1">
+                        <span className="font-semibold tabular-nums">
+                          {formatCurrency(cart.tradeInDocument.totalAmount)}
+                        </span>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          className="btn-circle text-error"
+                          aria-label={t('erp.pos.tradeInRemove')}
+                          onClick={() => cart.setTradeInDocument(null)}
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
+                      </div>
+                    </li>
+                  )}
+                  {cart.tradeIns.map((line) => (
+                    <li key={line.key} className="flex items-center justify-between gap-2 text-sm">
+                      <div className="min-w-0">
+                        <p className="truncate font-medium">
+                          {line.brandName ? `${line.brandName} ` : ''}
+                          {line.width}/{line.profile} R{line.diameter}
+                          {line.condition && (
+                            <span className="ml-1 text-xs text-base-content/60">· {line.condition}</span>
+                          )}
+                        </p>
+                        <p className="text-xs text-base-content/70">
+                          {line.quantity} × {formatCurrency(line.unitValue)}
+                        </p>
+                      </div>
+                      <div className="flex items-center gap-1">
+                        <span className="font-semibold tabular-nums">
+                          {formatCurrency(line.quantity * line.unitValue)}
+                        </span>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          className="btn-circle text-error"
+                          aria-label={t('erp.pos.tradeInRemove')}
+                          onClick={() => cart.removeTradeIn(line.key)}
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
+                      </div>
+                    </li>
+                  ))}
+                </ul>
+              )}
+              {availableTradeIns.length > 0 && (
+                <div className="space-y-1 border-t border-base-200 pt-2">
+                  <p className="text-xs font-medium">{t('erp.pos.barterDocsTitle')}</p>
+                  <p className="text-xs text-base-content/60">{t('erp.pos.barterDocsHint')}</p>
+                  <ul className="space-y-1">
+                    {availableTradeIns.map((doc) => (
+                      <li key={doc.id} className="flex items-center justify-between gap-2 text-sm">
+                        <div className="min-w-0">
+                          <p className="truncate font-medium">{doc.documentNumber}</p>
+                          <p className="text-xs text-base-content/70">
+                            {t('erp.pos.barterDocQty', { count: doc.totalQuantity ?? 0 })}
+                            {' · '}
+                            {t('erp.pos.barterDocAcceptedAt', { date: formatDate(doc.acceptedAt) })}
+                          </p>
+                        </div>
+                        <div className="flex items-center gap-1">
+                          <span className="font-semibold tabular-nums">{formatCurrency(doc.totalAmount)}</span>
+                          <Button variant="ghost" size="sm" onClick={() => cart.setTradeInDocument(doc)}>
+                            {t('erp.pos.barterDocApply')}
+                          </Button>
+                        </div>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              )}
+              {barterNeedsCustomer && (
+                <p className="text-xs font-medium text-warning">{t('erp.pos.barterNeedsCustomer')}</p>
+              )}
+              {barterExceeds && (
+                <p className="text-xs font-medium text-error">{t('erp.pos.barterExceeds')}</p>
+              )}
             </div>
-            {cart.tradeIns.length === 0 ? (
-              <p className="text-xs text-base-content/60">{t('erp.pos.barterEmpty')}</p>
-            ) : (
-              <ul className="space-y-1">
-                {cart.tradeIns.map((line) => (
-                  <li key={line.key} className="flex items-center justify-between gap-2 text-sm">
-                    <div className="min-w-0">
-                      <p className="truncate font-medium">
-                        {line.brandName ? `${line.brandName} ` : ''}
-                        {line.width}/{line.profile} R{line.diameter}
-                        {line.condition && (
-                          <span className="ml-1 text-xs text-base-content/60">· {line.condition}</span>
-                        )}
-                      </p>
-                      <p className="text-xs text-base-content/70">
-                        {line.quantity} × {formatCurrency(line.unitValue)}
-                      </p>
-                    </div>
-                    <div className="flex items-center gap-1">
-                      <span className="font-semibold tabular-nums">
-                        {formatCurrency(line.quantity * line.unitValue)}
-                      </span>
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        className="btn-circle text-error"
-                        aria-label={t('erp.pos.tradeInRemove')}
-                        onClick={() => cart.removeTradeIn(line.key)}
-                      >
-                        <Trash2 className="h-4 w-4" />
-                      </Button>
-                    </div>
-                  </li>
-                ))}
-              </ul>
-            )}
-            {barterNeedsCustomer && (
-              <p className="text-xs font-medium text-warning">{t('erp.pos.barterNeedsCustomer')}</p>
-            )}
-            {barterExceeds && (
-              <p className="text-xs font-medium text-error">{t('erp.pos.barterExceeds')}</p>
-            )}
           </div>
-        </div>
+        )}
 
         {/* Discount */}
         <div className="border-t border-base-200 p-4">
@@ -694,7 +770,7 @@ export function POSPage() {
             <span>{t('erp.pos.totalLabel')}</span>
             <span className="font-bold">{formatCurrency(total)}</span>
           </div>
-          {cart.tradeIns.length > 0 && (
+          {hasBarter && (
             <>
               <div className="flex items-center justify-between text-sm">
                 <span className="text-base-content/70">{t('erp.pos.barterTotal')}</span>
@@ -795,7 +871,7 @@ export function POSPage() {
                   <span>{t('erp.pos.summaryTotal')}</span>
                   <span className="font-bold">{formatCurrency(total)}</span>
                 </div>
-                {cart.tradeIns.length > 0 && (
+                {hasBarter && (
                   <>
                     <div className="mt-2 flex justify-between text-sm">
                       <span>{t('erp.pos.barterTotal')}</span>

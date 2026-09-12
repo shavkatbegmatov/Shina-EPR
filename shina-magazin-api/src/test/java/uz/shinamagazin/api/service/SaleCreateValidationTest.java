@@ -86,7 +86,7 @@ class SaleCreateValidationTest {
                 userRepository, debtRepository, stockMovementRepository, saleReturnRepository,
                 mock(StaffNotificationService.class), mock(NotificationService.class),
                 mock(SettingsService.class), documentNumbers, cashShiftService,
-                mock(UsedProductService.class));
+                mock(TradeInService.class));
 
         CustomUserDetails principal = new CustomUserDetails(cashier);
         SecurityContextHolder.getContext().setAuthentication(

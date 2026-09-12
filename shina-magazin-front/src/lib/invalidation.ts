@@ -37,6 +37,8 @@ export const invalidateAfter = {
   sale: (client: QueryClient) =>
     invalidate(client, [
       queryKeys.sales.all,
+      // Savdo mijozning kutayotgan barter hujjatini ishlatgan bo'lishi mumkin
+      queryKeys.tradeIns.all,
       queryKeys.debts.all,
       queryKeys.customers.all,
       queryKeys.products.all,
@@ -54,8 +56,25 @@ export const invalidateAfter = {
   saleReturn: (client: QueryClient) =>
     invalidate(client, [
       queryKeys.sales.all,
+      queryKeys.tradeIns.all,
       queryKeys.debts.all,
       queryKeys.customers.all,
+      queryKeys.products.all,
+      queryKeys.warehouse.all,
+      queryKeys.reports.all,
+      queryKeys.dashboard.all,
+    ]),
+
+  /**
+   * Barter hujjati qabul qilindi yoki bekor qilindi.
+   *
+   * <p>Server: eski shinalarni B/U kartochkaga kirim qiladi (bekor qilishda
+   * qaytaradi) va tannarxni qayta hisoblaydi — ombor, mahsulotlar va
+   * hisobotlar eskiradi; POS'dagi "kutayotgan barterlar" ro'yxati ham.
+   */
+  tradeIn: (client: QueryClient) =>
+    invalidate(client, [
+      queryKeys.tradeIns.all,
       queryKeys.products.all,
       queryKeys.warehouse.all,
       queryKeys.reports.all,

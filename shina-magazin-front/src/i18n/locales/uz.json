@@ -219,7 +219,8 @@
       "expenses": "Xarajatlar",
       "closeMenu": "Menyuni yopish",
       "mainNav": "Asosiy navigatsiya",
-      "staffRequests": "Xodimlik arizalari"
+      "staffRequests": "Xodimlik arizalari",
+      "tradeIns": "Barter"
     },
     "header": {
       "home": "Bosh sahifa",
@@ -847,7 +848,13 @@
       "tradeInSubmit": "Qo'shish",
       "tradeInSizeRequired": "O'lcham to'liq kiritilishi kerak (eni / profil / diametr)",
       "tradeInSku": "Ombor kartochkasi: {{sku}}",
-      "tradeInRemove": "Olib tashlash"
+      "tradeInRemove": "Olib tashlash",
+      "barterDocsTitle": "Mijozning kutayotgan barterlari",
+      "barterDocsHint": "Mijoz eski shinalarini oldinroq qoldirib ketgan — hujjatni tanlang, krediti savdodan ayiriladi",
+      "barterDocApply": "Qo'llash",
+      "barterDocApplied": "Barter hujjati",
+      "barterDocQty": "{{count}} dona",
+      "barterDocAcceptedAt": "qabul qilingan {{date}}"
     },
     "settings": {
       "title": "Sozlamalar",
@@ -1270,7 +1277,53 @@
       "tradeInProduct": "B/U mahsulot",
       "tradeInUnitValue": "Qabul narxi",
       "tradeInTotal": "Jami kredit:",
-      "tradeInDescription": "Holati"
+      "tradeInDescription": "Holati",
+      "tradeInDocument": "Hujjat",
+      "tradeInDocumentInSale": "kassada qabul qilingan",
+      "tradeInDocumentBefore": "oldindan qabul qilingan"
+    },
+    "tradeIns": {
+      "title": "Barter hujjatlari",
+      "subtitle": "Mijozdan qabul qilingan eski shinalar: kassada savdo ichida yoki oldindan — mijoz shinasini qoldirib ketganda",
+      "accept": "Eski shina qabul qilish",
+      "acceptTitle": "Eski shinani savdodan alohida qabul qilish",
+      "acceptHint": "Mijoz shinasini bugun qoldirib, xaridni keyin qiladi. Shinalar hoziroq B/U kartochkaga kirim bo'ladi, kredit esa keyingi xaridda kassada tanlanadi.",
+      "accepted": "Barter qabul qilindi: {{number}}",
+      "cancelled": "Barter bekor qilindi",
+      "cancelTitle": "Barterni bekor qilish",
+      "cancelHint": "Eski shinalar mijozga qaytariladi — B/U kartochka qoldig'i kamayadi. Savdoda ishlatilgan hujjatni bekor qilib bo'lmaydi.",
+      "cancelAction": "Bekor qilish",
+      "customer": "Mijoz",
+      "customerRequired": "Mijoz tanlang — eski shinalar kimdan qabul qilingani hujjatda qoladi",
+      "linesEmpty": "Hali shina qo'shilmagan — \"Eski shina qo'shish\" tugmasini bosing",
+      "linesRequired": "Kamida bitta eski shina qo'shing",
+      "notes": "Izoh",
+      "notesPh": "masalan: mijoz 3 kundan keyin keladi",
+      "total": "Jami kredit:",
+      "colDocument": "Hujjat",
+      "colDate": "Sana",
+      "colCustomer": "Mijoz",
+      "colItems": "Shinalar",
+      "colAmount": "Kredit",
+      "colStatus": "Holat",
+      "colSale": "Savdo",
+      "qty": "{{count}} dona",
+      "inSale": "Kassada",
+      "before": "Oldindan",
+      "notApplied": "—",
+      "view": "Ko'rish",
+      "filterStatus": "Holat",
+      "all": "Barchasi",
+      "empty": "Barter hujjatlari yo'q",
+      "emptyHint": "Mijoz eski shinasini qoldirib ketsa — shu yerda qabul qiling; kassadagi barterlar ham shu ro'yxatga tushadi",
+      "waiting": "Kutmoqda: {{count}}",
+      "detailTitle": "Barter hujjati {{number}}",
+      "acceptedBy": "Qabul qildi",
+      "status": {
+        "NEW": "Kutmoqda",
+        "APPLIED": "Savdoda ishlatilgan",
+        "CANCELLED": "Bekor qilingan"
+      }
     },
     "supplierDetail": {
       "notFound": "Ta'minotchi topilmadi",

@@ -681,8 +681,11 @@ export interface SaleItem {
   totalPrice: number;
 }
 
-/** Barter qatori — savdoda mijozdan qabul qilingan eski shina (B/U mahsulot). */
-export interface SaleTradeInItem {
+/** Barter hujjatining holati: kassada kutmoqda → savdoda ishlatilgan / bekor qilingan. */
+export type TradeInStatus = 'NEW' | 'APPLIED' | 'CANCELLED';
+
+/** Barter qatori — mijozdan qabul qilingan eski shina (B/U mahsulot). */
+export interface TradeInItem {
   id?: number;
   productId: number;
   productName?: string;
@@ -716,7 +719,9 @@ export interface Sale {
   tradeInAmount: number;
   /** Jami − barter. Eski javoblarda bo'lmasligi mumkin — `totalAmount - tradeInAmount`. */
   amountDue?: number;
-  tradeInItems?: SaleTradeInItem[];
+  tradeInItems?: TradeInItem[];
+  /** Savdoda hisobga olingan barter hujjatlari (raqami bilan). */
+  tradeInDocuments?: TradeInDocumentRef[];
   paymentMethod: PaymentMethod;
   paymentStatus: PaymentStatus;
   status: SaleStatus;
@@ -760,6 +765,48 @@ export interface SaleRequest {
   notes?: string;
   /** Barter: bo'sh bo'lsa oddiy savdo. Mijoz tanlangan bo'lishi shart. */
   tradeInItems?: TradeInItemRequest[];
+  /** Mijoz oldinroq qoldirgan barter hujjati (NEW) — krediti ham savdodan ayiriladi. */
+  tradeInId?: number;
+}
+
+/** Savdo javobidagi barter hujjatiga qisqa ishora. */
+export interface TradeInDocumentRef {
+  id: number;
+  documentNumber: string;
+  status: TradeInStatus;
+  totalAmount: number;
+  /** Kassada savdo ichida qabul qilingan (true) yoki Barter sahifasida, oldindan (false). */
+  acceptedInSale: boolean;
+}
+
+/**
+ * Barter hujjati — mijozdan qabul qilingan eski shinalar. Savdodan alohida
+ * ham yashaydi: mijoz shinasini bugun qoldirib, xaridni keyin qiladi.
+ */
+export interface TradeIn {
+  id: number;
+  documentNumber: string;
+  customerId?: number;
+  customerName?: string;
+  customerPhone?: string;
+  /** Qaysi savdoda ishlatilgan; bo'sh = hali ishlatilmagan. */
+  saleId?: number;
+  invoiceNumber?: string;
+  acceptedAt: string;
+  acceptedInSale: boolean;
+  status: TradeInStatus;
+  totalAmount: number;
+  totalQuantity?: number;
+  notes?: string;
+  createdByName?: string;
+  items?: TradeInItem[];
+}
+
+/** Barter sahifasida savdodan alohida qabul qilish so'rovi. */
+export interface TradeInRequest {
+  customerId: number;
+  items: TradeInItemRequest[];
+  notes?: string;
 }
 
 // Debt Types

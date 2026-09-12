@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
-import { useParams, useNavigate } from 'react-router-dom';
+import { Link, useParams, useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import {
   ArrowLeft,
@@ -527,6 +527,25 @@ export function SaleDetailPage() {
               <Recycle className="h-4 w-4" />
               {t('erp.saleDetail.tradeInSection')}
             </h3>
+            {/* Hujjat raqami — Barter sahifasida ochiladi (kassada yoki oldindan qabul qilingan) */}
+            {sale.tradeInDocuments && sale.tradeInDocuments.length > 0 && (
+              <div className="mt-2 flex flex-wrap gap-2">
+                {sale.tradeInDocuments.map((doc) => (
+                  <Link
+                    key={doc.id}
+                    to={`/admin/trade-ins?doc=${doc.id}`}
+                    className="badge badge-outline gap-1 text-xs"
+                  >
+                    {t('erp.saleDetail.tradeInDocument')}: {doc.documentNumber} ·{' '}
+                    {t(
+                      doc.acceptedInSale
+                        ? 'erp.saleDetail.tradeInDocumentInSale'
+                        : 'erp.saleDetail.tradeInDocumentBefore'
+                    )}
+                  </Link>
+                ))}
+              </div>
+            )}
           </div>
           <div className="overflow-x-auto">
             <table className="table">

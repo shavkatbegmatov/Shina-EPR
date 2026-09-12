@@ -48,4 +48,12 @@ public class SaleRequest {
      */
     @Valid
     private List<TradeInItemRequest> tradeInItems;
+
+    /**
+     * Mijoz oldinroq qoldirib ketgan barter hujjati (Barter sahifasida qabul
+     * qilingan, {@code NEW} holatda). Uning krediti ham savdodan ayiriladi;
+     * {@link #tradeInItems} bilan birga berilishi mumkin — ikkalasi
+     * qo'shiladi.
+     */
+    private Long tradeInId;
 }

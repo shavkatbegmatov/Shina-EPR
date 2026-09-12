@@ -80,3 +80,47 @@ describe('cartStore chegirma clamp', () => {
     expect(store().getTotal()).toBe(400_000);
   });
 });
+
+describe('cartStore barter hujjati', () => {
+  const DOC = {
+    id: 12,
+    documentNumber: 'TI-000012',
+    customerId: 5,
+    acceptedAt: '2026-09-10T12:00:00+05:00',
+    acceptedInSale: false,
+    status: 'NEW' as const,
+    totalAmount: 600_000,
+  };
+
+  it("hujjat krediti qatorlar bilan qo'shiladi va to'lanadigan summani kamaytiradi", () => {
+    const store = useCartStore.getState();
+    store.clear();
+    store.addItem({ id: 1, name: 'Yangi', sellingPrice: 1_000_000, quantity: 10 } as never, 1);
+    store.setCustomer({ id: 5, fullName: 'Mijoz' } as never);
+    store.setTradeInDocument(DOC);
+    store.addTradeIn({ width: 205, profile: 55, diameter: 16, quantity: 1, unitValue: 100_000 });
+
+    expect(useCartStore.getState().getTradeInTotal()).toBe(700_000);
+    expect(useCartStore.getState().getAmountDue()).toBe(300_000);
+  });
+
+  it("mijoz olib tashlansa yoki o'zgarsa hujjat savatdan chiqadi, savat tozalansa ham", () => {
+    const store = useCartStore.getState();
+    store.clear();
+    store.setCustomer({ id: 5, fullName: 'Mijoz' } as never);
+    store.setTradeInDocument(DOC);
+
+    // O'sha mijoz qayta tanlansa hujjat qoladi
+    store.setCustomer({ id: 5, fullName: 'Mijoz' } as never);
+    expect(useCartStore.getState().tradeInDocument?.id).toBe(12);
+
+    store.setCustomer(null);
+    expect(useCartStore.getState().tradeInDocument).toBeNull();
+
+    store.setCustomer({ id: 5, fullName: 'Mijoz' } as never);
+    store.setTradeInDocument(DOC);
+    store.clear();
+    expect(useCartStore.getState().tradeInDocument).toBeNull();
+    expect(useCartStore.getState().getTradeInTotal()).toBe(0);
+  });
+});

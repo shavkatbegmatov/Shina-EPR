@@ -199,6 +199,16 @@ export const queryKeys = {
     byCustomer: (customerId: number) => ['shop-orders', 'customer', customerId] as const,
   },
 
+  /** Barter hujjatlari — savdodan alohida qabul qilingan eski shinalar. */
+  tradeIns: {
+    all: ['trade-ins'] as const,
+    list: (params: { page: number; size: number; status?: string; customerId?: number }) =>
+      ['trade-ins', 'list', params] as const,
+    /** Kassada tanlash uchun: mijozning hali savdoga bog'lanmagan hujjatlari. */
+    available: (customerId: number) => ['trade-ins', 'available', customerId] as const,
+    detail: (id: number) => ['trade-ins', 'detail', id] as const,
+  },
+
   sales: {
     all: ['sales'] as const,
     list: (params: { page: number; size: number; startDate?: string; endDate?: string }) =>

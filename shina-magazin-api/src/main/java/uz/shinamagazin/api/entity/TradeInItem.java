@@ -14,27 +14,27 @@ import java.util.Map;
 import java.util.Set;
 
 /**
- * Barter qatori — savdoda mijozdan qabul qilingan eski shina.
+ * Barter hujjatining qatori — mijozdan qabul qilingan eski shina.
  *
  * <p>Eski shina {@link #product} (B/U mahsulot) sifatida omborga kiradi va
  * keyin oddiy mahsulot kabi sotiladi. {@link #unitValue} — mijozga bir dona
- * uchun berilgan kredit; u B/U mahsulotning tannarxi ham.
+ * uchun berilgan kredit; B/U kartochkaning tannarxi ham shundan hisoblanadi.
  */
 @Entity
-@Table(name = "sale_trade_in_items")
+@Table(name = "trade_in_items")
 @EntityListeners({AuditingEntityListener.class, AuditEntityListener.class})
 @Getter
 @Setter
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-public class SaleTradeInItem extends BaseEntity implements Auditable {
+public class TradeInItem extends BaseEntity implements Auditable {
 
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "sale_id", nullable = false)
-    private Sale sale;
+    @ManyToOne(fetch = FetchType.LAZY, optional = false)
+    @JoinColumn(name = "trade_in_id", nullable = false)
+    private TradeIn tradeIn;
 
-    @ManyToOne(fetch = FetchType.LAZY)
+    @ManyToOne(fetch = FetchType.LAZY, optional = false)
     @JoinColumn(name = "product_id", nullable = false)
     private Product product;
 
@@ -58,7 +58,7 @@ public class SaleTradeInItem extends BaseEntity implements Auditable {
 
     @Override
     public String getEntityName() {
-        return "SaleTradeInItem";
+        return "TradeInItem";
     }
 
     @Override
@@ -72,8 +72,8 @@ public class SaleTradeInItem extends BaseEntity implements Auditable {
         map.put("description", this.description);
 
         // Avoid lazy loading
-        if (this.sale != null) {
-            map.put("saleId", this.sale.getId());
+        if (this.tradeIn != null) {
+            map.put("tradeInId", this.tradeIn.getId());
         }
         if (this.product != null) {
             map.put("productId", this.product.getId());

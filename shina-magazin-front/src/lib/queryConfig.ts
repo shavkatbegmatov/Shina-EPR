@@ -93,6 +93,8 @@ const DOMAIN_STALE_TIME: Record<keyof typeof queryKeys, number> = {
   customers: staleTime.transactional,
   debts: staleTime.transactional,
   sales: staleTime.transactional,
+  // Barter qabuli ombor qoldig'ini o'zgartiradi — savdo bilan bir xil daraja
+  tradeIns: staleTime.transactional,
   shopOrders: staleTime.transactional,
 
   // Zaxira

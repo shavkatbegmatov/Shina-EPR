@@ -4,16 +4,16 @@ import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
-import uz.shinamagazin.api.entity.SaleTradeInItem;
+import uz.shinamagazin.api.entity.TradeInItem;
 
 import java.math.BigDecimal;
 
-/** Barter qatori — savdoda qabul qilingan eski shina. */
+/** Barter hujjatining qatori — qabul qilingan eski shina. */
 @Data
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-public class SaleTradeInItemResponse {
+public class TradeInItemResponse {
     private Long id;
     private Long productId;
     private String productName;
@@ -24,8 +24,8 @@ public class SaleTradeInItemResponse {
     private BigDecimal totalValue;
     private String description;
 
-    public static SaleTradeInItemResponse from(SaleTradeInItem item) {
-        return SaleTradeInItemResponse.builder()
+    public static TradeInItemResponse from(TradeInItem item) {
+        return TradeInItemResponse.builder()
                 .id(item.getId())
                 .productId(item.getProduct().getId())
                 .productName(item.getProduct().getName())

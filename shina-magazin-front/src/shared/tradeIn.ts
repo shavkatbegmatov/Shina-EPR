@@ -1,6 +1,21 @@
 /**
  * Barter yordamchilari — sof funksiyalar (komponentdan alohida, sinaladigan).
  */
+import type { TradeInItemRequest, TradeInLine } from '../types';
+
+/** Savat/forma qatori → serverga ketadigan barter qatori (kalit yuborilmaydi). */
+export function toTradeInItemRequest(line: Omit<TradeInLine, 'key'>): TradeInItemRequest {
+  return {
+    width: line.width,
+    profile: line.profile,
+    diameter: line.diameter,
+    brandName: line.brandName,
+    condition: line.condition,
+    quantity: line.quantity,
+    unitValue: line.unitValue,
+    resalePrice: line.resalePrice,
+  };
+}
 
 /** Server bilan bir xil kalit: `BU-205-55-R16[-BREND]` — kassir SKU o'ylamaydi. */
 export function usedTireSku(
