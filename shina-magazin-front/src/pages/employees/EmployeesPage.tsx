@@ -290,7 +290,8 @@ export function EmployeesPage() {
   const rolesQuery = useQuery({
     queryKey: queryKeys.roles.list(),
     queryFn: () => rolesApi.getAll(),
-    enabled: showModal,
+    // ROLES_VIEW'siz menejer uchun so'rov 403 berib "ruxsat yo'q" chiqarardi
+    enabled: showModal && hasPermission(PermissionCode.ROLES_VIEW),
   });
 
   const employees = employeesQuery.data?.content ?? [];

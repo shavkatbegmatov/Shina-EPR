@@ -20,12 +20,13 @@ export function usePurchaseDocument() {
   const [settings, setSettings] = useState<ReceiptSettings>();
   const pendingPrint = useRef(false);
 
-  // Do'kon ma'lumotlari bir marta olinadi. Xato bo'lsa hujjat sarlavhasiz
-  // chiqadi — chop eta olmaslikdan ko'ra shunisi yaxshi.
+  // Do'kon rekvizitlari OMMAVIY sozlamalardan (kassa cheki bilan bir xil manba;
+  // to'liq /v1/settings SETTINGS_VIEW talab qiladi). Xato bo'lsa hujjat
+  // sarlavhasiz chiqadi — chop eta olmaslikdan ko'ra shunisi yaxshi.
   useEffect(() => {
     let cancelled = false;
     settingsApi
-      .get()
+      .getPublic()
       .then((data) => {
         if (!cancelled) setSettings(data);
       })

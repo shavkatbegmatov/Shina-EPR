@@ -16,7 +16,7 @@ vi.mock('../../api/shifts.api', () => ({
   },
 }));
 vi.mock('../../api/settings.api', () => ({
-  settingsApi: { get: vi.fn() },
+  settingsApi: { get: vi.fn(), getPublic: vi.fn() },
 }));
 
 import { shiftsApi } from '../../api/shifts.api';
@@ -97,7 +97,7 @@ describe('ShiftsPage', () => {
     vi.mocked(shiftsApi.getAll).mockResolvedValue(pageOf([]));
     vi.mocked(shiftsApi.open).mockResolvedValue(OPEN_SHIFT);
     vi.mocked(shiftsApi.close).mockResolvedValue(Z_REPORT);
-    vi.mocked(settingsApi.get).mockResolvedValue({} as never);
+    vi.mocked(settingsApi.getPublic).mockResolvedValue({} as never);
   });
 
   it('joriy smena va tarixni yuklaydi', async () => {

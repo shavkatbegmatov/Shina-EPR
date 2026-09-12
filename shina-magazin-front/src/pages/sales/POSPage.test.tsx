@@ -16,7 +16,7 @@ vi.mock('../../api/customers.api', () => ({
   customersApi: { getAll: vi.fn() },
 }));
 vi.mock('../../api/settings.api', () => ({
-  settingsApi: { get: vi.fn().mockResolvedValue({}) },
+  settingsApi: { get: vi.fn().mockResolvedValue({}), getPublic: vi.fn().mockResolvedValue({}) },
 }));
 
 import { productsApi } from '../../api/products.api';

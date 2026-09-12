@@ -28,6 +28,7 @@ import { useUIStore } from '../../store/uiStore';
 import { useThemeStore } from '../../shared/theme/themeStore';
 import { useNotificationsStore, type Notification } from '../../store/notificationsStore';
 import { rolesApi } from '../../api/roles.api';
+import { usePermission, PermissionCode } from '../../hooks/usePermission';
 import { authApi } from '../../api/auth.api';
 import { ROLES } from '../../config/constants';
 import { enumLabel } from '@/shared/enumLabel';
@@ -111,6 +112,8 @@ export function Header() {
   const [userDropdownOpen, setUserDropdownOpen] = useState(false);
   const [notifDropdownOpen, setNotifDropdownOpen] = useState(false);
   const [roles, setRoles] = useState<Role[]>([]);
+  const { hasPermission } = usePermission();
+  const canViewRoles = hasPermission(PermissionCode.ROLES_VIEW);
   const userDropdownRef = useRef<HTMLDivElement>(null);
   const notifDropdownRef = useRef<HTMLDivElement>(null);
 
@@ -119,12 +122,16 @@ export function Header() {
   // WebSocket ulanishini boshlash va dastlabki ma'lumotlarni yuklash
   useEffect(() => {
     const fetchData = async () => {
-      // Fetch roles
-      try {
-        const rolesData = await rolesApi.getAll();
-        setRoles(rolesData);
-      } catch (error) {
-        console.error('Failed to fetch roles:', error);
+      // Rollar ro'yxati faqat maxsus rol nomini ko'rsatish uchun kerak va
+      // ROLES_VIEW talab qiladi — kassirda (SELLER) u yo'q, so'rov har sahifada
+      // 403 va "ruxsat yo'q" xabarini chiqarardi. Standart rollar i18n'dan.
+      if (canViewRoles) {
+        try {
+          const rolesData = await rolesApi.getAll();
+          setRoles(rolesData);
+        } catch (error) {
+          console.error('Failed to fetch roles:', error);
+        }
       }
 
       // Dastlabki bildirishnomalarni yuklash
@@ -144,7 +151,7 @@ export function Header() {
     };
     // Zustand store funksiyalari barqaror (identity o'zgarmaydi) — effekt amalda
     // bir marta ishlaydi, lekin bog'liqliklar aniq yozilgan: stale-closure xavfi yo'q.
-  }, [fetchNotifications, connectWebSocket, disconnectWebSocket]);
+  }, [canViewRoles, fetchNotifications, connectWebSocket, disconnectWebSocket]);
 
   // Close dropdowns when clicking outside
   useEffect(() => {

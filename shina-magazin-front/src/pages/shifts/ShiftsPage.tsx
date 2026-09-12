@@ -57,8 +57,8 @@ export function ShiftsPage() {
    * bu so'rovning xatosi hech qayerda ko'rsatilmaydi.
    */
   const settingsQuery = useQuery({
-    queryKey: queryKeys.settings.detail(),
-    queryFn: () => settingsApi.get(),
+    queryKey: queryKeys.settings.public(),
+    queryFn: () => settingsApi.getPublic(),
   });
 
   const current = currentQuery.data ?? null;

@@ -296,7 +296,12 @@ export interface SettingsUpdateRequest extends ReceiptSettings, TelegramSettings
  * Storefront (guest) uchun ommaviy sozlamalar — auth talab qilmaydi.
  * Bu yerda faqat ommaviy ko'rinishga ta'sir qiluvchi qiymatlar bo'ladi.
  */
-export interface PublicSettings {
+/**
+ * Ommaviy sozlamalar (`GET /v1/settings/public`, auth'siz). Chek/hujjat sarlavhasi
+ * ({@link ReceiptSettings}) ham shu yerda: kassirda SETTINGS_VIEW yo'q, to'liq
+ * sozlamalar unga 403 berardi.
+ */
+export interface PublicSettings extends ReceiptSettings {
   imageFallback?: string; // 'SVG' | 'PHOTO'
   /** Sozlama yoqilgan VA bot username kiritilgan bo'lsagina true. */
   telegramRegistrationEnabled?: boolean;

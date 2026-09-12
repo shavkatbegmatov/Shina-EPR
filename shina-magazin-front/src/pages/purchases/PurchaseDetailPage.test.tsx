@@ -7,7 +7,7 @@ import '../../i18n';
 import type { PurchaseOrder, PurchasePayment, PurchaseReturn } from '../../types';
 
 vi.mock('../../api/settings.api', () => ({
-  settingsApi: { get: vi.fn().mockResolvedValue({}) },
+  settingsApi: { get: vi.fn().mockResolvedValue({}), getPublic: vi.fn().mockResolvedValue({}) },
 }));
 vi.mock('../../api/purchases.api', () => ({
   purchasesApi: {

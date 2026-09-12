@@ -154,6 +154,8 @@ export const queryKeys = {
     all: ['settings'] as const,
     detail: () => ['settings', 'detail'] as const,
     demo: () => ['settings', 'demo-data'] as const,
+    /** `GET /v1/settings/public` — auth'siz; vitrina va chek sarlavhasi bitta kesh. */
+    public: () => ['public-settings'] as const,
   },
 
   profile: {

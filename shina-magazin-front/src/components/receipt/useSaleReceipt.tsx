@@ -24,12 +24,14 @@ export function useSaleReceipt() {
   const [settings, setSettings] = useState<ReceiptSettings>();
   const pendingPrint = useRef(false);
 
-  // Do'kon ma'lumotlari bir marta olinadi. Xato bo'lsa chek sarlavhasiz
-  // chiqadi — savdoni chop eta olmaslikdan ko'ra shunisi yaxshi.
+  // Do'kon rekvizitlari OMMAVIY sozlamalardan — kassirda SETTINGS_VIEW yo'q,
+  // to'liq /v1/settings unga 403 berib, har POS'da "ruxsat yo'q" chiqarardi va
+  // chek sarlavhasiz ketardi. Xato bo'lsa chek sarlavhasiz chiqadi — savdoni
+  // chop eta olmaslikdan ko'ra shunisi yaxshi.
   useEffect(() => {
     let cancelled = false;
     settingsApi
-      .get()
+      .getPublic()
       .then((data) => {
         if (!cancelled) setSettings(data);
       })

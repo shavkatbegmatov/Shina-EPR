@@ -29,4 +29,17 @@ public class PublicSettingsResponse {
 
     /** Shu summadan boshlab yetkazib berish bepul (so'm). */
     private Long freeDeliveryThreshold;
+
+    /**
+     * Chek va kirim hujjati sarlavhasi: do'kon nomi, telefoni, manzili, chek pastki matni.
+     *
+     * <p>Bu do'konning OMMAVIY rekvizitlari (vitrinada ham ko'rinadi), maxfiy emas.
+     * Ilgari faqat to'liq {@code GET /v1/settings} da bor edi, u esa {@code SETTINGS_VIEW}
+     * talab qiladi — kassir (SELLER) har POS ochganda 403 va "ruxsat yo'q" xabarini
+     * olar, cheki esa sarlavhasiz chiqardi. Endi chek/hujjat sarlavhasi shu yerdan.
+     */
+    private String receiptShopName;
+    private String receiptShopPhone;
+    private String receiptShopAddress;
+    private String receiptFooter;
 }
