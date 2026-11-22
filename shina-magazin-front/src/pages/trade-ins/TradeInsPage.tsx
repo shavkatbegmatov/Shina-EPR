@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { keepPreviousData, useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
-import { Link, useSearchParams } from 'react-router-dom';
+import { Link, useSearchParams } from 'react-router';
 import { Eye, Plus, Recycle, Trash2, X, XCircle } from 'lucide-react';
 import toast from 'react-hot-toast';
 import clsx from 'clsx';

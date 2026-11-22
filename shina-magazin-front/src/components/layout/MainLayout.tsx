@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Outlet, Navigate, useLocation } from 'react-router-dom';
+import { Outlet, Navigate, useLocation } from 'react-router';
 import { useAuthStore } from '../../store/authStore';
 import { useSessionMonitor } from '../../hooks/useSessionMonitor';
 import { useCrossTabSync } from '../../hooks/useCrossTabSync';

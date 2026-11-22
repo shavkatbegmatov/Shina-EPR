@@ -14,7 +14,7 @@ import {
   Clock,
   Calendar,
 } from 'lucide-react';
-import { Link } from 'react-router-dom';
+import { Link } from 'react-router';
 import clsx from 'clsx';
 import {
   AreaChart,

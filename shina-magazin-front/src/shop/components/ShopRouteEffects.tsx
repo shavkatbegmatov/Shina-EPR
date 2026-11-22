@@ -1,5 +1,5 @@
 import { useEffect } from 'react';
-import { useLocation, useMatches } from 'react-router-dom';
+import { useLocation, useMatches } from 'react-router';
 import { useDocumentMeta } from '../hooks/useDocumentMeta';
 
 interface ShopRouteHandle {

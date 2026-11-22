@@ -21,7 +21,7 @@ import {
 } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import i18n from '../../i18n';
-import { useMatches, useNavigate, Link } from 'react-router-dom';
+import { useMatches, useNavigate, Link } from 'react-router';
 import clsx from 'clsx';
 import { useAuthStore } from '../../store/authStore';
 import { useUIStore } from '../../store/uiStore';

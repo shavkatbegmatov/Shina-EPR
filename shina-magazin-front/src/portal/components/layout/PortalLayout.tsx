@@ -1,5 +1,5 @@
 import { useEffect } from 'react';
-import { Outlet, Navigate, useLocation } from 'react-router-dom';
+import { Outlet, Navigate, useLocation } from 'react-router';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { usePortalAuthStore } from '../../store/portalAuthStore';
 import { portalApiClient } from '../../api/portal.api';

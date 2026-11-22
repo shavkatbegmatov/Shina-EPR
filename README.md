@@ -12,7 +12,7 @@ Prod: **https://protektor.uz** (Coolify; `master`'ga push → CI → GHCR image 
 
 ## Texnologiyalar
 
-- **Frontend** — React 18, TypeScript, Vite 7, Tailwind 3 + DaisyUI 4, Zustand, TanStack Query, react-router v6, i18next (uz/ru), Vitest.
+- **Frontend** — React 18, TypeScript, Vite 7, Tailwind 3 + DaisyUI 4, Zustand, TanStack Query, react-router v7, i18next (uz/ru), Vitest.
 - **Backend** — Spring Boot 3.5 (Java 17), Spring Security (JWT + sessiyalar), JPA/Hibernate, Flyway, PostgreSQL 16.
 - **Infra** — Docker, nginx (frontend + `/api` proxy), GitHub Actions, Coolify.
 

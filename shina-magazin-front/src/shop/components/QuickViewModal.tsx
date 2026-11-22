@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Link } from 'react-router-dom';
+import { Link } from 'react-router';
 import { useTranslation } from 'react-i18next';
 import { ShoppingCart, Check, Minus, Plus, ArrowRight } from 'lucide-react';
 import { Modal, Button, Badge, buttonVariants, cn } from '@/ui';

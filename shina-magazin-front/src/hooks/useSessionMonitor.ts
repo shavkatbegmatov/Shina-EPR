@@ -1,5 +1,5 @@
 import { useEffect, useRef } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate } from 'react-router';
 import toast from 'react-hot-toast';
 import { sessionsApi } from '../api/sessions.api';
 import { useAuthStore } from '../store/authStore';

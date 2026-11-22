@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { useForm, Controller } from 'react-hook-form';
 import { useTranslation } from 'react-i18next';
-import { Link } from 'react-router-dom';
+import { Link } from 'react-router';
 import { Send, UserPlus } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { PhoneInput } from '../../components/ui/PhoneInput';

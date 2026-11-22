@@ -2,7 +2,7 @@ import { switchLanguage } from '@/i18n';
 import { useState } from 'react';
 import { useForm, Controller } from 'react-hook-form';
 import { useTranslation } from 'react-i18next';
-import { useNavigate, useSearchParams, Navigate } from 'react-router-dom';
+import { useNavigate, useSearchParams, Navigate } from 'react-router';
 import { LogIn, Lock, AlertCircle, UserRound, Send } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { PhoneInput } from '../../components/ui/PhoneInput';

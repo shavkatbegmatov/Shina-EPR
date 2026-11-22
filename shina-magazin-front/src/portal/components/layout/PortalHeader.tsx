@@ -1,7 +1,7 @@
 import { switchLanguage } from '@/i18n';
 import { useTranslation } from 'react-i18next';
 import { ArrowLeft, Globe, Sun, Moon } from 'lucide-react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate } from 'react-router';
 import { usePortalAuthStore } from '../../store/portalAuthStore';
 import { useThemeStore } from '../../../shared/theme/themeStore';
 import { portalApiClient } from '../../api/portal.api';

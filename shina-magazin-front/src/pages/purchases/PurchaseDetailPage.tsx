@@ -6,7 +6,7 @@ import { getApiErrorMessage } from '../../utils/apiError';
 import { queryKeys } from '../../lib/queryKeys';
 import { invalidateAfter } from '../../lib/invalidation';
 import { useInvalidateOnNotification } from '../../hooks/useInvalidateOnNotification';
-import { useParams, useNavigate } from 'react-router-dom';
+import { useParams, useNavigate } from 'react-router';
 import {
   ArrowLeft,
   Ban,

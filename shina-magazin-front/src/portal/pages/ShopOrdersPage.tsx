@@ -1,5 +1,5 @@
 import { useTranslation } from 'react-i18next';
-import { Link } from 'react-router-dom';
+import { Link } from 'react-router';
 import { useInfiniteQuery } from '@tanstack/react-query';
 import { ShoppingBag, ChevronRight } from 'lucide-react';
 import { format } from 'date-fns';

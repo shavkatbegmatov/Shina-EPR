@@ -44,7 +44,7 @@ function vendorChunk(id: string): string | undefined {
   const from = (names: string[]) =>
     names.some((name) => path.includes(`/node_modules/${name}/`))
 
-  if (from(['react', 'react-dom', 'react-router', 'react-router-dom', '@remix-run/router', 'scheduler'])) {
+  if (from(['react', 'react-dom', 'react-router', 'scheduler'])) {
     return 'vendor-react'
   }
   if (from(['recharts', 'victory-vendor', 'internmap', 'delaunator', 'robust-predicates']) || /\/node_modules\/d3-[a-z-]+\//.test(path)) {

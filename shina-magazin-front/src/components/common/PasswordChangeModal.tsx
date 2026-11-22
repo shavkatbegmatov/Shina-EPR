@@ -11,7 +11,7 @@ import { useTranslation } from 'react-i18next';
 import { Button } from '@/ui';
 import { authApi } from '../../api/auth.api';
 import { useAuthStore } from '../../store/authStore';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate } from 'react-router';
 import type { ChangePasswordRequest } from '../../types';
 import { evaluatePassword } from '@/security/passwordPolicy';
 import { GeneratePasswordButton } from './GeneratePasswordButton';

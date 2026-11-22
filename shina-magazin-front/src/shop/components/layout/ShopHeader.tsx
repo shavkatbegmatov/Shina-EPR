@@ -1,6 +1,6 @@
 import { switchLanguage } from '@/i18n';
 import { useState } from 'react';
-import { Link, NavLink, useNavigate } from 'react-router-dom';
+import { Link, NavLink, useNavigate } from 'react-router';
 import { useTranslation } from 'react-i18next';
 import { ShoppingCart, Menu, X, Sun, Moon, Globe, Heart, Scale, User, LogOut } from 'lucide-react';
 import { Button, Badge, buttonVariants, cn } from '@/ui';

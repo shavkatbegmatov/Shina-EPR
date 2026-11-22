@@ -1,4 +1,4 @@
-import { Link } from 'react-router-dom';
+import { Link } from 'react-router';
 import { useTranslation } from 'react-i18next';
 import { buttonVariants } from '@/ui';
 import { ShopLogo } from '../components/layout/ShopLogo';

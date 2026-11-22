@@ -146,7 +146,7 @@ rollback (`IMAGE_TAG`), README. Batafsil: `git log --since=2026-09-03` va `CHANG
 
 | Papka | Texnologiya | Port |
 |---|---|---|
-| `shina-magazin-front` | React 18 + TS + Vite 7 + Tailwind 3 + DaisyUI 4; Zustand; React Query; react-router v6; i18next (uz/ru) | dev: **5183** |
+| `shina-magazin-front` | React 18 + TS + Vite 7 + Tailwind 3 + DaisyUI 4; Zustand; React Query; react-router v7; i18next (uz/ru) | dev: **5183** |
 | `shina-magazin-api` | Spring Boot **3.5.5** (target **Java 17** — `pom.xml` `java.version`, CI ham 17), JPA, Flyway, Spring Security (JWT), PostgreSQL | **8183**, context-path `/api` |
 
 **Baza:** PostgreSQL `localhost:5432`, DB **`shina_epr_db`**, user `shina_epr_user` (`application-dev.yml`).
