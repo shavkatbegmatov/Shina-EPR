@@ -64,6 +64,13 @@ updates:
     ignore:
       - dependency-name: "*"
         update-types: ["version-update:semver-major"]
+      # Build stage'ining `maven:3.9-eclipse-temurin-17-alpine` tegida Dependabot
+      # "versiya"ni 3.9 deb o'qiydi, JDK raqami esa suffiks — shuning uchun yuqoridagi
+      # semver-major qoidasi 17 → 26 ni USHLAMADI (#30, LTS bo'lmagan JDK 26). Build
+      # JDK'si runtime (`eclipse-temurin:17-jre-alpine`) bilan bir xil qolishi kerak.
+      # Teg suzuvchi: Maven 3.9.x va JDK 17 patch'lari har image build'ida baribir
+      # keladi. Maven 3.10+ ga o'tish — mvnw wrapper bilan birga, qo'lda.
+      - dependency-name: "maven"
   - package-ecosystem: docker
     directory: /shina-magazin-front
     schedule:
