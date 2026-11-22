@@ -78,8 +78,14 @@ PAT olish: GitHub → Settings → Developer settings → Personal access tokens
 | `TELEGRAM_WEBHOOK_SECRET` | `openssl rand -hex 32` | `TELEGRAM_MODE=webhook` bo'lsa **majburiy** |
 | `SHOP_PUBLIC_BASE_URL` | `https://<domen>` | bot xabaridagi "kabinetga kirish" havolasi |
 
-4. **Domen** (Coolify UI'da): `frontend` servisiga `https://<domen>` — SSL avtomatik
-   (Traefik + Let's Encrypt). Backend'ga domen ULANMAYDI.
+4. **Domen** (Coolify UI'da): `frontend` servisiga IKKI domen, ikkalasi ham **Port 80** —
+   `https://<domen>` va `https://www.<domen>`. SSL avtomatik (Traefik + Let's Encrypt).
+   Backend'ga domen ULANMAYDI.
+   www → apex 301 ni nginx o'zi qiladi (`nginx.conf.template`), lekin www Coolify'da
+   yozilmagan bo'lsa Traefik so'rovni konteynerga umuman yetkazmaydi va o'zining
+   "Site not available" 503 sahifasini qaytaradi — 23.11.2026 gacha aynan shunday edi.
+   Domen o'zgarishi faqat service **Restart** bilan kuchga kiradi: barcha konteynerlar
+   qayta yaratiladi va ~1 daqiqa sayt 503, API 502 beradi (backend sekinroq ko'tariladi).
    ⚠️ Traefik qaysi konteyner portiga ulanishini compose'dagi `expose: ["80"]` aytadi.
    U bo'lmasa Coolify standart `3000` ni oladi va sayt konteynerlar sog'lom bo'lsa ham
    502 beradi (06.09.2026, Coolify 4.3.17 yangilanishidan keyin ~2,5 soat). Domenni
@@ -110,8 +116,10 @@ Migratsiyada aniqlangan qoidalar (keyingi safar bilib qo'yish uchun):
   -v new:/to alpine cp -a`). Compose'dagi `external` e'lonlar zararsiz, lekin Service'da
   ishlamaydi.
 - **Domen** API orqali ko'chmaydi (application: `docker_compose_domains` massiv talab qiladi,
-  service sub-app: `fqdn`/`domains` ruxsat etilmagan) — UI'da: Domains → Add → service
-  `frontend`, `https://protektor.uz`, **Port 80**, Direction "Allow www & non-www".
+  service sub-app: `fqdn`/`domains` ruxsat etilmagan) — UI'da: Domains → Add Domain →
+  service `frontend`, **Port 80**, ikkita alohida yozuv: `https://protektor.uz` va
+  `https://www.protektor.uz`; keyin Restart. Coolify v4.7.6 da loyiha Projects ro'yxatida
+  ko'rinmaydi — Ctrl+K qidiruvida "shina" deb topiladi.
 - **Token:** `COOLIFY_WRITE_TOKEN` (read + read:sensitive + write + deploy) — yozish va env
   qiymatlarini o'qish uchun; deploy quvurining `COOLIFY_API_TOKEN` (read + deploy) qoladi.
 - **Tarmoq:** Service'da "Connect to the predefined Coolify network" yoqiq (API:
@@ -317,6 +325,8 @@ Relizlar: `git tag vX.Y.Z && git push origin vX.Y.Z` → `release.yml` GitHub Re
 - [ ] **Xavfsizlik:** logdagi `XAVFSIZLIK: 'admin' akkaunti ...` qatorini toping → shu parol bilan
       kiring → darhol almashtiring. `admin123` bilan kirish ishlamasligini tasdiqlang.
 - [ ] `https://<domen>`: do'kon `/`, ERP `/admin`, kabinet `/hisob`, login `/kirish`.
+- [ ] `https://www.<domen>/katalog` → **301** `https://<domen>/katalog` (503 bo'lsa — www
+      Coolify domenlarida yo'q, 4-qadamga qarang).
 - [ ] `https://<domen>/api/api-docs` **401/404** qaytarsin (prodda OpenAPI o'chiq), `curl -I` da
       `Content-Security-Policy` va `Strict-Transport-Security` sarlavhalari bo'lsin.
 - [ ] ERP'da real-time bildirishnoma keladi (WebSocket origin = `CORS_ALLOWED_ORIGINS`).
@@ -338,7 +348,8 @@ Relizlar: `git tag vX.Y.Z && git push origin vX.Y.Z` → `release.yml` GitHub Re
 ## Eslatma
 - **CORS:** env-driven — `CORS_ALLOWED_ORIGINS` (compose default: `https://protektor.uz`). Brauzer har
   POST'ga Origin yuboradi, shuning uchun same-origin bo'lsa ham prod domen ro'yxatda bo'lishi shart.
-  Yangi domen qo'shilsa — vergul bilan shu env'ga qo'shiladi.
+  Yangi domen qo'shilsa — vergul bilan shu env'ga qo'shiladi. `www.<domen>` bunga kirmaydi:
+  nginx uni ilova yuklanishidan oldin apex'ga 301 qiladi, brauzer API'ga faqat apex'dan boradi.
 - To'lov webhook'lari: Payme `https://<domen>/api/v1/payments/payme`; Click `.../click/prepare` +
   `.../complete`. SMS hozircha stub (`LogSmsSender`) — jonli SMS uchun provider impl kerak.
 - Batafsil bajarilgan ishlar: `QOLGAN-ISHLAR.md`.
